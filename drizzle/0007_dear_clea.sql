@@ -1,0 +1,20 @@
+CREATE TABLE `destinations` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`name` varchar(255) NOT NULL,
+	`description` text,
+	`location` varchar(255) NOT NULL,
+	`pricePerPerson` decimal(10,2) DEFAULT '0',
+	`rating` decimal(3,2) DEFAULT '5',
+	`imageUrl` text,
+	`highlights` text,
+	`bestTimeToVisit` varchar(255),
+	`duration` varchar(100),
+	`difficulty` enum('easy','moderate','hard'),
+	`groupSize` varchar(100),
+	`inclusions` text,
+	`exclusions` text,
+	`isActive` enum('active','inactive') NOT NULL DEFAULT 'active',
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `destinations_id` PRIMARY KEY(`id`)
+);
