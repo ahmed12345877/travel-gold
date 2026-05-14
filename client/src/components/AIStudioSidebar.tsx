@@ -33,7 +33,12 @@ export default function AIStudioSidebar() {
     { icon: <Grid3x3 size={18} />, label: "Library", path: "/ai-studio" },
     { icon: <Image size={18} />, label: "Image", path: "/ai-image-generator" },
     { icon: <Play size={18} />, label: "Video", path: "/ai-studio" },
-    { icon: <Zap size={18} />, label: "Blueprints", path: "/ai-studio", badge: "NEW" },
+    {
+      icon: <Zap size={18} />,
+      label: "Blueprints",
+      path: "/ai-studio",
+      badge: "NEW",
+    },
     { icon: <Maximize2 size={18} />, label: "Upscaler", path: "/ai-studio" },
   ];
 

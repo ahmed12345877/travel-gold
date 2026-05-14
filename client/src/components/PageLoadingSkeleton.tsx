@@ -1,6 +1,12 @@
 import React from "react";
 
-type SkeletonVariant = "hero" | "gallery" | "cards" | "dashboard" | "form" | "ai-studio";
+type SkeletonVariant =
+  | "hero"
+  | "gallery"
+  | "cards"
+  | "dashboard"
+  | "form"
+  | "ai-studio";
 
 interface PageLoadingSkeletonProps {
   /** The variant of skeleton to display */
@@ -66,13 +72,19 @@ export default function PageLoadingSkeleton({
   switch (variant) {
     case "hero":
       return (
-        <div className={`min-h-screen bg-[var(--theme-background)] ${className}`}>
+        <div
+          className={`min-h-screen bg-[var(--theme-background)] ${className}`}
+        >
           {/* Navbar skeleton */}
           <div className="h-16 bg-[var(--theme-surface)]/80 border-b border-[var(--theme-primary)]/10 flex items-center px-6">
             <div className="w-10 h-10 rounded bg-[var(--card)] animate-pulse" />
             <div className="flex gap-6 ml-8">
               {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="w-16 h-3 rounded bg-[var(--card)] animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
+                <div
+                  key={i}
+                  className="w-16 h-3 rounded bg-[var(--card)] animate-pulse"
+                  style={{ animationDelay: `${i * 100}ms` }}
+                />
               ))}
             </div>
           </div>
@@ -91,8 +103,14 @@ export default function PageLoadingSkeleton({
               {pulseBar("w-80", "h-12", "200ms")}
               {pulseBar("w-72", "h-4", "300ms")}
               <div className="flex gap-4 mt-4">
-                <div className="w-40 h-12 rounded-lg bg-[var(--theme-primary)]/10 animate-pulse" style={{ animationDelay: "400ms" }} />
-                <div className="w-40 h-12 rounded-lg bg-[var(--card)] animate-pulse" style={{ animationDelay: "500ms" }} />
+                <div
+                  className="w-40 h-12 rounded-lg bg-[var(--theme-primary)]/10 animate-pulse"
+                  style={{ animationDelay: "400ms" }}
+                />
+                <div
+                  className="w-40 h-12 rounded-lg bg-[var(--card)] animate-pulse"
+                  style={{ animationDelay: "500ms" }}
+                />
               </div>
             </div>
           </div>
@@ -101,17 +119,26 @@ export default function PageLoadingSkeleton({
 
     case "gallery":
       return (
-        <div className={`min-h-screen bg-[var(--theme-background)] p-8 ${className}`}>
+        <div
+          className={`min-h-screen bg-[var(--theme-background)] p-8 ${className}`}
+        >
           {/* Filter bar skeleton */}
           <div className="flex gap-3 mb-8">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="w-24 h-9 rounded-full bg-[var(--card)] animate-pulse" style={{ animationDelay: `${i * 80}ms` }} />
+              <div
+                key={i}
+                className="w-24 h-9 rounded-full bg-[var(--card)] animate-pulse"
+                style={{ animationDelay: `${i * 80}ms` }}
+              />
             ))}
           </div>
           {/* Gallery grid skeleton */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="rounded-xl overflow-hidden bg-[var(--theme-surface)]">
+              <div
+                key={i}
+                className="rounded-xl overflow-hidden bg-[var(--theme-surface)]"
+              >
                 <div
                   className={`${i % 3 === 0 ? "aspect-[3/4]" : i % 3 === 1 ? "aspect-square" : "aspect-video"} bg-[var(--card)] relative overflow-hidden`}
                 >
@@ -124,8 +151,19 @@ export default function PageLoadingSkeleton({
                     }}
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-[var(--theme-primary)]/15 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ animationDelay: `${i * 100}ms` }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <svg
+                      className="w-6 h-6 text-[var(--theme-primary)]/15 animate-pulse"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      style={{ animationDelay: `${i * 100}ms` }}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1}
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
                     </svg>
                   </div>
                 </div>
@@ -141,7 +179,9 @@ export default function PageLoadingSkeleton({
 
     case "cards":
       return (
-        <div className={`min-h-screen bg-[var(--theme-background)] p-8 ${className}`}>
+        <div
+          className={`min-h-screen bg-[var(--theme-background)] p-8 ${className}`}
+        >
           <div className="max-w-7xl mx-auto">
             <div className="mb-8 space-y-3">
               {pulseBar("w-64", "h-8")}
@@ -156,12 +196,17 @@ export default function PageLoadingSkeleton({
 
     case "dashboard":
       return (
-        <div className={`min-h-screen bg-[var(--theme-background)] p-8 ${className}`}>
+        <div
+          className={`min-h-screen bg-[var(--theme-background)] p-8 ${className}`}
+        >
           <div className="max-w-7xl mx-auto">
             {/* Stats row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="p-6 rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-primary)]/10 space-y-3">
+                <div
+                  key={i}
+                  className="p-6 rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-primary)]/10 space-y-3"
+                >
                   {pulseBar("w-8", "h-8", `${i * 80}ms`)}
                   {pulseBar("w-16", "h-6", `${i * 80 + 40}ms`)}
                   {pulseBar("w-24", "h-3", `${i * 80 + 80}ms`)}
@@ -186,8 +231,14 @@ export default function PageLoadingSkeleton({
               {pulseBar("w-32", "h-5")}
               <div className="mt-4 space-y-3">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="flex gap-4 items-center py-3 border-b border-[var(--theme-primary)]/5">
-                    <div className="w-10 h-10 rounded-full bg-[var(--card)] animate-pulse" style={{ animationDelay: `${i * 60}ms` }} />
+                  <div
+                    key={i}
+                    className="flex gap-4 items-center py-3 border-b border-[var(--theme-primary)]/5"
+                  >
+                    <div
+                      className="w-10 h-10 rounded-full bg-[var(--card)] animate-pulse"
+                      style={{ animationDelay: `${i * 60}ms` }}
+                    />
                     {pulseBar("w-32", "h-3", `${i * 60}ms`)}
                     {pulseBar("w-24", "h-3", `${i * 60 + 30}ms`)}
                     {pulseBar("w-16", "h-3", `${i * 60 + 60}ms`)}
@@ -201,12 +252,18 @@ export default function PageLoadingSkeleton({
 
     case "ai-studio":
       return (
-        <div className={`min-h-screen bg-[var(--theme-background)] flex ${className}`}>
+        <div
+          className={`min-h-screen bg-[var(--theme-background)] flex ${className}`}
+        >
           {/* Sidebar skeleton */}
           <div className="w-16 bg-[var(--theme-surface)] border-r border-[var(--theme-primary)]/10 flex flex-col items-center py-4 gap-4">
             <div className="w-8 h-8 rounded bg-[var(--card)] animate-pulse" />
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="w-8 h-8 rounded bg-[var(--card)] animate-pulse" style={{ animationDelay: `${i * 80}ms` }} />
+              <div
+                key={i}
+                className="w-8 h-8 rounded bg-[var(--card)] animate-pulse"
+                style={{ animationDelay: `${i * 80}ms` }}
+              />
             ))}
           </div>
           {/* Main content */}
@@ -222,14 +279,20 @@ export default function PageLoadingSkeleton({
               />
               <div className="absolute inset-0 flex flex-col items-center justify-center space-y-4">
                 {pulseBar("w-72", "h-10")}
-                <div className="w-[500px] h-12 rounded-full bg-[var(--card)] animate-pulse" style={{ animationDelay: "200ms" }} />
+                <div
+                  className="w-[500px] h-12 rounded-full bg-[var(--card)] animate-pulse"
+                  style={{ animationDelay: "200ms" }}
+                />
               </div>
             </div>
             {/* Service icons */}
             <div className="flex justify-center gap-8 mb-8">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 rounded-xl bg-[var(--card)] animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
+                  <div
+                    className="w-12 h-12 rounded-xl bg-[var(--card)] animate-pulse"
+                    style={{ animationDelay: `${i * 100}ms` }}
+                  />
                   {pulseBar("w-14", "h-2", `${i * 100 + 50}ms`)}
                 </div>
               ))}
@@ -237,7 +300,10 @@ export default function PageLoadingSkeleton({
             {/* Featured grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
               {Array.from({ length: 10 }).map((_, i) => (
-                <div key={i} className="aspect-square rounded-lg bg-[var(--card)] relative overflow-hidden">
+                <div
+                  key={i}
+                  className="aspect-square rounded-lg bg-[var(--card)] relative overflow-hidden"
+                >
                   <div
                     className={`absolute inset-0 ${shimmerClass}`}
                     style={{
@@ -255,7 +321,9 @@ export default function PageLoadingSkeleton({
 
     case "form":
       return (
-        <div className={`min-h-screen bg-[var(--theme-background)] p-8 ${className}`}>
+        <div
+          className={`min-h-screen bg-[var(--theme-background)] p-8 ${className}`}
+        >
           <div className="max-w-2xl mx-auto">
             <div className="mb-8 space-y-3">
               {pulseBar("w-48", "h-8")}
@@ -265,14 +333,23 @@ export default function PageLoadingSkeleton({
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="space-y-2">
                   {pulseBar("w-24", "h-3", `${i * 80}ms`)}
-                  <div className="w-full h-11 rounded-lg bg-[var(--card)] animate-pulse" style={{ animationDelay: `${i * 80 + 40}ms` }} />
+                  <div
+                    className="w-full h-11 rounded-lg bg-[var(--card)] animate-pulse"
+                    style={{ animationDelay: `${i * 80 + 40}ms` }}
+                  />
                 </div>
               ))}
               <div className="space-y-2">
                 {pulseBar("w-24", "h-3", "400ms")}
-                <div className="w-full h-28 rounded-lg bg-[var(--card)] animate-pulse" style={{ animationDelay: "440ms" }} />
+                <div
+                  className="w-full h-28 rounded-lg bg-[var(--card)] animate-pulse"
+                  style={{ animationDelay: "440ms" }}
+                />
               </div>
-              <div className="w-full h-12 rounded-lg bg-[var(--theme-primary)]/10 animate-pulse" style={{ animationDelay: "500ms" }} />
+              <div
+                className="w-full h-12 rounded-lg bg-[var(--theme-primary)]/10 animate-pulse"
+                style={{ animationDelay: "500ms" }}
+              />
             </div>
           </div>
         </div>

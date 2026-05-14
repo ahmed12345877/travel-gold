@@ -12,21 +12,29 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WatermarkImage from "@/components/WatermarkImage";
 
-const CATEGORIES = ["All", "Destinations", "Experiences", "Travel Tips", "Culture"];
+const CATEGORIES = [
+  "All",
+  "Destinations",
+  "Experiences",
+  "Travel Tips",
+  "Culture",
+];
 
 export default function Blog() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: posts, isLoading } = trpc.blog.list.useQuery(
-    selectedCategory === "All" ? { limit: 20 } : { limit: 20, category: selectedCategory }
+    selectedCategory === "All"
+      ? { limit: 20 }
+      : { limit: 20, category: selectedCategory },
   );
 
   const filteredPosts = posts?.filter(
     (p) =>
       !searchQuery ||
       p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
+      p.excerpt.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   // JSON-LD for Blog page
@@ -60,7 +68,11 @@ export default function Blog() {
       {/* Hero Banner */}
       <section className="relative pt-32 pb-20 overflow-hidden">
         <div className="absolute inset-0">
-          <img src="/manus-storage/hero-blog_16ca6aef.jpg" alt="" className="w-full h-full object-cover" />
+          <img
+            src="/manus-storage/hero-blog_16ca6aef.jpg"
+            alt=""
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-b from-[var(--theme-background)]/80 via-[var(--theme-background)]/70 to-[var(--theme-background)]" />
         </div>
         <div className="container relative z-10">
@@ -77,8 +89,8 @@ export default function Blog() {
               Travel Blog & Guides
             </h1>
             <p className="text-white/60 text-lg leading-relaxed mb-8">
-              Expert insights, travel tips, and destination guides to help you plan
-              your perfect Egyptian adventure.
+              Expert insights, travel tips, and destination guides to help you
+              plan your perfect Egyptian adventure.
             </p>
             <div className="w-20 h-[2px] bg-gradient-to-r from-transparent via-[var(--theme-primary)] to-transparent mx-auto" />
           </motion.div>
@@ -180,11 +192,14 @@ export default function Blog() {
                         <span className="flex items-center gap-1">
                           <Calendar size={12} />
                           {post.publishedAt
-                            ? new Date(post.publishedAt).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })
+                            ? new Date(post.publishedAt).toLocaleDateString(
+                                "en-US",
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                },
+                              )
                             : "Draft"}
                         </span>
                         <span className="flex items-center gap-1">

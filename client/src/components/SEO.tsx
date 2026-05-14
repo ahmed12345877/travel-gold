@@ -27,7 +27,9 @@ export default function SEO({
 }: SEOProps) {
   const fullTitle = `${title} | ${SITE_NAME}`;
   const image = ogImage || DEFAULT_OG_IMAGE;
-  const canonical = canonicalUrl || `${BASE_URL}${typeof window !== "undefined" ? window.location.pathname : "/"}`;
+  const canonical =
+    canonicalUrl ||
+    `${BASE_URL}${typeof window !== "undefined" ? window.location.pathname : "/"}`;
 
   return (
     <Helmet>

@@ -12,10 +12,29 @@ import Footer from "@/components/Footer";
 import BackToTop from "@/components/BackToTop";
 import SEO from "@/components/SEO";
 import {
-  X, ChevronLeft, ChevronRight, MapPin,
-  Camera, ZoomIn, Play, Video, Clock, Eye,
-  Sparkles, Globe, Award, Heart, Share2, Download,
-  Grid3X3, LayoutGrid, Maximize2, Facebook, Instagram, Link2, MessageCircle
+  X,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  Camera,
+  ZoomIn,
+  Play,
+  Video,
+  Clock,
+  Eye,
+  Sparkles,
+  Globe,
+  Award,
+  Heart,
+  Share2,
+  Download,
+  Grid3X3,
+  LayoutGrid,
+  Maximize2,
+  Facebook,
+  Instagram,
+  Link2,
+  MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import OptimizedImage from "@/components/OptimizedImage";
@@ -28,7 +47,8 @@ const SOCIAL_LINKS = {
 };
 
 /* ─── CDN Base ─── */
-const CDN = "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8";
+const CDN =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8";
 
 /* ─── Gallery Item Interface (unified for DB + static) ─── */
 interface GalleryItemDisplay {
@@ -53,7 +73,8 @@ const staticGalleryItems: GalleryItemDisplay[] = [
     src: "/manus-storage/1ea6c9b2f3fbdac06639a33dc44d9b8f180d000265ecbd5278a892c0a3f64c88_74b6d5bc.avif",
     title: "Egyptian Luxury Experience",
     titleAr: "تجربة الفخامة المصرية",
-    description: "Discover the elegance and grandeur of Egypt's most luxurious destinations.",
+    description:
+      "Discover the elegance and grandeur of Egypt's most luxurious destinations.",
     descriptionAr: "اكتشف أناقة وعظمة أفخم وجهات مصر السياحية.",
     category: "Luxury Travel",
     categoryAr: "السفر الفاخر",
@@ -67,7 +88,8 @@ const staticGalleryItems: GalleryItemDisplay[] = [
     src: "/manus-storage/2a20e5d22b1f9142308a09e9f4cb42317410d08e8879e0bff6ffd3abc5d2505f_1a37c6fc.avif",
     title: "Desert Wonders",
     titleAr: "عجائب الصحراء",
-    description: "Experience the breathtaking beauty of Egypt's golden deserts.",
+    description:
+      "Experience the breathtaking beauty of Egypt's golden deserts.",
     descriptionAr: "استمتع بجمال الصحراء الذهبية الخلاب.",
     category: "Desert Safari",
     categoryAr: "سفاري الصحراء",
@@ -551,7 +573,8 @@ const staticVideoItems: VideoItemDisplay[] = [
     title: "Cairo Nights",
     titleAr: "ليالي القاهرة",
     description: "Experience the vibrant nightlife and culture of Cairo.",
-    descriptionAr: "استمتع بالحياة الليلية والثقافة النابضة بالحياة في القاهرة.",
+    descriptionAr:
+      "استمتع بالحياة الليلية والثقافة النابضة بالحياة في القاهرة.",
     duration: "3:59",
     views: "15.7K",
     category: "City Tours",
@@ -561,18 +584,26 @@ const staticVideoItems: VideoItemDisplay[] = [
 
 /* ─── Gallery Component ─── */
 export default function Gallery() {
-  const [selectedImage, setSelectedImage] = useState<GalleryItemDisplay | null>(null);
-  const [selectedVideo, setSelectedVideo] = useState<VideoItemDisplay | null>(null);
+  const [selectedImage, setSelectedImage] = useState<GalleryItemDisplay | null>(
+    null,
+  );
+  const [selectedVideo, setSelectedVideo] = useState<VideoItemDisplay | null>(
+    null,
+  );
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Fetch gallery data from DB (with fallback to static)
-  const { data: dbGalleryItems = [] } = trpc.gallery.listVisible.useQuery(undefined, {
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  }) as any;
+  const { data: dbGalleryItems = [] } = trpc.gallery.listVisible.useQuery(
+    undefined,
+    {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  ) as any;
 
-  const galleryItems = dbGalleryItems.length > 0 ? dbGalleryItems : staticGalleryItems;
+  const galleryItems =
+    dbGalleryItems.length > 0 ? dbGalleryItems : staticGalleryItems;
 
   // Extract unique categories
   const categories = useMemo(() => {
@@ -610,31 +641,31 @@ export default function Gallery() {
   const navigateImage = useCallback(
     (direction: "next" | "prev") => {
       if (!selectedImage) return;
-      const currentIndex = filteredItems.findIndex((item: any) => item.id === selectedImage.id);
-      const newIndex = direction === "next" ? currentIndex + 1 : currentIndex - 1;
+      const currentIndex = filteredItems.findIndex(
+        (item: any) => item.id === selectedImage.id,
+      );
+      const newIndex =
+        direction === "next" ? currentIndex + 1 : currentIndex - 1;
       if (newIndex >= 0 && newIndex < filteredItems.length) {
         setSelectedImage(filteredItems[newIndex]);
       }
     },
-    [selectedImage, filteredItems]
+    [selectedImage, filteredItems],
   );
 
   // Share image
-  const shareImage = useCallback(
-    (item: any) => {
-      const shareText = `Check out this amazing ${item.category} experience from Vanir Travel Group: ${item.title}`;
-      if (navigator.share) {
-        navigator.share({
-          title: item.title,
-          text: shareText,
-          url: window.location.href,
-        });
-      } else {
-        toast.success("Share link copied to clipboard!");
-      }
-    },
-    []
-  );
+  const shareImage = useCallback((item: any) => {
+    const shareText = `Check out this amazing ${item.category} experience from Vanir Travel Group: ${item.title}`;
+    if (navigator.share) {
+      navigator.share({
+        title: item.title,
+        text: shareText,
+        url: window.location.href,
+      });
+    } else {
+      toast.success("Share link copied to clipboard!");
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-[var(--theme-background)] text-white">
@@ -648,7 +679,11 @@ export default function Gallery() {
       {/* Hero Section */}
       <section className="relative pt-20 sm:pt-24 md:pt-32 pb-12 sm:pb-16 px-3 sm:px-4 md:px-8 overflow-hidden">
         <div className="absolute inset-0">
-          <img src="/manus-storage/hero-gallery_41ca4d64.jpg" alt="" className="w-full h-full object-cover" />
+          <img
+            src="/manus-storage/hero-gallery_41ca4d64.jpg"
+            alt=""
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-b from-[var(--theme-background)]/85 via-[var(--theme-background)]/75 to-[var(--theme-background)]" />
         </div>
         <div className="max-w-6xl mx-auto relative z-10">
@@ -690,7 +725,9 @@ export default function Gallery() {
             <button
               onClick={() => setViewMode("grid")}
               className={`p-2 rounded-lg transition-all ${
-                viewMode === "grid" ? "bg-[var(--theme-primary)] text-[var(--theme-background)]" : "bg-gray-800 text-gray-300"
+                viewMode === "grid"
+                  ? "bg-[var(--theme-primary)] text-[var(--theme-background)]"
+                  : "bg-gray-800 text-gray-300"
               }`}
             >
               <Grid3X3 size={20} />
@@ -698,7 +735,9 @@ export default function Gallery() {
             <button
               onClick={() => setViewMode("list")}
               className={`p-2 rounded-lg transition-all ${
-                viewMode === "list" ? "bg-[var(--theme-primary)] text-[var(--theme-background)]" : "bg-gray-800 text-gray-300"
+                viewMode === "list"
+                  ? "bg-[var(--theme-primary)] text-[var(--theme-background)]"
+                  : "bg-gray-800 text-gray-300"
               }`}
             >
               <LayoutGrid size={20} />
@@ -708,7 +747,10 @@ export default function Gallery() {
       </section>
 
       {/* Gallery Grid */}
-      <section ref={containerRef} className="px-3 sm:px-4 md:px-8 pb-12 sm:pb-20">
+      <section
+        ref={containerRef}
+        className="px-3 sm:px-4 md:px-8 pb-12 sm:pb-20"
+      >
         <div className="max-w-7xl mx-auto">
           <motion.div
             layout
@@ -745,8 +787,12 @@ export default function Gallery() {
 
                     {/* Info */}
                     <div className="absolute bottom-0 left-0 right-0 p-4 text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                      <h3 className="text-lg font-semibold mb-1">{item.title}</h3>
-                      <p className="text-sm text-gray-300 mb-2">{item.description}</p>
+                      <h3 className="text-lg font-semibold mb-1">
+                        {item.title}
+                      </h3>
+                      <p className="text-sm text-gray-300 mb-2">
+                        {item.description}
+                      </p>
                       <div className="flex items-center gap-2 text-xs text-gray-400">
                         <MapPin size={14} />
                         {item.location}
@@ -768,7 +814,10 @@ export default function Gallery() {
 
                     {/* Zoom Icon */}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <ZoomIn size={40} className="text-[var(--theme-primary)]" />
+                      <ZoomIn
+                        size={40}
+                        className="text-[var(--theme-primary)]"
+                      />
                     </div>
                   </div>
                 </motion.div>
@@ -797,7 +846,10 @@ export default function Gallery() {
                     />
                     <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <Play size={50} className="text-[var(--theme-primary)] group-hover:scale-125 transition-transform" />
+                      <Play
+                        size={50}
+                        className="text-[var(--theme-primary)] group-hover:scale-125 transition-transform"
+                      />
                     </div>
                     <div className="absolute bottom-2 right-2 bg-black/80 px-2 py-1 rounded text-xs text-white flex items-center gap-1">
                       <Clock size={12} />
@@ -805,7 +857,9 @@ export default function Gallery() {
                     </div>
                   </div>
                   <div className="p-3">
-                    <h3 className="font-semibold text-sm mb-1">{video.title}</h3>
+                    <h3 className="font-semibold text-sm mb-1">
+                      {video.title}
+                    </h3>
                     <div className="flex items-center gap-1 text-xs text-gray-400">
                       <Eye size={12} />
                       {video.views}
@@ -844,8 +898,12 @@ export default function Gallery() {
 
               {/* Info */}
               <div className="mt-4 text-white">
-                <h2 className="text-2xl font-bold mb-2">{selectedImage.title}</h2>
-                <p className="text-gray-300 mb-4">{selectedImage.description}</p>
+                <h2 className="text-2xl font-bold mb-2">
+                  {selectedImage.title}
+                </h2>
+                <p className="text-gray-300 mb-4">
+                  {selectedImage.description}
+                </p>
                 <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
                   <MapPin size={16} />
                   {selectedImage.location}
@@ -918,8 +976,12 @@ export default function Gallery() {
                   <Play size={80} className="text-[var(--theme-primary)]" />
                 </div>
                 <div className="p-6">
-                  <h2 className="text-2xl font-bold text-white mb-2">{selectedVideo.title}</h2>
-                  <p className="text-gray-300 mb-4">{selectedVideo.description}</p>
+                  <h2 className="text-2xl font-bold text-white mb-2">
+                    {selectedVideo.title}
+                  </h2>
+                  <p className="text-gray-300 mb-4">
+                    {selectedVideo.description}
+                  </p>
                 </div>
               </div>
               <button

@@ -53,7 +53,7 @@ export function registerDownloadProxy(app: Express) {
         isAllowed = allowedDomains.some(
           (domain) =>
             parsedUrl.hostname.endsWith(domain) ||
-            parsedUrl.hostname.includes(domain)
+            parsedUrl.hostname.includes(domain),
         );
       } catch {
         res.status(400).json({ error: "Invalid URL format" });
@@ -63,7 +63,7 @@ export function registerDownloadProxy(app: Express) {
       if (!isAllowed) {
         const s3Patterns = ["vanir", "ai-generated", "manus"];
         isAllowed = s3Patterns.some((pattern) =>
-          imageUrl.toLowerCase().includes(pattern)
+          imageUrl.toLowerCase().includes(pattern),
         );
       }
 
@@ -83,9 +83,10 @@ export function registerDownloadProxy(app: Express) {
       }
 
       const arrayBuffer = await response.arrayBuffer();
-      let outputBuffer: Buffer = Buffer.from(arrayBuffer) as Buffer<ArrayBuffer>;
-      let outputMime =
-        response.headers.get("content-type") || "image/png";
+      let outputBuffer: Buffer = Buffer.from(
+        arrayBuffer,
+      ) as Buffer<ArrayBuffer>;
+      let outputMime = response.headers.get("content-type") || "image/png";
       let outputExt = "png";
 
       // Convert format if requested
@@ -95,15 +96,17 @@ export function registerDownloadProxy(app: Express) {
         const sharpInstance = sharp(outputBuffer);
 
         if (normalizedFormat === "jpeg") {
-          outputBuffer = await sharpInstance
+          outputBuffer = (await sharpInstance
             .jpeg({ quality: 92 })
-            .toBuffer() as Buffer<ArrayBuffer>;
+            .toBuffer()) as Buffer<ArrayBuffer>;
         } else if (normalizedFormat === "webp") {
-          outputBuffer = await sharpInstance
+          outputBuffer = (await sharpInstance
             .webp({ quality: 90 })
-            .toBuffer() as Buffer<ArrayBuffer>;
+            .toBuffer()) as Buffer<ArrayBuffer>;
         } else {
-          outputBuffer = await sharpInstance.png().toBuffer() as Buffer<ArrayBuffer>;
+          outputBuffer = (await sharpInstance
+            .png()
+            .toBuffer()) as Buffer<ArrayBuffer>;
         }
 
         outputMime = FORMAT_MIME[requestedFormat] || "image/png";
@@ -111,7 +114,8 @@ export function registerDownloadProxy(app: Express) {
       }
 
       // Generate filename
-      const baseFilename = (req.query.filename as string) || `vanir-ai-${Date.now()}`;
+      const baseFilename =
+        (req.query.filename as string) || `vanir-ai-${Date.now()}`;
       // Remove existing extension from base filename if present
       const cleanBase = baseFilename.replace(/\.(png|jpg|jpeg|webp)$/i, "");
       const filename = `${cleanBase}.${outputExt}`;
@@ -120,7 +124,7 @@ export function registerDownloadProxy(app: Express) {
       res.setHeader("Content-Type", outputMime);
       res.setHeader(
         "Content-Disposition",
-        `attachment; filename="${filename}"`
+        `attachment; filename="${filename}"`,
       );
       res.setHeader("Content-Length", outputBuffer.length);
       res.setHeader("Cache-Control", "no-cache");

@@ -12,7 +12,11 @@ import {
   updateAIUsageStatus,
 } from "../db";
 import { generateImageWithDALLE } from "../openaiImageGen";
-import { generateImageWithGemini, GEMINI_IMAGE_MODELS, type GeminiModelId } from "../geminiImageGen";
+import {
+  generateImageWithGemini,
+  GEMINI_IMAGE_MODELS,
+  type GeminiModelId,
+} from "../geminiImageGen";
 
 export const aiStudioRouter = router({
   /** Get or create AI subscription for current user */
@@ -26,10 +30,14 @@ export const aiStudioRouter = router({
       z.object({
         plan: z.enum(["free", "pro", "enterprise"]),
         stripePaymentIntentId: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
-      const subscription = await updateAISubscription(ctx.user.id, input.plan, input.stripePaymentIntentId);
+      const subscription = await updateAISubscription(
+        ctx.user.id,
+        input.plan,
+        input.stripePaymentIntentId,
+      );
       return subscription;
     }),
 
@@ -44,7 +52,7 @@ export const aiStudioRouter = router({
       z.object({
         amount: z.number().min(1),
         reason: z.enum(["purchase", "monthly_allowance", "bonus"]).optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       return addAICredits(ctx.user.id, input.amount, input.reason || "bonus");
@@ -55,15 +63,21 @@ export const aiStudioRouter = router({
     .input(
       z.object({
         prompt: z.string().min(1).max(4000),
-        model: z.enum(["dall-e-3", "nano-banana", "nano-banana-pro", "nano-banana-2"]).default("dall-e-3"),
+        model: z
+          .enum(["dall-e-3", "nano-banana", "nano-banana-pro", "nano-banana-2"])
+          .default("dall-e-3"),
         // DALL-E specific options
-        size: z.enum(["1024x1024", "1792x1024", "1024x1792"]).default("1024x1024"),
+        size: z
+          .enum(["1024x1024", "1792x1024", "1024x1792"])
+          .default("1024x1024"),
         style: z.enum(["vivid", "natural"]).default("vivid"),
         quality: z.enum(["standard", "hd"]).default("standard"),
         // Nano Banana specific options
-        aspectRatio: z.enum(["1:1", "16:9", "9:16", "4:3", "3:4", "1:4", "4:1"]).default("1:1"),
+        aspectRatio: z
+          .enum(["1:1", "16:9", "9:16", "4:3", "3:4", "1:4", "4:1"])
+          .default("1:1"),
         creditCost: z.number().min(1).default(2),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       // 1. Check credits
@@ -71,7 +85,9 @@ export const aiStudioRouter = router({
       const currentBalance = parseFloat(credits.balance.toString());
 
       if (currentBalance < input.creditCost) {
-        throw new Error("Insufficient credits. Please upgrade your plan or purchase more credits.");
+        throw new Error(
+          "Insufficient credits. Please upgrade your plan or purchase more credits.",
+        );
       }
 
       // 2. Deduct credits first
@@ -127,8 +143,16 @@ export const aiStudioRouter = router({
       } catch (error: unknown) {
         // 6. On failure: refund credits and update usage record
         await addAICredits(ctx.user.id, input.creditCost, "bonus"); // refund
-        const errorMsg = error instanceof Error ? error.message : "Unknown error during image generation";
-        await updateAIUsageStatus(usageRecord.id, "failed", undefined, errorMsg);
+        const errorMsg =
+          error instanceof Error
+            ? error.message
+            : "Unknown error during image generation";
+        await updateAIUsageStatus(
+          usageRecord.id,
+          "failed",
+          undefined,
+          errorMsg,
+        );
 
         throw new Error(`Image generation failed (${modelName}): ${errorMsg}`);
       }
@@ -142,7 +166,7 @@ export const aiStudioRouter = router({
         imageModel: z.string().default("dall-e-3"),
         prompt: z.string().min(1),
         imageSize: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const credits = await getOrCreateAICredits(ctx.user.id);
@@ -175,7 +199,7 @@ export const aiStudioRouter = router({
         videoModel: z.string().default("runway-ml"),
         prompt: z.string().min(1),
         videoDuration: z.number().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const credits = await getOrCreateAICredits(ctx.user.id);
@@ -203,10 +227,12 @@ export const aiStudioRouter = router({
   /** Get user's AI usage history */
   getUsageHistory: protectedProcedure
     .input(
-      z.object({
-        limit: z.number().min(1).max(100).default(50),
-        offset: z.number().min(0).default(0),
-      }).optional()
+      z
+        .object({
+          limit: z.number().min(1).max(100).default(50),
+          offset: z.number().min(0).default(0),
+        })
+        .optional(),
     )
     .query(async ({ ctx, input }) => {
       const { limit = 50, offset = 0 } = input ?? {};
@@ -225,7 +251,8 @@ export const aiStudioRouter = router({
         id: "dall-e-3",
         name: "DALL-E 3",
         provider: "OpenAI",
-        description: "High-quality image generation with excellent prompt following",
+        description:
+          "High-quality image generation with excellent prompt following",
         creditCost: 2,
         badge: "Premium",
         sizes: ["1024x1024", "1792x1024", "1024x1792"],
@@ -251,7 +278,12 @@ export const aiStudioRouter = router({
         creditCost: GEMINI_IMAGE_MODELS["nano-banana-pro"].creditCost,
         badge: "4K Studio",
         aspectRatios: [...GEMINI_IMAGE_MODELS["nano-banana-pro"].aspectRatios],
-        features: ["4K resolution", "Complex layouts", "Precise text rendering", "Google Search grounding"],
+        features: [
+          "4K resolution",
+          "Complex layouts",
+          "Precise text rendering",
+          "Google Search grounding",
+        ],
       },
       {
         id: "nano-banana-2",
@@ -261,7 +293,12 @@ export const aiStudioRouter = router({
         creditCost: GEMINI_IMAGE_MODELS["nano-banana-2"].creditCost,
         badge: "New",
         aspectRatios: [...GEMINI_IMAGE_MODELS["nano-banana-2"].aspectRatios],
-        features: ["0.5K-4K resolution", "Extra aspect ratios", "Image Search grounding", "Production-scale"],
+        features: [
+          "0.5K-4K resolution",
+          "Extra aspect ratios",
+          "Image Search grounding",
+          "Production-scale",
+        ],
       },
     ];
   }),
@@ -274,11 +311,7 @@ export const aiStudioRouter = router({
         name: "Free",
         monthlyCredits: 10,
         price: 0,
-        features: [
-          "10 صور شهرياً",
-          "جودة معيارية",
-          "دعم البريد الإلكتروني",
-        ],
+        features: ["10 صور شهرياً", "جودة معيارية", "دعم البريد الإلكتروني"],
       },
       {
         id: "pro",

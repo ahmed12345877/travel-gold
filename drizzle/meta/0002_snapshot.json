@@ -197,12 +197,8 @@
           "name": "bookings_userId_users_id_fk",
           "tableFrom": "bookings",
           "tableTo": "users",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -210,17 +206,13 @@
       "compositePrimaryKeys": {
         "bookings_id": {
           "name": "bookings_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "bookings_confirmationCode_unique": {
           "name": "bookings_confirmationCode_unique",
-          "columns": [
-            "confirmationCode"
-          ]
+          "columns": ["confirmationCode"]
         }
       },
       "checkConstraint": {}
@@ -308,9 +300,7 @@
       "compositePrimaryKeys": {
         "contact_messages_id": {
           "name": "contact_messages_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -390,12 +380,8 @@
           "name": "file_uploads_userId_users_id_fk",
           "tableFrom": "file_uploads",
           "tableTo": "users",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -403,9 +389,7 @@
       "compositePrimaryKeys": {
         "file_uploads_id": {
           "name": "file_uploads_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -539,9 +523,7 @@
       "compositePrimaryKeys": {
         "gallery_items_id": {
           "name": "gallery_items_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -638,9 +620,7 @@
       "compositePrimaryKeys": {
         "gallery_videos_id": {
           "name": "gallery_videos_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -786,17 +766,13 @@
       "compositePrimaryKeys": {
         "offers_id": {
           "name": "offers_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "offers_promoCode_unique": {
           "name": "offers_promoCode_unique",
-          "columns": [
-            "promoCode"
-          ]
+          "columns": ["promoCode"]
         }
       },
       "checkConstraint": {}
@@ -935,12 +911,8 @@
           "name": "reviews_userId_users_id_fk",
           "tableFrom": "reviews",
           "tableTo": "users",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -948,9 +920,7 @@
       "compositePrimaryKeys": {
         "reviews_id": {
           "name": "reviews_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1047,17 +1017,13 @@
       "compositePrimaryKeys": {
         "users_id": {
           "name": "users_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "users_openId_unique": {
           "name": "users_openId_unique",
-          "columns": [
-            "openId"
-          ]
+          "columns": ["openId"]
         }
       },
       "checkConstraint": {}

@@ -7,9 +7,22 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Sparkles, Video, Image as ImageIcon, Zap, Wand2, Grid3x3,
-  PenTool, ArrowRight, Play, ChevronRight, Heart, Eye, Star,
-  Cpu, Crown, Layers
+  Sparkles,
+  Video,
+  Image as ImageIcon,
+  Zap,
+  Wand2,
+  Grid3x3,
+  PenTool,
+  ArrowRight,
+  Play,
+  ChevronRight,
+  Heart,
+  Eye,
+  Star,
+  Cpu,
+  Crown,
+  Layers,
 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -25,8 +38,9 @@ import OptimizedImage from "@/components/OptimizedImage";
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
   visible: (i: number) => ({
-    opacity: 1, y: 0,
-    transition: { delay: i * 0.12, duration: 0.6, ease: "easeOut" as const }
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.12, duration: 0.6, ease: "easeOut" as const },
   }),
 };
 
@@ -36,24 +50,38 @@ const fadeIn = {
 };
 
 /* ─── Section Title ─── */
-function SectionTitle({ subtitle, title, description, align = "center" }: {
-  subtitle: string; title: string; description?: string; align?: "center" | "left";
+function SectionTitle({
+  subtitle,
+  title,
+  description,
+  align = "center",
+}: {
+  subtitle: string;
+  title: string;
+  description?: string;
+  align?: "center" | "left";
 }) {
   return (
-    <div className={`mb-16 ${align === "center" ? "text-center" : "text-left"}`}>
+    <div
+      className={`mb-16 ${align === "center" ? "text-center" : "text-left"}`}
+    >
       <span className="font-[var(--font-display)] text-[var(--theme-primary)] text-sm tracking-[0.2em] uppercase italic">
         {subtitle}
       </span>
       <h2 className="font-[var(--font-display)] text-white text-3xl md:text-4xl lg:text-5xl font-bold mt-3 mb-4 leading-tight">
         {title}
       </h2>
-      <div className={`flex ${align === "center" ? "justify-center" : "justify-start"} mt-4 mb-6`}>
+      <div
+        className={`flex ${align === "center" ? "justify-center" : "justify-start"} mt-4 mb-6`}
+      >
         <div className="w-16 h-[1px] bg-[var(--theme-primary)]" />
         <div className="w-2 h-2 bg-[var(--theme-primary)] rotate-45 mx-3 -mt-[3px]" />
         <div className="w-16 h-[1px] bg-[var(--theme-primary)]" />
       </div>
       {description && (
-        <p className={`text-white/60 max-w-2xl leading-relaxed ${align === "center" ? "mx-auto" : ""}`}>
+        <p
+          className={`text-white/60 max-w-2xl leading-relaxed ${align === "center" ? "mx-auto" : ""}`}
+        >
           {description}
         </p>
       )}
@@ -117,11 +145,14 @@ function StudioHero() {
           <h1 className="md:hidden font-[var(--font-display)] text-3xl font-bold mb-4 leading-tight">
             <span className="text-[var(--theme-primary)]">AI Studio</span>
             <br />
-            <span className="text-white text-2xl">Create. Imagine. Inspire.</span>
+            <span className="text-white text-2xl">
+              Create. Imagine. Inspire.
+            </span>
           </h1>
 
           <p className="text-white/50 text-base md:text-lg max-w-xl mx-auto mb-10">
-            Transform your imagination into stunning visuals with our AI-powered creative tools, designed for the world of luxury travel.
+            Transform your imagination into stunning visuals with our AI-powered
+            creative tools, designed for the world of luxury travel.
           </p>
 
           {/* Prompt Bar - Desktop */}
@@ -179,7 +210,9 @@ function StudioHero() {
                 custom={i}
                 className="text-center"
               >
-                <div className="font-[var(--font-display)] text-xl md:text-2xl font-bold text-[var(--theme-primary)]">{stat.value}</div>
+                <div className="font-[var(--font-display)] text-xl md:text-2xl font-bold text-[var(--theme-primary)]">
+                  {stat.value}
+                </div>
                 <div className="text-xs text-white/30 mt-1">{stat.label}</div>
               </motion.div>
             ))}
@@ -200,7 +233,8 @@ function CreativeTools() {
       id: "image",
       icon: ImageIcon,
       title: "Image Generation",
-      description: "Create stunning travel photos and artwork with AI-powered generation tools.",
+      description:
+        "Create stunning travel photos and artwork with AI-powered generation tools.",
       href: "/ai-image-generator",
       stats: "50K+ generated",
     },
@@ -208,7 +242,8 @@ function CreativeTools() {
       id: "video",
       icon: Video,
       title: "Video Creation",
-      description: "Generate engaging cinematic video content for travel marketing.",
+      description:
+        "Generate engaging cinematic video content for travel marketing.",
       href: "/ai-studio",
       stats: "Coming Soon",
       badge: "SOON",
@@ -217,7 +252,8 @@ function CreativeTools() {
       id: "blueprints",
       icon: Grid3x3,
       title: "Blueprints",
-      description: "Pre-built design templates for instant creative inspiration.",
+      description:
+        "Pre-built design templates for instant creative inspiration.",
       href: "/ai-studio",
       stats: "120+ templates",
       badge: "NEW",
@@ -226,7 +262,8 @@ function CreativeTools() {
       id: "upscaler",
       icon: Wand2,
       title: "AI Upscaler",
-      description: "Enhance image quality up to 4x resolution with intelligent upscaling.",
+      description:
+        "Enhance image quality up to 4x resolution with intelligent upscaling.",
       href: "/ai-studio",
       stats: "4x resolution",
     },
@@ -234,7 +271,8 @@ function CreativeTools() {
       id: "canvas",
       icon: PenTool,
       title: "Canvas Editor",
-      description: "Professional editing tools for fine-tuning your AI creations.",
+      description:
+        "Professional editing tools for fine-tuning your AI creations.",
       href: "/ai-studio",
       stats: "Pro tools",
     },
@@ -279,11 +317,15 @@ function CreativeTools() {
                     {/* Badge */}
                     {service.badge && (
                       <div className="absolute top-4 right-4">
-                        <span className={`text-[10px] tracking-[0.15em] uppercase font-semibold px-3 py-1 ${
-                          service.badge === "NEW" ? "bg-[var(--theme-primary)]/15 text-[var(--theme-primary)] border border-[var(--theme-primary)]/30" :
-                          service.badge === "BETA" ? "bg-white/5 text-white/50 border border-white/10" :
-                          "bg-[var(--theme-primary)]/10 text-[var(--theme-primary)]/70 border border-[var(--theme-primary)]/20"
-                        }`}>
+                        <span
+                          className={`text-[10px] tracking-[0.15em] uppercase font-semibold px-3 py-1 ${
+                            service.badge === "NEW"
+                              ? "bg-[var(--theme-primary)]/15 text-[var(--theme-primary)] border border-[var(--theme-primary)]/30"
+                              : service.badge === "BETA"
+                                ? "bg-white/5 text-white/50 border border-white/10"
+                                : "bg-[var(--theme-primary)]/10 text-[var(--theme-primary)]/70 border border-[var(--theme-primary)]/20"
+                          }`}
+                        >
                           {service.badge}
                         </span>
                       </div>
@@ -291,19 +333,29 @@ function CreativeTools() {
 
                     {/* Icon - Diamond style */}
                     <div className="w-16 h-16 border border-[var(--theme-primary)]/30 flex items-center justify-center mb-6 group-hover:bg-[var(--theme-primary)]/10 group-hover:border-[var(--theme-primary)]/60 transition-all duration-500 rotate-45">
-                      <Icon size={24} className="text-[var(--theme-primary)] -rotate-45 group-hover:scale-110 transition-transform duration-300" />
+                      <Icon
+                        size={24}
+                        className="text-[var(--theme-primary)] -rotate-45 group-hover:scale-110 transition-transform duration-300"
+                      />
                     </div>
 
                     {/* Content */}
                     <h3 className="font-[var(--font-display)] text-white text-lg font-semibold mb-3 group-hover:text-[var(--theme-primary-light)] transition-colors duration-300">
                       {service.title}
                     </h3>
-                    <p className="text-white/50 text-sm leading-relaxed mb-4">{service.description}</p>
+                    <p className="text-white/50 text-sm leading-relaxed mb-4">
+                      {service.description}
+                    </p>
 
                     {/* Footer */}
                     <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                      <span className="text-xs text-white/30">{service.stats}</span>
-                      <ArrowRight size={14} className="text-white/20 group-hover:text-[var(--theme-primary)] group-hover:translate-x-1 transition-all duration-300" />
+                      <span className="text-xs text-white/30">
+                        {service.stats}
+                      </span>
+                      <ArrowRight
+                        size={14}
+                        className="text-white/20 group-hover:text-[var(--theme-primary)] group-hover:translate-x-1 transition-all duration-300"
+                      />
                     </div>
 
                     {/* Corner decoration */}
@@ -328,22 +380,33 @@ function CreativeTools() {
                   <div className="snap-start shrink-0 w-[280px] bg-[#0F0F0F] border border-white/8 p-6 relative group active:border-[var(--theme-primary)]/40 transition-colors">
                     {/* Badge */}
                     {service.badge && (
-                      <span className={`absolute top-3 right-3 text-[9px] tracking-[0.12em] uppercase font-semibold px-2 py-0.5 ${
-                        service.badge === "NEW" ? "bg-[var(--theme-primary)]/15 text-[var(--theme-primary)]" :
-                        service.badge === "BETA" ? "bg-white/5 text-white/50" :
-                        "bg-[var(--theme-primary)]/10 text-[var(--theme-primary)]/70"
-                      }`}>
+                      <span
+                        className={`absolute top-3 right-3 text-[9px] tracking-[0.12em] uppercase font-semibold px-2 py-0.5 ${
+                          service.badge === "NEW"
+                            ? "bg-[var(--theme-primary)]/15 text-[var(--theme-primary)]"
+                            : service.badge === "BETA"
+                              ? "bg-white/5 text-white/50"
+                              : "bg-[var(--theme-primary)]/10 text-[var(--theme-primary)]/70"
+                        }`}
+                      >
                         {service.badge}
                       </span>
                     )}
 
                     <div className="flex items-start gap-4">
                       <div className="w-12 h-12 border border-[var(--theme-primary)]/30 flex items-center justify-center shrink-0 rotate-45">
-                        <Icon size={18} className="text-[var(--theme-primary)] -rotate-45" />
+                        <Icon
+                          size={18}
+                          className="text-[var(--theme-primary)] -rotate-45"
+                        />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="font-[var(--font-display)] text-white text-base font-semibold mb-1">{service.title}</h3>
-                        <p className="text-white/40 text-xs leading-relaxed line-clamp-2">{service.description}</p>
+                        <h3 className="font-[var(--font-display)] text-white text-base font-semibold mb-1">
+                          {service.title}
+                        </h3>
+                        <p className="text-white/40 text-xs leading-relaxed line-clamp-2">
+                          {service.description}
+                        </p>
                         <div className="flex items-center gap-1 mt-3 text-[var(--theme-primary)] text-xs">
                           <span>{service.stats}</span>
                           <ArrowRight size={12} />
@@ -359,7 +422,10 @@ function CreativeTools() {
           <div className="flex justify-center mt-3">
             <div className="flex gap-1">
               {services.map((_, i) => (
-                <div key={i} className={`w-1.5 h-1.5 rounded-full ${i === 0 ? "bg-[var(--theme-primary)]" : "bg-white/15"}`} />
+                <div
+                  key={i}
+                  className={`w-1.5 h-1.5 rounded-full ${i === 0 ? "bg-[var(--theme-primary)]" : "bg-white/15"}`}
+                />
               ))}
             </div>
           </div>
@@ -375,34 +441,191 @@ function FeaturedGallery() {
   const [activeFilter, setActiveFilter] = useState("All");
 
   const galleryImages = [
-    { title: "Egyptian Elegance", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146353_e679aa8f.jpg", category: "Fashion", likes: 2847 },
-    { title: "Pharaonic Majesty", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146351_94261003.jpg", category: "Historical", likes: 3156 },
-    { title: "Ancient Robes", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146347_c499649b.jpg", category: "Fashion", likes: 1923 },
-    { title: "Winged Amulet", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146345_7d9a08eb.jpg", category: "Artifacts", likes: 4210 },
-    { title: "Sacred Feather", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146343_62a3eede.jpg", category: "Artifacts", likes: 1567 },
-    { title: "Museum Grandeur", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146332_57c5eb0f.jpg", category: "Architecture", likes: 2890 },
-    { title: "Cairo Monument", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146329_babee5c6.jpg", category: "Landmarks", likes: 1834 },
-    { title: "Nile Cruise Luxury", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000141933_d6652362.jpg", category: "Travel", likes: 2456 },
-    { title: "Desert Elegance", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146380_72ead6e5.jpg", category: "Landscape", likes: 3100 },
-    { title: "Golden Sands", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146381_52e9e86e.jpg", category: "Landscape", likes: 2750 },
-    { title: "Sphinx Wonder", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146382_d69f6fe0.jpg", category: "Landmarks", likes: 4050 },
-    { title: "Pyramid Majesty", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146383_c6931189.jpg", category: "Landmarks", likes: 3890 },
-    { title: "Temple Gateway", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146384_fc7c369b.jpg", category: "Architecture", likes: 2340 },
-    { title: "Luxor Beauty", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146385_28be6b13.jpg", category: "Landmarks", likes: 3567 },
-    { title: "Valley of Kings", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146386_2a630fe8.jpg", category: "Landscape", likes: 2890 },
-    { title: "Ancient Wonders", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146387_60cf820d.jpg", category: "Historical", likes: 3200 },
-    { title: "Cairo Museum", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146388_0b7c2144.jpg", category: "Architecture", likes: 2670 },
-    { title: "Sunset Reflection", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146392_420db1be.jpg", category: "Landscape", likes: 3450 },
-    { title: "Nile Serenity", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146393_6f805dc8.jpg", category: "Nature", likes: 2890 },
-    { title: "Desert Dunes", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146399_bc13e4c6.jpg", category: "Landscape", likes: 2567 },
-    { title: "Temple Columns", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146400_c39b4aa1.jpg", category: "Architecture", likes: 2340 },
-    { title: "Pharaoh's Legacy", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146401_60a1fccf.jpg", category: "Historical", likes: 3100 },
-    { title: "Golden Hour", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146402_fcbb8f49.jpg", category: "Landscape", likes: 2890 },
-    { title: "Desert Mystique", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146403_2c87a338.jpg", category: "Landscape", likes: 2456 },
+    {
+      title: "Egyptian Elegance",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146353_e679aa8f.jpg",
+      category: "Fashion",
+      likes: 2847,
+    },
+    {
+      title: "Pharaonic Majesty",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146351_94261003.jpg",
+      category: "Historical",
+      likes: 3156,
+    },
+    {
+      title: "Ancient Robes",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146347_c499649b.jpg",
+      category: "Fashion",
+      likes: 1923,
+    },
+    {
+      title: "Winged Amulet",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146345_7d9a08eb.jpg",
+      category: "Artifacts",
+      likes: 4210,
+    },
+    {
+      title: "Sacred Feather",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146343_62a3eede.jpg",
+      category: "Artifacts",
+      likes: 1567,
+    },
+    {
+      title: "Museum Grandeur",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146332_57c5eb0f.jpg",
+      category: "Architecture",
+      likes: 2890,
+    },
+    {
+      title: "Cairo Monument",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146329_babee5c6.jpg",
+      category: "Landmarks",
+      likes: 1834,
+    },
+    {
+      title: "Nile Cruise Luxury",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000141933_d6652362.jpg",
+      category: "Travel",
+      likes: 2456,
+    },
+    {
+      title: "Desert Elegance",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146380_72ead6e5.jpg",
+      category: "Landscape",
+      likes: 3100,
+    },
+    {
+      title: "Golden Sands",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146381_52e9e86e.jpg",
+      category: "Landscape",
+      likes: 2750,
+    },
+    {
+      title: "Sphinx Wonder",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146382_d69f6fe0.jpg",
+      category: "Landmarks",
+      likes: 4050,
+    },
+    {
+      title: "Pyramid Majesty",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146383_c6931189.jpg",
+      category: "Landmarks",
+      likes: 3890,
+    },
+    {
+      title: "Temple Gateway",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146384_fc7c369b.jpg",
+      category: "Architecture",
+      likes: 2340,
+    },
+    {
+      title: "Luxor Beauty",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146385_28be6b13.jpg",
+      category: "Landmarks",
+      likes: 3567,
+    },
+    {
+      title: "Valley of Kings",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146386_2a630fe8.jpg",
+      category: "Landscape",
+      likes: 2890,
+    },
+    {
+      title: "Ancient Wonders",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146387_60cf820d.jpg",
+      category: "Historical",
+      likes: 3200,
+    },
+    {
+      title: "Cairo Museum",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146388_0b7c2144.jpg",
+      category: "Architecture",
+      likes: 2670,
+    },
+    {
+      title: "Sunset Reflection",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146392_420db1be.jpg",
+      category: "Landscape",
+      likes: 3450,
+    },
+    {
+      title: "Nile Serenity",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146393_6f805dc8.jpg",
+      category: "Nature",
+      likes: 2890,
+    },
+    {
+      title: "Desert Dunes",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146399_bc13e4c6.jpg",
+      category: "Landscape",
+      likes: 2567,
+    },
+    {
+      title: "Temple Columns",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146400_c39b4aa1.jpg",
+      category: "Architecture",
+      likes: 2340,
+    },
+    {
+      title: "Pharaoh's Legacy",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146401_60a1fccf.jpg",
+      category: "Historical",
+      likes: 3100,
+    },
+    {
+      title: "Golden Hour",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146402_fcbb8f49.jpg",
+      category: "Landscape",
+      likes: 2890,
+    },
+    {
+      title: "Desert Mystique",
+      image:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146403_2c87a338.jpg",
+      category: "Landscape",
+      likes: 2456,
+    },
   ];
 
-  const categories = ["All", "Fashion", "Historical", "Artifacts", "Architecture", "Landmarks", "Landscape", "Travel", "Nature"];
-  const filtered = activeFilter === "All" ? galleryImages : galleryImages.filter(img => img.category === activeFilter);
+  const categories = [
+    "All",
+    "Fashion",
+    "Historical",
+    "Artifacts",
+    "Architecture",
+    "Landmarks",
+    "Landscape",
+    "Travel",
+    "Nature",
+  ];
+  const filtered =
+    activeFilter === "All"
+      ? galleryImages
+      : galleryImages.filter((img) => img.category === activeFilter);
 
   return (
     <section className="py-20 md:py-28 bg-[var(--theme-surface)]">
@@ -478,11 +701,19 @@ function FeaturedGallery() {
                 {/* Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                  <span className="text-[var(--theme-primary)] text-[10px] tracking-[0.15em] uppercase font-semibold">{project.category}</span>
-                  <h3 className="text-white font-semibold text-sm mt-1">{project.title}</h3>
+                  <span className="text-[var(--theme-primary)] text-[10px] tracking-[0.15em] uppercase font-semibold">
+                    {project.category}
+                  </span>
+                  <h3 className="text-white font-semibold text-sm mt-1">
+                    {project.title}
+                  </h3>
                   <div className="flex items-center gap-3 mt-2 text-xs text-white/50">
-                    <span className="flex items-center gap-1"><Heart size={11} /> {project.likes.toLocaleString()}</span>
-                    <span className="flex items-center gap-1"><Eye size={11} /> {(project.likes * 3).toLocaleString()}</span>
+                    <span className="flex items-center gap-1">
+                      <Heart size={11} /> {project.likes.toLocaleString()}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Eye size={11} /> {(project.likes * 3).toLocaleString()}
+                    </span>
                   </div>
                 </div>
                 {/* Corner accent */}
@@ -514,7 +745,9 @@ function FeaturedGallery() {
                   loading="lazy"
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2.5">
-                  <p className="text-white text-xs font-semibold truncate">{project.title}</p>
+                  <p className="text-white text-xs font-semibold truncate">
+                    {project.title}
+                  </p>
                   <div className="flex items-center gap-1 text-[10px] text-white/40 mt-0.5">
                     <Heart size={9} /> {project.likes.toLocaleString()}
                   </div>
@@ -559,7 +792,11 @@ function FeaturedGallery() {
             className="max-w-4xl w-full relative"
             onClick={(e) => e.stopPropagation()}
           >
-            <img src={selectedImage} alt="Full view" className="w-full h-auto max-h-[85vh] object-contain" />
+            <img
+              src={selectedImage}
+              alt="Full view"
+              className="w-full h-auto max-h-[85vh] object-contain"
+            />
             <button
               onClick={() => setSelectedImage(null)}
               className="absolute -top-12 right-0 text-white/60 hover:text-white text-sm tracking-wider uppercase"
@@ -580,26 +817,34 @@ function FeaturedVideos() {
   const featuredVideos = [
     {
       title: "Desert Expedition",
-      video: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146389_965eefc8.mp4",
-      thumbnail: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146383_c6931189.jpg",
+      video:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146389_965eefc8.mp4",
+      thumbnail:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146383_c6931189.jpg",
       category: "Adventure",
     },
     {
       title: "Nile River Journey",
-      video: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146394_14d6eaf2.mp4",
-      thumbnail: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000141933_d6652362.jpg",
+      video:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146394_14d6eaf2.mp4",
+      thumbnail:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000141933_d6652362.jpg",
       category: "Travel",
     },
     {
       title: "Ancient Temples",
-      video: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146395_32a7e324.mp4",
-      thumbnail: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146385_28be6b13.jpg",
+      video:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146395_32a7e324.mp4",
+      thumbnail:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146385_28be6b13.jpg",
       category: "Historical",
     },
     {
       title: "Cairo Nights",
-      video: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146397_68e383d6.mp4",
-      thumbnail: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146329_babee5c6.jpg",
+      video:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146397_68e383d6.mp4",
+      thumbnail:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/1000146329_babee5c6.jpg",
       category: "Urban",
     },
   ];
@@ -637,13 +882,20 @@ function FeaturedVideos() {
                   />
                   <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors flex items-center justify-center">
                     <div className="w-16 h-16 border-2 border-[var(--theme-primary)] flex items-center justify-center group-hover:bg-[var(--theme-primary)]/10 group-hover:scale-110 transition-all duration-300 rotate-45">
-                      <Play size={24} className="text-[var(--theme-primary)] -rotate-45 fill-[var(--theme-primary)]" />
+                      <Play
+                        size={24}
+                        className="text-[var(--theme-primary)] -rotate-45 fill-[var(--theme-primary)]"
+                      />
                     </div>
                   </div>
                 </div>
                 <div className="p-5 bg-[#0F0F0F]">
-                  <span className="text-[var(--theme-primary)] text-[10px] tracking-[0.15em] uppercase font-semibold">{video.category}</span>
-                  <h3 className="text-white font-[var(--font-display)] font-semibold mt-1 group-hover:text-[var(--theme-primary-light)] transition-colors">{video.title}</h3>
+                  <span className="text-[var(--theme-primary)] text-[10px] tracking-[0.15em] uppercase font-semibold">
+                    {video.category}
+                  </span>
+                  <h3 className="text-white font-[var(--font-display)] font-semibold mt-1 group-hover:text-[var(--theme-primary-light)] transition-colors">
+                    {video.title}
+                  </h3>
                 </div>
               </div>
             </motion.div>
@@ -668,13 +920,20 @@ function FeaturedVideos() {
                   />
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                     <div className="w-12 h-12 border-2 border-[var(--theme-primary)] flex items-center justify-center rotate-45">
-                      <Play size={18} className="text-[var(--theme-primary)] -rotate-45 fill-[var(--theme-primary)]" />
+                      <Play
+                        size={18}
+                        className="text-[var(--theme-primary)] -rotate-45 fill-[var(--theme-primary)]"
+                      />
                     </div>
                   </div>
                 </div>
                 <div className="p-3 bg-[#0F0F0F]">
-                  <span className="text-[var(--theme-primary)] text-[9px] tracking-[0.12em] uppercase font-semibold">{video.category}</span>
-                  <h3 className="text-white font-semibold text-sm mt-0.5">{video.title}</h3>
+                  <span className="text-[var(--theme-primary)] text-[9px] tracking-[0.12em] uppercase font-semibold">
+                    {video.category}
+                  </span>
+                  <h3 className="text-white font-semibold text-sm mt-0.5">
+                    {video.title}
+                  </h3>
                 </div>
               </div>
             ))}
@@ -716,10 +975,30 @@ function FeaturedVideos() {
 /* ─── How It Works ─── */
 function HowItWorks() {
   const steps = [
-    { icon: Sparkles, step: "01", title: "Describe", desc: "Enter a detailed description of the image or video you want to create." },
-    { icon: Cpu, step: "02", title: "Generate", desc: "Our AI processes your prompt and generates high-quality visual content." },
-    { icon: Wand2, step: "03", title: "Refine", desc: "Fine-tune your creation with editing tools and style adjustments." },
-    { icon: Layers, step: "04", title: "Export", desc: "Download your creation in high resolution, ready for any platform." },
+    {
+      icon: Sparkles,
+      step: "01",
+      title: "Describe",
+      desc: "Enter a detailed description of the image or video you want to create.",
+    },
+    {
+      icon: Cpu,
+      step: "02",
+      title: "Generate",
+      desc: "Our AI processes your prompt and generates high-quality visual content.",
+    },
+    {
+      icon: Wand2,
+      step: "03",
+      title: "Refine",
+      desc: "Fine-tune your creation with editing tools and style adjustments.",
+    },
+    {
+      icon: Layers,
+      step: "04",
+      title: "Export",
+      desc: "Download your creation in high resolution, ready for any platform.",
+    },
   ];
 
   return (
@@ -749,13 +1028,18 @@ function HowItWorks() {
               >
                 <div className="w-[104px] h-[104px] mx-auto mb-6 relative">
                   <div className="w-full h-full border border-[var(--theme-primary)]/30 rotate-45 flex items-center justify-center bg-[var(--theme-surface)]">
-                    <Icon size={28} className="text-[var(--theme-primary)] -rotate-45" />
+                    <Icon
+                      size={28}
+                      className="text-[var(--theme-primary)] -rotate-45"
+                    />
                   </div>
                   <div className="absolute -top-2 -right-2 bg-[var(--theme-primary)] text-[var(--theme-surface)] text-[10px] font-bold w-6 h-6 flex items-center justify-center">
                     {step}
                   </div>
                 </div>
-                <h3 className="font-[var(--font-display)] text-white text-lg font-semibold mb-2">{title}</h3>
+                <h3 className="font-[var(--font-display)] text-white text-lg font-semibold mb-2">
+                  {title}
+                </h3>
                 <p className="text-white/50 text-sm leading-relaxed">{desc}</p>
               </motion.div>
             ))}
@@ -780,16 +1064,25 @@ function HowItWorks() {
               >
                 {/* Timeline dot */}
                 <div className="absolute -left-8 top-1 w-6 h-6 bg-[var(--theme-primary)] flex items-center justify-center">
-                  <span className="text-[var(--theme-surface)] text-[9px] font-bold">{step}</span>
+                  <span className="text-[var(--theme-surface)] text-[9px] font-bold">
+                    {step}
+                  </span>
                 </div>
 
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 border border-[var(--theme-primary)]/30 rotate-45 flex items-center justify-center shrink-0 mt-0.5">
-                    <Icon size={16} className="text-[var(--theme-primary)] -rotate-45" />
+                    <Icon
+                      size={16}
+                      className="text-[var(--theme-primary)] -rotate-45"
+                    />
                   </div>
                   <div>
-                    <h3 className="font-[var(--font-display)] text-white font-semibold mb-1">{title}</h3>
-                    <p className="text-white/50 text-sm leading-relaxed">{desc}</p>
+                    <h3 className="font-[var(--font-display)] text-white font-semibold mb-1">
+                      {title}
+                    </h3>
+                    <p className="text-white/50 text-sm leading-relaxed">
+                      {desc}
+                    </p>
                   </div>
                 </div>
               </motion.div>
@@ -819,7 +1112,8 @@ function StudioCTA() {
             Ready to Create Something Amazing?
           </h2>
           <p className="text-white/60 max-w-xl mx-auto mb-8">
-            Join thousands of creators using AI to produce stunning travel content. Start your creative journey today.
+            Join thousands of creators using AI to produce stunning travel
+            content. Start your creative journey today.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             {!isAuthenticated ? (

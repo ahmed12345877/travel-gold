@@ -93,9 +93,15 @@ function Router() {
       <Route path={"/blog"} component={Blog} />
       <Route path={"/blog/:slug"} component={BlogPost} />
       <Route path={"/marketing"} component={MarketingSuite} />
-      <Route path={"/marketing/social-media"} component={SocialMediaGenerator} />
+      <Route
+        path={"/marketing/social-media"}
+        component={SocialMediaGenerator}
+      />
       <Route path={"/marketing/email"} component={EmailGenerator} />
-      <Route path={"/marketing/trip-description"} component={TripDescriptionGenerator} />
+      <Route
+        path={"/marketing/trip-description"}
+        component={TripDescriptionGenerator}
+      />
       <Route path={"/marketing/blog-seo"} component={BlogSEOGenerator} />
       <Route path={"/marketing/ad-copy"} component={AdCopyGenerator} />
       <Route path={"/marketing/calendar"} component={ContentCalendar} />
@@ -103,79 +109,129 @@ function Router() {
 
       {/* Admin Routes */}
       <Route path="/admin">
-        <AdminLayout><AdminDashboard /></AdminLayout>
+        <AdminLayout>
+          <AdminDashboard />
+        </AdminLayout>
       </Route>
       <Route path="/admin/analytics">
-        <AdminLayout><AnalyticsAdmin /></AdminLayout>
+        <AdminLayout>
+          <AnalyticsAdmin />
+        </AdminLayout>
       </Route>
       <Route path="/admin/destinations">
-        <AdminLayout><DestinationsAdmin /></AdminLayout>
+        <AdminLayout>
+          <DestinationsAdmin />
+        </AdminLayout>
       </Route>
       <Route path="/admin/offers">
-        <AdminLayout><OffersAdmin /></AdminLayout>
+        <AdminLayout>
+          <OffersAdmin />
+        </AdminLayout>
       </Route>
       <Route path="/admin/blog">
-        <AdminLayout><BlogAdmin /></AdminLayout>
+        <AdminLayout>
+          <BlogAdmin />
+        </AdminLayout>
       </Route>
       <Route path="/admin/activities">
-        <AdminLayout><ActivitiesAdmin /></AdminLayout>
+        <AdminLayout>
+          <ActivitiesAdmin />
+        </AdminLayout>
       </Route>
       <Route path="/admin/gallery">
-        <AdminLayout><AdminGallery /></AdminLayout>
+        <AdminLayout>
+          <AdminGallery />
+        </AdminLayout>
       </Route>
       <Route path="/admin/reviews">
-        <AdminLayout><ReviewsAdmin /></AdminLayout>
+        <AdminLayout>
+          <ReviewsAdmin />
+        </AdminLayout>
       </Route>
       <Route path="/admin/bookings">
-        <AdminLayout><BookingsAdmin /></AdminLayout>
+        <AdminLayout>
+          <BookingsAdmin />
+        </AdminLayout>
       </Route>
       <Route path="/admin/messages">
-        <AdminLayout><MessagesAdmin /></AdminLayout>
+        <AdminLayout>
+          <MessagesAdmin />
+        </AdminLayout>
       </Route>
       <Route path="/admin/users">
-        <AdminLayout><AdminUsers /></AdminLayout>
+        <AdminLayout>
+          <AdminUsers />
+        </AdminLayout>
       </Route>
       <Route path="/admin/credits">
-        <AdminLayout><CreditsAdmin /></AdminLayout>
+        <AdminLayout>
+          <CreditsAdmin />
+        </AdminLayout>
       </Route>
       <Route path="/admin/hero">
-        <AdminLayout><HeroAdmin /></AdminLayout>
+        <AdminLayout>
+          <HeroAdmin />
+        </AdminLayout>
       </Route>
       <Route path="/admin/navbar">
-        <AdminLayout><NavbarAdmin /></AdminLayout>
+        <AdminLayout>
+          <NavbarAdmin />
+        </AdminLayout>
       </Route>
       <Route path="/admin/pages">
-        <AdminLayout><PagesAdmin /></AdminLayout>
+        <AdminLayout>
+          <PagesAdmin />
+        </AdminLayout>
       </Route>
       <Route path="/admin/ai-studio">
-        <AdminLayout><AdminAIStudio /></AdminLayout>
+        <AdminLayout>
+          <AdminAIStudio />
+        </AdminLayout>
       </Route>
       <Route path="/admin/settings">
-        <AdminLayout><SettingsAdmin /></AdminLayout>
+        <AdminLayout>
+          <SettingsAdmin />
+        </AdminLayout>
       </Route>
       <Route path="/admin/permissions">
-        <AdminLayout><PermissionsAdmin /></AdminLayout>
+        <AdminLayout>
+          <PermissionsAdmin />
+        </AdminLayout>
       </Route>
       <Route path="/admin/audit-log">
-        <AdminLayout><AuditLogAdmin /></AdminLayout>
+        <AdminLayout>
+          <AuditLogAdmin />
+        </AdminLayout>
       </Route>
       <Route path="/admin/testimonials">
-        <AdminLayout><TestimonialsAdmin /></AdminLayout>
+        <AdminLayout>
+          <TestimonialsAdmin />
+        </AdminLayout>
       </Route>
       <Route path="/admin/theme">
-        <AdminLayout><ThemeAdmin /></AdminLayout>
+        <AdminLayout>
+          <ThemeAdmin />
+        </AdminLayout>
       </Route>
       <Route path="/admin/seo">
-        <AdminLayout><SEOAdmin /></AdminLayout>
+        <AdminLayout>
+          <SEOAdmin />
+        </AdminLayout>
       </Route>
       <Route path="/admin/media">
-        <AdminLayout><MediaLibrary /></AdminLayout>
+        <AdminLayout>
+          <MediaLibrary />
+        </AdminLayout>
       </Route>
       <Route path="/admin/backup">
-        <AdminLayout><BackupExport /></AdminLayout>
+        <AdminLayout>
+          <BackupExport />
+        </AdminLayout>
       </Route>
       <Route path="/admin/ai-command">
-        <AdminLayout><AICommandCenter /></AdminLayout>
+        <AdminLayout>
+          <AICommandCenter />
+        </AdminLayout>
       </Route>
 
       <Route path={"/404"} component={NotFound} />
@@ -188,13 +244,14 @@ function App() {
   return (
     <ErrorBoundary>
       <HelmetProvider>
-      <ThemeProvider defaultTheme="dark">
-        <TooltipProvider>
-          <Toaster />
-          {/* <PromoNotifications /> */} {/* Disabled: Removed popup notifications and offers */}
-          <Router />
-        </TooltipProvider>
-      </ThemeProvider>
+        <ThemeProvider defaultTheme="dark">
+          <TooltipProvider>
+            <Toaster />
+            {/* <PromoNotifications /> */}{" "}
+            {/* Disabled: Removed popup notifications and offers */}
+            <Router />
+          </TooltipProvider>
+        </ThemeProvider>
       </HelmetProvider>
     </ErrorBoundary>
   );

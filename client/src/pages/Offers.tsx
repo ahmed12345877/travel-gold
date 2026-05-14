@@ -13,15 +13,43 @@ import OptimizedImage from "@/components/OptimizedImage";
 import { toast } from "sonner";
 import PageMeta from "@/components/PageMeta";
 import {
-  Clock, MapPin, Star, Users, ArrowRight, Tag, Percent, Flame,
-  Zap, Gift, Calendar, Shield, Award, ChevronDown, ChevronUp,
-  Timer, Sparkles, TrendingDown, BadgePercent, Crown, Heart,
-  Share2, Bell, Check, X, Copy, Ticket
+  Clock,
+  MapPin,
+  Star,
+  Users,
+  ArrowRight,
+  Tag,
+  Percent,
+  Flame,
+  Zap,
+  Gift,
+  Calendar,
+  Shield,
+  Award,
+  ChevronDown,
+  ChevronUp,
+  Timer,
+  Sparkles,
+  TrendingDown,
+  BadgePercent,
+  Crown,
+  Heart,
+  Share2,
+  Bell,
+  Check,
+  X,
+  Copy,
+  Ticket,
 } from "lucide-react";
 
 /* ─── Countdown Hook ─── */
 function useCountdown(targetDate: string) {
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
 
   useEffect(() => {
     const target = new Date(targetDate).getTime();
@@ -54,7 +82,13 @@ interface Offer {
   rating: number;
   reviews: number;
   includes: string[];
-  category: "flash" | "seasonal" | "exclusive" | "earlybird" | "lastminute" | "group";
+  category:
+    | "flash"
+    | "seasonal"
+    | "exclusive"
+    | "earlybird"
+    | "lastminute"
+    | "group";
   badge: string;
   badgeColor: string;
   expiresAt: string;
@@ -67,16 +101,25 @@ interface Offer {
 const offers: Offer[] = [
   {
     id: 1,
-    image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/destination-egypt-YcosuhKLMYbaJ475QVrVxy.webp",
+    image:
+      "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/destination-egypt-YcosuhKLMYbaJ475QVrVxy.webp",
     title: "Pyramids & Nile Cruise — Summer Special",
     destination: "Cairo & Luxor, Egypt",
-    description: "Experience the magic of ancient Egypt at an unbeatable price. Private guided tours, luxury Nile cruise, and 5-star accommodation included.",
+    description:
+      "Experience the magic of ancient Egypt at an unbeatable price. Private guided tours, luxury Nile cruise, and 5-star accommodation included.",
     price: 899,
     originalPrice: 1599,
     duration: "8 Days / 7 Nights",
     rating: 4.9,
     reviews: 234,
-    includes: ["5-Star Hotels", "Private Guide", "Nile Cruise", "All Meals", "Airport Transfer", "Entry Tickets"],
+    includes: [
+      "5-Star Hotels",
+      "Private Guide",
+      "Nile Cruise",
+      "All Meals",
+      "Airport Transfer",
+      "Entry Tickets",
+    ],
     category: "flash",
     badge: "Flash Sale",
     badgeColor: "bg-red-600",
@@ -88,16 +131,25 @@ const offers: Offer[] = [
   },
   {
     id: 2,
-    image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/destination-sharm-Fh2PhqqrRQGfdg6EtwXedu.webp",
+    image:
+      "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/destination-sharm-Fh2PhqqrRQGfdg6EtwXedu.webp",
     title: "Sharm El Sheikh — Beach Paradise Deal",
     destination: "Sharm El Sheikh, Egypt",
-    description: "Dive into crystal-clear waters and relax on pristine beaches. All-inclusive beachfront resort with world-class diving included.",
+    description:
+      "Dive into crystal-clear waters and relax on pristine beaches. All-inclusive beachfront resort with world-class diving included.",
     price: 599,
     originalPrice: 1199,
     duration: "6 Days / 5 Nights",
     rating: 4.8,
     reviews: 189,
-    includes: ["Beachfront Resort", "Snorkeling Gear", "2 Dive Sessions", "All Meals", "Airport Transfer", "Spa Access"],
+    includes: [
+      "Beachfront Resort",
+      "Snorkeling Gear",
+      "2 Dive Sessions",
+      "All Meals",
+      "Airport Transfer",
+      "Spa Access",
+    ],
     category: "seasonal",
     badge: "Summer Sale",
     badgeColor: "bg-amber-600",
@@ -108,16 +160,25 @@ const offers: Offer[] = [
   },
   {
     id: 3,
-    image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop",
     title: "Mount Sinai Sunrise Trek — Early Bird",
     destination: "Sinai Peninsula, Egypt",
-    description: "Book early and save big on this unforgettable desert adventure. Trek Mount Sinai, camp under the stars, and explore ancient monasteries.",
+    description:
+      "Book early and save big on this unforgettable desert adventure. Trek Mount Sinai, camp under the stars, and explore ancient monasteries.",
     price: 449,
     originalPrice: 899,
     duration: "5 Days / 4 Nights",
     rating: 4.7,
     reviews: 156,
-    includes: ["Desert Camp", "Bedouin Guide", "Camel Ride", "All Meals", "Camping Equipment", "Transport"],
+    includes: [
+      "Desert Camp",
+      "Bedouin Guide",
+      "Camel Ride",
+      "All Meals",
+      "Camping Equipment",
+      "Transport",
+    ],
     category: "earlybird",
     badge: "Early Bird",
     badgeColor: "bg-emerald-600",
@@ -128,16 +189,25 @@ const offers: Offer[] = [
   },
   {
     id: 4,
-    image: "https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?w=600&h=400&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?w=600&h=400&fit=crop",
     title: "Luxury Hurghada — VIP Experience",
     destination: "Hurghada, Egypt",
-    description: "The ultimate luxury escape with private villa, personal butler, exclusive excursions, and premium all-inclusive dining.",
+    description:
+      "The ultimate luxury escape with private villa, personal butler, exclusive excursions, and premium all-inclusive dining.",
     price: 1499,
     originalPrice: 2499,
     duration: "7 Days / 6 Nights",
     rating: 4.9,
     reviews: 312,
-    includes: ["Private Villa", "Personal Butler", "Premium All-Inclusive", "Private Beach", "Yacht Tour", "Spa Package"],
+    includes: [
+      "Private Villa",
+      "Personal Butler",
+      "Premium All-Inclusive",
+      "Private Beach",
+      "Yacht Tour",
+      "Spa Package",
+    ],
     category: "exclusive",
     badge: "VIP Exclusive",
     badgeColor: "bg-purple-600",
@@ -148,16 +218,25 @@ const offers: Offer[] = [
   },
   {
     id: 5,
-    image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=400&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=400&fit=crop",
     title: "Alexandria Weekend Getaway — Last Minute",
     destination: "Alexandria, Egypt",
-    description: "Grab this last-minute deal for a quick Mediterranean escape. Explore ancient history and enjoy fresh seafood by the sea.",
+    description:
+      "Grab this last-minute deal for a quick Mediterranean escape. Explore ancient history and enjoy fresh seafood by the sea.",
     price: 299,
     originalPrice: 749,
     duration: "3 Days / 2 Nights",
     rating: 4.6,
     reviews: 128,
-    includes: ["Sea View Hotel", "City Guide", "Museum Tickets", "Breakfast", "Airport Transfer", "Boat Tour"],
+    includes: [
+      "Sea View Hotel",
+      "City Guide",
+      "Museum Tickets",
+      "Breakfast",
+      "Airport Transfer",
+      "Boat Tour",
+    ],
     category: "lastminute",
     badge: "Last Minute",
     badgeColor: "bg-orange-600",
@@ -168,16 +247,25 @@ const offers: Offer[] = [
   },
   {
     id: 6,
-    image: "https://images.unsplash.com/photo-1539635278303-d4002c07eae3?w=600&h=400&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1539635278303-d4002c07eae3?w=600&h=400&fit=crop",
     title: "Siwa Oasis — Group Adventure Deal",
     destination: "Siwa Oasis, Egypt",
-    description: "Bring your friends and save! Group discount on our most unique desert retreat. Hot springs, sandboarding, and stargazing included.",
+    description:
+      "Bring your friends and save! Group discount on our most unique desert retreat. Hot springs, sandboarding, and stargazing included.",
     price: 549,
     originalPrice: 999,
     duration: "5 Days / 4 Nights",
     rating: 4.8,
     reviews: 97,
-    includes: ["Eco Lodge", "Desert Guide", "4x4 Safari", "All Meals", "Hot Springs Access", "Sandboarding"],
+    includes: [
+      "Eco Lodge",
+      "Desert Guide",
+      "4x4 Safari",
+      "All Meals",
+      "Hot Springs Access",
+      "Sandboarding",
+    ],
     category: "group",
     badge: "Group Deal",
     badgeColor: "bg-blue-600",
@@ -188,16 +276,25 @@ const offers: Offer[] = [
   },
   {
     id: 7,
-    image: "https://images.unsplash.com/photo-1548013146-72479768bada?w=600&h=400&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1548013146-72479768bada?w=600&h=400&fit=crop",
     title: "Full Egypt Explorer — Mega Flash Sale",
     destination: "Cairo, Luxor, Aswan & Hurghada",
-    description: "The ultimate Egypt experience covering all major destinations. From pyramids to beaches, experience everything Egypt has to offer at 50% off.",
+    description:
+      "The ultimate Egypt experience covering all major destinations. From pyramids to beaches, experience everything Egypt has to offer at 50% off.",
     price: 1999,
     originalPrice: 3999,
     duration: "14 Days / 13 Nights",
     rating: 5.0,
     reviews: 89,
-    includes: ["5-Star Hotels", "Domestic Flights", "Private Guide", "Nile Cruise", "All Meals", "Desert Safari"],
+    includes: [
+      "5-Star Hotels",
+      "Domestic Flights",
+      "Private Guide",
+      "Nile Cruise",
+      "All Meals",
+      "Desert Safari",
+    ],
     category: "flash",
     badge: "Mega Deal",
     badgeColor: "bg-red-600",
@@ -209,16 +306,25 @@ const offers: Offer[] = [
   },
   {
     id: 8,
-    image: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=600&h=400&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=600&h=400&fit=crop",
     title: "Honeymoon in Hurghada — Couples Special",
     destination: "Hurghada, Egypt",
-    description: "Celebrate your love with a romantic all-inclusive honeymoon package. Private sunset dinner, couples spa, and exclusive beach cabana.",
+    description:
+      "Celebrate your love with a romantic all-inclusive honeymoon package. Private sunset dinner, couples spa, and exclusive beach cabana.",
     price: 1299,
     originalPrice: 1999,
     duration: "7 Days / 6 Nights",
     rating: 4.9,
     reviews: 145,
-    includes: ["Honeymoon Suite", "Couples Spa", "Sunset Dinner", "Private Cabana", "Champagne Welcome", "Photo Session"],
+    includes: [
+      "Honeymoon Suite",
+      "Couples Spa",
+      "Sunset Dinner",
+      "Private Cabana",
+      "Champagne Welcome",
+      "Photo Session",
+    ],
     category: "exclusive",
     badge: "Couples Special",
     badgeColor: "bg-pink-600",
@@ -240,7 +346,15 @@ const categoryFilters = [
 ];
 
 /* ─── Section Title ─── */
-function SectionTitle({ sub, title, desc }: { sub: string; title: string; desc?: string }) {
+function SectionTitle({
+  sub,
+  title,
+  desc,
+}: {
+  sub: string;
+  title: string;
+  desc?: string;
+}) {
   return (
     <div className="text-center mb-16">
       <motion.p
@@ -281,14 +395,24 @@ function SectionTitle({ sub, title, desc }: { sub: string; title: string; desc?:
 }
 
 /* ─── Countdown Timer Display ─── */
-function CountdownTimer({ targetDate, size = "md" }: { targetDate: string; size?: "sm" | "md" | "lg" }) {
+function CountdownTimer({
+  targetDate,
+  size = "md",
+}: {
+  targetDate: string;
+  size?: "sm" | "md" | "lg";
+}) {
   const { days, hours, minutes, seconds } = useCountdown(targetDate);
   const isUrgent = days === 0 && hours < 12;
 
   const sizeClasses = {
     sm: { box: "w-12 h-12", num: "text-lg", label: "text-[8px]" },
     md: { box: "w-16 h-16", num: "text-2xl", label: "text-[9px]" },
-    lg: { box: "w-20 h-20 md:w-24 md:h-24", num: "text-2xl sm:text-3xl md:text-4xl", label: "text-[10px] md:text-xs" },
+    lg: {
+      box: "w-20 h-20 md:w-24 md:h-24",
+      num: "text-2xl sm:text-3xl md:text-4xl",
+      label: "text-[10px] md:text-xs",
+    },
   };
 
   const s = sizeClasses[size];
@@ -304,21 +428,39 @@ function CountdownTimer({ targetDate, size = "md" }: { targetDate: string; size?
     <div className="flex items-center gap-2 md:gap-3">
       {units.map((unit, i) => (
         <div key={unit.label} className="flex items-center gap-2 md:gap-3">
-          <div className={`${s.box} flex flex-col items-center justify-center border ${isUrgent ? "border-red-500/50 bg-red-950/30" : "border-[var(--theme-primary)]/30 bg-[var(--theme-surface)]"} relative`}>
-            <span className={`${s.num} font-[var(--font-display)] font-bold ${isUrgent ? "text-red-400" : "text-white"}`}>
+          <div
+            className={`${s.box} flex flex-col items-center justify-center border ${isUrgent ? "border-red-500/50 bg-red-950/30" : "border-[var(--theme-primary)]/30 bg-[var(--theme-surface)]"} relative`}
+          >
+            <span
+              className={`${s.num} font-[var(--font-display)] font-bold ${isUrgent ? "text-red-400" : "text-white"}`}
+            >
               {String(unit.value).padStart(2, "0")}
             </span>
-            <span className={`${s.label} ${isUrgent ? "text-red-400/60" : "text-[var(--theme-primary)]/60"} font-[var(--font-body)] tracking-wider`}>
+            <span
+              className={`${s.label} ${isUrgent ? "text-red-400/60" : "text-[var(--theme-primary)]/60"} font-[var(--font-body)] tracking-wider`}
+            >
               {unit.label}
             </span>
             {/* Corner accents */}
-            <div className={`absolute top-0 left-0 w-2 h-2 border-t border-l ${isUrgent ? "border-red-500" : "border-[var(--theme-primary)]"}`} />
-            <div className={`absolute top-0 right-0 w-2 h-2 border-t border-r ${isUrgent ? "border-red-500" : "border-[var(--theme-primary)]"}`} />
-            <div className={`absolute bottom-0 left-0 w-2 h-2 border-b border-l ${isUrgent ? "border-red-500" : "border-[var(--theme-primary)]"}`} />
-            <div className={`absolute bottom-0 right-0 w-2 h-2 border-b border-r ${isUrgent ? "border-red-500" : "border-[var(--theme-primary)]"}`} />
+            <div
+              className={`absolute top-0 left-0 w-2 h-2 border-t border-l ${isUrgent ? "border-red-500" : "border-[var(--theme-primary)]"}`}
+            />
+            <div
+              className={`absolute top-0 right-0 w-2 h-2 border-t border-r ${isUrgent ? "border-red-500" : "border-[var(--theme-primary)]"}`}
+            />
+            <div
+              className={`absolute bottom-0 left-0 w-2 h-2 border-b border-l ${isUrgent ? "border-red-500" : "border-[var(--theme-primary)]"}`}
+            />
+            <div
+              className={`absolute bottom-0 right-0 w-2 h-2 border-b border-r ${isUrgent ? "border-red-500" : "border-[var(--theme-primary)]"}`}
+            />
           </div>
           {i < units.length - 1 && (
-            <span className={`${s.num} font-[var(--font-display)] ${isUrgent ? "text-red-400/40" : "text-[var(--theme-primary)]/40"}`}>:</span>
+            <span
+              className={`${s.num} font-[var(--font-display)] ${isUrgent ? "text-red-400/40" : "text-[var(--theme-primary)]/40"}`}
+            >
+              :
+            </span>
           )}
         </div>
       ))}
@@ -341,12 +483,18 @@ function PromoCodeBox({ code }: { code: string }) {
   return (
     <div className="flex items-center gap-2 bg-[var(--theme-primary)]/10 border border-dashed border-[var(--theme-primary)]/40 px-3 py-2">
       <Ticket className="w-4 h-4 text-[var(--theme-primary)]" />
-      <span className="font-mono text-[var(--theme-primary)] font-bold text-sm tracking-wider">{code}</span>
+      <span className="font-mono text-[var(--theme-primary)] font-bold text-sm tracking-wider">
+        {code}
+      </span>
       <button
         onClick={handleCopy}
         className="ml-auto p-1 hover:bg-[var(--theme-primary)]/20 transition-colors"
       >
-        {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-[var(--theme-primary)]/60" />}
+        {copied ? (
+          <Check className="w-3.5 h-3.5 text-emerald-400" />
+        ) : (
+          <Copy className="w-3.5 h-3.5 text-[var(--theme-primary)]/60" />
+        )}
       </button>
     </div>
   );
@@ -363,7 +511,9 @@ function SpotsBar({ left, total }: { left: number; total: number }) {
         <span className={`${isLow ? "text-red-400" : "text-white/60"}`}>
           {isLow ? `Only ${left} spots left!` : `${left} spots remaining`}
         </span>
-        <span className="text-[var(--theme-primary)]/40">{Math.round(pct)}% booked</span>
+        <span className="text-[var(--theme-primary)]/40">
+          {Math.round(pct)}% booked
+        </span>
       </div>
       <div className="h-1.5 bg-[#1A1A1A] overflow-hidden">
         <motion.div
@@ -380,7 +530,9 @@ function SpotsBar({ left, total }: { left: number; total: number }) {
 
 /* ─── Featured Offer Card (Hero) ─── */
 function FeaturedOffer({ offer }: { offer: Offer }) {
-  const discount = Math.round(((offer.originalPrice - offer.price) / offer.originalPrice) * 100);
+  const discount = Math.round(
+    ((offer.originalPrice - offer.price) / offer.originalPrice) * 100,
+  );
 
   return (
     <motion.div
@@ -395,14 +547,21 @@ function FeaturedOffer({ offer }: { offer: Offer }) {
       <div className="grid md:grid-cols-2 gap-0">
         {/* Image */}
         <div className="relative h-64 md:h-auto overflow-hidden">
-          <OptimizedImage src={offer.image} alt={offer.title} className="w-full h-full object-cover" containerClassName="w-full h-full" />
+          <OptimizedImage
+            src={offer.image}
+            alt={offer.title}
+            className="w-full h-full object-cover"
+            containerClassName="w-full h-full"
+          />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[var(--theme-surface)]/80" />
 
           {/* Discount badge */}
           <div className="absolute top-6 left-6">
             <div className="bg-red-600 text-white px-4 py-2 flex items-center gap-2">
               <Flame className="w-5 h-5" />
-              <span className="font-[var(--font-body)] font-bold text-lg">SAVE {discount}%</span>
+              <span className="font-[var(--font-body)] font-bold text-lg">
+                SAVE {discount}%
+              </span>
             </div>
           </div>
 
@@ -415,7 +574,9 @@ function FeaturedOffer({ offer }: { offer: Offer }) {
         {/* Content */}
         <div className="p-8 md:p-12 flex flex-col justify-center">
           <div className="flex items-center gap-2 mb-4">
-            <span className={`${offer.badgeColor} text-white text-xs px-3 py-1 font-[var(--font-body)] font-semibold uppercase tracking-wider`}>
+            <span
+              className={`${offer.badgeColor} text-white text-xs px-3 py-1 font-[var(--font-body)] font-semibold uppercase tracking-wider`}
+            >
               {offer.badge}
             </span>
             <div className="flex items-center gap-1 text-[var(--theme-primary)]">
@@ -443,9 +604,15 @@ function FeaturedOffer({ offer }: { offer: Offer }) {
 
           {/* Price */}
           <div className="flex items-end gap-3 mb-6">
-            <span className="text-4xl font-[var(--font-display)] font-bold text-[var(--theme-primary)]">${offer.price}</span>
-            <span className="text-xl text-white/30 line-through font-[var(--font-body)] mb-1">${offer.originalPrice}</span>
-            <span className="text-sm text-white/40 font-[var(--font-body)] mb-1">per person</span>
+            <span className="text-4xl font-[var(--font-display)] font-bold text-[var(--theme-primary)]">
+              ${offer.price}
+            </span>
+            <span className="text-xl text-white/30 line-through font-[var(--font-body)] mb-1">
+              ${offer.originalPrice}
+            </span>
+            <span className="text-sm text-white/40 font-[var(--font-body)] mb-1">
+              per person
+            </span>
           </div>
 
           {/* Countdown */}
@@ -464,7 +631,9 @@ function FeaturedOffer({ offer }: { offer: Offer }) {
           {/* Promo Code */}
           {offer.promoCode && (
             <div className="mb-6">
-              <p className="text-white/40 text-xs font-[var(--font-body)] uppercase tracking-wider mb-2">Use Promo Code</p>
+              <p className="text-white/40 text-xs font-[var(--font-body)] uppercase tracking-wider mb-2">
+                Use Promo Code
+              </p>
               <PromoCodeBox code={offer.promoCode} />
             </div>
           )}
@@ -483,9 +652,14 @@ function FeaturedOffer({ offer }: { offer: Offer }) {
       {/* Includes strip */}
       <div className="border-t border-white/5 bg-[var(--theme-surface)] px-8 py-4">
         <div className="flex flex-wrap items-center gap-4">
-          <span className="text-[var(--theme-primary)]/40 text-xs font-[var(--font-body)] uppercase tracking-wider">Includes:</span>
+          <span className="text-[var(--theme-primary)]/40 text-xs font-[var(--font-body)] uppercase tracking-wider">
+            Includes:
+          </span>
           {offer.includes.map((item) => (
-            <span key={item} className="flex items-center gap-1.5 text-white/50 text-xs font-[var(--font-body)]">
+            <span
+              key={item}
+              className="flex items-center gap-1.5 text-white/50 text-xs font-[var(--font-body)]"
+            >
               <Check className="w-3 h-3 text-[var(--theme-primary)]" />
               {item}
             </span>
@@ -499,7 +673,9 @@ function FeaturedOffer({ offer }: { offer: Offer }) {
 /* ─── Offer Card ─── */
 function OfferCard({ offer, index }: { offer: Offer; index: number }) {
   const [expanded, setExpanded] = useState(false);
-  const discount = Math.round(((offer.originalPrice - offer.price) / offer.originalPrice) * 100);
+  const discount = Math.round(
+    ((offer.originalPrice - offer.price) / offer.originalPrice) * 100,
+  );
   const { days, hours } = useCountdown(offer.expiresAt);
   const isUrgent = days === 0 && hours < 12;
 
@@ -522,7 +698,9 @@ function OfferCard({ offer, index }: { offer: Offer; index: number }) {
 
         {/* Badges */}
         <div className="absolute top-4 left-4 flex flex-col gap-2">
-          <span className={`${offer.badgeColor} text-white text-xs px-3 py-1 font-[var(--font-body)] font-bold uppercase tracking-wider flex items-center gap-1.5`}>
+          <span
+            className={`${offer.badgeColor} text-white text-xs px-3 py-1 font-[var(--font-body)] font-bold uppercase tracking-wider flex items-center gap-1.5`}
+          >
             {offer.category === "flash" && <Zap className="w-3 h-3" />}
             {offer.category === "seasonal" && <Calendar className="w-3 h-3" />}
             {offer.category === "exclusive" && <Crown className="w-3 h-3" />}
@@ -535,8 +713,12 @@ function OfferCard({ offer, index }: { offer: Offer; index: number }) {
 
         {/* Discount circle */}
         <div className="absolute top-4 right-4 w-14 h-14 rounded-full bg-[var(--theme-primary)] flex flex-col items-center justify-center">
-          <span className="text-[var(--theme-surface)] font-[var(--font-display)] font-bold text-lg leading-none">{discount}%</span>
-          <span className="text-[var(--theme-surface)] text-[8px] font-[var(--font-body)] font-bold uppercase">OFF</span>
+          <span className="text-[var(--theme-surface)] font-[var(--font-display)] font-bold text-lg leading-none">
+            {discount}%
+          </span>
+          <span className="text-[var(--theme-surface)] text-[8px] font-[var(--font-body)] font-bold uppercase">
+            OFF
+          </span>
         </div>
 
         {/* Wishlist & Share */}
@@ -586,8 +768,12 @@ function OfferCard({ offer, index }: { offer: Offer; index: number }) {
 
         {/* Price */}
         <div className="flex items-end gap-2 mb-4">
-          <span className="text-2xl font-[var(--font-display)] font-bold text-[var(--theme-primary)]">${offer.price}</span>
-          <span className="text-sm text-white/30 line-through font-[var(--font-body)] mb-0.5">${offer.originalPrice}</span>
+          <span className="text-2xl font-[var(--font-display)] font-bold text-[var(--theme-primary)]">
+            ${offer.price}
+          </span>
+          <span className="text-sm text-white/30 line-through font-[var(--font-body)] mb-0.5">
+            ${offer.originalPrice}
+          </span>
           <span className="ml-auto text-xs bg-emerald-900/40 text-emerald-400 px-2 py-0.5 font-[var(--font-body)] font-semibold">
             Save ${offer.originalPrice - offer.price}
           </span>
@@ -596,8 +782,12 @@ function OfferCard({ offer, index }: { offer: Offer; index: number }) {
         {/* Mini Countdown */}
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-2">
-            <Timer className={`w-3.5 h-3.5 ${isUrgent ? "text-red-400" : "text-[var(--theme-primary)]/60"}`} />
-            <span className={`text-xs font-[var(--font-body)] ${isUrgent ? "text-red-400" : "text-white/40"}`}>
+            <Timer
+              className={`w-3.5 h-3.5 ${isUrgent ? "text-red-400" : "text-[var(--theme-primary)]/60"}`}
+            />
+            <span
+              className={`text-xs font-[var(--font-body)] ${isUrgent ? "text-red-400" : "text-white/40"}`}
+            >
               {isUrgent ? "Ending soon!" : "Ends in"}
             </span>
           </div>
@@ -615,7 +805,11 @@ function OfferCard({ offer, index }: { offer: Offer; index: number }) {
           className="flex items-center gap-1.5 text-[var(--theme-primary)]/60 text-xs font-[var(--font-body)] hover:text-[var(--theme-primary)] transition-colors mb-4"
         >
           {expanded ? "Hide Details" : "Show Details"}
-          {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          {expanded ? (
+            <ChevronUp className="w-3 h-3" />
+          ) : (
+            <ChevronDown className="w-3 h-3" />
+          )}
         </button>
 
         <AnimatePresence>
@@ -629,7 +823,10 @@ function OfferCard({ offer, index }: { offer: Offer; index: number }) {
             >
               <div className="space-y-2 pb-2">
                 {offer.includes.map((item) => (
-                  <div key={item} className="flex items-center gap-2 text-white/50 text-xs font-[var(--font-body)]">
+                  <div
+                    key={item}
+                    className="flex items-center gap-2 text-white/50 text-xs font-[var(--font-body)]"
+                  >
                     <Check className="w-3 h-3 text-[var(--theme-primary)]" />
                     {item}
                   </div>
@@ -637,7 +834,9 @@ function OfferCard({ offer, index }: { offer: Offer; index: number }) {
               </div>
               {offer.promoCode && (
                 <div className="mt-3">
-                  <p className="text-white/30 text-[10px] font-[var(--font-body)] uppercase tracking-wider mb-1.5">Promo Code</p>
+                  <p className="text-white/30 text-[10px] font-[var(--font-body)] uppercase tracking-wider mb-1.5">
+                    Promo Code
+                  </p>
                   <PromoCodeBox code={offer.promoCode} />
                 </div>
               )}
@@ -692,7 +891,8 @@ function NewsletterSignup() {
             Never Miss a Deal
           </h3>
           <p className="text-white/40 font-[var(--font-body)] text-sm mb-8 max-w-lg mx-auto">
-            Subscribe to our newsletter and be the first to know about exclusive offers, flash sales, and special travel packages.
+            Subscribe to our newsletter and be the first to know about exclusive
+            offers, flash sales, and special travel packages.
           </p>
 
           {subscribed ? (
@@ -704,10 +904,15 @@ function NewsletterSignup() {
               <div className="w-10 h-10 rounded-full bg-emerald-900/30 border border-emerald-500/30 flex items-center justify-center">
                 <Check className="w-5 h-5" />
               </div>
-              <span className="font-[var(--font-body)] font-semibold">You're subscribed! Check your inbox.</span>
+              <span className="font-[var(--font-body)] font-semibold">
+                You're subscribed! Check your inbox.
+              </span>
             </motion.div>
           ) : (
-            <form onSubmit={handleSubmit} className="flex gap-0 max-w-md mx-auto">
+            <form
+              onSubmit={handleSubmit}
+              className="flex gap-0 max-w-md mx-auto"
+            >
               <input
                 type="email"
                 value={email}
@@ -755,8 +960,12 @@ function OffersStats() {
           className="bg-[var(--theme-surface)] border border-white/5 p-6 text-center"
         >
           <stat.icon className="w-6 h-6 text-[var(--theme-primary)] mx-auto mb-3" />
-          <p className="text-xl font-[var(--font-display)] text-white font-bold">{stat.value}</p>
-          <p className="text-white/40 text-xs font-[var(--font-body)] mt-1">{stat.label}</p>
+          <p className="text-xl font-[var(--font-display)] text-white font-bold">
+            {stat.value}
+          </p>
+          <p className="text-white/40 text-xs font-[var(--font-body)] mt-1">
+            {stat.label}
+          </p>
         </motion.div>
       ))}
     </div>
@@ -771,7 +980,10 @@ export default function Offers() {
   const featuredOffers = useMemo(() => offers.filter((o) => o.featured), []);
 
   const filteredOffers = useMemo(() => {
-    let filtered = activeCategory === "all" ? offers : offers.filter((o) => o.category === activeCategory);
+    let filtered =
+      activeCategory === "all"
+        ? offers
+        : offers.filter((o) => o.category === activeCategory);
     // Remove featured from grid if showing all
     if (activeCategory === "all") {
       filtered = filtered.filter((o) => !o.featured);
@@ -789,7 +1001,10 @@ export default function Offers() {
       case "price-high":
         return [...filtered].sort((a, b) => b.price - a.price);
       case "ending":
-        return [...filtered].sort((a, b) => new Date(a.expiresAt).getTime() - new Date(b.expiresAt).getTime());
+        return [...filtered].sort(
+          (a, b) =>
+            new Date(a.expiresAt).getTime() - new Date(b.expiresAt).getTime(),
+        );
       case "rating":
         return [...filtered].sort((a, b) => b.rating - a.rating);
       default:
@@ -815,13 +1030,26 @@ export default function Offers() {
       {/* Hero Banner */}
       <section className="relative pt-32 pb-20 overflow-hidden">
         <div className="absolute inset-0">
-          <img src="/manus-storage/hero-offers_d7a75299.webp" alt="" className="w-full h-full object-cover" />
+          <img
+            src="/manus-storage/hero-offers_d7a75299.webp"
+            alt=""
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-b from-[var(--theme-surface)]/85 via-[var(--theme-surface)]/75 to-[var(--theme-surface)]" />
         </div>
         {/* Decorative gold lines */}
         <div className="absolute inset-0 overflow-hidden opacity-5">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="absolute h-px bg-[var(--theme-primary)]" style={{ top: `${20 + i * 15}%`, left: 0, right: 0, transform: `rotate(${-2 + i}deg)` }} />
+            <div
+              key={i}
+              className="absolute h-px bg-[var(--theme-primary)]"
+              style={{
+                top: `${20 + i * 15}%`,
+                left: 0,
+                right: 0,
+                transform: `rotate(${-2 + i}deg)`,
+              }}
+            />
           ))}
         </div>
 
@@ -847,7 +1075,12 @@ export default function Offers() {
             transition={{ delay: 0.2 }}
             className="flex items-center justify-center gap-2 text-white/40 text-sm font-[var(--font-body)]"
           >
-            <a href="/" className="hover:text-[var(--theme-primary)] transition-colors">Home</a>
+            <a
+              href="/"
+              className="hover:text-[var(--theme-primary)] transition-colors"
+            >
+              Home
+            </a>
             <span>&gt;</span>
             <span className="text-[var(--theme-primary)]">Offers</span>
           </motion.div>
@@ -888,8 +1121,12 @@ export default function Offers() {
                   <Flame className="w-7 h-7 text-red-400" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-[var(--font-display)] text-white font-bold">Flash Sale Live Now!</h3>
-                  <p className="text-white/40 text-sm font-[var(--font-body)]">Limited time offers — up to 60% off selected trips</p>
+                  <h3 className="text-xl font-[var(--font-display)] text-white font-bold">
+                    Flash Sale Live Now!
+                  </h3>
+                  <p className="text-white/40 text-sm font-[var(--font-body)]">
+                    Limited time offers — up to 60% off selected trips
+                  </p>
                 </div>
               </div>
               <CountdownTimer targetDate="2026-04-08T23:59:59" size="sm" />
@@ -960,7 +1197,9 @@ export default function Offers() {
           {filteredOffers.length === 0 && (
             <div className="text-center py-20">
               <Tag className="w-12 h-12 text-[var(--theme-primary)]/20 mx-auto mb-4" />
-              <p className="text-white/40 font-[var(--font-body)]">No offers in this category right now. Check back soon!</p>
+              <p className="text-white/40 font-[var(--font-body)]">
+                No offers in this category right now. Check back soon!
+              </p>
             </div>
           )}
 
@@ -981,7 +1220,9 @@ export default function Offers() {
                 className="flex items-center gap-3 bg-[var(--theme-surface)] border border-white/5 p-4"
               >
                 <badge.icon className="w-5 h-5 text-[var(--theme-primary)]" />
-                <span className="text-white/60 text-xs font-[var(--font-body)] font-semibold">{badge.text}</span>
+                <span className="text-white/60 text-xs font-[var(--font-body)] font-semibold">
+                  {badge.text}
+                </span>
               </motion.div>
             ))}
           </div>

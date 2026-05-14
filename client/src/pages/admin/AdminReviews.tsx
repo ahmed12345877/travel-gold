@@ -43,7 +43,11 @@ function StarRating({ rating }: { rating: number }) {
         <Star
           key={s}
           size={12}
-          className={s <= rating ? "text-[var(--theme-primary)] fill-[var(--theme-primary)]" : "text-[var(--theme-primary)]/20"}
+          className={
+            s <= rating
+              ? "text-[var(--theme-primary)] fill-[var(--theme-primary)]"
+              : "text-[var(--theme-primary)]/20"
+          }
         />
       ))}
     </div>
@@ -88,7 +92,8 @@ export default function AdminReviews() {
       r.guestName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.content?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === "all" || r.isApproved === filterStatus;
+    const matchesFilter =
+      filterStatus === "all" || r.isApproved === filterStatus;
     return matchesSearch && matchesFilter;
   });
 
@@ -99,7 +104,10 @@ export default function AdminReviews() {
         <div className="h-12 bg-[var(--theme-surface)] rounded-lg border border-white/5" />
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-24 bg-[var(--theme-surface)] rounded-lg border border-white/5" />
+            <div
+              key={i}
+              className="h-24 bg-[var(--theme-surface)] rounded-lg border border-white/5"
+            />
           ))}
         </div>
       </div>
@@ -121,7 +129,10 @@ export default function AdminReviews() {
       {/* Search & Filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-primary)]/50" />
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-primary)]/50"
+          />
           <input
             type="text"
             placeholder="Search by trip, guest, title, or content..."
@@ -141,7 +152,9 @@ export default function AdminReviews() {
                   : "bg-[var(--theme-surface)] border-white/5 text-white/50 hover:border-[var(--theme-primary)]/30"
               }`}
             >
-              {status === "all" ? "All" : status.charAt(0).toUpperCase() + status.slice(1)}
+              {status === "all"
+                ? "All"
+                : status.charAt(0).toUpperCase() + status.slice(1)}
             </button>
           ))}
         </div>
@@ -185,7 +198,9 @@ export default function AdminReviews() {
                   {/* Rating & Title */}
                   <div className="flex items-center gap-2 mb-2">
                     <StarRating rating={review.rating} />
-                    <span className="text-white/40 text-xs">({review.rating}/5)</span>
+                    <span className="text-white/40 text-xs">
+                      ({review.rating}/5)
+                    </span>
                   </div>
                   <h4 className="text-white font-[var(--font-display)] font-semibold mb-1">
                     {review.title || "No title"}
@@ -236,7 +251,10 @@ export default function AdminReviews() {
           ))
         ) : (
           <div className="bg-[var(--theme-surface)] border border-white/8 rounded-lg p-12 text-center">
-            <Star size={40} className="text-[var(--theme-primary)]/20 mx-auto mb-3" />
+            <Star
+              size={40}
+              className="text-[var(--theme-primary)]/20 mx-auto mb-3"
+            />
             <p className="text-white/40 text-sm font-[var(--font-body)]">
               {searchTerm || filterStatus !== "all"
                 ? "No reviews match your filters"
@@ -262,7 +280,8 @@ export default function AdminReviews() {
                   Review Details
                 </h3>
                 <p className="text-white/40 text-xs font-[var(--font-body)] mt-0.5">
-                  By {selectedReview.guestName || "Anonymous"} - {selectedReview.tripName}
+                  By {selectedReview.guestName || "Anonymous"} -{" "}
+                  {selectedReview.tripName}
                 </p>
               </div>
               <button
@@ -306,7 +325,10 @@ export default function AdminReviews() {
                         id: selectedReview.id,
                         isApproved: "approved",
                       });
-                      setSelectedReview({ ...selectedReview, isApproved: "approved" });
+                      setSelectedReview({
+                        ...selectedReview,
+                        isApproved: "approved",
+                      });
                     }}
                     disabled={selectedReview.isApproved === "approved"}
                     className="flex items-center gap-2 px-4 py-2 text-sm font-[var(--font-body)] font-medium rounded-lg border transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20"
@@ -319,7 +341,10 @@ export default function AdminReviews() {
                         id: selectedReview.id,
                         isApproved: "rejected",
                       });
-                      setSelectedReview({ ...selectedReview, isApproved: "rejected" });
+                      setSelectedReview({
+                        ...selectedReview,
+                        isApproved: "rejected",
+                      });
                     }}
                     disabled={selectedReview.isApproved === "rejected"}
                     className="flex items-center gap-2 px-4 py-2 text-sm font-[var(--font-body)] font-medium rounded-lg border transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20"
@@ -332,7 +357,10 @@ export default function AdminReviews() {
                         id: selectedReview.id,
                         isApproved: "pending",
                       });
-                      setSelectedReview({ ...selectedReview, isApproved: "pending" });
+                      setSelectedReview({
+                        ...selectedReview,
+                        isApproved: "pending",
+                      });
                     }}
                     disabled={selectedReview.isApproved === "pending"}
                     className="flex items-center gap-2 px-4 py-2 text-sm font-[var(--font-body)] font-medium rounded-lg border transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-yellow-500/10 border-yellow-500/20 text-yellow-400 hover:bg-yellow-500/20"

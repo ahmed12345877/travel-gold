@@ -43,12 +43,14 @@ vi.mock("./db", () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     })),
-    updateBookingPaymentStatus: vi.fn(async (id: number, paymentStatus: string) => ({
-      id,
-      paymentStatus,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    })),
+    updateBookingPaymentStatus: vi.fn(
+      async (id: number, paymentStatus: string) => ({
+        id,
+        paymentStatus,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }),
+    ),
     getAllBookings: vi.fn(async () => []),
     createReview: vi.fn(async (data: any) => {
       reviewIdCounter++;
@@ -154,7 +156,12 @@ vi.mock("./db", () => {
     getUserById: vi.fn(async () => null),
     updateUserRole: vi.fn(async () => null),
     searchUsers: vi.fn(async () => []),
-    getUserStats: vi.fn(async () => ({ total: 0, admins: 0, recentSignups: 0, todaySignups: 0 })),
+    getUserStats: vi.fn(async () => ({
+      total: 0,
+      admins: 0,
+      recentSignups: 0,
+      todaySignups: 0,
+    })),
     // Profile update helper
     updateUserProfile: vi.fn(async (id: number, data: any) => ({
       id,
@@ -170,7 +177,14 @@ vi.mock("./db", () => {
       lastSignedIn: new Date(),
     })),
     // Profile stats helpers
-    getOrCreateAICredits: vi.fn(async () => ({ id: 1, userId: 1, balance: "10", totalUsed: "5", createdAt: new Date(), updatedAt: new Date() })),
+    getOrCreateAICredits: vi.fn(async () => ({
+      id: 1,
+      userId: 1,
+      balance: "10",
+      totalUsed: "5",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })),
     getDb: vi.fn(async () => {
       const mockDb = {
         select: vi.fn().mockReturnValue({
@@ -295,7 +309,7 @@ describe("bookings router", () => {
   it("rejects admin operations for non-admin users", async () => {
     const caller = appRouter.createCaller(createAuthContext("user"));
     await expect(
-      caller.bookings.updateStatus({ id: 1, status: "confirmed" })
+      caller.bookings.updateStatus({ id: 1, status: "confirmed" }),
     ).rejects.toThrow();
   });
 
@@ -356,7 +370,7 @@ describe("reviews router", () => {
   it("rejects admin operations for non-admin users", async () => {
     const caller = appRouter.createCaller(createAuthContext("user"));
     await expect(
-      caller.reviews.moderate({ id: 1, isApproved: "approved" })
+      caller.reviews.moderate({ id: 1, isApproved: "approved" }),
     ).rejects.toThrow();
   });
 
@@ -402,7 +416,7 @@ describe("contact router", () => {
         name: "",
         email: "test@test.com",
         message: "Short message that is at least 10 chars",
-      })
+      }),
     ).rejects.toThrow();
   });
 
@@ -413,7 +427,7 @@ describe("contact router", () => {
         name: "Test",
         email: "invalid-email",
         message: "This is a test message for validation",
-      })
+      }),
     ).rejects.toThrow();
   });
 
@@ -577,14 +591,14 @@ describe("admin offers management", () => {
         discountValue: "10",
         startDate: Date.now(),
         endDate: Date.now() + 86400000,
-      })
+      }),
     ).rejects.toThrow();
   });
 
   it("rejects regular user from updating offers", async () => {
     const caller = appRouter.createCaller(createAuthContext("user"));
     await expect(
-      caller.offers.update({ id: 1, title: "Hacked" })
+      caller.offers.update({ id: 1, title: "Hacked" }),
     ).rejects.toThrow();
   });
 
@@ -707,14 +721,14 @@ describe("admin dashboard access control", () => {
   it("rejects regular user from updating booking status", async () => {
     const caller = appRouter.createCaller(createAuthContext("user"));
     await expect(
-      caller.bookings.updateStatus({ id: 1, status: "confirmed" })
+      caller.bookings.updateStatus({ id: 1, status: "confirmed" }),
     ).rejects.toThrow();
   });
 
   it("rejects regular user from updating contact message status", async () => {
     const caller = appRouter.createCaller(createAuthContext("user"));
     await expect(
-      caller.contact.updateStatus({ id: 1, status: "read" })
+      caller.contact.updateStatus({ id: 1, status: "read" }),
     ).rejects.toThrow();
   });
 });
@@ -790,7 +804,9 @@ describe("users router - updateProfile", () => {
 
   it("updates avatar URL for authenticated user", async () => {
     const caller = appRouter.createCaller(createAuthContext());
-    const result = await caller.users.updateProfile({ avatarUrl: "https://example.com/avatar.jpg" });
+    const result = await caller.users.updateProfile({
+      avatarUrl: "https://example.com/avatar.jpg",
+    });
     expect(result).toBeDefined();
     expect(result.avatarUrl).toBe("https://example.com/avatar.jpg");
   });
@@ -817,7 +833,9 @@ describe("users router - updateProfile", () => {
 
   it("rejects updateProfile for unauthenticated user", async () => {
     const caller = appRouter.createCaller(createPublicContext());
-    await expect(caller.users.updateProfile({ name: "Hacker" })).rejects.toThrow();
+    await expect(
+      caller.users.updateProfile({ name: "Hacker" }),
+    ).rejects.toThrow();
   });
 
   it("rejects empty name", async () => {
@@ -827,6 +845,8 @@ describe("users router - updateProfile", () => {
 
   it("rejects invalid avatar URL", async () => {
     const caller = appRouter.createCaller(createAuthContext());
-    await expect(caller.users.updateProfile({ avatarUrl: "not-a-url" })).rejects.toThrow();
+    await expect(
+      caller.users.updateProfile({ avatarUrl: "not-a-url" }),
+    ).rejects.toThrow();
   });
 });

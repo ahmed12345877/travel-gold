@@ -42,9 +42,19 @@ interface CalendarEntry {
 
 /* ─── Constants ─── */
 const CONTENT_TYPES = [
-  { value: "social_media", label: "Social Media", icon: Instagram, color: "#E1306C" },
+  {
+    value: "social_media",
+    label: "Social Media",
+    icon: Instagram,
+    color: "#E1306C",
+  },
   { value: "email", label: "Email", icon: Mail, color: "#D4A853" },
-  { value: "trip_description", label: "Trip Description", icon: FileText, color: "#4ECDC4" },
+  {
+    value: "trip_description",
+    label: "Trip Description",
+    icon: FileText,
+    color: "#4ECDC4",
+  },
   { value: "blog_seo", label: "Blog/SEO", icon: PenTool, color: "#FF6B6B" },
   { value: "ad_copy", label: "Ad Copy", icon: Megaphone, color: "#45B7D1" },
 ];
@@ -58,8 +68,18 @@ const STATUSES = [
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 /* ─── Helper ─── */
@@ -86,7 +106,9 @@ function EntryModal({
 }) {
   const [title, setTitle] = useState(entry?.title || "");
   const [description, setDescription] = useState(entry?.description || "");
-  const [contentType, setContentType] = useState(entry?.contentType || "social_media");
+  const [contentType, setContentType] = useState(
+    entry?.contentType || "social_media",
+  );
   const [platform, setPlatform] = useState(entry?.platform || "");
   const [status, setStatus] = useState(entry?.status || "planned");
   const [colorTag, setColorTag] = useState(entry?.colorTag || "#D4A853");
@@ -147,7 +169,9 @@ function EntryModal({
           </div>
 
           <div>
-            <label className="text-gray-400 text-sm mb-1 block">Description</label>
+            <label className="text-gray-400 text-sm mb-1 block">
+              Description
+            </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -160,7 +184,9 @@ function EntryModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-gray-400 text-sm mb-1 block">Content Type</label>
+              <label className="text-gray-400 text-sm mb-1 block">
+                Content Type
+              </label>
               <select
                 value={contentType}
                 onChange={(e) => setContentType(e.target.value)}
@@ -168,7 +194,9 @@ function EntryModal({
                   focus:border-[var(--theme-primary)] focus:outline-none"
               >
                 {CONTENT_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -181,14 +209,18 @@ function EntryModal({
                   focus:border-[var(--theme-primary)] focus:outline-none"
               >
                 {STATUSES.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
                 ))}
               </select>
             </div>
           </div>
 
           <div>
-            <label className="text-gray-400 text-sm mb-1 block">Platform (Optional)</label>
+            <label className="text-gray-400 text-sm mb-1 block">
+              Platform (Optional)
+            </label>
             <input
               type="text"
               value={platform}
@@ -200,15 +232,27 @@ function EntryModal({
           </div>
 
           <div>
-            <label className="text-gray-400 text-sm mb-2 block">Color Tag</label>
+            <label className="text-gray-400 text-sm mb-2 block">
+              Color Tag
+            </label>
             <div className="flex gap-2">
-              {["#D4A853", "#E1306C", "#4ECDC4", "#FF6B6B", "#45B7D1", "#96CEB4", "#6b7280"].map((c) => (
+              {[
+                "#D4A853",
+                "#E1306C",
+                "#4ECDC4",
+                "#FF6B6B",
+                "#45B7D1",
+                "#96CEB4",
+                "#6b7280",
+              ].map((c) => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => setColorTag(c)}
                   className={`w-7 h-7 rounded-full border-2 transition-all ${
-                    colorTag === c ? "border-white scale-110" : "border-transparent"
+                    colorTag === c
+                      ? "border-white scale-110"
+                      : "border-transparent"
                   }`}
                   style={{ backgroundColor: c }}
                 />
@@ -222,7 +266,11 @@ function EntryModal({
             className="w-full py-3 bg-gradient-to-r from-[var(--theme-primary)] to-[#B8922D] text-black font-bold rounded-lg
               hover:shadow-[0_0_20px_rgba(212,168,83,0.3)] transition-all disabled:opacity-50"
           >
-            {isLoading ? "Saving..." : entry ? "Update Entry" : "Add to Calendar"}
+            {isLoading
+              ? "Saving..."
+              : entry
+                ? "Update Entry"
+                : "Add to Calendar"}
           </button>
         </form>
       </motion.div>
@@ -247,7 +295,7 @@ export default function ContentCalendar() {
 
   const entriesQuery = trpc.marketing.listCalendar.useQuery(
     { startDate: startOfMonth, endDate: endOfMonth },
-    { enabled: isAuthenticated }
+    { enabled: isAuthenticated },
   );
 
   const addMutation = trpc.marketing.addCalendarEntry.useMutation({
@@ -289,29 +337,51 @@ export default function ContentCalendar() {
     // Previous month padding
     const prevMonthDays = getDaysInMonth(year, month - 1);
     for (let i = firstDay - 1; i >= 0; i--) {
-      days.push({ day: prevMonthDays - i, isCurrentMonth: false, date: new Date(year, month - 1, prevMonthDays - i) });
+      days.push({
+        day: prevMonthDays - i,
+        isCurrentMonth: false,
+        date: new Date(year, month - 1, prevMonthDays - i),
+      });
     }
     // Current month
     for (let i = 1; i <= daysInMonth; i++) {
-      days.push({ day: i, isCurrentMonth: true, date: new Date(year, month, i) });
+      days.push({
+        day: i,
+        isCurrentMonth: true,
+        date: new Date(year, month, i),
+      });
     }
     // Next month padding
     const remaining = 42 - days.length;
     for (let i = 1; i <= remaining; i++) {
-      days.push({ day: i, isCurrentMonth: false, date: new Date(year, month + 1, i) });
+      days.push({
+        day: i,
+        isCurrentMonth: false,
+        date: new Date(year, month + 1, i),
+      });
     }
     return days;
   }, [year, month, daysInMonth, firstDay]);
 
   const getEntriesForDay = (date: Date) => {
-    const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+    const dayStart = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+    ).getTime();
     const dayEnd = dayStart + 86400000;
-    return entries.filter((e: any) => e.scheduledDate >= dayStart && e.scheduledDate < dayEnd);
+    return entries.filter(
+      (e: any) => e.scheduledDate >= dayStart && e.scheduledDate < dayEnd,
+    );
   };
 
   const isToday = (date: Date) => {
     const today = new Date();
-    return date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    );
   };
 
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
@@ -344,8 +414,13 @@ export default function ContentCalendar() {
         <Navbar />
         <div className="pt-32 pb-20 text-center">
           <h1 className="text-3xl font-bold text-white mb-4">Login Required</h1>
-          <p className="text-gray-400 mb-8">Please login to use the Content Calendar.</p>
-          <a href={getLoginUrl()} className="px-8 py-3 bg-gradient-to-r from-[var(--theme-primary)] to-[#B8922D] text-black font-bold rounded-lg">
+          <p className="text-gray-400 mb-8">
+            Please login to use the Content Calendar.
+          </p>
+          <a
+            href={getLoginUrl()}
+            className="px-8 py-3 bg-gradient-to-r from-[var(--theme-primary)] to-[#B8922D] text-black font-bold rounded-lg"
+          >
             Login Now
           </a>
         </div>
@@ -373,23 +448,36 @@ export default function ContentCalendar() {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <div className="h-px w-8 bg-[var(--theme-primary)]" />
-                <span className="text-[var(--theme-primary)] text-sm tracking-[0.3em] uppercase font-light">Content Calendar</span>
+                <span className="text-[var(--theme-primary)] text-sm tracking-[0.3em] uppercase font-light">
+                  Content Calendar
+                </span>
               </div>
-              <h1 className="text-3xl font-bold text-white">Plan Your Content</h1>
+              <h1 className="text-3xl font-bold text-white">
+                Plan Your Content
+              </h1>
             </div>
 
             {/* Month Navigation */}
             <div className="flex items-center gap-3 mt-4 md:mt-0">
-              <button onClick={goToday} className="px-3 py-1.5 text-sm bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-gray-400 hover:text-[var(--theme-primary)] hover:border-[var(--theme-primary)]/30 transition-colors">
+              <button
+                onClick={goToday}
+                className="px-3 py-1.5 text-sm bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-gray-400 hover:text-[var(--theme-primary)] hover:border-[var(--theme-primary)]/30 transition-colors"
+              >
                 Today
               </button>
-              <button onClick={prevMonth} className="p-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-gray-400 hover:text-[var(--theme-primary)] transition-colors">
+              <button
+                onClick={prevMonth}
+                className="p-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-gray-400 hover:text-[var(--theme-primary)] transition-colors"
+              >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <span className="text-white font-semibold text-lg min-w-[180px] text-center">
                 {MONTHS[month]} {year}
               </span>
-              <button onClick={nextMonth} className="p-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-gray-400 hover:text-[var(--theme-primary)] transition-colors">
+              <button
+                onClick={nextMonth}
+                className="p-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-gray-400 hover:text-[var(--theme-primary)] transition-colors"
+              >
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
@@ -398,8 +486,14 @@ export default function ContentCalendar() {
           {/* Legend */}
           <div className="flex flex-wrap gap-4 mb-6">
             {CONTENT_TYPES.map((t) => (
-              <div key={t.value} className="flex items-center gap-1.5 text-xs text-gray-400">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: t.color }} />
+              <div
+                key={t.value}
+                className="flex items-center gap-1.5 text-xs text-gray-400"
+              >
+                <div
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: t.color }}
+                />
                 {t.label}
               </div>
             ))}
@@ -410,7 +504,10 @@ export default function ContentCalendar() {
             {/* Day headers */}
             <div className="grid grid-cols-7 border-b border-[#2a2a2a]">
               {DAYS.map((day) => (
-                <div key={day} className="py-3 text-center text-sm font-medium text-gray-500">
+                <div
+                  key={day}
+                  className="py-3 text-center text-sm font-medium text-gray-500"
+                >
                   {day}
                 </div>
               ))}
@@ -419,13 +516,17 @@ export default function ContentCalendar() {
             {/* Calendar cells */}
             <div className="grid grid-cols-7">
               {calendarDays.map((cell, i) => {
-                const dayEntries = cell.isCurrentMonth ? getEntriesForDay(cell.date) : [];
+                const dayEntries = cell.isCurrentMonth
+                  ? getEntriesForDay(cell.date)
+                  : [];
                 const today = isToday(cell.date);
 
                 return (
                   <div
                     key={i}
-                    onClick={() => cell.isCurrentMonth && handleDayClick(cell.date)}
+                    onClick={() =>
+                      cell.isCurrentMonth && handleDayClick(cell.date)
+                    }
                     className={`min-h-[100px] md:min-h-[120px] p-1.5 border-b border-r border-[#1a1a1a] cursor-pointer
                       transition-colors ${
                         cell.isCurrentMonth
@@ -433,20 +534,24 @@ export default function ContentCalendar() {
                           : "opacity-30 cursor-default"
                       } ${today ? "bg-[var(--theme-primary)]/5" : ""}`}
                   >
-                    <div className={`text-sm font-medium mb-1 ${
-                      today
-                        ? "text-[var(--theme-primary)] font-bold"
-                        : cell.isCurrentMonth
-                        ? "text-gray-300"
-                        : "text-gray-600"
-                    }`}>
+                    <div
+                      className={`text-sm font-medium mb-1 ${
+                        today
+                          ? "text-[var(--theme-primary)] font-bold"
+                          : cell.isCurrentMonth
+                            ? "text-gray-300"
+                            : "text-gray-600"
+                      }`}
+                    >
                       {cell.day}
                     </div>
 
                     {/* Entries */}
                     <div className="space-y-0.5">
                       {dayEntries.slice(0, 3).map((entry: any) => {
-                        const typeConfig = CONTENT_TYPES.find((t) => t.value === entry.contentType);
+                        const typeConfig = CONTENT_TYPES.find(
+                          (t) => t.value === entry.contentType,
+                        );
                         return (
                           <div
                             key={entry.id}
@@ -457,7 +562,10 @@ export default function ContentCalendar() {
                             className="text-xs px-1.5 py-0.5 rounded truncate cursor-pointer hover:opacity-80 transition-opacity"
                             style={{
                               backgroundColor: `${entry.colorTag || typeConfig?.color || "#D4A853"}20`,
-                              color: entry.colorTag || typeConfig?.color || "#D4A853",
+                              color:
+                                entry.colorTag ||
+                                typeConfig?.color ||
+                                "#D4A853",
                               borderLeft: `2px solid ${entry.colorTag || typeConfig?.color || "#D4A853"}`,
                             }}
                             title={entry.title}
@@ -467,7 +575,9 @@ export default function ContentCalendar() {
                         );
                       })}
                       {dayEntries.length > 3 && (
-                        <div className="text-xs text-gray-500 px-1">+{dayEntries.length - 3} more</div>
+                        <div className="text-xs text-gray-500 px-1">
+                          +{dayEntries.length - 3} more
+                        </div>
                       )}
                     </div>
                   </div>
@@ -485,15 +595,22 @@ export default function ContentCalendar() {
             {entries.length === 0 ? (
               <div className="bg-[#111111] border border-[#2a2a2a] rounded-xl p-8 text-center">
                 <CalendarIcon className="w-10 h-10 text-[var(--theme-primary)]/30 mx-auto mb-3" />
-                <p className="text-gray-500 text-sm">No content scheduled this month. Click on a day to add an entry.</p>
+                <p className="text-gray-500 text-sm">
+                  No content scheduled this month. Click on a day to add an
+                  entry.
+                </p>
               </div>
             ) : (
               <div className="space-y-2">
                 {entries
                   .sort((a: any, b: any) => a.scheduledDate - b.scheduledDate)
                   .map((entry: any) => {
-                    const typeConfig = CONTENT_TYPES.find((t) => t.value === entry.contentType);
-                    const statusConfig = STATUSES.find((s) => s.value === entry.status);
+                    const typeConfig = CONTENT_TYPES.find(
+                      (t) => t.value === entry.contentType,
+                    );
+                    const statusConfig = STATUSES.find(
+                      (s) => s.value === entry.status,
+                    );
                     const Icon = typeConfig?.icon || CalendarIcon;
                     return (
                       <div
@@ -502,16 +619,37 @@ export default function ContentCalendar() {
                       >
                         <div
                           className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                          style={{ backgroundColor: `${typeConfig?.color || "#D4A853"}15` }}
+                          style={{
+                            backgroundColor: `${typeConfig?.color || "#D4A853"}15`,
+                          }}
                         >
-                          <Icon className="w-5 h-5" style={{ color: typeConfig?.color || "#D4A853" }} />
+                          <Icon
+                            className="w-5 h-5"
+                            style={{ color: typeConfig?.color || "#D4A853" }}
+                          />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-white text-sm font-medium truncate">{entry.title}</div>
+                          <div className="text-white text-sm font-medium truncate">
+                            {entry.title}
+                          </div>
                           <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-                            <span>{new Date(entry.scheduledDate).toLocaleDateString()}</span>
-                            {entry.platform && <span className="px-1.5 py-0.5 rounded bg-[#1a1a1a]">{entry.platform}</span>}
-                            <span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: `${statusConfig?.color}20`, color: statusConfig?.color }}>
+                            <span>
+                              {new Date(
+                                entry.scheduledDate,
+                              ).toLocaleDateString()}
+                            </span>
+                            {entry.platform && (
+                              <span className="px-1.5 py-0.5 rounded bg-[#1a1a1a]">
+                                {entry.platform}
+                              </span>
+                            )}
+                            <span
+                              className="px-1.5 py-0.5 rounded"
+                              style={{
+                                backgroundColor: `${statusConfig?.color}20`,
+                                color: statusConfig?.color,
+                              }}
+                            >
                               {statusConfig?.label}
                             </span>
                           </div>

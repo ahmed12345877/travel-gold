@@ -11,10 +11,14 @@ export default function CTASection() {
   const { ref, inView } = useInView({ threshold: 0.3 });
 
   return (
-    <section ref={ref} className="py-12 sm:py-16 md:py-20 bg-gradient-to-r from-[var(--theme-primary)] via-[#B8860B] to-[var(--theme-primary)] relative overflow-hidden">
+    <section
+      ref={ref}
+      className="py-12 sm:py-16 md:py-20 bg-gradient-to-r from-[var(--theme-primary)] via-[#B8860B] to-[var(--theme-primary)] relative overflow-hidden"
+    >
       {/* Decorative pattern */}
       <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 left-0 w-full h-full"
+        <div
+          className="absolute top-0 left-0 w-full h-full"
           style={{
             backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(10,10,10,0.1) 35px, rgba(10,10,10,0.1) 36px)`,
           }}
@@ -60,7 +64,10 @@ export default function CTASection() {
             className="group inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 bg-[var(--theme-surface)] text-[var(--theme-primary)] font-semibold text-xs sm:text-sm tracking-wide hover:bg-[var(--theme-surface)] transition-all duration-300 w-full sm:w-auto"
           >
             Book Your Trip Now
-            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+            <ArrowRight
+              size={16}
+              className="group-hover:translate-x-1 transition-transform"
+            />
           </a>
         </motion.div>
       </div>

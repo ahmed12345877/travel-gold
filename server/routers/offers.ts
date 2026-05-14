@@ -20,13 +20,21 @@ export const offersRouter = router({
     .input(z.object({ promoCode: z.string().min(1) }))
     .query(async ({ input }) => {
       const offer = await getOfferByPromoCode(input.promoCode);
-      if (!offer) return { valid: false, message: "رمز الخصم غير صالح" } as const;
+      if (!offer)
+        return { valid: false, message: "رمز الخصم غير صالح" } as const;
 
       const now = Date.now();
-      if (offer.isActive !== "active") return { valid: false, message: "هذا العرض غير نشط" } as const;
-      if (now < offer.startDate) return { valid: false, message: "هذا العرض لم يبدأ بعد" } as const;
-      if (now > offer.endDate) return { valid: false, message: "انتهت صلاحية هذا العرض" } as const;
-      if (offer.totalSpots && offer.bookedSpots && offer.bookedSpots >= offer.totalSpots) {
+      if (offer.isActive !== "active")
+        return { valid: false, message: "هذا العرض غير نشط" } as const;
+      if (now < offer.startDate)
+        return { valid: false, message: "هذا العرض لم يبدأ بعد" } as const;
+      if (now > offer.endDate)
+        return { valid: false, message: "انتهت صلاحية هذا العرض" } as const;
+      if (
+        offer.totalSpots &&
+        offer.bookedSpots &&
+        offer.bookedSpots >= offer.totalSpots
+      ) {
         return { valid: false, message: "نفدت جميع الأماكن المتاحة" } as const;
       }
 
@@ -42,10 +50,12 @@ export const offersRouter = router({
   /** List all offers (admin only) */
   listAll: adminProcedure
     .input(
-      z.object({
-        limit: z.number().min(1).max(100).default(50),
-        offset: z.number().min(0).default(0),
-      }).optional()
+      z
+        .object({
+          limit: z.number().min(1).max(100).default(50),
+          offset: z.number().min(0).default(0),
+        })
+        .optional(),
     )
     .query(async ({ input }) => {
       const { limit = 50, offset = 0 } = input ?? {};
@@ -69,7 +79,7 @@ export const offersRouter = router({
         totalSpots: z.number().optional(),
         badgeText: z.string().optional(),
         badgeColor: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       return createOffer({
@@ -93,7 +103,7 @@ export const offersRouter = router({
         isActive: z.enum(["active", "inactive", "expired"]).optional(),
         totalSpots: z.number().optional(),
         badgeText: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       const { id, ...data } = input;

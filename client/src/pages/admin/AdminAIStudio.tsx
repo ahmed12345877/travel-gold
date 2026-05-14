@@ -1,8 +1,25 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 import { Users, Zap, TrendingUp, DollarSign } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -17,7 +34,9 @@ export default function AdminAIStudio() {
     return (
       <div className="p-8 text-center">
         <h1 className="text-2xl font-bold text-red-500 mb-4">Access Denied</h1>
-        <p className="text-gray-400">You do not have permission to access this page.</p>
+        <p className="text-gray-400">
+          You do not have permission to access this page.
+        </p>
       </div>
     );
   }
@@ -54,7 +73,9 @@ export default function AdminAIStudio() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold mb-2">AI Studio Management</h1>
-        <p className="text-gray-400">Monitor and manage AI Studio usage and subscriptions</p>
+        <p className="text-gray-400">
+          Monitor and manage AI Studio usage and subscriptions
+        </p>
       </div>
 
       {/* Stats Grid */}
@@ -67,7 +88,9 @@ export default function AdminAIStudio() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[var(--theme-primary)]">346</div>
+            <div className="text-3xl font-bold text-[var(--theme-primary)]">
+              346
+            </div>
             <p className="text-gray-400 text-sm mt-2">+12 this week</p>
           </CardContent>
         </Card>
@@ -80,7 +103,9 @@ export default function AdminAIStudio() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[var(--theme-primary)]">12.5K</div>
+            <div className="text-3xl font-bold text-[var(--theme-primary)]">
+              12.5K
+            </div>
             <p className="text-gray-400 text-sm mt-2">This month</p>
           </CardContent>
         </Card>
@@ -93,7 +118,9 @@ export default function AdminAIStudio() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[var(--theme-primary)]">8.2K</div>
+            <div className="text-3xl font-bold text-[var(--theme-primary)]">
+              8.2K
+            </div>
             <p className="text-gray-400 text-sm mt-2">Images & Videos</p>
           </CardContent>
         </Card>
@@ -106,7 +133,9 @@ export default function AdminAIStudio() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[var(--theme-primary)]">$3,769</div>
+            <div className="text-3xl font-bold text-[var(--theme-primary)]">
+              $3,769
+            </div>
             <p className="text-gray-400 text-sm mt-2">This month</p>
           </CardContent>
         </Card>
@@ -133,8 +162,18 @@ export default function AdminAIStudio() {
                   }}
                 />
                 <Legend />
-                <Line type="monotone" dataKey="images" stroke="#D4A853" strokeWidth={2} />
-                <Line type="monotone" dataKey="videos" stroke="#8B7355" strokeWidth={2} />
+                <Line
+                  type="monotone"
+                  dataKey="images"
+                  stroke="#D4A853"
+                  strokeWidth={2}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="videos"
+                  stroke="#8B7355"
+                  strokeWidth={2}
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -176,16 +215,29 @@ export default function AdminAIStudio() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[var(--theme-primary)]/20">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-300">Plan</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-300">Users</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-300">Revenue</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-300">% of Total</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-300">
+                    Plan
+                  </th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-300">
+                    Users
+                  </th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-300">
+                    Revenue
+                  </th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-300">
+                    % of Total
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {subscriptionStats.map((stat, idx) => (
-                  <tr key={idx} className="border-b border-[var(--theme-primary)]/10 hover:bg-[var(--theme-background)]/50 transition">
-                    <td className="py-3 px-4 font-semibold text-[var(--theme-primary)]">{stat.plan}</td>
+                  <tr
+                    key={idx}
+                    className="border-b border-[var(--theme-primary)]/10 hover:bg-[var(--theme-background)]/50 transition"
+                  >
+                    <td className="py-3 px-4 font-semibold text-[var(--theme-primary)]">
+                      {stat.plan}
+                    </td>
                     <td className="py-3 px-4 text-gray-300">{stat.users}</td>
                     <td className="py-3 px-4 text-gray-300">${stat.revenue}</td>
                     <td className="py-3 px-4 text-gray-300">
@@ -223,7 +275,9 @@ export default function AdminAIStudio() {
               className="bg-[var(--theme-primary)] text-black hover:bg-[#E5B86B]"
               onClick={() => {
                 if (selectedUser && creditsToAdd > 0) {
-                  alert(`Added ${creditsToAdd} credits to user ${selectedUser}`);
+                  alert(
+                    `Added ${creditsToAdd} credits to user ${selectedUser}`,
+                  );
                   setCreditsToAdd(0);
                 }
               }}
@@ -232,7 +286,8 @@ export default function AdminAIStudio() {
             </Button>
           </div>
           <p className="text-xs text-gray-400">
-            Enter the user ID and number of credits to add. This will be logged as a bonus credit transaction.
+            Enter the user ID and number of credits to add. This will be logged
+            as a bonus credit transaction.
           </p>
         </CardContent>
       </Card>

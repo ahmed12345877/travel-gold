@@ -11,7 +11,9 @@ import { getBlogPosts, getBlogPostBySlug, incrementBlogViewCount } from "../db";
 
 const mockGetBlogPosts = getBlogPosts as ReturnType<typeof vi.fn>;
 const mockGetBlogPostBySlug = getBlogPostBySlug as ReturnType<typeof vi.fn>;
-const mockIncrementBlogViewCount = incrementBlogViewCount as ReturnType<typeof vi.fn>;
+const mockIncrementBlogViewCount = incrementBlogViewCount as ReturnType<
+  typeof vi.fn
+>;
 
 describe("Blog DB helpers", () => {
   beforeEach(() => {
@@ -54,7 +56,10 @@ describe("Blog DB helpers", () => {
       mockGetBlogPosts.mockResolvedValue([]);
 
       await getBlogPosts({ limit: 10, category: "Destinations" });
-      expect(mockGetBlogPosts).toHaveBeenCalledWith({ limit: 10, category: "Destinations" });
+      expect(mockGetBlogPosts).toHaveBeenCalledWith({
+        limit: 10,
+        category: "Destinations",
+      });
     });
 
     it("returns empty array when no posts", async () => {

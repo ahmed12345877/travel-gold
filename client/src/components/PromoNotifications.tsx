@@ -8,7 +8,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, Flame, Tag, Clock, ArrowRight, Zap, Sparkles, Crown, ChevronRight
+  X,
+  Flame,
+  Tag,
+  Clock,
+  ArrowRight,
+  Zap,
+  Sparkles,
+  Crown,
+  ChevronRight,
 } from "lucide-react";
 import OptimizedImage from "@/components/OptimizedImage";
 
@@ -31,10 +39,12 @@ const promos: PromoItem[] = [
   {
     id: 1,
     title: "Summer Flash Sale!",
-    description: "Save up to 60% on Egypt's most popular destinations. Limited spots available.",
+    description:
+      "Save up to 60% on Egypt's most popular destinations. Limited spots available.",
     discount: "60% OFF",
     code: "PYRAMID40",
-    image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/destination-egypt-YcosuhKLMYbaJ475QVrVxy.webp",
+    image:
+      "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/destination-egypt-YcosuhKLMYbaJ475QVrVxy.webp",
     link: "/offers",
     badge: "Flash Sale",
     badgeIcon: Zap,
@@ -44,10 +54,12 @@ const promos: PromoItem[] = [
   {
     id: 2,
     title: "VIP Luxury Escape",
-    description: "Exclusive private villa experience in Hurghada with personal butler service.",
+    description:
+      "Exclusive private villa experience in Hurghada with personal butler service.",
     discount: "40% OFF",
     code: undefined,
-    image: "https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?w=600&h=400&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?w=600&h=400&fit=crop",
     link: "/offers",
     badge: "VIP Exclusive",
     badgeIcon: Crown,
@@ -57,10 +69,12 @@ const promos: PromoItem[] = [
   {
     id: 3,
     title: "Early Bird Special",
-    description: "Book your Sinai adventure early and save 50% on the full package.",
+    description:
+      "Book your Sinai adventure early and save 50% on the full package.",
     discount: "50% OFF",
     code: "EARLY50",
-    image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop",
     link: "/offers",
     badge: "Early Bird",
     badgeIcon: Sparkles,
@@ -69,11 +83,46 @@ const promos: PromoItem[] = [
 ];
 
 const toastNotifications = [
-  { id: 1, name: "Ahmed M.", action: "just booked", trip: "Pyramids & Nile Cruise", time: "2 minutes ago", icon: "🇪🇬" },
-  { id: 2, name: "Sarah L.", action: "just booked", trip: "Sharm El Sheikh Beach", time: "5 minutes ago", icon: "🏖️" },
-  { id: 3, name: "James K.", action: "just saved $700 on", trip: "Full Egypt Explorer", time: "8 minutes ago", icon: "✈️" },
-  { id: 4, name: "Maria G.", action: "just booked", trip: "Luxury Hurghada", time: "12 minutes ago", icon: "🌴" },
-  { id: 5, name: "Omar H.", action: "just used code MEGA50 for", trip: "Egypt Explorer", time: "15 minutes ago", icon: "🎫" },
+  {
+    id: 1,
+    name: "Ahmed M.",
+    action: "just booked",
+    trip: "Pyramids & Nile Cruise",
+    time: "2 minutes ago",
+    icon: "🇪🇬",
+  },
+  {
+    id: 2,
+    name: "Sarah L.",
+    action: "just booked",
+    trip: "Sharm El Sheikh Beach",
+    time: "5 minutes ago",
+    icon: "🏖️",
+  },
+  {
+    id: 3,
+    name: "James K.",
+    action: "just saved $700 on",
+    trip: "Full Egypt Explorer",
+    time: "8 minutes ago",
+    icon: "✈️",
+  },
+  {
+    id: 4,
+    name: "Maria G.",
+    action: "just booked",
+    trip: "Luxury Hurghada",
+    time: "12 minutes ago",
+    icon: "🌴",
+  },
+  {
+    id: 5,
+    name: "Omar H.",
+    action: "just used code MEGA50 for",
+    trip: "Egypt Explorer",
+    time: "15 minutes ago",
+    icon: "🎫",
+  },
 ];
 
 const announcementMessages = [
@@ -127,14 +176,21 @@ function WelcomePopup({ onClose }: { onClose: () => void }) {
 
         {/* Image header */}
         <div className="relative h-48 overflow-hidden">
-          <OptimizedImage src={promo.image} alt={promo.title} className="w-full h-full object-cover" containerClassName="w-full h-full" />
+          <OptimizedImage
+            src={promo.image}
+            alt={promo.title}
+            className="w-full h-full object-cover"
+            containerClassName="w-full h-full"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-[var(--theme-surface)] via-[var(--theme-surface)]/40 to-transparent" />
 
           {/* Discount badge */}
           <div className="absolute top-4 left-4">
             <div className="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
               <Flame className="w-5 h-5 animate-pulse" />
-              <span className="font-[var(--font-body)] font-bold text-lg">{promo.discount}</span>
+              <span className="font-[var(--font-body)] font-bold text-lg">
+                {promo.discount}
+              </span>
             </div>
           </div>
 
@@ -160,24 +216,32 @@ function WelcomePopup({ onClose }: { onClose: () => void }) {
           {promo.urgency && (
             <div className="flex items-center gap-2 mb-4">
               <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              <span className="text-red-400 text-xs font-[var(--font-body)] font-semibold">{promo.urgency}</span>
+              <span className="text-red-400 text-xs font-[var(--font-body)] font-semibold">
+                {promo.urgency}
+              </span>
               <span className="text-white/15 mx-1">|</span>
               <Clock className="w-3 h-3 text-white/40" />
-              <span className="text-white/40 text-xs font-[var(--font-body)]">{promo.expiresLabel}</span>
+              <span className="text-white/40 text-xs font-[var(--font-body)]">
+                {promo.expiresLabel}
+              </span>
             </div>
           )}
 
           {/* Promo code */}
           {promo.code && (
             <div className="mb-5">
-              <p className="text-white/25 text-[10px] font-[var(--font-body)] uppercase tracking-wider mb-2">Your Exclusive Code</p>
+              <p className="text-white/25 text-[10px] font-[var(--font-body)] uppercase tracking-wider mb-2">
+                Your Exclusive Code
+              </p>
               <button
                 onClick={handleCopy}
                 className="w-full flex items-center justify-between bg-white/5 border border-dashed border-white/20 rounded-lg px-4 py-3 hover:bg-white/10 transition-colors group"
               >
                 <div className="flex items-center gap-2">
                   <Tag className="w-4 h-4 text-[var(--theme-primary)]" />
-                  <span className="font-mono text-[var(--theme-primary)] font-bold tracking-widest text-lg">{promo.code}</span>
+                  <span className="font-mono text-[var(--theme-primary)] font-bold tracking-widest text-lg">
+                    {promo.code}
+                  </span>
                 </div>
                 <span className="text-white/40 text-xs font-[var(--font-body)] group-hover:text-white/70 transition-colors">
                   {copied ? "Copied!" : "Click to copy"}
@@ -213,7 +277,13 @@ function WelcomePopup({ onClose }: { onClose: () => void }) {
 }
 
 /* ─── 2. Social Proof Toast ─── */
-function SocialProofToast({ notification, onClose }: { notification: typeof toastNotifications[0]; onClose: () => void }) {
+function SocialProofToast({
+  notification,
+  onClose,
+}: {
+  notification: (typeof toastNotifications)[0];
+  onClose: () => void;
+}) {
   return (
     <motion.div
       initial={{ x: 400, opacity: 0 }}
@@ -241,9 +311,13 @@ function SocialProofToast({ notification, onClose }: { notification: typeof toas
             <p className="text-white text-sm font-[var(--font-body)] leading-snug">
               <span className="font-semibold">{notification.name}</span>{" "}
               <span className="text-white/50">{notification.action}</span>{" "}
-              <span className="text-[var(--theme-primary)] font-semibold">{notification.trip}</span>
+              <span className="text-[var(--theme-primary)] font-semibold">
+                {notification.trip}
+              </span>
             </p>
-            <p className="text-white/20 text-xs font-[var(--font-body)] mt-1">{notification.time}</p>
+            <p className="text-white/20 text-xs font-[var(--font-body)] mt-1">
+              {notification.time}
+            </p>
           </div>
         </div>
 
@@ -322,7 +396,9 @@ export function AnnouncementBar() {
 /* ─── Main Notification System ─── */
 export default function PromoNotifications() {
   const [showPopup, setShowPopup] = useState(false);
-  const [currentToast, setCurrentToast] = useState<typeof toastNotifications[0] | null>(null);
+  const [currentToast, setCurrentToast] = useState<
+    (typeof toastNotifications)[0] | null
+  >(null);
   const [toastIndex, setToastIndex] = useState(0);
 
   // Show welcome popup after 2.5 seconds on first visit

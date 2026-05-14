@@ -28,7 +28,8 @@ export default function BlogSEOGenerator() {
           { value: "persuasive", label: "Persuasive" },
           { value: "educational", label: "Educational" },
         ],
-        placeholderPrompt: "e.g., Write an SEO article about the top 10 hidden gems in Egypt for adventurous travelers...",
+        placeholderPrompt:
+          "e.g., Write an SEO article about the top 10 hidden gems in Egypt for adventurous travelers...",
         promptHints: [
           "Top 10 hidden gems in Egypt",
           "Best time to visit Luxor",

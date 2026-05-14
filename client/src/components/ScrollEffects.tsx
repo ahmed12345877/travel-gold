@@ -3,7 +3,13 @@
  * Elegant, performant scroll-triggered animations for section transitions.
  * Uses Framer Motion + Intersection Observer for smooth reveal effects.
  */
-import { motion, useScroll, useTransform, useSpring, useInView } from "framer-motion";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useSpring,
+  useInView,
+} from "framer-motion";
 import { useRef, type ReactNode } from "react";
 
 /* ─── 1. Scroll Reveal - Multiple animation variants ─── */
@@ -164,7 +170,11 @@ export function ParallaxSection({
   const smoothY = useSpring(y, { stiffness: 100, damping: 30 });
 
   return (
-    <div ref={ref} className={`relative overflow-hidden ${className}`} style={{ position: "relative" }}>
+    <div
+      ref={ref}
+      className={`relative overflow-hidden ${className}`}
+      style={{ position: "relative" }}
+    >
       <motion.div style={{ y: smoothY }}>{children}</motion.div>
     </div>
   );
@@ -201,7 +211,10 @@ export function AnimatedDivider({
 
   if (style === "gold-line") {
     return (
-      <div ref={ref} className={`flex items-center justify-center py-6 ${className}`}>
+      <div
+        ref={ref}
+        className={`flex items-center justify-center py-6 ${className}`}
+      >
         <motion.div
           className="flex items-center gap-4"
           initial={{ opacity: 0, scaleX: 0 }}
@@ -222,7 +235,10 @@ export function AnimatedDivider({
 
   if (style === "diamond") {
     return (
-      <div ref={ref} className={`flex items-center justify-center py-8 gap-3 ${className}`}>
+      <div
+        ref={ref}
+        className={`flex items-center justify-center py-8 gap-3 ${className}`}
+      >
         {[0, 1, 2].map((i) => (
           <motion.div
             key={i}
@@ -263,7 +279,10 @@ export function AnimatedDivider({
 
   if (style === "dots") {
     return (
-      <div ref={ref} className={`flex items-center justify-center py-6 gap-2 ${className}`}>
+      <div
+        ref={ref}
+        className={`flex items-center justify-center py-6 gap-2 ${className}`}
+      >
         {Array.from({ length: 5 }).map((_, i) => (
           <motion.div
             key={i}
@@ -284,7 +303,8 @@ export function AnimatedDivider({
       <motion.div
         className="mx-auto h-[1px] max-w-xs"
         style={{
-          background: "linear-gradient(90deg, transparent, rgba(212,168,83,0.3), transparent)",
+          background:
+            "linear-gradient(90deg, transparent, rgba(212,168,83,0.3), transparent)",
         }}
         initial={{ opacity: 0, scaleX: 0 }}
         animate={isInView ? { opacity: 1, scaleX: 1 } : {}}
@@ -339,11 +359,7 @@ export function AnimatedCounter({
 
   return (
     <motion.span ref={ref} className={className}>
-      {isInView ? (
-        <motion.span>{springValue}</motion.span>
-      ) : (
-        "0"
-      )}
+      {isInView ? <motion.span>{springValue}</motion.span> : "0"}
       {suffix}
     </motion.span>
   );

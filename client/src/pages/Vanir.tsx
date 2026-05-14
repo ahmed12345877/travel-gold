@@ -4,8 +4,18 @@
  */
 import { motion } from "framer-motion";
 import {
-  Award, Globe, Users, TrendingUp, Shield, Heart, Star,
-  MapPin, ArrowRight, Building2, Briefcase, Gem,
+  Award,
+  Globe,
+  Users,
+  TrendingUp,
+  Shield,
+  Heart,
+  Star,
+  MapPin,
+  ArrowRight,
+  Building2,
+  Briefcase,
+  Gem,
 } from "lucide-react";
 import { useInView } from "@/hooks/useInView";
 import Navbar from "@/components/Navbar";
@@ -13,35 +23,44 @@ import Footer from "@/components/Footer";
 import PageMeta from "@/components/PageMeta";
 import WatermarkImage from "@/components/WatermarkImage";
 
-const CDN = "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8";
+const CDN =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8";
 
 export default function Vanir() {
   const { ref: heroRef, inView: heroInView } = useInView({ threshold: 0.1 });
   const { ref: storyRef, inView: storyInView } = useInView({ threshold: 0.1 });
   const { ref: statsRef, inView: statsInView } = useInView({ threshold: 0.1 });
-  const { ref: valuesRef, inView: valuesInView } = useInView({ threshold: 0.1 });
-  const { ref: officesRef, inView: officesInView } = useInView({ threshold: 0.1 });
+  const { ref: valuesRef, inView: valuesInView } = useInView({
+    threshold: 0.1,
+  });
+  const { ref: officesRef, inView: officesInView } = useInView({
+    threshold: 0.1,
+  });
 
   const values = [
     {
       icon: Gem,
       title: "Excellence",
-      description: "We pursue the highest standards in every service, ensuring each traveler receives an exceptional experience.",
+      description:
+        "We pursue the highest standards in every service, ensuring each traveler receives an exceptional experience.",
     },
     {
       icon: Heart,
       title: "Passion",
-      description: "Our love for travel and culture drives us to create journeys that inspire and transform.",
+      description:
+        "Our love for travel and culture drives us to create journeys that inspire and transform.",
     },
     {
       icon: Shield,
       title: "Trust",
-      description: "Built on decades of reliability, we are trusted by thousands of travelers and partners worldwide.",
+      description:
+        "Built on decades of reliability, we are trusted by thousands of travelers and partners worldwide.",
     },
     {
       icon: Globe,
       title: "Heritage",
-      description: "We blend Egypt's rich cultural heritage with modern luxury to create truly unique experiences.",
+      description:
+        "We blend Egypt's rich cultural heritage with modern luxury to create truly unique experiences.",
     },
   ];
 
@@ -56,19 +75,60 @@ export default function Vanir() {
   ];
 
   const offices = [
-    { city: "Cairo", country: "Egypt", role: "Global Headquarters", flag: "🇪🇬" },
-    { city: "Luxor", country: "Egypt", role: "Upper Egypt Operations", flag: "🇪🇬" },
-    { city: "Sharm El Sheikh", country: "Egypt", role: "Red Sea Division", flag: "🇪🇬" },
+    {
+      city: "Cairo",
+      country: "Egypt",
+      role: "Global Headquarters",
+      flag: "🇪🇬",
+    },
+    {
+      city: "Luxor",
+      country: "Egypt",
+      role: "Upper Egypt Operations",
+      flag: "🇪🇬",
+    },
+    {
+      city: "Sharm El Sheikh",
+      country: "Egypt",
+      role: "Red Sea Division",
+      flag: "🇪🇬",
+    },
     { city: "Dubai", country: "UAE", role: "Gulf Region Office", flag: "🇦🇪" },
-    { city: "Istanbul", country: "Turkey", role: "Europe & Turkey Office", flag: "🇹🇷" },
-    { city: "Riyadh", country: "Saudi Arabia", role: "KSA Operations", flag: "🇸🇦" },
+    {
+      city: "Istanbul",
+      country: "Turkey",
+      role: "Europe & Turkey Office",
+      flag: "🇹🇷",
+    },
+    {
+      city: "Riyadh",
+      country: "Saudi Arabia",
+      role: "KSA Operations",
+      flag: "🇸🇦",
+    },
   ];
 
   const affiliates = [
-    { name: "VANIR Hotels & Resorts", desc: "Luxury hospitality management", icon: Building2 },
-    { name: "VANIR Aviation", desc: "Private jet charter services", icon: Briefcase },
-    { name: "VANIR Events", desc: "MICE & corporate event planning", icon: Users },
-    { name: "VANIR Digital", desc: "AI-powered travel technology", icon: TrendingUp },
+    {
+      name: "VANIR Hotels & Resorts",
+      desc: "Luxury hospitality management",
+      icon: Building2,
+    },
+    {
+      name: "VANIR Aviation",
+      desc: "Private jet charter services",
+      icon: Briefcase,
+    },
+    {
+      name: "VANIR Events",
+      desc: "MICE & corporate event planning",
+      icon: Users,
+    },
+    {
+      name: "VANIR Digital",
+      desc: "AI-powered travel technology",
+      icon: TrendingUp,
+    },
   ];
 
   return (
@@ -104,11 +164,13 @@ export default function Vanir() {
                 Since 1995
               </span>
               <h1 className="font-[var(--font-display)] text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-                About <span className="text-[var(--theme-primary)]">VANIR GROUP</span>
+                About{" "}
+                <span className="text-[var(--theme-primary)]">VANIR GROUP</span>
               </h1>
               <p className="text-white/70 text-lg md:text-xl max-w-2xl">
-                From a boutique Cairo agency to a leading luxury travel company — 
-                crafting extraordinary journeys across Egypt and the world for nearly three decades.
+                From a boutique Cairo agency to a leading luxury travel company
+                — crafting extraordinary journeys across Egypt and the world for
+                nearly three decades.
               </p>
             </motion.div>
           </div>
@@ -153,20 +215,23 @@ export default function Vanir() {
                 </h2>
                 <div className="space-y-4 text-white/60 text-sm leading-relaxed">
                   <p>
-                    Founded in 1995 in the heart of Cairo, VANIR GROUP began as a small travel agency
-                    with a big vision: to showcase Egypt's timeless wonders through the lens of luxury
-                    and authentic cultural immersion.
+                    Founded in 1995 in the heart of Cairo, VANIR GROUP began as
+                    a small travel agency with a big vision: to showcase Egypt's
+                    timeless wonders through the lens of luxury and authentic
+                    cultural immersion.
                   </p>
                   <p>
-                    Over nearly three decades, we have grown from a local operation into a regional
-                    powerhouse with offices across Egypt, the UAE, Turkey, and Saudi Arabia. Our team
-                    of over 200 travel professionals speaks 8 languages and serves travelers from more
-                    than 50 countries.
+                    Over nearly three decades, we have grown from a local
+                    operation into a regional powerhouse with offices across
+                    Egypt, the UAE, Turkey, and Saudi Arabia. Our team of over
+                    200 travel professionals speaks 8 languages and serves
+                    travelers from more than 50 countries.
                   </p>
                   <p>
-                    Today, VANIR GROUP is recognized as one of the Middle East's premier luxury travel
-                    companies, combining cutting-edge technology with deep cultural expertise to create
-                    journeys that are as enriching as they are unforgettable.
+                    Today, VANIR GROUP is recognized as one of the Middle East's
+                    premier luxury travel companies, combining cutting-edge
+                    technology with deep cultural expertise to create journeys
+                    that are as enriching as they are unforgettable.
                   </p>
                 </div>
 
@@ -190,7 +255,10 @@ export default function Vanir() {
         </section>
 
         {/* Stats Banner */}
-        <section ref={statsRef} className="py-16 bg-[var(--theme-background)] border-y border-white/5">
+        <section
+          ref={statsRef}
+          className="py-16 bg-[var(--theme-background)] border-y border-white/5"
+        >
           <div className="container">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {[
@@ -208,7 +276,10 @@ export default function Vanir() {
                     transition={{ duration: 0.5, delay: i * 0.1 }}
                     className="text-center"
                   >
-                    <Icon size={24} className="text-[var(--theme-primary)] mx-auto mb-3" />
+                    <Icon
+                      size={24}
+                      className="text-[var(--theme-primary)] mx-auto mb-3"
+                    />
                     <span className="font-[var(--font-display)] text-3xl md:text-4xl font-bold text-white block">
                       {stat.value}
                     </span>
@@ -299,7 +370,10 @@ export default function Vanir() {
         </section>
 
         {/* Global Offices */}
-        <section ref={officesRef} className="py-20 bg-[var(--theme-background)] border-t border-white/5">
+        <section
+          ref={officesRef}
+          className="py-20 bg-[var(--theme-background)] border-t border-white/5"
+        >
           <div className="container">
             <div className="text-center mb-12">
               <span className="font-[var(--font-script)] text-[var(--theme-primary)] text-xl mb-3 block">
@@ -326,7 +400,9 @@ export default function Vanir() {
                       {office.city}
                     </h3>
                     <p className="text-white/40 text-xs">{office.country}</p>
-                    <p className="text-[var(--theme-primary)]/60 text-xs mt-1">{office.role}</p>
+                    <p className="text-[var(--theme-primary)]/60 text-xs mt-1">
+                      {office.role}
+                    </p>
                   </div>
                 </motion.div>
               ))}
@@ -391,8 +467,8 @@ export default function Vanir() {
               Experience the VANIR Difference
             </h2>
             <p className="text-white/50 max-w-xl mx-auto mb-8">
-              Whether you&apos;re planning a dream vacation or a corporate event,
-              our team is ready to make it extraordinary.
+              Whether you&apos;re planning a dream vacation or a corporate
+              event, our team is ready to make it extraordinary.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a

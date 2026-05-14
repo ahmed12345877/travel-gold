@@ -27,7 +27,8 @@ export default function AdCopyGenerator() {
           { value: "value", label: "Value-Focused" },
           { value: "emotional", label: "Emotional" },
         ],
-        placeholderPrompt: "e.g., Create Google Ads copy for our luxury Egypt tour package targeting US travelers...",
+        placeholderPrompt:
+          "e.g., Create Google Ads copy for our luxury Egypt tour package targeting US travelers...",
         promptHints: [
           "Luxury Egypt tour for US market",
           "Last-minute Red Sea deals",

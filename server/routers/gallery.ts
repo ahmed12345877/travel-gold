@@ -36,10 +36,12 @@ export const galleryRouter = router({
   /** List all gallery items (admin) */
   listAll: adminProcedure
     .input(
-      z.object({
-        limit: z.number().min(1).max(200).default(100),
-        offset: z.number().min(0).default(0),
-      }).optional()
+      z
+        .object({
+          limit: z.number().min(1).max(200).default(100),
+          offset: z.number().min(0).default(0),
+        })
+        .optional(),
     )
     .query(async ({ input }) => {
       const { limit = 100, offset = 0 } = input ?? {};
@@ -60,9 +62,11 @@ export const galleryRouter = router({
         location: z.string().optional(),
         locationAr: z.string().optional(),
         featured: z.enum(["yes", "no"]).default("no"),
-        aspect: z.enum(["landscape", "portrait", "square"]).default("landscape"),
+        aspect: z
+          .enum(["landscape", "portrait", "square"])
+          .default("landscape"),
         sortOrder: z.number().default(0),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       return createGalleryItem({
@@ -89,7 +93,7 @@ export const galleryRouter = router({
         aspect: z.enum(["landscape", "portrait", "square"]).optional(),
         sortOrder: z.number().optional(),
         isVisible: z.enum(["visible", "hidden"]).optional(),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
@@ -111,7 +115,7 @@ export const galleryRouter = router({
         fileData: z.string(),
         filename: z.string(),
         mimeType: z.string(),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       const buffer = Buffer.from(input.fileData, "base64");
@@ -132,10 +136,12 @@ export const galleryRouter = router({
   /** List all gallery videos (admin) */
   listAllVideos: adminProcedure
     .input(
-      z.object({
-        limit: z.number().min(1).max(100).default(50),
-        offset: z.number().min(0).default(0),
-      }).optional()
+      z
+        .object({
+          limit: z.number().min(1).max(100).default(50),
+          offset: z.number().min(0).default(0),
+        })
+        .optional(),
     )
     .query(async ({ input }) => {
       const { limit = 50, offset = 0 } = input ?? {};
@@ -153,7 +159,7 @@ export const galleryRouter = router({
         duration: z.string().optional(),
         views: z.string().optional(),
         sortOrder: z.number().default(0),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       return createGalleryVideo({
@@ -175,7 +181,7 @@ export const galleryRouter = router({
         views: z.string().optional(),
         sortOrder: z.number().optional(),
         isVisible: z.enum(["visible", "hidden"]).optional(),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       const { id, ...data } = input;

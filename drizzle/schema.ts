@@ -1,4 +1,14 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, bigint, decimal, json } from "drizzle-orm/mysql-core";
+import {
+  int,
+  mysqlEnum,
+  mysqlTable,
+  text,
+  timestamp,
+  varchar,
+  bigint,
+  decimal,
+  json,
+} from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -44,8 +54,19 @@ export const bookings = mysqlTable("bookings", {
   totalPrice: decimal("totalPrice", { precision: 10, scale: 2 }),
   currency: varchar("currency", { length: 10 }).default("USD"),
   /** Payment */
-  paymentMethod: mysqlEnum("paymentMethod", ["credit_card", "paypal", "bank_transfer"]),
-  paymentStatus: mysqlEnum("paymentStatus", ["pending", "paid", "failed", "refunded"]).default("pending").notNull(),
+  paymentMethod: mysqlEnum("paymentMethod", [
+    "credit_card",
+    "paypal",
+    "bank_transfer",
+  ]),
+  paymentStatus: mysqlEnum("paymentStatus", [
+    "pending",
+    "paid",
+    "failed",
+    "refunded",
+  ])
+    .default("pending")
+    .notNull(),
   /** Promo code if applied */
   promoCode: varchar("promoCode", { length: 50 }),
   discountAmount: decimal("discountAmount", { precision: 10, scale: 2 }),
@@ -54,7 +75,14 @@ export const bookings = mysqlTable("bookings", {
   /** Billing address as JSON */
   billingAddress: json("billingAddress"),
   /** Booking status */
-  status: mysqlEnum("status", ["pending", "confirmed", "cancelled", "completed"]).default("pending").notNull(),
+  status: mysqlEnum("status", [
+    "pending",
+    "confirmed",
+    "cancelled",
+    "completed",
+  ])
+    .default("pending")
+    .notNull(),
   /** Confirmation code */
   confirmationCode: varchar("confirmationCode", { length: 20 }).unique(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -87,7 +115,9 @@ export const reviews = mysqlTable("reviews", {
   adminReply: text("adminReply"),
   adminReplyAt: timestamp("adminReplyAt"),
   /** Moderation */
-  isApproved: mysqlEnum("isApproved", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  isApproved: mysqlEnum("isApproved", ["pending", "approved", "rejected"])
+    .default("pending")
+    .notNull(),
   /** Helpful votes */
   helpfulCount: int("helpfulCount").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -106,7 +136,10 @@ export const offers = mysqlTable("offers", {
   description: text("description"),
   /** Discount details */
   discountType: mysqlEnum("discountType", ["percentage", "fixed"]).notNull(),
-  discountValue: decimal("discountValue", { precision: 10, scale: 2 }).notNull(),
+  discountValue: decimal("discountValue", {
+    precision: 10,
+    scale: 2,
+  }).notNull(),
   /** Promo code */
   promoCode: varchar("promoCode", { length: 50 }).unique(),
   /** Validity */
@@ -120,7 +153,9 @@ export const offers = mysqlTable("offers", {
   totalSpots: int("totalSpots"),
   bookedSpots: int("bookedSpots").default(0),
   /** Status */
-  isActive: mysqlEnum("isActive", ["active", "inactive", "expired"]).default("active").notNull(),
+  isActive: mysqlEnum("isActive", ["active", "inactive", "expired"])
+    .default("active")
+    .notNull(),
   /** Badge text like "FLASH SALE", "EXCLUSIVE" */
   badgeText: varchar("badgeText", { length: 50 }),
   badgeColor: varchar("badgeColor", { length: 20 }),
@@ -142,7 +177,9 @@ export const contactMessages = mysqlTable("contact_messages", {
   subject: varchar("subject", { length: 500 }),
   message: text("message").notNull(),
   /** Status tracking */
-  status: mysqlEnum("status", ["new", "read", "replied", "archived"]).default("new").notNull(),
+  status: mysqlEnum("status", ["new", "read", "replied", "archived"])
+    .default("new")
+    .notNull(),
   adminNotes: text("adminNotes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -193,11 +230,15 @@ export const galleryItems = mysqlTable("gallery_items", {
   locationAr: varchar("locationAr", { length: 255 }),
   /** Display options */
   featured: mysqlEnum("featured", ["yes", "no"]).default("no").notNull(),
-  aspect: mysqlEnum("aspect", ["landscape", "portrait", "square"]).default("landscape").notNull(),
+  aspect: mysqlEnum("aspect", ["landscape", "portrait", "square"])
+    .default("landscape")
+    .notNull(),
   /** Sort order (lower = first) */
   sortOrder: int("sortOrder").default(0),
   /** Visibility */
-  isVisible: mysqlEnum("isVisible", ["visible", "hidden"]).default("visible").notNull(),
+  isVisible: mysqlEnum("isVisible", ["visible", "hidden"])
+    .default("visible")
+    .notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -223,7 +264,9 @@ export const galleryVideos = mysqlTable("gallery_videos", {
   /** Sort order */
   sortOrder: int("sortOrder").default(0),
   /** Visibility */
-  isVisible: mysqlEnum("isVisible", ["visible", "hidden"]).default("visible").notNull(),
+  isVisible: mysqlEnum("isVisible", ["visible", "hidden"])
+    .default("visible")
+    .notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -231,19 +274,26 @@ export const galleryVideos = mysqlTable("gallery_videos", {
 export type GalleryVideo = typeof galleryVideos.$inferSelect;
 export type InsertGalleryVideo = typeof galleryVideos.$inferInsert;
 
-
 /**
  * AI Studio Subscriptions - stores user subscription plans
  */
 export const aiSubscriptions = mysqlTable("ai_subscriptions", {
   id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").references(() => users.id).notNull(),
+  userId: int("userId")
+    .references(() => users.id)
+    .notNull(),
   /** Plan type */
-  plan: mysqlEnum("plan", ["free", "pro", "enterprise"]).default("free").notNull(),
+  plan: mysqlEnum("plan", ["free", "pro", "enterprise"])
+    .default("free")
+    .notNull(),
   /** Pricing */
-  monthlyPrice: decimal("monthlyPrice", { precision: 10, scale: 2 }).default("0"),
+  monthlyPrice: decimal("monthlyPrice", { precision: 10, scale: 2 }).default(
+    "0",
+  ),
   /** Subscription status */
-  status: mysqlEnum("status", ["active", "cancelled", "expired"]).default("active").notNull(),
+  status: mysqlEnum("status", ["active", "cancelled", "expired"])
+    .default("active")
+    .notNull(),
   /** Stripe subscription ID */
   stripeSubscriptionId: varchar("stripeSubscriptionId", { length: 255 }),
   /** Dates */
@@ -262,11 +312,18 @@ export type InsertAISubscription = typeof aiSubscriptions.$inferInsert;
  */
 export const aiCredits = mysqlTable("ai_credits", {
   id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").references(() => users.id).notNull().unique(),
+  userId: int("userId")
+    .references(() => users.id)
+    .notNull()
+    .unique(),
   /** Credit balance */
-  balance: decimal("balance", { precision: 12, scale: 2 }).default("0").notNull(),
+  balance: decimal("balance", { precision: 12, scale: 2 })
+    .default("0")
+    .notNull(),
   /** Lifetime credits used */
-  totalUsed: decimal("totalUsed", { precision: 12, scale: 2 }).default("0").notNull(),
+  totalUsed: decimal("totalUsed", { precision: 12, scale: 2 })
+    .default("0")
+    .notNull(),
   /** Last reset date */
   lastResetDate: bigint("lastResetDate", { mode: "number" }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -281,7 +338,9 @@ export type InsertAICredit = typeof aiCredits.$inferInsert;
  */
 export const aiUsage = mysqlTable("ai_usage", {
   id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").references(() => users.id).notNull(),
+  userId: int("userId")
+    .references(() => users.id)
+    .notNull(),
   /** Generation type */
   type: mysqlEnum("type", ["image", "video", "edit"]).notNull(),
   /** Model used */
@@ -296,7 +355,9 @@ export const aiUsage = mysqlTable("ai_usage", {
   /** Metadata */
   imageSize: varchar("imageSize", { length: 50 }), // "512x512", "1024x1024", etc
   videoDuration: int("videoDuration"), // in seconds
-  status: mysqlEnum("status", ["pending", "completed", "failed"]).default("pending").notNull(),
+  status: mysqlEnum("status", ["pending", "completed", "failed"])
+    .default("pending")
+    .notNull(),
   errorMessage: text("errorMessage"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -309,16 +370,25 @@ export type InsertAIUsage = typeof aiUsage.$inferInsert;
  */
 export const aiTransactions = mysqlTable("ai_transactions", {
   id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").references(() => users.id).notNull(),
+  userId: int("userId")
+    .references(() => users.id)
+    .notNull(),
   /** Transaction type */
-  type: mysqlEnum("type", ["purchase", "refund", "monthly_allowance", "bonus"]).notNull(),
+  type: mysqlEnum("type", [
+    "purchase",
+    "refund",
+    "monthly_allowance",
+    "bonus",
+  ]).notNull(),
   /** Amount */
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
   /** Payment info */
   stripePaymentId: varchar("stripePaymentId", { length: 255 }),
   paymentMethod: varchar("paymentMethod", { length: 50 }),
   /** Status */
-  status: mysqlEnum("status", ["pending", "completed", "failed"]).default("pending").notNull(),
+  status: mysqlEnum("status", ["pending", "completed", "failed"])
+    .default("pending")
+    .notNull(),
   /** Description */
   description: text("description"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -326,7 +396,6 @@ export const aiTransactions = mysqlTable("ai_transactions", {
 
 export type AITransaction = typeof aiTransactions.$inferSelect;
 export type InsertAITransaction = typeof aiTransactions.$inferInsert;
-
 
 /**
  * Blog posts table - stores SEO-optimized travel articles
@@ -352,7 +421,9 @@ export const blogPosts = mysqlTable("blog_posts", {
   authorId: int("authorId").references(() => users.id),
   authorName: varchar("authorName", { length: 255 }).default("VANIR GROUP"),
   /** Publishing */
-  status: mysqlEnum("status", ["draft", "published", "archived"]).default("draft").notNull(),
+  status: mysqlEnum("status", ["draft", "published", "archived"])
+    .default("draft")
+    .notNull(),
   publishedAt: timestamp("publishedAt"),
   /** Engagement */
   viewCount: int("viewCount").default(0),
@@ -370,9 +441,17 @@ export type InsertBlogPost = typeof blogPosts.$inferInsert;
  */
 export const marketingContent = mysqlTable("marketing_content", {
   id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").references(() => users.id).notNull(),
+  userId: int("userId")
+    .references(() => users.id)
+    .notNull(),
   /** Content type */
-  type: mysqlEnum("type", ["social_media", "email", "trip_description", "blog_seo", "ad_copy"]).notNull(),
+  type: mysqlEnum("type", [
+    "social_media",
+    "email",
+    "trip_description",
+    "blog_seo",
+    "ad_copy",
+  ]).notNull(),
   /** Platform (for social media) */
   platform: varchar("platform", { length: 50 }), // instagram, facebook, twitter, linkedin, tiktok
   /** Content */
@@ -400,7 +479,9 @@ export type InsertMarketingContent = typeof marketingContent.$inferInsert;
  */
 export const marketingCalendar = mysqlTable("marketing_calendar", {
   id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").references(() => users.id).notNull(),
+  userId: int("userId")
+    .references(() => users.id)
+    .notNull(),
   /** Content reference */
   contentId: int("contentId").references(() => marketingContent.id),
   /** Calendar entry */
@@ -411,7 +492,9 @@ export const marketingCalendar = mysqlTable("marketing_calendar", {
   /** Scheduling */
   scheduledDate: bigint("scheduledDate", { mode: "number" }).notNull(),
   /** Status */
-  status: mysqlEnum("status", ["draft", "scheduled", "published", "cancelled"]).default("draft").notNull(),
+  status: mysqlEnum("status", ["draft", "scheduled", "published", "cancelled"])
+    .default("draft")
+    .notNull(),
   /** Color tag for calendar display */
   colorTag: varchar("colorTag", { length: 20 }).default("#D4A853"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -419,7 +502,8 @@ export const marketingCalendar = mysqlTable("marketing_calendar", {
 });
 
 export type MarketingCalendarEntry = typeof marketingCalendar.$inferSelect;
-export type InsertMarketingCalendarEntry = typeof marketingCalendar.$inferInsert;
+export type InsertMarketingCalendarEntry =
+  typeof marketingCalendar.$inferInsert;
 
 /**
  * Marketing Templates - pre-built templates for tourism content
@@ -430,7 +514,13 @@ export const marketingTemplates = mysqlTable("marketing_templates", {
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   /** Template type */
-  type: mysqlEnum("type", ["social_media", "email", "trip_description", "blog_seo", "ad_copy"]).notNull(),
+  type: mysqlEnum("type", [
+    "social_media",
+    "email",
+    "trip_description",
+    "blog_seo",
+    "ad_copy",
+  ]).notNull(),
   /** Platform */
   platform: varchar("platform", { length: 50 }),
   /** Template content (with placeholders like {{destination}}, {{price}}) */
@@ -461,7 +551,10 @@ export const destinations = mysqlTable("destinations", {
   description: text("description"),
   location: varchar("location", { length: 255 }).notNull(),
   /** Pricing and rating */
-  pricePerPerson: decimal("pricePerPerson", { precision: 10, scale: 2 }).default("0"),
+  pricePerPerson: decimal("pricePerPerson", {
+    precision: 10,
+    scale: 2,
+  }).default("0"),
   rating: decimal("rating", { precision: 3, scale: 2 }).default("5"),
   /** Media */
   imageUrl: text("imageUrl"),
@@ -474,7 +567,9 @@ export const destinations = mysqlTable("destinations", {
   inclusions: text("inclusions"),
   exclusions: text("exclusions"),
   /** Status */
-  isActive: mysqlEnum("isActive", ["active", "inactive"]).default("active").notNull(),
+  isActive: mysqlEnum("isActive", ["active", "inactive"])
+    .default("active")
+    .notNull(),
   /** Timestamps */
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -482,7 +577,6 @@ export const destinations = mysqlTable("destinations", {
 
 export type Destination = typeof destinations.$inferSelect;
 export type InsertDestination = typeof destinations.$inferInsert;
-
 
 /**
  * Site Settings - key-value store for all admin-configurable settings.

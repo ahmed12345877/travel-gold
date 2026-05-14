@@ -7,8 +7,10 @@ import { Star, ArrowRight, Clock } from "lucide-react";
 import { useInView } from "@/hooks/useInView";
 import WatermarkImage from "@/components/WatermarkImage";
 
-const EGYPT_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/destination-egypt-YcosuhKLMYbaJ475QVrVxy.webp";
-const SHARM_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/destination-sharm-Fh2PhqqrRQGfdg6EtwXedu.webp";
+const EGYPT_IMG =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/destination-egypt-YcosuhKLMYbaJ475QVrVxy.webp";
+const SHARM_IMG =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/destination-sharm-Fh2PhqqrRQGfdg6EtwXedu.webp";
 
 const destinations = [
   {
@@ -28,7 +30,8 @@ const destinations = [
     rating: 4.9,
   },
   {
-    image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop",
     title: "Short Trek around Pokhara",
     location: "Nepal, Pokhara, Tibet",
     price: "$300.00",
@@ -36,7 +39,8 @@ const destinations = [
     rating: 4.9,
   },
   {
-    image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=400&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=400&fit=crop",
     title: "Island Peak Climbing",
     location: "SHARM EL SHEKH, EGYPT, Pokhara",
     price: "$200.00",
@@ -49,7 +53,11 @@ export default function DestinationsSection() {
   const { ref, inView } = useInView({ threshold: 0.1 });
 
   return (
-    <section id="destinations" className="py-12 sm:py-16 md:py-24 bg-[var(--theme-surface)]" ref={ref}>
+    <section
+      id="destinations"
+      className="py-12 sm:py-16 md:py-24 bg-[var(--theme-surface)]"
+      ref={ref}
+    >
       <div className="container">
         {/* Header */}
         <motion.div
@@ -91,8 +99,13 @@ export default function DestinationsSection() {
                 <div className="absolute inset-0 bg-gradient-to-t from-[var(--theme-surface)]/80 to-transparent" />
                 {/* Rating badge */}
                 <div className="absolute top-4 left-4 flex items-center gap-1 bg-[var(--theme-surface)]/80 backdrop-blur-sm px-3 py-1 border border-[var(--theme-primary)]/30 z-20">
-                  <Star size={12} className="text-[var(--theme-primary)] fill-[var(--theme-primary)]" />
-                  <span className="text-[var(--theme-primary)] text-xs font-semibold">{dest.rating}</span>
+                  <Star
+                    size={12}
+                    className="text-[var(--theme-primary)] fill-[var(--theme-primary)]"
+                  />
+                  <span className="text-[var(--theme-primary)] text-xs font-semibold">
+                    {dest.rating}
+                  </span>
                 </div>
               </WatermarkImage>
 
@@ -121,7 +134,10 @@ export default function DestinationsSection() {
                   className="group/btn mt-4 w-full flex items-center justify-center gap-2 py-2.5 border border-[var(--theme-primary)]/30 text-[var(--theme-primary)] text-sm font-medium hover:bg-[var(--theme-primary)] hover:text-[var(--theme-surface)] transition-all duration-300"
                 >
                   Book Now
-                  <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                  <ArrowRight
+                    size={14}
+                    className="group-hover/btn:translate-x-1 transition-transform"
+                  />
                 </a>
               </div>
             </motion.div>

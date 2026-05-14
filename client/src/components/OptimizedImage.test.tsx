@@ -25,7 +25,10 @@ beforeEach(() => {
 describe("OptimizedImage", () => {
   it("renders with lazy loading attributes", () => {
     const { container } = render(
-      <OptimizedImage src="https://example.com/test.jpg" alt="Lazy test image" />
+      <OptimizedImage
+        src="https://example.com/test.jpg"
+        alt="Lazy test image"
+      />,
     );
     const img = container.querySelector("img");
     expect(img).toBeDefined();
@@ -35,7 +38,11 @@ describe("OptimizedImage", () => {
 
   it("renders with eager loading when lazy=false", () => {
     const { container } = render(
-      <OptimizedImage src="https://example.com/test.jpg" alt="Eager test image" lazy={false} />
+      <OptimizedImage
+        src="https://example.com/test.jpg"
+        alt="Eager test image"
+        lazy={false}
+      />,
     );
     const img = container.querySelector("img");
     expect(img?.getAttribute("loading")).toBe("eager");
@@ -43,7 +50,11 @@ describe("OptimizedImage", () => {
 
   it("applies custom className to image", () => {
     const { container } = render(
-      <OptimizedImage src="https://example.com/test.jpg" alt="Styled test image" className="w-full h-full object-cover" />
+      <OptimizedImage
+        src="https://example.com/test.jpg"
+        alt="Styled test image"
+        className="w-full h-full object-cover"
+      />,
     );
     const img = container.querySelector("img");
     expect(img?.className).toContain("object-cover");
@@ -51,7 +62,11 @@ describe("OptimizedImage", () => {
 
   it("applies containerClassName to wrapper div", () => {
     const { container } = render(
-      <OptimizedImage src="https://example.com/test.jpg" alt="Container test image" containerClassName="w-full h-64" />
+      <OptimizedImage
+        src="https://example.com/test.jpg"
+        alt="Container test image"
+        containerClassName="w-full h-64"
+      />,
     );
     const wrapper = container.firstChild as HTMLElement;
     expect(wrapper.className).toContain("w-full");
@@ -60,7 +75,10 @@ describe("OptimizedImage", () => {
 
   it("shows shimmer placeholder before image loads", () => {
     const { container } = render(
-      <OptimizedImage src="https://example.com/test.jpg" alt="Shimmer test image" />
+      <OptimizedImage
+        src="https://example.com/test.jpg"
+        alt="Shimmer test image"
+      />,
     );
     const shimmer = container.querySelector(".animate-pulse");
     expect(shimmer).toBeDefined();
@@ -68,7 +86,10 @@ describe("OptimizedImage", () => {
 
   it("hides shimmer after image loads", () => {
     const { container } = render(
-      <OptimizedImage src="https://example.com/test.jpg" alt="Load test image" />
+      <OptimizedImage
+        src="https://example.com/test.jpg"
+        alt="Load test image"
+      />,
     );
     const img = container.querySelector("img")!;
     fireEvent.load(img);
@@ -78,7 +99,10 @@ describe("OptimizedImage", () => {
 
   it("shows error fallback when image fails to load", () => {
     const { container } = render(
-      <OptimizedImage src="https://example.com/broken.jpg" alt="Broken test image" />
+      <OptimizedImage
+        src="https://example.com/broken.jpg"
+        alt="Broken test image"
+      />,
     );
     const img = container.querySelector("img")!;
     fireEvent.error(img);
@@ -88,7 +112,11 @@ describe("OptimizedImage", () => {
   it("calls onImageLoad callback when image loads", () => {
     const onLoad = vi.fn();
     const { container } = render(
-      <OptimizedImage src="https://example.com/test.jpg" alt="Callback test image" onImageLoad={onLoad} />
+      <OptimizedImage
+        src="https://example.com/test.jpg"
+        alt="Callback test image"
+        onImageLoad={onLoad}
+      />,
     );
     const img = container.querySelector("img")!;
     fireEvent.load(img);
@@ -98,7 +126,11 @@ describe("OptimizedImage", () => {
   it("calls onImageError callback when image fails", () => {
     const onError = vi.fn();
     const { container } = render(
-      <OptimizedImage src="https://example.com/broken.jpg" alt="Error callback test image" onImageError={onError} />
+      <OptimizedImage
+        src="https://example.com/broken.jpg"
+        alt="Error callback test image"
+        onImageError={onError}
+      />,
     );
     const img = container.querySelector("img")!;
     fireEvent.error(img);
@@ -107,7 +139,11 @@ describe("OptimizedImage", () => {
 
   it("applies aspect ratio style to container", () => {
     const { container } = render(
-      <OptimizedImage src="https://example.com/test.jpg" alt="Aspect ratio test image" aspectRatio="16/9" />
+      <OptimizedImage
+        src="https://example.com/test.jpg"
+        alt="Aspect ratio test image"
+        aspectRatio="16/9"
+      />,
     );
     const wrapper = container.firstChild as HTMLElement;
     expect(wrapper.style.aspectRatio).toBe("16/9");
@@ -115,7 +151,11 @@ describe("OptimizedImage", () => {
 
   it("uses IntersectionObserver for lazy loading", () => {
     render(
-      <OptimizedImage src="https://example.com/test.jpg" alt="Observer test image" lazy={true} />
+      <OptimizedImage
+        src="https://example.com/test.jpg"
+        alt="Observer test image"
+        lazy={true}
+      />,
     );
     expect(global.IntersectionObserver).toHaveBeenCalled();
     expect(mockObserve).toHaveBeenCalled();
@@ -123,7 +163,11 @@ describe("OptimizedImage", () => {
 
   it("applies placeholder color", () => {
     const { container } = render(
-      <OptimizedImage src="https://example.com/test.jpg" alt="Color test image" placeholderColor="#ff0000" />
+      <OptimizedImage
+        src="https://example.com/test.jpg"
+        alt="Color test image"
+        placeholderColor="#ff0000"
+      />,
     );
     const wrapper = container.firstChild as HTMLElement;
     expect(wrapper.style.backgroundColor).toBe("rgb(255, 0, 0)");
@@ -132,7 +176,7 @@ describe("OptimizedImage", () => {
   // New animation tests
   it("applies blur-up animation by default (blur-sm before load)", () => {
     const { container } = render(
-      <OptimizedImage src="https://example.com/test.jpg" alt="Blur-up test" />
+      <OptimizedImage src="https://example.com/test.jpg" alt="Blur-up test" />,
     );
     const img = container.querySelector("img");
     expect(img?.className).toContain("blur-sm");
@@ -140,7 +184,10 @@ describe("OptimizedImage", () => {
 
   it("removes blur after load with blur-up animation", () => {
     const { container } = render(
-      <OptimizedImage src="https://example.com/test.jpg" alt="Blur load test" />
+      <OptimizedImage
+        src="https://example.com/test.jpg"
+        alt="Blur load test"
+      />,
     );
     const img = container.querySelector("img")!;
     fireEvent.load(img);
@@ -150,7 +197,11 @@ describe("OptimizedImage", () => {
 
   it("applies fade animation when specified", () => {
     const { container } = render(
-      <OptimizedImage src="https://example.com/test.jpg" alt="Fade test" animation="fade" />
+      <OptimizedImage
+        src="https://example.com/test.jpg"
+        alt="Fade test"
+        animation="fade"
+      />,
     );
     const img = container.querySelector("img");
     expect(img?.className).toContain("opacity-0");
@@ -159,7 +210,11 @@ describe("OptimizedImage", () => {
 
   it("applies scale animation when specified", () => {
     const { container } = render(
-      <OptimizedImage src="https://example.com/test.jpg" alt="Scale test" animation="scale" />
+      <OptimizedImage
+        src="https://example.com/test.jpg"
+        alt="Scale test"
+        animation="scale"
+      />,
     );
     const img = container.querySelector("img");
     expect(img?.className).toContain("scale-95");
@@ -167,7 +222,11 @@ describe("OptimizedImage", () => {
 
   it("applies slide-up animation when specified", () => {
     const { container } = render(
-      <OptimizedImage src="https://example.com/test.jpg" alt="Slide test" animation="slide-up" />
+      <OptimizedImage
+        src="https://example.com/test.jpg"
+        alt="Slide test"
+        animation="slide-up"
+      />,
     );
     const img = container.querySelector("img");
     expect(img?.className).toContain("translate-y-4");
@@ -175,7 +234,11 @@ describe("OptimizedImage", () => {
 
   it("uses gold shimmer when goldShimmer=true", () => {
     const { container } = render(
-      <OptimizedImage src="https://example.com/test.jpg" alt="Gold test" goldShimmer={true} />
+      <OptimizedImage
+        src="https://example.com/test.jpg"
+        alt="Gold test"
+        goldShimmer={true}
+      />,
     );
     // Check for gold-colored element in placeholder
     const goldEl = container.querySelector("[class*='theme-primary']");
@@ -184,7 +247,7 @@ describe("OptimizedImage", () => {
 
   it("shows center icon placeholder before load", () => {
     const { container } = render(
-      <OptimizedImage src="https://example.com/test.jpg" alt="Icon test" />
+      <OptimizedImage src="https://example.com/test.jpg" alt="Icon test" />,
     );
     const svg = container.querySelector("svg");
     expect(svg).not.toBeNull();
@@ -218,15 +281,23 @@ describe("ImageGrid", () => {
 
   it("calls onImageClick when image is clicked", () => {
     const onClick = vi.fn();
-    const { container } = render(<ImageGrid images={images} onImageClick={onClick} />);
-    const firstItem = container.querySelector("[class*='group']") as HTMLElement;
+    const { container } = render(
+      <ImageGrid images={images} onImageClick={onClick} />,
+    );
+    const firstItem = container.querySelector(
+      "[class*='group']",
+    ) as HTMLElement;
     fireEvent.click(firstItem);
     expect(onClick).toHaveBeenCalledWith(images[0], 0);
   });
 
   it("applies hover ring when onImageClick is provided", () => {
-    const { container } = render(<ImageGrid images={images} onImageClick={() => {}} />);
-    const firstItem = container.querySelector("[class*='group']") as HTMLElement;
+    const { container } = render(
+      <ImageGrid images={images} onImageClick={() => {}} />,
+    );
+    const firstItem = container.querySelector(
+      "[class*='group']",
+    ) as HTMLElement;
     expect(firstItem.className).toContain("hover:ring-2");
   });
 
@@ -251,7 +322,9 @@ describe("ImageSkeleton", () => {
   });
 
   it("applies gold shimmer when specified", () => {
-    const { container } = render(<ImageSkeleton count={2} goldShimmer={true} />);
+    const { container } = render(
+      <ImageSkeleton count={2} goldShimmer={true} />,
+    );
     const goldEl = container.querySelector("[class*='theme-primary']");
     expect(goldEl).not.toBeNull();
   });
@@ -263,7 +336,9 @@ describe("ImageSkeleton", () => {
   });
 
   it("applies custom containerClassName", () => {
-    const { container } = render(<ImageSkeleton count={2} containerClassName="my-custom" />);
+    const { container } = render(
+      <ImageSkeleton count={2} containerClassName="my-custom" />,
+    );
     const grid = container.firstChild as HTMLElement;
     expect(grid.className).toContain("my-custom");
   });

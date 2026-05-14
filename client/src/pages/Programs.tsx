@@ -5,8 +5,17 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Ship, Mountain, Users, Heart, Compass, Camera, Clock, Star,
-  ArrowRight, Check, Sparkles,
+  Ship,
+  Mountain,
+  Users,
+  Heart,
+  Compass,
+  Camera,
+  Clock,
+  Star,
+  ArrowRight,
+  Check,
+  Sparkles,
 } from "lucide-react";
 import { useInView } from "@/hooks/useInView";
 import Navbar from "@/components/Navbar";
@@ -14,7 +23,8 @@ import Footer from "@/components/Footer";
 import PageMeta from "@/components/PageMeta";
 import WatermarkImage from "@/components/WatermarkImage";
 
-const CDN = "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8";
+const CDN =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8";
 
 type Program = {
   id: number;
@@ -39,15 +49,26 @@ const programs: Program[] = [
     title: "Luxury Nile Cruise",
     subtitle: "The Ultimate Egyptian Experience",
     category: "cruises",
-    description: "Sail the Nile in 5-star luxury from Luxor to Aswan, visiting ancient temples, tombs, and vibrant markets along the way.",
+    description:
+      "Sail the Nile in 5-star luxury from Luxor to Aswan, visiting ancient temples, tombs, and vibrant markets along the way.",
     image: `${CDN}/nile-cruise-deck_0c941b35.jpg`,
     duration: "5-7 Days",
     groupSize: "2-20",
     priceFrom: "$2,499",
     rating: 4.9,
     reviews: 1240,
-    highlights: ["Karnak Temple", "Valley of Kings", "Edfu & Kom Ombo", "Aswan High Dam"],
-    includes: ["5-Star Cabin", "All Meals", "Expert Egyptologist", "Airport Transfers"],
+    highlights: [
+      "Karnak Temple",
+      "Valley of Kings",
+      "Edfu & Kom Ombo",
+      "Aswan High Dam",
+    ],
+    includes: [
+      "5-Star Cabin",
+      "All Meals",
+      "Expert Egyptologist",
+      "Airport Transfers",
+    ],
     featured: true,
   },
   {
@@ -55,15 +76,26 @@ const programs: Program[] = [
     title: "Classic Egypt Tour",
     subtitle: "Cairo, Luxor & Aswan",
     category: "packages",
-    description: "A comprehensive 7-day journey through Egypt's greatest treasures — from the Pyramids to the temples of Upper Egypt.",
+    description:
+      "A comprehensive 7-day journey through Egypt's greatest treasures — from the Pyramids to the temples of Upper Egypt.",
     image: `${CDN}/pyramids-giza_5a4860db.jpg`,
     duration: "7 Days",
     groupSize: "2-15",
     priceFrom: "$1,299",
     rating: 4.8,
     reviews: 2100,
-    highlights: ["Pyramids of Giza", "Egyptian Museum", "Luxor Temple", "Philae Temple"],
-    includes: ["4-Star Hotels", "Breakfast & Dinner", "Licensed Guide", "All Entrance Fees"],
+    highlights: [
+      "Pyramids of Giza",
+      "Egyptian Museum",
+      "Luxor Temple",
+      "Philae Temple",
+    ],
+    includes: [
+      "4-Star Hotels",
+      "Breakfast & Dinner",
+      "Licensed Guide",
+      "All Entrance Fees",
+    ],
     featured: true,
   },
   {
@@ -71,30 +103,52 @@ const programs: Program[] = [
     title: "Desert Safari Adventure",
     subtitle: "Into the Western Desert",
     category: "adventure",
-    description: "Experience the magic of Egypt's Western Desert with camel rides, dune bashing, Bedouin camps, and stargazing under pristine skies.",
+    description:
+      "Experience the magic of Egypt's Western Desert with camel rides, dune bashing, Bedouin camps, and stargazing under pristine skies.",
     image: `${CDN}/desert-safari_f88e9fa9.jpg`,
     duration: "3-4 Days",
     groupSize: "4-12",
     priceFrom: "$599",
     rating: 4.7,
     reviews: 860,
-    highlights: ["Camel Trekking", "Dune Bashing", "Bedouin Camp", "Stargazing"],
-    includes: ["4x4 Vehicle", "Camping Gear", "All Meals", "Professional Guide"],
+    highlights: [
+      "Camel Trekking",
+      "Dune Bashing",
+      "Bedouin Camp",
+      "Stargazing",
+    ],
+    includes: [
+      "4x4 Vehicle",
+      "Camping Gear",
+      "All Meals",
+      "Professional Guide",
+    ],
   },
   {
     id: 4,
     title: "Honeymoon Paradise",
     subtitle: "Romance on the Red Sea",
     category: "honeymoon",
-    description: "Celebrate love with a romantic getaway featuring private beach dinners, couple spa treatments, and sunset sailing.",
+    description:
+      "Celebrate love with a romantic getaway featuring private beach dinners, couple spa treatments, and sunset sailing.",
     image: `${CDN}/honeymoon-beach_4aee13b3.jpg`,
     duration: "5-7 Days",
     groupSize: "2",
     priceFrom: "$1,899",
     rating: 4.9,
     reviews: 680,
-    highlights: ["Private Beach Dinner", "Couples Spa", "Sunset Sailing", "Snorkeling"],
-    includes: ["5-Star Resort", "All-Inclusive", "Airport Transfers", "Romantic Setup"],
+    highlights: [
+      "Private Beach Dinner",
+      "Couples Spa",
+      "Sunset Sailing",
+      "Snorkeling",
+    ],
+    includes: [
+      "5-Star Resort",
+      "All-Inclusive",
+      "Airport Transfers",
+      "Romantic Setup",
+    ],
     featured: true,
   },
   {
@@ -102,52 +156,86 @@ const programs: Program[] = [
     title: "Cultural Heritage Tour",
     subtitle: "Walk Through History",
     category: "cultural",
-    description: "Dive deep into Egypt's 5,000-year civilization with expert Egyptologists guiding you through temples, museums, and hidden gems.",
+    description:
+      "Dive deep into Egypt's 5,000-year civilization with expert Egyptologists guiding you through temples, museums, and hidden gems.",
     image: `${CDN}/guide-karnak_e7ad9b7c.jpg`,
     duration: "10 Days",
     groupSize: "2-10",
     priceFrom: "$2,199",
     rating: 4.9,
     reviews: 540,
-    highlights: ["Private Museum Tours", "Karnak Sound & Light", "Coptic Cairo", "Abu Simbel"],
-    includes: ["Boutique Hotels", "All Meals", "Expert Egyptologist", "Internal Flights"],
+    highlights: [
+      "Private Museum Tours",
+      "Karnak Sound & Light",
+      "Coptic Cairo",
+      "Abu Simbel",
+    ],
+    includes: [
+      "Boutique Hotels",
+      "All Meals",
+      "Expert Egyptologist",
+      "Internal Flights",
+    ],
   },
   {
     id: 6,
     title: "Family Fun Egypt",
     subtitle: "Adventures for All Ages",
     category: "family",
-    description: "Kid-friendly itineraries with interactive tours, camel rides, felucca sailing, and beach time — memories the whole family will cherish.",
+    description:
+      "Kid-friendly itineraries with interactive tours, camel rides, felucca sailing, and beach time — memories the whole family will cherish.",
     image: `${CDN}/family-vacation_9d23c5a6.jpg`,
     duration: "7 Days",
     groupSize: "4-8",
     priceFrom: "$999",
     rating: 4.8,
     reviews: 920,
-    highlights: ["Interactive Pyramids Tour", "Camel Ride", "Felucca Sailing", "Beach Day"],
-    includes: ["Family Rooms", "Kid-Friendly Meals", "Child Guide", "All Transfers"],
+    highlights: [
+      "Interactive Pyramids Tour",
+      "Camel Ride",
+      "Felucca Sailing",
+      "Beach Day",
+    ],
+    includes: [
+      "Family Rooms",
+      "Kid-Friendly Meals",
+      "Child Guide",
+      "All Transfers",
+    ],
   },
   {
     id: 7,
     title: "Red Sea Diving",
     subtitle: "Underwater Paradise",
     category: "adventure",
-    description: "Explore the Red Sea's legendary coral reefs and marine life with PADI-certified instructors at world-class dive sites.",
+    description:
+      "Explore the Red Sea's legendary coral reefs and marine life with PADI-certified instructors at world-class dive sites.",
     image: `${CDN}/hurghada-diving_1d5763c1.jpg`,
     duration: "5 Days",
     groupSize: "2-8",
     priceFrom: "$799",
     rating: 4.8,
     reviews: 1100,
-    highlights: ["Ras Mohammed", "Thistlegorm Wreck", "Coral Gardens", "Night Diving"],
-    includes: ["Dive Equipment", "Boat Trips", "PADI Instructor", "Resort Stay"],
+    highlights: [
+      "Ras Mohammed",
+      "Thistlegorm Wreck",
+      "Coral Gardens",
+      "Night Diving",
+    ],
+    includes: [
+      "Dive Equipment",
+      "Boat Trips",
+      "PADI Instructor",
+      "Resort Stay",
+    ],
   },
   {
     id: 8,
     title: "Historical Rome & Egypt",
     subtitle: "Two Civilizations, One Journey",
     category: "packages",
-    description: "Compare the grandeur of Ancient Rome with Ancient Egypt in this unique cross-continental tour of two legendary civilizations.",
+    description:
+      "Compare the grandeur of Ancient Rome with Ancient Egypt in this unique cross-continental tour of two legendary civilizations.",
     image: `${CDN}/guide-rome_7f625e79.jpg`,
     duration: "12 Days",
     groupSize: "2-12",
@@ -155,22 +243,38 @@ const programs: Program[] = [
     rating: 4.9,
     reviews: 380,
     highlights: ["Colosseum", "Vatican", "Pyramids", "Karnak Temple"],
-    includes: ["4-Star Hotels", "Flights Included", "Expert Guides", "Most Meals"],
+    includes: [
+      "4-Star Hotels",
+      "Flights Included",
+      "Expert Guides",
+      "Most Meals",
+    ],
   },
   {
     id: 9,
     title: "Nile Cruise Night Experience",
     subtitle: "Cairo's Floating Dinner",
     category: "cruises",
-    description: "Enjoy a magical evening on the Nile with live entertainment, gourmet dining, and stunning views of Cairo's illuminated skyline.",
+    description:
+      "Enjoy a magical evening on the Nile with live entertainment, gourmet dining, and stunning views of Cairo's illuminated skyline.",
     image: `${CDN}/nile-cruise-night_fb88a685.jpg`,
     duration: "1 Evening",
     groupSize: "2-50",
     priceFrom: "$149",
     rating: 4.7,
     reviews: 3200,
-    highlights: ["Gourmet Dinner", "Live Music", "Belly Dancing", "Cairo Skyline"],
-    includes: ["Dinner Buffet", "Entertainment", "Hotel Pickup", "Drinks Package"],
+    highlights: [
+      "Gourmet Dinner",
+      "Live Music",
+      "Belly Dancing",
+      "Cairo Skyline",
+    ],
+    includes: [
+      "Dinner Buffet",
+      "Entertainment",
+      "Hotel Pickup",
+      "Drinks Package",
+    ],
   },
 ];
 
@@ -189,9 +293,10 @@ export default function Programs() {
   const { ref: heroRef, inView: heroInView } = useInView({ threshold: 0.1 });
   const { ref: gridRef, inView: gridInView } = useInView({ threshold: 0.05 });
 
-  const filtered = activeCategory === "all"
-    ? programs
-    : programs.filter((p) => p.category === activeCategory);
+  const filtered =
+    activeCategory === "all"
+      ? programs
+      : programs.filter((p) => p.category === activeCategory);
 
   const featured = programs.filter((p) => p.featured);
 
@@ -228,7 +333,9 @@ export default function Programs() {
                 Curated Experiences
               </span>
               <h1 className="font-[var(--font-display)] text-3xl sm:text-2xl sm:text-2xl sm:text-3xl md:text-4xl lg:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-                Travel <span className="text-[var(--theme-primary)]">Programs</span> & Tours
+                Travel{" "}
+                <span className="text-[var(--theme-primary)]">Programs</span> &
+                Tours
               </h1>
               <p className="text-white/70 text-lg md:text-xl max-w-2xl">
                 From luxury Nile cruises to desert adventures — every program is
@@ -278,8 +385,13 @@ export default function Programs() {
                         </span>
                       </div>
                       <div className="absolute top-4 right-4 flex items-center gap-1 bg-[var(--theme-background)]/80 backdrop-blur-sm px-3 py-1 border border-[var(--theme-primary)]/30 z-20">
-                        <Star size={12} className="text-[var(--theme-primary)] fill-[var(--theme-primary)]" />
-                        <span className="text-[var(--theme-primary)] text-xs font-semibold">{prog.rating}</span>
+                        <Star
+                          size={12}
+                          className="text-[var(--theme-primary)] fill-[var(--theme-primary)]"
+                        />
+                        <span className="text-[var(--theme-primary)] text-xs font-semibold">
+                          {prog.rating}
+                        </span>
                       </div>
                     </WatermarkImage>
 
@@ -305,7 +417,10 @@ export default function Programs() {
 
                       <div className="flex flex-wrap gap-2 mb-4">
                         {prog.includes.map((inc) => (
-                          <span key={inc} className="flex items-center gap-1 text-xs text-[var(--theme-primary)]/70">
+                          <span
+                            key={inc}
+                            className="flex items-center gap-1 text-xs text-[var(--theme-primary)]/70"
+                          >
                             <Check size={10} /> {inc}
                           </span>
                         ))}
@@ -366,7 +481,8 @@ export default function Programs() {
             </div>
 
             <p className="text-white/40 text-sm mb-8">
-              Showing {filtered.length} program{filtered.length !== 1 ? "s" : ""}
+              Showing {filtered.length} program
+              {filtered.length !== 1 ? "s" : ""}
             </p>
 
             {/* Programs Grid */}
@@ -391,8 +507,13 @@ export default function Programs() {
                   >
                     <div className="absolute inset-0 bg-gradient-to-t from-[var(--theme-background)]/80 to-transparent" />
                     <div className="absolute top-4 left-4 flex items-center gap-1 bg-[var(--theme-background)]/80 backdrop-blur-sm px-3 py-1 border border-[var(--theme-primary)]/30 z-20">
-                      <Star size={12} className="text-[var(--theme-primary)] fill-[var(--theme-primary)]" />
-                      <span className="text-[var(--theme-primary)] text-xs font-semibold">{prog.rating}</span>
+                      <Star
+                        size={12}
+                        className="text-[var(--theme-primary)] fill-[var(--theme-primary)]"
+                      />
+                      <span className="text-[var(--theme-primary)] text-xs font-semibold">
+                        {prog.rating}
+                      </span>
                     </div>
                     <div className="absolute top-4 right-4 bg-white/10 backdrop-blur-sm px-3 py-1 z-20">
                       <span className="text-white text-xs font-medium capitalize">
@@ -450,7 +571,10 @@ export default function Programs() {
                       className="group/btn mt-4 w-full flex items-center justify-center gap-2 py-2.5 border border-[var(--theme-primary)]/30 text-[var(--theme-primary)] text-sm font-medium hover:bg-[var(--theme-primary)] hover:text-[var(--theme-background)] transition-all duration-300"
                     >
                       View Details & Book
-                      <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                      <ArrowRight
+                        size={14}
+                        className="group-hover/btn:translate-x-1 transition-transform"
+                      />
                     </a>
                   </div>
                 </motion.div>

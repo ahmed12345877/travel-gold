@@ -88,7 +88,10 @@ export default function AdminMessages() {
         <div className="h-12 bg-[var(--theme-surface)] rounded-lg border border-white/5" />
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-20 bg-[var(--theme-surface)] rounded-lg border border-white/5" />
+            <div
+              key={i}
+              className="h-20 bg-[var(--theme-surface)] rounded-lg border border-white/5"
+            />
           ))}
         </div>
       </div>
@@ -110,7 +113,10 @@ export default function AdminMessages() {
       {/* Search & Filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-primary)]/50" />
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-primary)]/50"
+          />
           <input
             type="text"
             placeholder="Search by name, email, subject, or message..."
@@ -130,7 +136,9 @@ export default function AdminMessages() {
                   : "bg-[var(--theme-surface)] border-white/5 text-white/50 hover:border-[var(--theme-primary)]/30"
               }`}
             >
-              {status === "all" ? "All" : status.charAt(0).toUpperCase() + status.slice(1)}
+              {status === "all"
+                ? "All"
+                : status.charAt(0).toUpperCase() + status.slice(1)}
             </button>
           ))}
         </div>
@@ -160,7 +168,11 @@ export default function AdminMessages() {
                   >
                     <User
                       size={16}
-                      className={message.status === "new" ? "text-[var(--theme-primary)]" : "text-white/40"}
+                      className={
+                        message.status === "new"
+                          ? "text-[var(--theme-primary)]"
+                          : "text-white/40"
+                      }
                     />
                   </div>
                   <div className="flex-1">
@@ -201,7 +213,10 @@ export default function AdminMessages() {
           ))
         ) : (
           <div className="bg-[var(--theme-surface)] border border-white/8 rounded-lg p-12 text-center">
-            <MessageSquare size={40} className="text-[var(--theme-primary)]/20 mx-auto mb-3" />
+            <MessageSquare
+              size={40}
+              className="text-[var(--theme-primary)]/20 mx-auto mb-3"
+            />
             <p className="text-white/40 text-sm font-[var(--font-body)]">
               {searchTerm || filterStatus !== "all"
                 ? "No messages match your filters"
@@ -269,7 +284,10 @@ export default function AdminMessages() {
                     <div>
                       <p className="text-white/40 text-xs">Phone</p>
                       <p className="text-white font-[var(--font-body)] flex items-center gap-1">
-                        <Phone size={12} className="text-[var(--theme-primary)]" />
+                        <Phone
+                          size={12}
+                          className="text-[var(--theme-primary)]"
+                        />
                         <a
                           href={`tel:${selectedMessage.phone}`}
                           className="hover:text-[var(--theme-primary)] transition-colors"
@@ -283,7 +301,10 @@ export default function AdminMessages() {
                     <div>
                       <p className="text-white/40 text-xs">Subject</p>
                       <p className="text-white font-[var(--font-body)] flex items-center gap-1">
-                        <Briefcase size={12} className="text-[var(--theme-primary)]" />
+                        <Briefcase
+                          size={12}
+                          className="text-[var(--theme-primary)]"
+                        />
                         {selectedMessage.subject}
                       </p>
                     </div>
@@ -291,7 +312,10 @@ export default function AdminMessages() {
                   <div>
                     <p className="text-white/40 text-xs">Received</p>
                     <p className="text-white font-[var(--font-body)] flex items-center gap-1">
-                      <Calendar size={12} className="text-[var(--theme-primary)]" />
+                      <Calendar
+                        size={12}
+                        className="text-[var(--theme-primary)]"
+                      />
                       {selectedMessage.createdAt
                         ? new Date(selectedMessage.createdAt).toLocaleString()
                         : "—"}
@@ -316,30 +340,32 @@ export default function AdminMessages() {
                   Update Status
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {(["new", "read", "replied", "archived"] as const).map((status) => {
-                    const Icon = statusIcons[status];
-                    return (
-                      <button
-                        key={status}
-                        onClick={() => {
-                          updateStatusMutation.mutate({
-                            id: selectedMessage.id,
-                            status,
-                          });
-                          setSelectedMessage({ ...selectedMessage, status });
-                        }}
-                        disabled={selectedMessage.status === status}
-                        className={`flex items-center gap-2 px-4 py-2 text-sm font-[var(--font-body)] font-medium rounded-lg border transition-all disabled:opacity-30 disabled:cursor-not-allowed ${
-                          selectedMessage.status === status
-                            ? "bg-[var(--theme-primary)]/20 border-[var(--theme-primary)]/40 text-[var(--theme-primary)]"
-                            : "bg-[var(--theme-surface)] border-white/5 text-white/60 hover:border-[var(--theme-primary)]/30 hover:text-white"
-                        }`}
-                      >
-                        <Icon size={14} />
-                        {status.charAt(0).toUpperCase() + status.slice(1)}
-                      </button>
-                    );
-                  })}
+                  {(["new", "read", "replied", "archived"] as const).map(
+                    (status) => {
+                      const Icon = statusIcons[status];
+                      return (
+                        <button
+                          key={status}
+                          onClick={() => {
+                            updateStatusMutation.mutate({
+                              id: selectedMessage.id,
+                              status,
+                            });
+                            setSelectedMessage({ ...selectedMessage, status });
+                          }}
+                          disabled={selectedMessage.status === status}
+                          className={`flex items-center gap-2 px-4 py-2 text-sm font-[var(--font-body)] font-medium rounded-lg border transition-all disabled:opacity-30 disabled:cursor-not-allowed ${
+                            selectedMessage.status === status
+                              ? "bg-[var(--theme-primary)]/20 border-[var(--theme-primary)]/40 text-[var(--theme-primary)]"
+                              : "bg-[var(--theme-surface)] border-white/5 text-white/60 hover:border-[var(--theme-primary)]/30 hover:text-white"
+                          }`}
+                        >
+                          <Icon size={14} />
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </button>
+                      );
+                    },
+                  )}
                 </div>
               </div>
 

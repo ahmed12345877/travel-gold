@@ -31,10 +31,12 @@ export const usersRouter = router({
   // Get all users (admin only)
   list: adminProcedure
     .input(
-      z.object({
-        limit: z.number().min(1).max(100).default(50),
-        offset: z.number().min(0).default(0),
-      }).optional()
+      z
+        .object({
+          limit: z.number().min(1).max(100).default(50),
+          offset: z.number().min(0).default(0),
+        })
+        .optional(),
     )
     .query(async ({ input }) => {
       const { limit = 50, offset = 0 } = input ?? {};
@@ -70,7 +72,7 @@ export const usersRouter = router({
       z.object({
         id: z.number(),
         role: z.enum(["user", "admin"]),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       const user = await updateUserRole(input.id, input.role);
@@ -89,7 +91,7 @@ export const usersRouter = router({
       z.object({
         query: z.string().min(1),
         limit: z.number().min(1).max(50).default(20),
-      })
+      }),
     )
     .query(async ({ input }) => {
       return searchUsers(input.query, input.limit);
@@ -112,7 +114,7 @@ export const usersRouter = router({
         name: z.string().min(1).max(100).optional(),
         phone: z.string().max(32).nullable().optional(),
         avatarUrl: z.string().url().nullable().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const updated = await updateUserProfile(ctx.user.id, input);

@@ -2,7 +2,10 @@ import React, { useState, useRef, useEffect, ImgHTMLAttributes } from "react";
 
 type AnimationStyle = "fade" | "blur-up" | "scale" | "slide-up" | "none";
 
-interface OptimizedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, "onLoad" | "onError"> {
+interface OptimizedImageProps extends Omit<
+  ImgHTMLAttributes<HTMLImageElement>,
+  "onLoad" | "onError"
+> {
   /** The image source URL */
   src: string;
   /** Alt text for accessibility */
@@ -29,7 +32,7 @@ interface OptimizedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 
 
 /**
  * OptimizedImage - Performance-optimized image component with progressive loading
- * 
+ *
  * Features:
  * - Native lazy loading (loading="lazy")
  * - Intersection Observer for advanced lazy loading
@@ -76,7 +79,7 @@ export default function OptimizedImage({
       {
         rootMargin: "200px 0px",
         threshold: 0.01,
-      }
+      },
     );
 
     if (containerRef.current) {
@@ -123,15 +126,11 @@ export default function OptimizedImage({
         }`;
       case "scale":
         return `${base} duration-600 ${
-          showImage
-            ? "opacity-100 scale-100"
-            : "opacity-0 scale-95"
+          showImage ? "opacity-100 scale-100" : "opacity-0 scale-95"
         }`;
       case "slide-up":
         return `${base} duration-600 ${
-          showImage
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-4"
+          showImage ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
         }`;
       case "fade":
       default:
@@ -162,12 +161,13 @@ export default function OptimizedImage({
           style={{ backgroundColor: placeholderColor }}
         >
           {/* Skeleton pulse */}
-          <div className="absolute inset-0 animate-pulse opacity-30" 
-            style={{ 
-              background: goldShimmer 
-                ? "linear-gradient(135deg, rgba(212,168,83,0.1) 0%, rgba(212,168,83,0.05) 50%, rgba(212,168,83,0.1) 100%)" 
-                : "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.05) 100%)"
-            }} 
+          <div
+            className="absolute inset-0 animate-pulse opacity-30"
+            style={{
+              background: goldShimmer
+                ? "linear-gradient(135deg, rgba(212,168,83,0.1) 0%, rgba(212,168,83,0.05) 50%, rgba(212,168,83,0.1) 100%)"
+                : "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.05) 100%)",
+            }}
           />
           {/* Sliding shimmer */}
           <div
@@ -259,7 +259,10 @@ export function ImageGrid({
   aspectRatio?: string;
   imageClassName?: string;
   containerClassName?: string;
-  onImageClick?: (image: { src: string; alt: string; id?: string | number }, index: number) => void;
+  onImageClick?: (
+    image: { src: string; alt: string; id?: string | number },
+    index: number,
+  ) => void;
 }) {
   const colsClass = {
     2: "grid-cols-1 sm:grid-cols-2",
@@ -274,7 +277,9 @@ export function ImageGrid({
         <div
           key={image.id || index}
           className={`group cursor-pointer overflow-hidden rounded-lg ${
-            onImageClick ? "hover:ring-2 hover:ring-[var(--theme-primary)]/50 transition-all duration-300" : ""
+            onImageClick
+              ? "hover:ring-2 hover:ring-[var(--theme-primary)]/50 transition-all duration-300"
+              : ""
           }`}
           onClick={() => onImageClick?.(image, index)}
         >

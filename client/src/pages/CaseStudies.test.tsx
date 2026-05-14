@@ -16,8 +16,12 @@ vi.mock("framer-motion", () => {
   };
 });
 
-vi.mock("@/components/Navbar", () => ({ default: () => <nav data-testid="navbar" /> }));
-vi.mock("@/components/Footer", () => ({ default: () => <footer data-testid="footer" /> }));
+vi.mock("@/components/Navbar", () => ({
+  default: () => <nav data-testid="navbar" />,
+}));
+vi.mock("@/components/Footer", () => ({
+  default: () => <footer data-testid="footer" />,
+}));
 vi.mock("@/components/PageMeta", () => ({ default: () => null }));
 vi.mock("react-helmet-async", () => ({
   Helmet: ({ children }: any) => <div data-testid="helmet">{children}</div>,
@@ -59,16 +63,26 @@ describe("CaseStudies Page", () => {
 
   it("renders stat labels", () => {
     render(<CaseStudies />);
-    expect(screen.getAllByText("Projects Completed").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Client Satisfaction").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Revenue Generated").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Countries Reached").length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText("Projects Completed").length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText("Client Satisfaction").length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText("Revenue Generated").length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText("Countries Reached").length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
   /* ─── Category Filters ─── */
   it("renders category filter buttons", () => {
     render(<CaseStudies />);
-    expect(screen.getAllByText(/All Projects/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/All Projects/).length).toBeGreaterThanOrEqual(
+      1,
+    );
     expect(screen.getAllByText(/Tourism/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/Branding/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/Investment/).length).toBeGreaterThanOrEqual(1);
@@ -78,9 +92,9 @@ describe("CaseStudies Page", () => {
 
   it("filters case studies by Tourism category", () => {
     render(<CaseStudies />);
-    const tourismBtn = screen.getAllByRole("button").find(
-      (b: HTMLElement) => b.textContent?.includes("Tourism")
-    );
+    const tourismBtn = screen
+      .getAllByRole("button")
+      .find((b: HTMLElement) => b.textContent?.includes("Tourism"));
     fireEvent.click(tourismBtn!);
     const viewButtons = screen.getAllByText("View Full Case Study");
     expect(viewButtons.length).toBe(2);
@@ -88,9 +102,9 @@ describe("CaseStudies Page", () => {
 
   it("filters case studies by Branding category", () => {
     render(<CaseStudies />);
-    const brandingBtn = screen.getAllByRole("button").find(
-      (b: HTMLElement) => b.textContent?.includes("Branding")
-    );
+    const brandingBtn = screen
+      .getAllByRole("button")
+      .find((b: HTMLElement) => b.textContent?.includes("Branding"));
     fireEvent.click(brandingBtn!);
     const viewButtons = screen.getAllByText("View Full Case Study");
     expect(viewButtons.length).toBe(1);
@@ -98,13 +112,13 @@ describe("CaseStudies Page", () => {
 
   it("returns to all when All Projects is clicked", () => {
     render(<CaseStudies />);
-    const tourismBtn = screen.getAllByRole("button").find(
-      (b: HTMLElement) => b.textContent?.includes("Tourism")
-    );
+    const tourismBtn = screen
+      .getAllByRole("button")
+      .find((b: HTMLElement) => b.textContent?.includes("Tourism"));
     fireEvent.click(tourismBtn!);
-    const allBtn = screen.getAllByRole("button").find(
-      (b: HTMLElement) => b.textContent?.includes("All Projects")
-    );
+    const allBtn = screen
+      .getAllByRole("button")
+      .find((b: HTMLElement) => b.textContent?.includes("All Projects"));
     fireEvent.click(allBtn!);
     const viewButtons = screen.getAllByText("View Full Case Study");
     expect(viewButtons.length).toBe(6);
@@ -119,16 +133,28 @@ describe("CaseStudies Page", () => {
 
   it("renders case study titles", () => {
     render(<CaseStudies />);
-    expect(screen.getAllByText("Luxury Nile Cruise Experience").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("El Gouna Luxury Resort Branding").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Abu Simbel Heritage Tourism Campaign").length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText("Luxury Nile Cruise Experience").length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText("El Gouna Luxury Resort Branding").length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText("Abu Simbel Heritage Tourism Campaign").length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it("renders client names", () => {
     render(<CaseStudies />);
-    expect(screen.getAllByText(/Royal Nile Cruises/).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/Oasis Resorts International/).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/Egypt Tourism Authority/).length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText(/Royal Nile Cruises/).length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText(/Oasis Resorts International/).length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText(/Egypt Tourism Authority/).length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it("renders featured badges on featured cards", () => {
@@ -154,9 +180,13 @@ describe("CaseStudies Page", () => {
 
   it("renders tags on cards", () => {
     render(<CaseStudies />);
-    expect(screen.getAllByText("Luxury Travel").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Luxury Travel").length).toBeGreaterThanOrEqual(
+      1,
+    );
     expect(screen.getAllByText("Nile Cruise").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Brand Identity").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Brand Identity").length).toBeGreaterThanOrEqual(
+      1,
+    );
   });
 
   /* ─── Expanded View ─── */
@@ -164,8 +194,12 @@ describe("CaseStudies Page", () => {
     render(<CaseStudies />);
     const viewButtons = screen.getAllByText("View Full Case Study");
     fireEvent.click(viewButtons[0]);
-    expect(screen.getAllByText("The Challenge").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Our Solution").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("The Challenge").length).toBeGreaterThanOrEqual(
+      1,
+    );
+    expect(screen.getAllByText("Our Solution").length).toBeGreaterThanOrEqual(
+      1,
+    );
     expect(screen.getAllByText("Key Results").length).toBeGreaterThanOrEqual(1);
   });
 
@@ -181,14 +215,20 @@ describe("CaseStudies Page", () => {
   /* ─── CTA Section ─── */
   it("renders CTA section", () => {
     render(<CaseStudies />);
-    expect(screen.getAllByText(/GET IN TOUCH/i).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/BOOK A CONSULTATION/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/GET IN TOUCH/i).length).toBeGreaterThanOrEqual(
+      1,
+    );
+    expect(
+      screen.getAllByText(/BOOK A CONSULTATION/i).length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
   /* ─── Breadcrumb ─── */
   it("renders breadcrumb navigation", () => {
     render(<CaseStudies />);
     expect(screen.getAllByText("Home").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/Case Studies/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Case Studies/).length).toBeGreaterThanOrEqual(
+      1,
+    );
   });
 });

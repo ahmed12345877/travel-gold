@@ -28,7 +28,8 @@ export default function EmailGenerator() {
           { value: "informative", label: "Informative" },
           { value: "personal", label: "Personal Touch" },
         ],
-        placeholderPrompt: "e.g., Create a promotional email for our early bird summer deals to Hurghada...",
+        placeholderPrompt:
+          "e.g., Create a promotional email for our early bird summer deals to Hurghada...",
         promptHints: [
           "Early bird summer deals",
           "Welcome new subscriber",

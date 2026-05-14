@@ -4,7 +4,17 @@
  * White links with gold hover, glass-blur background on scroll
  */
 import { useState, useEffect, useRef } from "react";
-import { Search, Menu, X, ChevronDown, MoreHorizontal, User, LogOut, Moon, Sun } from "lucide-react";
+import {
+  Search,
+  Menu,
+  X,
+  ChevronDown,
+  MoreHorizontal,
+  User,
+  LogOut,
+  Moon,
+  Sun,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -80,7 +90,10 @@ export default function Navbar() {
         { label: "Day Trips & Excursions", href: "/programs#day-trips" },
         { label: "MICE", href: "/programs#mice" },
         { label: "Private Jet", href: "/programs#private-jet" },
-        { label: "Fast Track & Airport Transfer", href: "/programs#fast-track" },
+        {
+          label: "Fast Track & Airport Transfer",
+          href: "/programs#fast-track",
+        },
         { label: "Visa Assistance & Meet and Greet", href: "/programs#visa" },
         { label: "eSIM Purchase", href: "/programs#esim" },
       ],
@@ -142,20 +155,27 @@ export default function Navbar() {
           scrolled
             ? "bg-[var(--theme-surface)] shadow-lg shadow-black/20 border-b border-white/5"
             : isHome
-            ? "bg-gradient-to-b from-black/40 to-transparent border-b border-transparent"
-            : "bg-transparent border-b border-transparent"
+              ? "bg-gradient-to-b from-black/40 to-transparent border-b border-transparent"
+              : "bg-transparent border-b border-transparent"
         }`}
       >
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 flex items-center justify-between py-3 sm:py-4 md:py-5">
           {/* Logo + Brand Name */}
-          <a href="/" className="flex items-center gap-1.5 sm:gap-2 shrink-0 group">
+          <a
+            href="/"
+            className="flex items-center gap-1.5 sm:gap-2 shrink-0 group"
+          >
             <img
               src="https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/vanir-logo-correct_2a805e1d.png"
               alt="VANIR GROUP"
               className="h-9 sm:h-10 md:h-11 lg:h-12 w-auto object-contain"
             />
             <span className="text-white font-bold text-sm sm:text-base md:text-lg lg:text-xl tracking-[0.1em] font-[var(--font-display)] group-hover:text-[var(--theme-primary)] transition-colors duration-300 hidden sm:inline">
-              VANIR<span className="text-[var(--theme-primary)] group-hover:text-white transition-colors duration-300"> GROUP</span>
+              VANIR
+              <span className="text-[var(--theme-primary)] group-hover:text-white transition-colors duration-300">
+                {" "}
+                GROUP
+              </span>
             </span>
           </a>
 
@@ -176,7 +196,11 @@ export default function Navbar() {
                         ? "text-[var(--theme-primary)]"
                         : "text-white/80 hover:text-white"
                     }`}
-                    onClick={() => setOpenDropdown(openDropdown === item.label ? null : item.label)}
+                    onClick={() =>
+                      setOpenDropdown(
+                        openDropdown === item.label ? null : item.label,
+                      )
+                    }
                   >
                     {item.label}
                     <ChevronDown
@@ -241,11 +265,13 @@ export default function Navbar() {
                   {item.label}
                   <span
                     className={`absolute bottom-0 left-2 xl:left-2.5 right-2 xl:right-2.5 h-[1px] bg-[var(--theme-primary)] transition-all duration-300 ${
-                      isActiveLink(item.href) ? "w-[calc(100%-1rem)] xl:w-[calc(100%-1.25rem)]" : "w-0 group-hover:w-[calc(100%-1rem)] xl:group-hover:w-[calc(100%-1.25rem)]"
+                      isActiveLink(item.href)
+                        ? "w-[calc(100%-1rem)] xl:w-[calc(100%-1.25rem)]"
+                        : "w-0 group-hover:w-[calc(100%-1rem)] xl:group-hover:w-[calc(100%-1.25rem)]"
                     }`}
                   />
                 </a>
-              )
+              ),
             )}
 
             {/* More menu dropdown */}
@@ -261,7 +287,9 @@ export default function Navbar() {
                     ? "text-[var(--theme-primary)]"
                     : "text-white/80 hover:text-white"
                 }`}
-                onClick={() => setOpenDropdown(openDropdown === "more" ? null : "more")}
+                onClick={() =>
+                  setOpenDropdown(openDropdown === "more" ? null : "more")
+                }
                 title="More options"
               >
                 <MoreHorizontal size={16} />
@@ -329,7 +357,7 @@ export default function Navbar() {
                               />
                               {item.label}
                             </a>
-                          )
+                          ),
                         )}
                       </div>
                     </div>
@@ -345,9 +373,9 @@ export default function Navbar() {
             <button
               onClick={toggleMode}
               className="text-white/50 hover:text-[var(--theme-primary)] transition-colors p-1 rounded-md hover:bg-white/5"
-              title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}
+              title={`Switch to ${mode === "light" ? "dark" : "light"} mode`}
             >
-              {mode === 'light' ? (
+              {mode === "light" ? (
                 <Moon size={16} className="sm:w-[18px] sm:h-[18px]" />
               ) : (
                 <Sun size={16} className="sm:w-[18px] sm:h-[18px]" />
@@ -369,17 +397,30 @@ export default function Navbar() {
               >
                 <button
                   className="flex items-center gap-1.5 px-2 lg:px-2.5 py-1.5 text-white text-xs lg:text-sm font-medium tracking-tight hover:text-[var(--theme-primary)] transition-all duration-300 whitespace-nowrap"
-                  onClick={() => setOpenDropdown(openDropdown === "user-menu" ? null : "user-menu")}
+                  onClick={() =>
+                    setOpenDropdown(
+                      openDropdown === "user-menu" ? null : "user-menu",
+                    )
+                  }
                 >
                   {user?.avatarUrl ? (
-                    <img src={user.avatarUrl} alt="" className="w-5 h-5 rounded-full object-cover border border-[var(--theme-primary)]/30" />
+                    <img
+                      src={user.avatarUrl}
+                      alt=""
+                      className="w-5 h-5 rounded-full object-cover border border-[var(--theme-primary)]/30"
+                    />
                   ) : (
                     <div className="w-5 h-5 rounded-full bg-[var(--theme-primary)]/20 flex items-center justify-center">
                       <User size={12} className="text-[var(--theme-primary)]" />
                     </div>
                   )}
-                  <span className="hidden lg:inline">{user?.name?.split(" ")[0] || "Profile"}</span>
-                  <ChevronDown size={12} className={`transition-transform duration-300 ${openDropdown === "user-menu" ? "rotate-180" : ""}`} />
+                  <span className="hidden lg:inline">
+                    {user?.name?.split(" ")[0] || "Profile"}
+                  </span>
+                  <ChevronDown
+                    size={12}
+                    className={`transition-transform duration-300 ${openDropdown === "user-menu" ? "rotate-180" : ""}`}
+                  />
                 </button>
                 <AnimatePresence>
                   {openDropdown === "user-menu" && (
@@ -400,7 +441,10 @@ export default function Navbar() {
                             onClick={() => setOpenDropdown(null)}
                             className="group flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-tight text-white/80 hover:text-white hover:bg-white/5 transition-all duration-300"
                           >
-                            <User size={14} className="text-[var(--theme-primary)]/60" />
+                            <User
+                              size={14}
+                              className="text-[var(--theme-primary)]/60"
+                            />
                             My Profile
                           </a>
                           <a
@@ -408,7 +452,9 @@ export default function Navbar() {
                             onClick={() => setOpenDropdown(null)}
                             className="group flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-tight text-white/80 hover:text-white hover:bg-white/5 transition-all duration-300"
                           >
-                            <span className="w-3.5 h-3.5 text-[var(--theme-primary)]/60">✨</span>
+                            <span className="w-3.5 h-3.5 text-[var(--theme-primary)]/60">
+                              ✨
+                            </span>
                             AI Dashboard
                           </a>
                           {user?.role === "admin" && (
@@ -417,13 +463,19 @@ export default function Navbar() {
                               onClick={() => setOpenDropdown(null)}
                               className="group flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-tight text-white/80 hover:text-white hover:bg-white/5 transition-all duration-300"
                             >
-                              <span className="w-3.5 h-3.5 text-[var(--theme-primary)]/60">⚙️</span>
+                              <span className="w-3.5 h-3.5 text-[var(--theme-primary)]/60">
+                                ⚙️
+                              </span>
                               Admin Panel
                             </a>
                           )}
                           <div className="border-t border-white/10 mt-1 pt-1">
                             <button
-                              onClick={async () => { setOpenDropdown(null); await logout(); window.location.href = "/"; }}
+                              onClick={async () => {
+                                setOpenDropdown(null);
+                                await logout();
+                                window.location.href = "/";
+                              }}
                               className="w-full group flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-tight text-red-400/80 hover:text-red-400 hover:bg-red-500/5 transition-all duration-300"
                             >
                               <LogOut size={14} />
@@ -480,7 +532,9 @@ export default function Navbar() {
                     <div key={item.label}>
                       <button
                         onClick={() =>
-                          setMobileExpanded(mobileExpanded === item.label ? null : item.label)
+                          setMobileExpanded(
+                            mobileExpanded === item.label ? null : item.label,
+                          )
                         }
                         className={`w-full flex items-center justify-between py-3 text-sm sm:text-base font-medium tracking-tight uppercase border-b border-white/5 transition-colors duration-300 ${
                           mobileExpanded === item.label || isGroupActive(item)
@@ -548,7 +602,7 @@ export default function Navbar() {
                     >
                       {item.label}
                     </a>
-                  )
+                  ),
                 )}
                 {isAuthenticated ? (
                   <>
@@ -560,7 +614,11 @@ export default function Navbar() {
                       My Profile
                     </a>
                     <button
-                      onClick={async () => { setMobileOpen(false); await logout(); window.location.href = "/"; }}
+                      onClick={async () => {
+                        setMobileOpen(false);
+                        await logout();
+                        window.location.href = "/";
+                      }}
                       className="py-3 text-sm sm:text-base font-medium tracking-tight uppercase border-b border-white/5 text-red-400 hover:text-red-300 transition-colors duration-300 text-left"
                     >
                       Sign Out

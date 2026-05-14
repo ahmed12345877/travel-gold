@@ -8,45 +8,62 @@ export const adminBlogRouter = router({
   /** List all blog posts with pagination and filtering */
   list: adminProcedure
     .input(
-      z.object({
-        limit: z.number().min(1).max(100).default(20),
-        offset: z.number().min(0).default(0),
-        search: z.string().optional(),
-        status: z.enum(["draft", "published", "archived"]).optional(),
-        category: z.string().optional(),
-        sortBy: z.enum(["title", "publishedAt", "createdAt", "viewCount"]).default("createdAt"),
-        sortOrder: z.enum(["asc", "desc"]).default("desc"),
-      }).optional()
+      z
+        .object({
+          limit: z.number().min(1).max(100).default(20),
+          offset: z.number().min(0).default(0),
+          search: z.string().optional(),
+          status: z.enum(["draft", "published", "archived"]).optional(),
+          category: z.string().optional(),
+          sortBy: z
+            .enum(["title", "publishedAt", "createdAt", "viewCount"])
+            .default("createdAt"),
+          sortOrder: z.enum(["asc", "desc"]).default("desc"),
+        })
+        .optional(),
     )
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
-      const { limit = 20, offset = 0, search = "", status, category, sortBy = "createdAt", sortOrder = "desc" } = input ?? {};
-      
+
+      const {
+        limit = 20,
+        offset = 0,
+        search = "",
+        status,
+        category,
+        sortBy = "createdAt",
+        sortOrder = "desc",
+      } = input ?? {};
+
       let query: any = db.select().from(blogPosts);
-      
+
       if (search) {
         query = query.where(like(blogPosts.title, `%${search}%`));
       }
-      
+
       if (status) {
         query = query.where(eq(blogPosts.status, status));
       }
-      
+
       if (category) {
         query = query.where(eq(blogPosts.category, category));
       }
-      
-      const orderColumn = 
-        sortBy === "title" ? blogPosts.title :
-        sortBy === "publishedAt" ? blogPosts.publishedAt :
-        sortBy === "viewCount" ? blogPosts.viewCount :
-        blogPosts.createdAt;
-      
-      query = query.orderBy(sortOrder === "desc" ? desc(orderColumn) : asc(orderColumn));
+
+      const orderColumn =
+        sortBy === "title"
+          ? blogPosts.title
+          : sortBy === "publishedAt"
+            ? blogPosts.publishedAt
+            : sortBy === "viewCount"
+              ? blogPosts.viewCount
+              : blogPosts.createdAt;
+
+      query = query.orderBy(
+        sortOrder === "desc" ? desc(orderColumn) : asc(orderColumn),
+      );
       query = query.limit(limit).offset(offset);
-      
+
       return await query;
     }),
 
@@ -56,7 +73,7 @@ export const adminBlogRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
+
       const result = await db
         .select()
         .from(blogPosts)
@@ -70,7 +87,7 @@ export const adminBlogRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
+
       const result = await db
         .select()
         .from(blogPosts)
@@ -94,12 +111,12 @@ export const adminBlogRouter = router({
         tags: z.array(z.string()).optional(),
         authorName: z.string().optional(),
         readingTime: z.number().optional(),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
+
       const result = await db.insert(blogPosts).values({
         ...input,
         status: "draft",
@@ -126,18 +143,15 @@ export const adminBlogRouter = router({
         authorName: z.string().optional(),
         readingTime: z.number().optional(),
         status: z.enum(["draft", "published", "archived"]).optional(),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
+
       const { id, ...data } = input;
-      
-      await db
-        .update(blogPosts)
-        .set(data)
-        .where(eq(blogPosts.id, id));
+
+      await db.update(blogPosts).set(data).where(eq(blogPosts.id, id));
       return { success: true };
     }),
 
@@ -147,10 +161,8 @@ export const adminBlogRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
-      await db
-        .delete(blogPosts)
-        .where(eq(blogPosts.id, input.id));
+
+      await db.delete(blogPosts).where(eq(blogPosts.id, input.id));
       return { success: true };
     }),
 
@@ -160,10 +172,8 @@ export const adminBlogRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
-      await db
-        .delete(blogPosts)
-        .where(inArray(blogPosts.id, input.ids));
+
+      await db.delete(blogPosts).where(inArray(blogPosts.id, input.ids));
       return { success: true, deleted: input.ids.length };
     }),
 
@@ -173,7 +183,7 @@ export const adminBlogRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
+
       await db
         .update(blogPosts)
         .set({
@@ -190,7 +200,7 @@ export const adminBlogRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
+
       await db
         .update(blogPosts)
         .set({
@@ -204,12 +214,18 @@ export const adminBlogRouter = router({
   getStats: adminProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
-    
+
     const allPosts = await db.select().from(blogPosts);
-    const publishedCount = allPosts.filter((p: any) => p.status === "published").length;
+    const publishedCount = allPosts.filter(
+      (p: any) => p.status === "published",
+    ).length;
     const draftCount = allPosts.filter((p: any) => p.status === "draft").length;
-    const totalViews = allPosts.reduce((sum: number, p: any) => sum + (p.viewCount || 0), 0);
-    const avgViews = allPosts.length > 0 ? (totalViews / allPosts.length).toFixed(0) : 0;
+    const totalViews = allPosts.reduce(
+      (sum: number, p: any) => sum + (p.viewCount || 0),
+      0,
+    );
+    const avgViews =
+      allPosts.length > 0 ? (totalViews / allPosts.length).toFixed(0) : 0;
 
     return {
       total: allPosts.length,

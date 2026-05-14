@@ -4,8 +4,19 @@
  */
 import { motion } from "framer-motion";
 import {
-  Plane, Hotel, MapPin, FileText, Shield, Users, Phone,
-  Car, Crown, Globe, ArrowRight, Check, Sparkles,
+  Plane,
+  Hotel,
+  MapPin,
+  FileText,
+  Shield,
+  Users,
+  Phone,
+  Car,
+  Crown,
+  Globe,
+  ArrowRight,
+  Check,
+  Sparkles,
 } from "lucide-react";
 import { useInView } from "@/hooks/useInView";
 import Navbar from "@/components/Navbar";
@@ -13,7 +24,8 @@ import Footer from "@/components/Footer";
 import PageMeta from "@/components/PageMeta";
 import WatermarkImage from "@/components/WatermarkImage";
 
-const CDN = "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8";
+const CDN =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8";
 
 type Service = {
   id: number;
@@ -32,104 +44,184 @@ const services: Service[] = [
     id: 1,
     title: "VIP Airport Services",
     subtitle: "Fast Track & Luxury Transfers",
-    description: "Skip the queues with our VIP fast-track immigration and enjoy luxury limousine transfers to your destination.",
-    longDescription: "Our VIP airport service includes meet & greet at the gate, fast-track through immigration and customs, porter service for your luggage, and a luxury limousine waiting to take you directly to your hotel or destination.",
+    description:
+      "Skip the queues with our VIP fast-track immigration and enjoy luxury limousine transfers to your destination.",
+    longDescription:
+      "Our VIP airport service includes meet & greet at the gate, fast-track through immigration and customs, porter service for your luggage, and a luxury limousine waiting to take you directly to your hotel or destination.",
     image: `${CDN}/limousine-airport_133f2e61.jpg`,
     icon: Car,
-    features: ["Meet & Greet at Gate", "Fast-Track Immigration", "Luxury Limousine", "Porter Service", "24/7 Availability"],
+    features: [
+      "Meet & Greet at Gate",
+      "Fast-Track Immigration",
+      "Luxury Limousine",
+      "Porter Service",
+      "24/7 Availability",
+    ],
     highlight: true,
   },
   {
     id: 2,
     title: "Hotel Reservations",
     subtitle: "From Boutique to 5-Star Luxury",
-    description: "Access exclusive rates at Egypt's finest hotels and resorts, from boutique gems to world-renowned luxury properties.",
-    longDescription: "We partner with over 500 hotels across Egypt and the Middle East, offering you exclusive rates and complimentary upgrades. Whether you prefer a historic palace hotel or a modern beachfront resort, we find the perfect match.",
+    description:
+      "Access exclusive rates at Egypt's finest hotels and resorts, from boutique gems to world-renowned luxury properties.",
+    longDescription:
+      "We partner with over 500 hotels across Egypt and the Middle East, offering you exclusive rates and complimentary upgrades. Whether you prefer a historic palace hotel or a modern beachfront resort, we find the perfect match.",
     image: `${CDN}/hotel-reception_36ceab25.jpg`,
     icon: Hotel,
-    features: ["Exclusive Rates", "Complimentary Upgrades", "500+ Partner Hotels", "Instant Confirmation", "Free Cancellation"],
+    features: [
+      "Exclusive Rates",
+      "Complimentary Upgrades",
+      "500+ Partner Hotels",
+      "Instant Confirmation",
+      "Free Cancellation",
+    ],
     highlight: true,
   },
   {
     id: 3,
     title: "Visa Assistance",
     subtitle: "Hassle-Free Documentation",
-    description: "Complete visa processing and documentation support for all nationalities traveling to Egypt and beyond.",
-    longDescription: "Our visa team handles the entire process — from application preparation and document verification to embassy submission and follow-up. We support tourist, business, and transit visas for over 50 countries.",
+    description:
+      "Complete visa processing and documentation support for all nationalities traveling to Egypt and beyond.",
+    longDescription:
+      "Our visa team handles the entire process — from application preparation and document verification to embassy submission and follow-up. We support tourist, business, and transit visas for over 50 countries.",
     image: `${CDN}/visa-assistance_f384e024.jpg`,
     icon: FileText,
-    features: ["Full Application Support", "Document Preparation", "Embassy Liaison", "Express Processing", "50+ Countries"],
+    features: [
+      "Full Application Support",
+      "Document Preparation",
+      "Embassy Liaison",
+      "Express Processing",
+      "50+ Countries",
+    ],
   },
   {
     id: 4,
     title: "Concierge Service",
     subtitle: "Your Personal Travel Assistant",
-    description: "A dedicated concierge to handle every detail of your trip — from restaurant reservations to private tours.",
-    longDescription: "Our premium concierge service assigns you a personal travel assistant who manages your entire itinerary. From securing hard-to-get restaurant reservations to arranging private museum tours and exclusive experiences.",
+    description:
+      "A dedicated concierge to handle every detail of your trip — from restaurant reservations to private tours.",
+    longDescription:
+      "Our premium concierge service assigns you a personal travel assistant who manages your entire itinerary. From securing hard-to-get restaurant reservations to arranging private museum tours and exclusive experiences.",
     image: `${CDN}/concierge-service_0454a2d8.webp`,
     icon: Crown,
-    features: ["Personal Assistant", "Restaurant Reservations", "Private Tours", "Event Tickets", "24/7 Availability"],
+    features: [
+      "Personal Assistant",
+      "Restaurant Reservations",
+      "Private Tours",
+      "Event Tickets",
+      "24/7 Availability",
+    ],
     highlight: true,
   },
   {
     id: 5,
     title: "Travel Insurance",
     subtitle: "Travel with Peace of Mind",
-    description: "Comprehensive travel insurance covering medical emergencies, trip cancellation, lost luggage, and more.",
-    longDescription: "Our travel insurance plans are designed specifically for travelers to Egypt and the Middle East. Coverage includes medical emergencies up to $500,000, trip cancellation, baggage loss, flight delays, and emergency evacuation.",
+    description:
+      "Comprehensive travel insurance covering medical emergencies, trip cancellation, lost luggage, and more.",
+    longDescription:
+      "Our travel insurance plans are designed specifically for travelers to Egypt and the Middle East. Coverage includes medical emergencies up to $500,000, trip cancellation, baggage loss, flight delays, and emergency evacuation.",
     image: `${CDN}/travel-insurance_dc3ba418.png`,
     icon: Shield,
-    features: ["Medical Coverage $500K", "Trip Cancellation", "Lost Luggage", "Flight Delay", "Emergency Evacuation"],
+    features: [
+      "Medical Coverage $500K",
+      "Trip Cancellation",
+      "Lost Luggage",
+      "Flight Delay",
+      "Emergency Evacuation",
+    ],
   },
   {
     id: 6,
     title: "Group & MICE Travel",
     subtitle: "Corporate Events & Conferences",
-    description: "Specialized packages for corporate groups, conferences, incentive trips, and team-building events in Egypt.",
-    longDescription: "We organize end-to-end corporate travel including venue selection, accommodation, transportation, team activities, and gala dinners. Our MICE team has organized events for groups of 10 to 2,000 participants.",
+    description:
+      "Specialized packages for corporate groups, conferences, incentive trips, and team-building events in Egypt.",
+    longDescription:
+      "We organize end-to-end corporate travel including venue selection, accommodation, transportation, team activities, and gala dinners. Our MICE team has organized events for groups of 10 to 2,000 participants.",
     image: `${CDN}/office-meeting_d934f6c0.png`,
     icon: Users,
-    features: ["Venue Selection", "Group Accommodation", "Team Activities", "Gala Dinners", "Up to 2,000 Participants"],
+    features: [
+      "Venue Selection",
+      "Group Accommodation",
+      "Team Activities",
+      "Gala Dinners",
+      "Up to 2,000 Participants",
+    ],
   },
   {
     id: 7,
     title: "Flight Booking",
     subtitle: "Domestic & International",
-    description: "Book flights at competitive rates with flexible options, including business and first-class upgrades.",
-    longDescription: "Access the best fares across all major airlines with our flight booking service. We offer flexible booking options, seat selection, special meal requests, and last-minute deals for both domestic and international routes.",
+    description:
+      "Book flights at competitive rates with flexible options, including business and first-class upgrades.",
+    longDescription:
+      "Access the best fares across all major airlines with our flight booking service. We offer flexible booking options, seat selection, special meal requests, and last-minute deals for both domestic and international routes.",
     image: `${CDN}/airport-concierge_b1da3a56.jpg`,
     icon: Plane,
-    features: ["Best Fare Guarantee", "Flexible Booking", "Business Class", "Seat Selection", "24/7 Support"],
+    features: [
+      "Best Fare Guarantee",
+      "Flexible Booking",
+      "Business Class",
+      "Seat Selection",
+      "24/7 Support",
+    ],
   },
   {
     id: 8,
     title: "VIP Lounge Access",
     subtitle: "Exclusive Airport Lounges",
-    description: "Relax in premium airport lounges with complimentary food, drinks, Wi-Fi, and shower facilities.",
-    longDescription: "Enjoy access to over 1,200 airport lounges worldwide. Our VIP lounge service includes complimentary gourmet food and beverages, high-speed Wi-Fi, shower facilities, and quiet work areas — perfect for business travelers.",
+    description:
+      "Relax in premium airport lounges with complimentary food, drinks, Wi-Fi, and shower facilities.",
+    longDescription:
+      "Enjoy access to over 1,200 airport lounges worldwide. Our VIP lounge service includes complimentary gourmet food and beverages, high-speed Wi-Fi, shower facilities, and quiet work areas — perfect for business travelers.",
     image: `${CDN}/vip-lounge_6e90c366.jpg`,
     icon: Sparkles,
-    features: ["1,200+ Lounges", "Gourmet Food", "High-Speed Wi-Fi", "Shower Facilities", "Business Center"],
+    features: [
+      "1,200+ Lounges",
+      "Gourmet Food",
+      "High-Speed Wi-Fi",
+      "Shower Facilities",
+      "Business Center",
+    ],
   },
   {
     id: 9,
     title: "Custom Tour Design",
     subtitle: "Tailored to Your Vision",
-    description: "Work with our travel designers to create a completely bespoke itinerary matching your exact preferences.",
-    longDescription: "Our experienced travel designers sit with you to understand your interests, pace, budget, and style. We then craft a unique itinerary that includes hidden gems, local experiences, and exclusive access that standard tours can't offer.",
+    description:
+      "Work with our travel designers to create a completely bespoke itinerary matching your exact preferences.",
+    longDescription:
+      "Our experienced travel designers sit with you to understand your interests, pace, budget, and style. We then craft a unique itinerary that includes hidden gems, local experiences, and exclusive access that standard tours can't offer.",
     image: `${CDN}/luxury-agency_f12d8ad7.jpg`,
     icon: MapPin,
-    features: ["Personal Consultation", "Custom Itinerary", "Hidden Gems", "Local Experiences", "Flexible Budget"],
+    features: [
+      "Personal Consultation",
+      "Custom Itinerary",
+      "Hidden Gems",
+      "Local Experiences",
+      "Flexible Budget",
+    ],
   },
   {
     id: 10,
     title: "24/7 Travel Support",
     subtitle: "Always Here for You",
-    description: "Round-the-clock multilingual support for any travel emergency or assistance you may need.",
-    longDescription: "Our support team is available 24 hours a day, 7 days a week, in Arabic, English, French, and German. Whether you need to change a booking, report an emergency, or simply need local recommendations, we're just a call away.",
+    description:
+      "Round-the-clock multilingual support for any travel emergency or assistance you may need.",
+    longDescription:
+      "Our support team is available 24 hours a day, 7 days a week, in Arabic, English, French, and German. Whether you need to change a booking, report an emergency, or simply need local recommendations, we're just a call away.",
     image: `${CDN}/sharm-balcony_d1ac82aa.jpg`,
     icon: Phone,
-    features: ["24/7 Availability", "Multilingual (AR/EN/FR/DE)", "Emergency Response", "Booking Changes", "Local Recommendations"],
+    features: [
+      "24/7 Availability",
+      "Multilingual (AR/EN/FR/DE)",
+      "Emergency Response",
+      "Booking Changes",
+      "Local Recommendations",
+    ],
   },
 ];
 
@@ -175,8 +267,8 @@ export default function Services() {
                 <span className="text-[var(--theme-primary)]">Services</span>
               </h1>
               <p className="text-white/70 text-lg md:text-xl max-w-2xl mb-8">
-                From VIP airport fast-track to personal concierge — we handle every
-                detail so you can focus on the experience.
+                From VIP airport fast-track to personal concierge — we handle
+                every detail so you can focus on the experience.
               </p>
 
               {/* Quick stats */}
@@ -248,7 +340,10 @@ export default function Services() {
                       <div className="lg:w-1/2 p-8 lg:p-10 flex flex-col justify-center bg-[var(--theme-background)]">
                         <div className="flex items-center gap-3 mb-4">
                           <div className="p-2 border border-[var(--theme-primary)]/30">
-                            <Icon size={20} className="text-[var(--theme-primary)]" />
+                            <Icon
+                              size={20}
+                              className="text-[var(--theme-primary)]"
+                            />
                           </div>
                           <span className="text-[var(--theme-primary)]/60 text-xs uppercase tracking-wider">
                             {service.subtitle}
@@ -268,7 +363,10 @@ export default function Services() {
                               key={f}
                               className="flex items-center gap-2 text-xs text-white/60"
                             >
-                              <Check size={12} className="text-[var(--theme-primary)] shrink-0" />
+                              <Check
+                                size={12}
+                                className="text-[var(--theme-primary)] shrink-0"
+                              />
                               {f}
                             </span>
                           ))}
@@ -290,7 +388,10 @@ export default function Services() {
         </section>
 
         {/* All Services Grid */}
-        <section ref={gridRef} className="py-12 sm:py-16 md:py-20 bg-[var(--theme-background)]">
+        <section
+          ref={gridRef}
+          className="py-12 sm:py-16 md:py-20 bg-[var(--theme-background)]"
+        >
           <div className="container">
             <div className="text-center mb-12">
               <h2 className="font-[var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white">
@@ -333,7 +434,10 @@ export default function Services() {
         </section>
 
         {/* Why Choose Us */}
-        <section ref={whyRef} className="py-12 sm:py-16 md:py-20 bg-[var(--theme-background)] border-t border-white/5">
+        <section
+          ref={whyRef}
+          className="py-12 sm:py-16 md:py-20 bg-[var(--theme-background)] border-t border-white/5"
+        >
           <div className="container">
             <div className="text-center mb-12">
               <span className="font-[var(--font-script)] text-[var(--theme-primary)] text-xl mb-3 block">

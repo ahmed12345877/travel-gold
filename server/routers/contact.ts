@@ -18,7 +18,7 @@ export const contactRouter = router({
         phone: z.string().optional(),
         subject: z.string().optional(),
         message: z.string().min(10),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       const msg = await createContactMessage({
@@ -38,10 +38,12 @@ export const contactRouter = router({
   /** List all contact messages (admin only) */
   listAll: adminProcedure
     .input(
-      z.object({
-        limit: z.number().min(1).max(100).default(50),
-        offset: z.number().min(0).default(0),
-      }).optional()
+      z
+        .object({
+          limit: z.number().min(1).max(100).default(50),
+          offset: z.number().min(0).default(0),
+        })
+        .optional(),
     )
     .query(async ({ input }) => {
       const { limit = 50, offset = 0 } = input ?? {};
@@ -54,7 +56,7 @@ export const contactRouter = router({
       z.object({
         id: z.number(),
         status: z.enum(["new", "read", "replied", "archived"]),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       await updateContactMessageStatus(input.id, input.status);

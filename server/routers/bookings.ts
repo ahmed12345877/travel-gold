@@ -28,7 +28,9 @@ export const bookingsRouter = router({
         roomType: z.string().optional(),
         totalPrice: z.string().optional(),
         currency: z.string().default("USD"),
-        paymentMethod: z.enum(["credit_card", "paypal", "bank_transfer"]).optional(),
+        paymentMethod: z
+          .enum(["credit_card", "paypal", "bank_transfer"])
+          .optional(),
         promoCode: z.string().optional(),
         discountAmount: z.string().optional(),
         specialRequests: z.string().optional(),
@@ -36,7 +38,7 @@ export const bookingsRouter = router({
         guestName: z.string().optional(),
         guestEmail: z.string().email().optional(),
         guestPhone: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const confirmationCode = `VNR-${nanoid(8).toUpperCase()}`;
@@ -82,7 +84,7 @@ export const bookingsRouter = router({
       z.object({
         id: z.number(),
         status: z.enum(["pending", "confirmed", "cancelled", "completed"]),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       return updateBookingStatus(input.id, input.status);
@@ -94,7 +96,7 @@ export const bookingsRouter = router({
       z.object({
         id: z.number(),
         paymentStatus: z.enum(["pending", "paid", "failed", "refunded"]),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       return updateBookingPaymentStatus(input.id, input.paymentStatus);
@@ -103,10 +105,12 @@ export const bookingsRouter = router({
   /** List all bookings (admin only) */
   listAll: adminProcedure
     .input(
-      z.object({
-        limit: z.number().min(1).max(100).default(50),
-        offset: z.number().min(0).default(0),
-      }).optional()
+      z
+        .object({
+          limit: z.number().min(1).max(100).default(50),
+          offset: z.number().min(0).default(0),
+        })
+        .optional(),
     )
     .query(async ({ input }) => {
       const { limit = 50, offset = 0 } = input ?? {};

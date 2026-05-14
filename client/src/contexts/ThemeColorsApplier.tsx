@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { useThemeMode } from './ThemeModeProvider';
+import { useEffect } from "react";
+import { useThemeMode } from "./ThemeModeProvider";
 
 /**
  * Apply theme colors to document root via CSS custom properties
@@ -10,11 +10,11 @@ export function ThemeColorsApplier() {
 
   useEffect(() => {
     const root = document.documentElement;
-    
+
     // Apply theme mode class for CSS selector matching
-    root.classList.remove('light', 'dark');
+    root.classList.remove("light", "dark");
     root.classList.add(mode);
-    
+
     // Force browser to recalculate styles
     void root.offsetHeight;
   }, [mode]);

@@ -16,7 +16,12 @@ const testRouter = router({ aiCommand: aiCommandRouter });
 const createCaller = testRouter.createCaller;
 
 const adminCtx = {
-  user: { id: "admin-1", name: "Admin", role: "admin" as const, openId: "oid-1" },
+  user: {
+    id: "admin-1",
+    name: "Admin",
+    role: "admin" as const,
+    openId: "oid-1",
+  },
   req: {} as any,
   res: {} as any,
 };
@@ -67,7 +72,9 @@ describe("AI Command Center Router", () => {
         taskType: "content_writer",
       });
 
-      expect(result.response).toBe("Here is a luxury blog post about Luxor temples...");
+      expect(result.response).toBe(
+        "Here is a luxury blog post about Luxor temples...",
+      );
       expect(result.usage?.total_tokens).toBe(300);
       expect(result.model).toBe("gemini-2.5-flash");
       expect(mockedInvokeLLM).toHaveBeenCalledOnce();
@@ -78,7 +85,13 @@ describe("AI Command Center Router", () => {
         id: "test-id",
         created: Date.now(),
         model: "gemini-2.5-flash",
-        choices: [{ index: 0, message: { role: "assistant", content: "SEO analysis..." }, finish_reason: "stop" }],
+        choices: [
+          {
+            index: 0,
+            message: { role: "assistant", content: "SEO analysis..." },
+            finish_reason: "stop",
+          },
+        ],
       });
 
       const caller = createCaller(adminCtx);
@@ -97,7 +110,13 @@ describe("AI Command Center Router", () => {
         id: "test-id",
         created: Date.now(),
         model: "gemini-2.5-flash",
-        choices: [{ index: 0, message: { role: "assistant", content: "Hello!" }, finish_reason: "stop" }],
+        choices: [
+          {
+            index: 0,
+            message: { role: "assistant", content: "Hello!" },
+            finish_reason: "stop",
+          },
+        ],
       });
 
       const caller = createCaller(adminCtx);
@@ -143,7 +162,7 @@ describe("AI Command Center Router", () => {
       await expect(
         caller.aiCommand.chat({
           messages: [{ role: "user", content: "Hello" }],
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -152,7 +171,7 @@ describe("AI Command Center Router", () => {
       await expect(
         caller.aiCommand.chat({
           messages: [{ role: "user", content: "Hello" }],
-        })
+        }),
       ).rejects.toThrow();
     });
   });
@@ -173,7 +192,11 @@ describe("AI Command Center Router", () => {
             finish_reason: "stop",
           },
         ],
-        usage: { prompt_tokens: 150, completion_tokens: 500, total_tokens: 650 },
+        usage: {
+          prompt_tokens: 150,
+          completion_tokens: 500,
+          total_tokens: 650,
+        },
       });
 
       const caller = createCaller(adminCtx);
@@ -193,7 +216,13 @@ describe("AI Command Center Router", () => {
         id: "test-id",
         created: Date.now(),
         model: "gemini-2.5-flash",
-        choices: [{ index: 0, message: { role: "assistant", content: "Translation..." }, finish_reason: "stop" }],
+        choices: [
+          {
+            index: 0,
+            message: { role: "assistant", content: "Translation..." },
+            finish_reason: "stop",
+          },
+        ],
       });
 
       const caller = createCaller(adminCtx);
@@ -216,7 +245,7 @@ describe("AI Command Center Router", () => {
         caller.aiCommand.executeTask({
           taskType: "content_writer",
           prompt: "Write something",
-        })
+        }),
       ).rejects.toThrow();
     });
   });

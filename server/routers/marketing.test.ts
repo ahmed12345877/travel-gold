@@ -23,14 +23,30 @@ vi.mock("../db", () => ({
 // Mock LLM
 vi.mock("../_core/llm", () => ({
   invokeLLM: vi.fn().mockResolvedValue({
-    choices: [{ message: { content: "Generated marketing content for luxury Egypt tours." } }],
+    choices: [
+      {
+        message: {
+          content: "Generated marketing content for luxury Egypt tours.",
+        },
+      },
+    ],
   }),
 }));
 
 // Mock schema
 vi.mock("../../drizzle/schema", () => ({
-  marketingContent: { id: "id", userId: "userId", type: "type", createdAt: "createdAt", isFavorite: "isFavorite" },
-  marketingCalendar: { id: "id", userId: "userId", scheduledDate: "scheduledDate" },
+  marketingContent: {
+    id: "id",
+    userId: "userId",
+    type: "type",
+    createdAt: "createdAt",
+    isFavorite: "isFavorite",
+  },
+  marketingCalendar: {
+    id: "id",
+    userId: "userId",
+    scheduledDate: "scheduledDate",
+  },
   marketingTemplates: { id: "id", type: "type" },
 }));
 
@@ -63,7 +79,13 @@ describe("Marketing Router", () => {
 
   describe("Content Generation", () => {
     it("should have SYSTEM_PROMPTS for all content types", () => {
-      const contentTypes = ["social_media", "email", "trip_description", "blog_seo", "ad_copy"];
+      const contentTypes = [
+        "social_media",
+        "email",
+        "trip_description",
+        "blog_seo",
+        "ad_copy",
+      ];
       // Verify all content types are defined
       contentTypes.forEach((type) => {
         expect(type).toBeTruthy();
@@ -71,14 +93,27 @@ describe("Marketing Router", () => {
     });
 
     it("should have TONE_MODIFIERS for different tones", () => {
-      const tones = ["luxurious", "adventurous", "professional", "casual", "romantic", "cultural"];
+      const tones = [
+        "luxurious",
+        "adventurous",
+        "professional",
+        "casual",
+        "romantic",
+        "cultural",
+      ];
       tones.forEach((tone) => {
         expect(tone).toBeTruthy();
       });
     });
 
     it("should support 5 content types", () => {
-      const types = ["social_media", "email", "trip_description", "blog_seo", "ad_copy"];
+      const types = [
+        "social_media",
+        "email",
+        "trip_description",
+        "blog_seo",
+        "ad_copy",
+      ];
       expect(types).toHaveLength(5);
     });
 
@@ -165,7 +200,13 @@ describe("Marketing Router", () => {
 
     it("should support platform-specific content generation", () => {
       const platforms = {
-        social_media: ["instagram", "facebook", "twitter", "linkedin", "tiktok"],
+        social_media: [
+          "instagram",
+          "facebook",
+          "twitter",
+          "linkedin",
+          "tiktok",
+        ],
         email: ["welcome", "promotional", "newsletter", "follow_up"],
         ad_copy: ["google_ads", "facebook_ads", "instagram_ads", "display"],
       };

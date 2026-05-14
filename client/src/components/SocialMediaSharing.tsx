@@ -1,4 +1,11 @@
-import { Facebook, Twitter, Linkedin, MessageCircle, Copy, Check } from "lucide-react";
+import {
+  Facebook,
+  Twitter,
+  Linkedin,
+  MessageCircle,
+  Copy,
+  Check,
+} from "lucide-react";
 import { useState } from "react";
 
 interface SocialMediaSharingProps {
@@ -36,7 +43,7 @@ export default function SocialMediaSharing({
   return (
     <div className="flex items-center gap-3 p-4 bg-[var(--card)] rounded-lg border border-[var(--theme-primary)]/20">
       <span className="text-sm font-medium text-white/70">مشاركة:</span>
-      
+
       {/* Facebook */}
       <button
         onClick={() => openShare(shareLinks.facebook)}

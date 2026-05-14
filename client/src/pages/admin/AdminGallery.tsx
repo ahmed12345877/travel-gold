@@ -8,21 +8,51 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import OptimizedImage from "@/components/OptimizedImage";
 import {
-  Image, Plus, Pencil, Trash2, Eye, EyeOff, Upload,
-  X, Search, Star, Video, ChevronDown, Loader2, Link2,
-  Grid3X3, LayoutGrid, Filter
+  Image,
+  Plus,
+  Pencil,
+  Trash2,
+  Eye,
+  EyeOff,
+  Upload,
+  X,
+  Search,
+  Star,
+  Video,
+  ChevronDown,
+  Loader2,
+  Link2,
+  Grid3X3,
+  LayoutGrid,
+  Filter,
 } from "lucide-react";
 
 /* ─── Category Options ─── */
 const CATEGORY_OPTIONS = [
-  { value: "Pyramids & Ancient Sites", label: "Pyramids & Ancient Sites", labelAr: "الأهرامات والمواقع الأثرية" },
-  { value: "Temples & Monuments", label: "Temples & Monuments", labelAr: "المعابد والآثار" },
+  {
+    value: "Pyramids & Ancient Sites",
+    label: "Pyramids & Ancient Sites",
+    labelAr: "الأهرامات والمواقع الأثرية",
+  },
+  {
+    value: "Temples & Monuments",
+    label: "Temples & Monuments",
+    labelAr: "المعابد والآثار",
+  },
   { value: "Nile Cruises", label: "Nile Cruises", labelAr: "رحلات النيل" },
   { value: "Desert Safari", label: "Desert Safari", labelAr: "سفاري الصحراء" },
-  { value: "Beach & Resorts", label: "Beach & Resorts", labelAr: "شواطئ ومنتجعات" },
+  {
+    value: "Beach & Resorts",
+    label: "Beach & Resorts",
+    labelAr: "شواطئ ومنتجعات",
+  },
   { value: "Luxury Hotels", label: "Luxury Hotels", labelAr: "فنادق فاخرة" },
   { value: "City Tours", label: "City Tours", labelAr: "جولات المدن" },
-  { value: "Business Travel", label: "Business Travel", labelAr: "سفر الأعمال" },
+  {
+    value: "Business Travel",
+    label: "Business Travel",
+    labelAr: "سفر الأعمال",
+  },
   { value: "Branding", label: "Branding", labelAr: "الهوية البصرية" },
 ];
 
@@ -49,19 +79,24 @@ export default function AdminGallery() {
   const [editingVideo, setEditingVideo] = useState<any>(null);
 
   // Delete confirmation
-  const [deleteConfirm, setDeleteConfirm] = useState<{ type: "image" | "video"; id: number } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    type: "image" | "video";
+    id: number;
+  } | null>(null);
 
   const utils = trpc.useUtils();
 
   /* ─── Queries ─── */
-  const { data: galleryItems, isLoading: loadingImages } = trpc.gallery.listAll.useQuery(
-    { limit: 200, offset: 0 },
-    { staleTime: 30_000 }
-  );
-  const { data: galleryVideos, isLoading: loadingVideos } = trpc.gallery.listAllVideos.useQuery(
-    { limit: 100, offset: 0 },
-    { staleTime: 30_000 }
-  );
+  const { data: galleryItems, isLoading: loadingImages } =
+    trpc.gallery.listAll.useQuery(
+      { limit: 200, offset: 0 },
+      { staleTime: 30_000 },
+    );
+  const { data: galleryVideos, isLoading: loadingVideos } =
+    trpc.gallery.listAllVideos.useQuery(
+      { limit: 100, offset: 0 },
+      { staleTime: 30_000 },
+    );
 
   /* ─── Mutations ─── */
   const createImageMut = trpc.gallery.create.useMutation({
@@ -139,7 +174,8 @@ export default function AdminGallery() {
       item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (item.titleAr || "").includes(searchTerm) ||
       (item.location || "").toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = filterCategory === "all" || item.category === filterCategory;
+    const matchesCategory =
+      filterCategory === "all" || item.category === filterCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -269,7 +305,9 @@ export default function AdminGallery() {
             <div className="text-center py-20 bg-[var(--theme-surface)] rounded-xl border border-white/5">
               <Image className="w-16 h-16 text-[var(--theme-primary)]/20 mx-auto mb-4" />
               <p className="text-white/50 font-[var(--font-body)]">
-                {searchTerm || filterCategory !== "all" ? "No images match your search" : "No images yet. Add your first image!"}
+                {searchTerm || filterCategory !== "all"
+                  ? "No images match your search"
+                  : "No images yet. Add your first image!"}
               </p>
             </div>
           ) : (
@@ -278,7 +316,9 @@ export default function AdminGallery() {
                 <div
                   key={item.id}
                   className={`group relative bg-[var(--theme-surface)] rounded-xl border overflow-hidden transition-all hover:border-[var(--theme-primary)]/40 ${
-                    item.isVisible === "hidden" ? "border-red-500/20 opacity-60" : "border-white/5"
+                    item.isVisible === "hidden"
+                      ? "border-red-500/20 opacity-60"
+                      : "border-white/5"
                   }`}
                 >
                   {/* Image */}
@@ -306,7 +346,11 @@ export default function AdminGallery() {
                         className="w-9 h-9 rounded-full bg-[#1A1A1A] border border-[#333] flex items-center justify-center text-white hover:bg-[var(--theme-primary)] hover:text-[var(--theme-surface)] transition-colors"
                         title={item.isVisible === "visible" ? "Hide" : "Show"}
                       >
-                        {item.isVisible === "visible" ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        {item.isVisible === "visible" ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
                       </button>
                       <button
                         onClick={() => toggleImageFeatured(item)}
@@ -315,12 +359,16 @@ export default function AdminGallery() {
                             ? "bg-[var(--theme-primary)] text-[var(--theme-surface)]"
                             : "bg-[#1A1A1A] border border-[#333] text-white hover:bg-[var(--theme-primary)] hover:text-[var(--theme-surface)]"
                         }`}
-                        title={item.featured === "yes" ? "Unfeature" : "Feature"}
+                        title={
+                          item.featured === "yes" ? "Unfeature" : "Feature"
+                        }
                       >
                         <Star className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => setDeleteConfirm({ type: "image", id: item.id })}
+                        onClick={() =>
+                          setDeleteConfirm({ type: "image", id: item.id })
+                        }
                         className="w-9 h-9 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-400 hover:bg-red-500 hover:text-white transition-colors"
                         title="Delete"
                       >
@@ -375,7 +423,9 @@ export default function AdminGallery() {
             <div className="text-center py-20 bg-[var(--theme-surface)] rounded-xl border border-white/5">
               <Video className="w-16 h-16 text-[var(--theme-primary)]/20 mx-auto mb-4" />
               <p className="text-white/50 font-[var(--font-body)]">
-                {searchTerm ? "No videos match your search" : "No videos yet. Add your first video!"}
+                {searchTerm
+                  ? "No videos match your search"
+                  : "No videos yet. Add your first video!"}
               </p>
             </div>
           ) : (
@@ -384,7 +434,9 @@ export default function AdminGallery() {
                 <div
                   key={video.id}
                   className={`group relative bg-[var(--theme-surface)] rounded-xl border overflow-hidden transition-all hover:border-[var(--theme-primary)]/40 ${
-                    video.isVisible === "hidden" ? "border-red-500/20 opacity-60" : "border-white/5"
+                    video.isVisible === "hidden"
+                      ? "border-red-500/20 opacity-60"
+                      : "border-white/5"
                   }`}
                 >
                   <div className="relative aspect-video">
@@ -408,10 +460,16 @@ export default function AdminGallery() {
                         onClick={() => toggleVideoVisibility(video)}
                         className="w-9 h-9 rounded-full bg-[#1A1A1A] border border-[#333] flex items-center justify-center text-white hover:bg-[var(--theme-primary)] hover:text-[var(--theme-surface)] transition-colors"
                       >
-                        {video.isVisible === "visible" ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        {video.isVisible === "visible" ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
                       </button>
                       <button
-                        onClick={() => setDeleteConfirm({ type: "video", id: video.id })}
+                        onClick={() =>
+                          setDeleteConfirm({ type: "video", id: video.id })
+                        }
                         className="w-9 h-9 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-400 hover:bg-red-500 hover:text-white transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -445,7 +503,10 @@ export default function AdminGallery() {
       {showImageModal && (
         <ImageFormModal
           editing={editingImage}
-          onClose={() => { setShowImageModal(false); setEditingImage(null); }}
+          onClose={() => {
+            setShowImageModal(false);
+            setEditingImage(null);
+          }}
           onSubmit={(data) => {
             if (editingImage) {
               updateImageMut.mutate({ id: editingImage.id, ...data });
@@ -454,7 +515,11 @@ export default function AdminGallery() {
             }
           }}
           onUpload={async (fileData, filename, mimeType) => {
-            const result = await uploadImageMut.mutateAsync({ fileData, filename, mimeType });
+            const result = await uploadImageMut.mutateAsync({
+              fileData,
+              filename,
+              mimeType,
+            });
             return result.url;
           }}
           isSubmitting={createImageMut.isPending || updateImageMut.isPending}
@@ -466,7 +531,10 @@ export default function AdminGallery() {
       {showVideoModal && (
         <VideoFormModal
           editing={editingVideo}
-          onClose={() => { setShowVideoModal(false); setEditingVideo(null); }}
+          onClose={() => {
+            setShowVideoModal(false);
+            setEditingVideo(null);
+          }}
           onSubmit={(data) => {
             if (editingVideo) {
               updateVideoMut.mutate({ id: editingVideo.id, ...data });
@@ -506,7 +574,7 @@ export default function AdminGallery() {
                 disabled={deleteImageMut.isPending || deleteVideoMut.isPending}
                 className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-[var(--font-body)] font-semibold hover:bg-red-600 transition-colors disabled:opacity-50"
               >
-                {(deleteImageMut.isPending || deleteVideoMut.isPending) ? (
+                {deleteImageMut.isPending || deleteVideoMut.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   "Delete"
@@ -534,7 +602,11 @@ function ImageFormModal({
   editing: any;
   onClose: () => void;
   onSubmit: (data: any) => void;
-  onUpload: (fileData: string, filename: string, mimeType: string) => Promise<string>;
+  onUpload: (
+    fileData: string,
+    filename: string,
+    mimeType: string,
+  ) => Promise<string>;
   isSubmitting: boolean;
   isUploading: boolean;
 }) {
@@ -556,35 +628,38 @@ function ImageFormModal({
   const [previewUrl, setPreviewUrl] = useState(editing?.imageUrl || "");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("حجم الملف يتجاوز 10 ميجابايت");
-      return;
-    }
-
-    // Preview
-    const reader = new FileReader();
-    reader.onload = () => setPreviewUrl(reader.result as string);
-    reader.readAsDataURL(file);
-
-    // Upload
-    const base64Reader = new FileReader();
-    base64Reader.onload = async () => {
-      const base64 = (base64Reader.result as string).split(",")[1];
-      try {
-        const url = await onUpload(base64, file.name, file.type);
-        setForm((prev) => ({ ...prev, imageUrl: url }));
-        setPreviewUrl(url);
-        toast.success("تم رفع الصورة بنجاح");
-      } catch {
-        toast.error("فشل رفع الصورة");
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("حجم الملف يتجاوز 10 ميجابايت");
+        return;
       }
-    };
-    base64Reader.readAsDataURL(file);
-  }, [onUpload]);
+
+      // Preview
+      const reader = new FileReader();
+      reader.onload = () => setPreviewUrl(reader.result as string);
+      reader.readAsDataURL(file);
+
+      // Upload
+      const base64Reader = new FileReader();
+      base64Reader.onload = async () => {
+        const base64 = (base64Reader.result as string).split(",")[1];
+        try {
+          const url = await onUpload(base64, file.name, file.type);
+          setForm((prev) => ({ ...prev, imageUrl: url }));
+          setPreviewUrl(url);
+          toast.success("تم رفع الصورة بنجاح");
+        } catch {
+          toast.error("فشل رفع الصورة");
+        }
+      };
+      base64Reader.readAsDataURL(file);
+    },
+    [onUpload],
+  );
 
   const handleCategoryChange = (value: string) => {
     const cat = CATEGORY_OPTIONS.find((c) => c.value === value);
@@ -615,7 +690,10 @@ function ImageFormModal({
           <h3 className="text-white font-[var(--font-display)] font-bold text-lg">
             {editing ? "Edit Image" : "Add New Image"}
           </h3>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
+          <button
+            onClick={onClose}
+            className="text-white/40 hover:text-white transition-colors"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -624,7 +702,9 @@ function ImageFormModal({
         <div className="p-5 space-y-5 max-h-[70vh] overflow-y-auto">
           {/* Image Upload */}
           <div>
-            <label className="text-sm text-white/70 font-[var(--font-body)] mb-2 block">Image *</label>
+            <label className="text-sm text-white/70 font-[var(--font-body)] mb-2 block">
+              Image *
+            </label>
             <div className="flex items-start gap-4">
               {/* Preview */}
               <div
@@ -632,7 +712,13 @@ function ImageFormModal({
                 onClick={() => fileInputRef.current?.click()}
               >
                 {previewUrl ? (
-                  <OptimizedImage src={previewUrl} alt="Preview" className="w-full h-full object-cover" containerClassName="w-full h-full" lazy={false} />
+                  <OptimizedImage
+                    src={previewUrl}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                    containerClassName="w-full h-full"
+                    lazy={false}
+                  />
                 ) : (
                   <Upload className="w-6 h-6 text-[var(--theme-primary)]/30" />
                 )}
@@ -643,7 +729,11 @@ function ImageFormModal({
                   disabled={isUploading}
                   className="flex items-center gap-2 px-3 py-2 bg-[var(--theme-primary)]/10 border border-white/10 rounded-lg text-[var(--theme-primary)] text-sm font-[var(--font-body)] hover:bg-[var(--theme-primary)]/20 transition-colors disabled:opacity-50"
                 >
-                  {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  {isUploading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4" />
+                  )}
                   {isUploading ? "Uploading..." : "Upload Image"}
                 </button>
                 <input
@@ -653,7 +743,9 @@ function ImageFormModal({
                   onChange={handleFileUpload}
                   className="hidden"
                 />
-                <p className="text-[10px] text-white/30">Or paste image URL below</p>
+                <p className="text-[10px] text-white/30">
+                  Or paste image URL below
+                </p>
                 <input
                   type="text"
                   value={form.imageUrl}
@@ -671,20 +763,28 @@ function ImageFormModal({
           {/* Title EN / AR */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">Title (EN) *</label>
+              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">
+                Title (EN) *
+              </label>
               <input
                 type="text"
                 value={form.title}
-                onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, title: e.target.value }))
+                }
                 className="w-full px-3 py-2.5 bg-[var(--theme-surface)] border border-white/5 rounded-lg text-white text-sm font-[var(--font-body)] focus:outline-none focus:border-[var(--theme-primary)]/40"
               />
             </div>
             <div>
-              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">العنوان (AR)</label>
+              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">
+                العنوان (AR)
+              </label>
               <input
                 type="text"
                 value={form.titleAr}
-                onChange={(e) => setForm((prev) => ({ ...prev, titleAr: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, titleAr: e.target.value }))
+                }
                 dir="rtl"
                 className="w-full px-3 py-2.5 bg-[var(--theme-surface)] border border-white/5 rounded-lg text-white text-sm font-[var(--font-body)] focus:outline-none focus:border-[var(--theme-primary)]/40"
               />
@@ -694,19 +794,30 @@ function ImageFormModal({
           {/* Description EN / AR */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">Description (EN)</label>
+              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">
+                Description (EN)
+              </label>
               <textarea
                 value={form.description}
-                onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, description: e.target.value }))
+                }
                 rows={2}
                 className="w-full px-3 py-2.5 bg-[var(--theme-surface)] border border-white/5 rounded-lg text-white text-sm font-[var(--font-body)] focus:outline-none focus:border-[var(--theme-primary)]/40 resize-none"
               />
             </div>
             <div>
-              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">الوصف (AR)</label>
+              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">
+                الوصف (AR)
+              </label>
               <textarea
                 value={form.descriptionAr}
-                onChange={(e) => setForm((prev) => ({ ...prev, descriptionAr: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    descriptionAr: e.target.value,
+                  }))
+                }
                 rows={2}
                 dir="rtl"
                 className="w-full px-3 py-2.5 bg-[var(--theme-surface)] border border-white/5 rounded-lg text-white text-sm font-[var(--font-body)] focus:outline-none focus:border-[var(--theme-primary)]/40 resize-none"
@@ -717,26 +828,36 @@ function ImageFormModal({
           {/* Category & Aspect */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">Category *</label>
+              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">
+                Category *
+              </label>
               <select
                 value={form.category}
                 onChange={(e) => handleCategoryChange(e.target.value)}
                 className="w-full px-3 py-2.5 bg-[var(--theme-surface)] border border-white/5 rounded-lg text-white text-sm font-[var(--font-body)] focus:outline-none focus:border-[var(--theme-primary)]/40"
               >
                 {CATEGORY_OPTIONS.map((cat) => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  <option key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">Aspect Ratio</label>
+              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">
+                Aspect Ratio
+              </label>
               <select
                 value={form.aspect}
-                onChange={(e) => setForm((prev) => ({ ...prev, aspect: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, aspect: e.target.value }))
+                }
                 className="w-full px-3 py-2.5 bg-[var(--theme-surface)] border border-white/5 rounded-lg text-white text-sm font-[var(--font-body)] focus:outline-none focus:border-[var(--theme-primary)]/40"
               >
                 {ASPECT_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -745,20 +866,28 @@ function ImageFormModal({
           {/* Location EN / AR */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">Location (EN)</label>
+              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">
+                Location (EN)
+              </label>
               <input
                 type="text"
                 value={form.location}
-                onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, location: e.target.value }))
+                }
                 className="w-full px-3 py-2.5 bg-[var(--theme-surface)] border border-white/5 rounded-lg text-white text-sm font-[var(--font-body)] focus:outline-none focus:border-[var(--theme-primary)]/40"
               />
             </div>
             <div>
-              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">الموقع (AR)</label>
+              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">
+                الموقع (AR)
+              </label>
               <input
                 type="text"
                 value={form.locationAr}
-                onChange={(e) => setForm((prev) => ({ ...prev, locationAr: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, locationAr: e.target.value }))
+                }
                 dir="rtl"
                 className="w-full px-3 py-2.5 bg-[var(--theme-surface)] border border-white/5 rounded-lg text-white text-sm font-[var(--font-body)] focus:outline-none focus:border-[var(--theme-primary)]/40"
               />
@@ -768,10 +897,14 @@ function ImageFormModal({
           {/* Featured & Sort */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">Featured</label>
+              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">
+                Featured
+              </label>
               <select
                 value={form.featured}
-                onChange={(e) => setForm((prev) => ({ ...prev, featured: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, featured: e.target.value }))
+                }
                 className="w-full px-3 py-2.5 bg-[var(--theme-surface)] border border-white/5 rounded-lg text-white text-sm font-[var(--font-body)] focus:outline-none focus:border-[var(--theme-primary)]/40"
               >
                 <option value="no">No</option>
@@ -779,11 +912,18 @@ function ImageFormModal({
               </select>
             </div>
             <div>
-              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">Sort Order</label>
+              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">
+                Sort Order
+              </label>
               <input
                 type="number"
                 value={form.sortOrder}
-                onChange={(e) => setForm((prev) => ({ ...prev, sortOrder: parseInt(e.target.value) || 0 }))}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    sortOrder: parseInt(e.target.value) || 0,
+                  }))
+                }
                 className="w-full px-3 py-2.5 bg-[var(--theme-surface)] border border-white/5 rounded-lg text-white text-sm font-[var(--font-body)] focus:outline-none focus:border-[var(--theme-primary)]/40"
               />
             </div>
@@ -859,7 +999,10 @@ function VideoFormModal({
           <h3 className="text-white font-[var(--font-display)] font-bold text-lg">
             {editing ? "Edit Video" : "Add New Video"}
           </h3>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
+          <button
+            onClick={onClose}
+            className="text-white/40 hover:text-white transition-colors"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -867,36 +1010,54 @@ function VideoFormModal({
         <div className="p-5 space-y-4">
           {/* Thumbnail URL */}
           <div>
-            <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">Thumbnail URL *</label>
+            <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">
+              Thumbnail URL *
+            </label>
             <input
               type="text"
               value={form.thumbnailUrl}
-              onChange={(e) => setForm((prev) => ({ ...prev, thumbnailUrl: e.target.value }))}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, thumbnailUrl: e.target.value }))
+              }
               placeholder="https://..."
               className="w-full px-3 py-2.5 bg-[var(--theme-surface)] border border-white/5 rounded-lg text-white text-sm font-[var(--font-body)] focus:outline-none focus:border-[var(--theme-primary)]/40"
             />
             {form.thumbnailUrl && (
-              <OptimizedImage src={form.thumbnailUrl} alt="Preview" className="w-32 h-20 object-cover rounded-lg" containerClassName="w-32 h-20 rounded-lg mt-2" lazy={false} />
+              <OptimizedImage
+                src={form.thumbnailUrl}
+                alt="Preview"
+                className="w-32 h-20 object-cover rounded-lg"
+                containerClassName="w-32 h-20 rounded-lg mt-2"
+                lazy={false}
+              />
             )}
           </div>
 
           {/* Title EN / AR */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">Title (EN) *</label>
+              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">
+                Title (EN) *
+              </label>
               <input
                 type="text"
                 value={form.title}
-                onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, title: e.target.value }))
+                }
                 className="w-full px-3 py-2.5 bg-[var(--theme-surface)] border border-white/5 rounded-lg text-white text-sm font-[var(--font-body)] focus:outline-none focus:border-[var(--theme-primary)]/40"
               />
             </div>
             <div>
-              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">العنوان (AR)</label>
+              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">
+                العنوان (AR)
+              </label>
               <input
                 type="text"
                 value={form.titleAr}
-                onChange={(e) => setForm((prev) => ({ ...prev, titleAr: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, titleAr: e.target.value }))
+                }
                 dir="rtl"
                 className="w-full px-3 py-2.5 bg-[var(--theme-surface)] border border-white/5 rounded-lg text-white text-sm font-[var(--font-body)] focus:outline-none focus:border-[var(--theme-primary)]/40"
               />
@@ -905,11 +1066,15 @@ function VideoFormModal({
 
           {/* YouTube ID */}
           <div>
-            <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">YouTube Video ID *</label>
+            <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">
+              YouTube Video ID *
+            </label>
             <input
               type="text"
               value={form.youtubeId}
-              onChange={(e) => setForm((prev) => ({ ...prev, youtubeId: e.target.value }))}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, youtubeId: e.target.value }))
+              }
               placeholder="e.g. dQw4w9WgXcQ"
               className="w-full px-3 py-2.5 bg-[var(--theme-surface)] border border-white/5 rounded-lg text-white text-sm font-[var(--font-body)] focus:outline-none focus:border-[var(--theme-primary)]/40"
             />
@@ -918,21 +1083,29 @@ function VideoFormModal({
           {/* Duration & Views */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">Duration</label>
+              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">
+                Duration
+              </label>
               <input
                 type="text"
                 value={form.duration}
-                onChange={(e) => setForm((prev) => ({ ...prev, duration: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, duration: e.target.value }))
+                }
                 placeholder="e.g. 8:45"
                 className="w-full px-3 py-2.5 bg-[var(--theme-surface)] border border-white/5 rounded-lg text-white text-sm font-[var(--font-body)] focus:outline-none focus:border-[var(--theme-primary)]/40"
               />
             </div>
             <div>
-              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">Views</label>
+              <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">
+                Views
+              </label>
               <input
                 type="text"
                 value={form.views}
-                onChange={(e) => setForm((prev) => ({ ...prev, views: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, views: e.target.value }))
+                }
                 placeholder="e.g. 12.5K"
                 className="w-full px-3 py-2.5 bg-[var(--theme-surface)] border border-white/5 rounded-lg text-white text-sm font-[var(--font-body)] focus:outline-none focus:border-[var(--theme-primary)]/40"
               />
@@ -941,11 +1114,18 @@ function VideoFormModal({
 
           {/* Sort Order */}
           <div>
-            <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">Sort Order</label>
+            <label className="text-sm text-white/70 font-[var(--font-body)] mb-1 block">
+              Sort Order
+            </label>
             <input
               type="number"
               value={form.sortOrder}
-              onChange={(e) => setForm((prev) => ({ ...prev, sortOrder: parseInt(e.target.value) || 0 }))}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  sortOrder: parseInt(e.target.value) || 0,
+                }))
+              }
               className="w-full px-3 py-2.5 bg-[var(--theme-surface)] border border-white/5 rounded-lg text-white text-sm font-[var(--font-body)] focus:outline-none focus:border-[var(--theme-primary)]/40"
             />
           </div>

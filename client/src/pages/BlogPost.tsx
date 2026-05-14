@@ -4,7 +4,15 @@
  */
 import { useParams, Link } from "wouter";
 import { motion } from "framer-motion";
-import { Calendar, Clock, Eye, ArrowLeft, User, Tag, Share2 } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  Eye,
+  ArrowLeft,
+  User,
+  Tag,
+  Share2,
+} from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Streamdown } from "streamdown";
 import PageMeta from "@/components/PageMeta";
@@ -16,18 +24,21 @@ export default function BlogPost() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug || "";
 
-  const { data: post, isLoading, error } = trpc.blog.getBySlug.useQuery(
-    { slug },
-    { enabled: !!slug }
-  );
+  const {
+    data: post,
+    isLoading,
+    error,
+  } = trpc.blog.getBySlug.useQuery({ slug }, { enabled: !!slug });
 
   // Related posts (same category, excluding current)
   const { data: relatedPosts } = trpc.blog.list.useQuery(
     { limit: 3, category: post?.category || undefined },
-    { enabled: !!post?.category }
+    { enabled: !!post?.category },
   );
 
-  const filteredRelated = relatedPosts?.filter((p) => p.slug !== slug).slice(0, 3);
+  const filteredRelated = relatedPosts
+    ?.filter((p) => p.slug !== slug)
+    .slice(0, 3);
 
   const handleShare = () => {
     if (navigator.share) {
@@ -151,7 +162,9 @@ export default function BlogPost() {
     );
   }
 
-  const tags: string[] = Array.isArray(post.tags) ? (post.tags as string[]) : [];
+  const tags: string[] = Array.isArray(post.tags)
+    ? (post.tags as string[])
+    : [];
 
   return (
     <div className="min-h-screen bg-[var(--theme-background)]">
@@ -186,11 +199,17 @@ export default function BlogPost() {
           >
             {/* Breadcrumb */}
             <nav className="flex items-center gap-2 text-sm text-white/40 mb-8">
-              <Link href="/" className="hover:text-[var(--theme-primary)] transition-colors">
+              <Link
+                href="/"
+                className="hover:text-[var(--theme-primary)] transition-colors"
+              >
                 Home
               </Link>
               <span>/</span>
-              <Link href="/blog" className="hover:text-[var(--theme-primary)] transition-colors">
+              <Link
+                href="/blog"
+                className="hover:text-[var(--theme-primary)] transition-colors"
+              >
                 Blog
               </Link>
               <span>/</span>

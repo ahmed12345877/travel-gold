@@ -26,12 +26,12 @@ export default function AdminUsers() {
 
   const usersQuery = trpc.users.list.useQuery(
     { limit, offset: page * limit },
-    { enabled: !isSearching }
+    { enabled: !isSearching },
   );
 
   const searchResults = trpc.users.search.useQuery(
     { query: searchQuery, limit: 20 },
-    { enabled: isSearching && searchQuery.length > 0 }
+    { enabled: isSearching && searchQuery.length > 0 },
   );
 
   const statsQuery = trpc.users.stats.useQuery();
@@ -44,8 +44,8 @@ export default function AdminUsers() {
   });
 
   const displayedUsers = isSearching
-    ? searchResults.data ?? []
-    : usersQuery.data?.users ?? [];
+    ? (searchResults.data ?? [])
+    : (usersQuery.data?.users ?? []);
 
   const totalUsers = usersQuery.data?.total ?? 0;
   const totalPages = Math.ceil(totalUsers / limit);
@@ -62,10 +62,13 @@ export default function AdminUsers() {
     const newRole = currentRole === "admin" ? "user" : "admin";
     if (
       window.confirm(
-        `Are you sure you want to change this user's role to ${newRole}?`
+        `Are you sure you want to change this user's role to ${newRole}?`,
       )
     ) {
-      updateRoleMutation.mutate({ id: userId, role: newRole as "user" | "admin" });
+      updateRoleMutation.mutate({
+        id: userId,
+        role: newRole as "user" | "admin",
+      });
     }
   };
 
@@ -244,9 +247,7 @@ export default function AdminUsers() {
                         <p className="text-white text-sm font-medium">
                           {user.name || "Unnamed User"}
                         </p>
-                        <p className="text-gray-600 text-xs">
-                          ID: {user.id}
-                        </p>
+                        <p className="text-gray-600 text-xs">ID: {user.id}</p>
                       </div>
                     </div>
                   </td>

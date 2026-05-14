@@ -24,11 +24,13 @@ export type ImageGenerationResult = {
  * Returns the S3 URL and key of the stored image
  */
 export async function generateImageWithDALLE(
-  options: ImageGenerationOptions
+  options: ImageGenerationOptions,
 ): Promise<ImageGenerationResult> {
   const apiKey = ENV.openaiApiKey;
   if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is not configured. Please add your OpenAI API key.");
+    throw new Error(
+      "OPENAI_API_KEY is not configured. Please add your OpenAI API key.",
+    );
   }
 
   const openai = new OpenAI({ apiKey });

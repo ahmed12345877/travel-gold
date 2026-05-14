@@ -11,7 +11,8 @@ import Footer from "@/components/Footer";
 import PageMeta from "@/components/PageMeta";
 import WatermarkImage from "@/components/WatermarkImage";
 
-const CDN = "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8";
+const CDN =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8";
 
 type Destination = {
   id: number;
@@ -32,142 +33,307 @@ type Destination = {
 const destinations: Destination[] = [
   // EGYPT
   {
-    id: 1, name: "Cairo & Giza", nameAr: "القاهرة والجيزة", country: "Egypt",
+    id: 1,
+    name: "Cairo & Giza",
+    nameAr: "القاهرة والجيزة",
+    country: "Egypt",
     region: "egypt",
-    description: "Explore the Great Pyramids, the Sphinx, and the vibrant Khan El-Khalili bazaar in Egypt's iconic capital.",
+    description:
+      "Explore the Great Pyramids, the Sphinx, and the vibrant Khan El-Khalili bazaar in Egypt's iconic capital.",
     image: `${CDN}/pyramids-giza_5a4860db.jpg`,
-    rating: 4.9, reviews: 2450,
-    highlights: ["Pyramids of Giza", "Egyptian Museum", "Khan El-Khalili", "Citadel of Saladin"],
-    priceFrom: "$299", duration: "3-5 Days", featured: true,
+    rating: 4.9,
+    reviews: 2450,
+    highlights: [
+      "Pyramids of Giza",
+      "Egyptian Museum",
+      "Khan El-Khalili",
+      "Citadel of Saladin",
+    ],
+    priceFrom: "$299",
+    duration: "3-5 Days",
+    featured: true,
   },
   {
-    id: 2, name: "Luxor", nameAr: "الأقصر", country: "Egypt",
+    id: 2,
+    name: "Luxor",
+    nameAr: "الأقصر",
+    country: "Egypt",
     region: "egypt",
-    description: "Walk through the Valley of Kings and marvel at Karnak Temple, the world's largest ancient religious site.",
+    description:
+      "Walk through the Valley of Kings and marvel at Karnak Temple, the world's largest ancient religious site.",
     image: `${CDN}/karnak-temple_a7b15bf3.jpg`,
-    rating: 4.9, reviews: 1890,
-    highlights: ["Karnak Temple", "Valley of Kings", "Hatshepsut Temple", "Luxor Temple"],
-    priceFrom: "$349", duration: "3-4 Days", featured: true,
+    rating: 4.9,
+    reviews: 1890,
+    highlights: [
+      "Karnak Temple",
+      "Valley of Kings",
+      "Hatshepsut Temple",
+      "Luxor Temple",
+    ],
+    priceFrom: "$349",
+    duration: "3-4 Days",
+    featured: true,
   },
   {
-    id: 3, name: "Aswan", nameAr: "أسوان", country: "Egypt",
+    id: 3,
+    name: "Aswan",
+    nameAr: "أسوان",
+    country: "Egypt",
     region: "egypt",
-    description: "Sail on a felucca at sunset and visit the magnificent Philae Temple on the banks of the Nile.",
+    description:
+      "Sail on a felucca at sunset and visit the magnificent Philae Temple on the banks of the Nile.",
     image: `${CDN}/aswan-felucca_889a0340.jpg`,
-    rating: 4.8, reviews: 1340,
-    highlights: ["Philae Temple", "Nubian Village", "Felucca Sailing", "High Dam"],
-    priceFrom: "$279", duration: "2-3 Days",
+    rating: 4.8,
+    reviews: 1340,
+    highlights: [
+      "Philae Temple",
+      "Nubian Village",
+      "Felucca Sailing",
+      "High Dam",
+    ],
+    priceFrom: "$279",
+    duration: "2-3 Days",
   },
   {
-    id: 4, name: "Sharm El Sheikh", nameAr: "شرم الشيخ", country: "Egypt",
+    id: 4,
+    name: "Sharm El Sheikh",
+    nameAr: "شرم الشيخ",
+    country: "Egypt",
     region: "egypt",
-    description: "Dive into crystal-clear waters, explore coral reefs, and relax on pristine beaches.",
+    description:
+      "Dive into crystal-clear waters, explore coral reefs, and relax on pristine beaches.",
     image: `${CDN}/sharm-resort_a26d0b20.jpg`,
-    rating: 4.7, reviews: 2100,
+    rating: 4.7,
+    reviews: 2100,
     highlights: ["Ras Mohammed", "Naama Bay", "Tiran Island", "Desert Safari"],
-    priceFrom: "$399", duration: "5-7 Days",
+    priceFrom: "$399",
+    duration: "5-7 Days",
   },
   {
-    id: 5, name: "Hurghada", nameAr: "الغردقة", country: "Egypt",
+    id: 5,
+    name: "Hurghada",
+    nameAr: "الغردقة",
+    country: "Egypt",
     region: "egypt",
-    description: "Experience world-class diving and snorkeling in the Red Sea's most vibrant coral gardens.",
+    description:
+      "Experience world-class diving and snorkeling in the Red Sea's most vibrant coral gardens.",
     image: `${CDN}/hurghada-coral_0efb5bb7.jpg`,
-    rating: 4.6, reviews: 1780,
-    highlights: ["Giftun Island", "Coral Reefs", "Desert Safari", "Marina Boulevard"],
-    priceFrom: "$349", duration: "5-7 Days",
+    rating: 4.6,
+    reviews: 1780,
+    highlights: [
+      "Giftun Island",
+      "Coral Reefs",
+      "Desert Safari",
+      "Marina Boulevard",
+    ],
+    priceFrom: "$349",
+    duration: "5-7 Days",
   },
   {
-    id: 6, name: "Alexandria", nameAr: "الإسكندرية", country: "Egypt",
+    id: 6,
+    name: "Alexandria",
+    nameAr: "الإسكندرية",
+    country: "Egypt",
     region: "egypt",
-    description: "Discover the Mediterranean charm of Egypt's second city, from the Citadel to the legendary Library.",
+    description:
+      "Discover the Mediterranean charm of Egypt's second city, from the Citadel to the legendary Library.",
     image: `${CDN}/alex-citadel_a3ce57f5.jpg`,
-    rating: 4.7, reviews: 980,
-    highlights: ["Qaitbay Citadel", "Bibliotheca", "Corniche", "Montazah Palace"],
-    priceFrom: "$199", duration: "2-3 Days",
+    rating: 4.7,
+    reviews: 980,
+    highlights: [
+      "Qaitbay Citadel",
+      "Bibliotheca",
+      "Corniche",
+      "Montazah Palace",
+    ],
+    priceFrom: "$199",
+    duration: "2-3 Days",
   },
   {
-    id: 7, name: "Siwa Oasis", nameAr: "واحة سيوة", country: "Egypt",
+    id: 7,
+    name: "Siwa Oasis",
+    nameAr: "واحة سيوة",
+    country: "Egypt",
     region: "egypt",
-    description: "Escape to the Western Desert's hidden gem with salt lakes, ancient ruins, and starlit skies.",
+    description:
+      "Escape to the Western Desert's hidden gem with salt lakes, ancient ruins, and starlit skies.",
     image: `${CDN}/siwa-oasis_db3b7653.jpg`,
-    rating: 4.8, reviews: 620,
-    highlights: ["Salt Lakes", "Oracle Temple", "Desert Camping", "Hot Springs"],
-    priceFrom: "$249", duration: "3-4 Days",
+    rating: 4.8,
+    reviews: 620,
+    highlights: [
+      "Salt Lakes",
+      "Oracle Temple",
+      "Desert Camping",
+      "Hot Springs",
+    ],
+    priceFrom: "$249",
+    duration: "3-4 Days",
   },
   // MIDDLE EAST
   {
-    id: 8, name: "Dubai", nameAr: "دبي", country: "UAE",
+    id: 8,
+    name: "Dubai",
+    nameAr: "دبي",
+    country: "UAE",
     region: "middle-east",
-    description: "Experience the ultimate luxury in the city of superlatives — from Burj Khalifa to desert adventures.",
+    description:
+      "Experience the ultimate luxury in the city of superlatives — from Burj Khalifa to desert adventures.",
     image: `${CDN}/dubai-skyline_653097dc.jpg`,
-    rating: 4.8, reviews: 3200,
-    highlights: ["Burj Khalifa", "Dubai Mall", "Desert Safari", "Palm Jumeirah"],
-    priceFrom: "$599", duration: "4-6 Days", featured: true,
+    rating: 4.8,
+    reviews: 3200,
+    highlights: [
+      "Burj Khalifa",
+      "Dubai Mall",
+      "Desert Safari",
+      "Palm Jumeirah",
+    ],
+    priceFrom: "$599",
+    duration: "4-6 Days",
+    featured: true,
   },
   {
-    id: 9, name: "Istanbul", nameAr: "إسطنبول", country: "Turkey",
+    id: 9,
+    name: "Istanbul",
+    nameAr: "إسطنبول",
+    country: "Turkey",
     region: "middle-east",
-    description: "Where East meets West — explore the Hagia Sophia, Blue Mosque, and the Grand Bazaar.",
+    description:
+      "Where East meets West — explore the Hagia Sophia, Blue Mosque, and the Grand Bazaar.",
     image: `${CDN}/istanbul-hagia_0ac16b7c.jpg`,
-    rating: 4.8, reviews: 2800,
-    highlights: ["Hagia Sophia", "Blue Mosque", "Grand Bazaar", "Bosphorus Cruise"],
-    priceFrom: "$449", duration: "4-5 Days",
+    rating: 4.8,
+    reviews: 2800,
+    highlights: [
+      "Hagia Sophia",
+      "Blue Mosque",
+      "Grand Bazaar",
+      "Bosphorus Cruise",
+    ],
+    priceFrom: "$449",
+    duration: "4-5 Days",
   },
   // EUROPE
   {
-    id: 10, name: "Paris", nameAr: "باريس", country: "France",
+    id: 10,
+    name: "Paris",
+    nameAr: "باريس",
+    country: "France",
     region: "europe",
-    description: "The City of Light awaits — from the Eiffel Tower to Montmartre, romance fills every corner.",
+    description:
+      "The City of Light awaits — from the Eiffel Tower to Montmartre, romance fills every corner.",
     image: `${CDN}/paris-eiffel_ed23fdbb.jpg`,
-    rating: 4.9, reviews: 4100,
-    highlights: ["Eiffel Tower", "Louvre Museum", "Champs-Élysées", "Versailles"],
-    priceFrom: "$699", duration: "5-7 Days", featured: true,
+    rating: 4.9,
+    reviews: 4100,
+    highlights: [
+      "Eiffel Tower",
+      "Louvre Museum",
+      "Champs-Élysées",
+      "Versailles",
+    ],
+    priceFrom: "$699",
+    duration: "5-7 Days",
+    featured: true,
   },
   {
-    id: 11, name: "Santorini", nameAr: "سانتوريني", country: "Greece",
+    id: 11,
+    name: "Santorini",
+    nameAr: "سانتوريني",
+    country: "Greece",
     region: "europe",
-    description: "Blue domes, white-washed villages, and breathtaking sunsets over the Aegean Sea.",
+    description:
+      "Blue domes, white-washed villages, and breathtaking sunsets over the Aegean Sea.",
     image: `${CDN}/santorini-sunset_1eed46d1.jpg`,
-    rating: 4.9, reviews: 2600,
-    highlights: ["Oia Sunset", "Caldera Views", "Wine Tasting", "Black Sand Beach"],
-    priceFrom: "$749", duration: "4-6 Days",
+    rating: 4.9,
+    reviews: 2600,
+    highlights: [
+      "Oia Sunset",
+      "Caldera Views",
+      "Wine Tasting",
+      "Black Sand Beach",
+    ],
+    priceFrom: "$749",
+    duration: "4-6 Days",
   },
   // ASIA
   {
-    id: 12, name: "Bali", nameAr: "بالي", country: "Indonesia",
+    id: 12,
+    name: "Bali",
+    nameAr: "بالي",
+    country: "Indonesia",
     region: "asia",
-    description: "Tropical paradise with ancient temples, lush rice terraces, and world-class surfing.",
+    description:
+      "Tropical paradise with ancient temples, lush rice terraces, and world-class surfing.",
     image: `${CDN}/bali-terrace_4a2b5d41.jpg`,
-    rating: 4.8, reviews: 3500,
-    highlights: ["Ubud Temples", "Rice Terraces", "Beach Clubs", "Volcano Trekking"],
-    priceFrom: "$549", duration: "5-7 Days",
+    rating: 4.8,
+    reviews: 3500,
+    highlights: [
+      "Ubud Temples",
+      "Rice Terraces",
+      "Beach Clubs",
+      "Volcano Trekking",
+    ],
+    priceFrom: "$549",
+    duration: "5-7 Days",
   },
   {
-    id: 13, name: "Maldives", nameAr: "المالديف", country: "Maldives",
+    id: 13,
+    name: "Maldives",
+    nameAr: "المالديف",
+    country: "Maldives",
     region: "asia",
-    description: "Overwater villas, turquoise lagoons, and the ultimate luxury island escape.",
+    description:
+      "Overwater villas, turquoise lagoons, and the ultimate luxury island escape.",
     image: `${CDN}/maldives-villa_d8294f66.jpg`,
-    rating: 4.9, reviews: 1900,
-    highlights: ["Overwater Villas", "Snorkeling", "Spa Retreats", "Sunset Cruises"],
-    priceFrom: "$1,299", duration: "5-7 Days", featured: true,
+    rating: 4.9,
+    reviews: 1900,
+    highlights: [
+      "Overwater Villas",
+      "Snorkeling",
+      "Spa Retreats",
+      "Sunset Cruises",
+    ],
+    priceFrom: "$1,299",
+    duration: "5-7 Days",
+    featured: true,
   },
   {
-    id: 14, name: "Thailand", nameAr: "تايلاند", country: "Thailand",
+    id: 14,
+    name: "Thailand",
+    nameAr: "تايلاند",
+    country: "Thailand",
     region: "asia",
-    description: "From Bangkok's temples to Phi Phi's turquoise waters — adventure and serenity combined.",
+    description:
+      "From Bangkok's temples to Phi Phi's turquoise waters — adventure and serenity combined.",
     image: `${CDN}/thailand-boat_0ece2c45.jpg`,
-    rating: 4.7, reviews: 2900,
-    highlights: ["Grand Palace", "Phi Phi Islands", "Chiang Mai", "Street Food"],
-    priceFrom: "$499", duration: "5-7 Days",
+    rating: 4.7,
+    reviews: 2900,
+    highlights: [
+      "Grand Palace",
+      "Phi Phi Islands",
+      "Chiang Mai",
+      "Street Food",
+    ],
+    priceFrom: "$499",
+    duration: "5-7 Days",
   },
   {
-    id: 15, name: "Tokyo", nameAr: "طوكيو", country: "Japan",
+    id: 15,
+    name: "Tokyo",
+    nameAr: "طوكيو",
+    country: "Japan",
     region: "asia",
-    description: "A mesmerizing blend of ultra-modern technology and ancient traditions in Japan's capital.",
+    description:
+      "A mesmerizing blend of ultra-modern technology and ancient traditions in Japan's capital.",
     image: `${CDN}/tokyo-night_5f9fb74c.jpg`,
-    rating: 4.8, reviews: 2200,
-    highlights: ["Shibuya Crossing", "Senso-ji Temple", "Mt. Fuji", "Akihabara"],
-    priceFrom: "$799", duration: "5-7 Days",
+    rating: 4.8,
+    reviews: 2200,
+    highlights: [
+      "Shibuya Crossing",
+      "Senso-ji Temple",
+      "Mt. Fuji",
+      "Akihabara",
+    ],
+    priceFrom: "$799",
+    duration: "5-7 Days",
   },
 ];
 
@@ -209,10 +375,7 @@ export default function Destinations() {
 
       <div className="min-h-screen bg-[var(--theme-background)]">
         {/* Hero Section */}
-        <section
-          ref={heroRef}
-          className="relative pt-28 pb-20 overflow-hidden"
-        >
+        <section ref={heroRef} className="relative pt-28 pb-20 overflow-hidden">
           {/* Background image */}
           <div className="absolute inset-0">
             <img
@@ -235,11 +398,13 @@ export default function Destinations() {
               </span>
               <h1 className="font-[var(--font-display)] text-3xl sm:text-2xl sm:text-2xl sm:text-3xl md:text-4xl lg:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
                 Discover Extraordinary{" "}
-                <span className="text-[var(--theme-primary)]">Destinations</span>
+                <span className="text-[var(--theme-primary)]">
+                  Destinations
+                </span>
               </h1>
               <p className="text-white/70 text-lg md:text-xl max-w-2xl mb-8">
-                From the ancient wonders of Egypt to the world's most breathtaking
-                locations — curated luxury experiences await you.
+                From the ancient wonders of Egypt to the world's most
+                breathtaking locations — curated luxury experiences await you.
               </p>
 
               {/* Search Bar */}
@@ -321,7 +486,10 @@ export default function Destinations() {
                       <div className="absolute inset-0 bg-gradient-to-t from-[var(--theme-background)] via-[var(--theme-background)]/30 to-transparent" />
                       <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
                         <div className="flex items-center gap-2 mb-2">
-                          <MapPin size={14} className="text-[var(--theme-primary)]" />
+                          <MapPin
+                            size={14}
+                            className="text-[var(--theme-primary)]"
+                          />
                           <span className="text-white/60 text-xs uppercase tracking-wider">
                             {dest.country}
                           </span>
@@ -381,7 +549,8 @@ export default function Destinations() {
 
             {/* Results count */}
             <p className="text-white/40 text-sm mb-8">
-              Showing {filtered.length} destination{filtered.length !== 1 ? "s" : ""}
+              Showing {filtered.length} destination
+              {filtered.length !== 1 ? "s" : ""}
               {activeRegion !== "all" && (
                 <span>
                   {" "}
@@ -394,7 +563,11 @@ export default function Destinations() {
               {searchQuery && (
                 <span>
                   {" "}
-                  matching &quot;<span className="text-[var(--theme-primary)]">{searchQuery}</span>&quot;
+                  matching &quot;
+                  <span className="text-[var(--theme-primary)]">
+                    {searchQuery}
+                  </span>
+                  &quot;
                 </span>
               )}
             </p>
@@ -446,7 +619,9 @@ export default function Destinations() {
                         <h3 className="font-[var(--font-display)] text-lg font-semibold text-white group-hover:text-[var(--theme-primary)] transition-colors">
                           {dest.name}
                         </h3>
-                        <span className="text-white/30 text-xs">{dest.nameAr}</span>
+                        <span className="text-white/30 text-xs">
+                          {dest.nameAr}
+                        </span>
                       </div>
                       <span className="text-[var(--theme-primary)] font-[var(--font-display)] text-lg font-bold">
                         {dest.priceFrom}
