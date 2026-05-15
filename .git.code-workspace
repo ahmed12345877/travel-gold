@@ -1,0 +1,28 @@
+{
+	"folders": [
+		{
+			"path": ".git"
+		},
+		{
+			"path": "node_modules"
+		},
+		{
+			"path": "client"
+		},
+		{
+			"path": "server"
+		},
+		{
+			"path": "dist"
+		},
+		{
+			"path": "drizzle"
+		},
+		{
+			"path": "shared"
+		},
+		{
+			"path": "public"
+		}
+	]
+}
