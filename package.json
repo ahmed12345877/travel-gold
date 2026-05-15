@@ -12,9 +12,14 @@
     "test": "vitest run",
     "db:push": "drizzle-kit generate && drizzle-kit migrate"
   },
-  "dependencies": {
+ "dependencies": {
     "vite": "^5.0.0",
-"esbuild": "^0.20.0"
+    "esbuild": "^0.20.0",
+    "@aws-sdk/client-s3": "^3.693.0",
+    "@aws-sdk/s3-request-presigner": "^3.693.0",
+    "@google/generai": "^1.50.1",
+    "@hookform/resolvers": "^3.3.2",
+    "@radix-ui/react-accordion": "^1.2.12"
     "@aws-sdk/client-s3": "^3.693.0",
     "@aws-sdk/s3-request-presigner": "^3.693.0",
     "@google/genai": "^1.50.1",
