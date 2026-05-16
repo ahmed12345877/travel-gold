@@ -11,11 +11,11 @@
         },
         {
             "source": "/assets/(.*)",
-            "destination": "/assets/$1"
+            "destination": "/dist/public/assets/$1"
         },
         {
             "source": "/(.*)",
-            "destination": "/index.html"
+            "destination": "/dist/public/index.html"
         }
     ]
 }
