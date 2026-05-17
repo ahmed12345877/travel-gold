@@ -1,6 +1,8 @@
+import "dotenv/config";
 import { defineConfig } from "drizzle-kit";
 
 const connectionString = process.env.DATABASE_URL;
+
 if (!connectionString) {
   throw new Error("DATABASE_URL is required to run drizzle commands");
 }
@@ -8,7 +10,7 @@ if (!connectionString) {
 export default defineConfig({
   schema: "./drizzle/schema.ts",
   out: "./drizzle",
-  dialect: "mysql",
+  dialect: "mysql", // تأكد أنها mysql لأنك تستخدم TiDB
   dbCredentials: {
     url: connectionString,
   },

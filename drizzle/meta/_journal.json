@@ -64,6 +64,20 @@
       "when": 1776927695124,
       "tag": "0008_fat_wendigo",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1778976548024,
+      "tag": "0009_regular_jean_grey",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1778978035868,
+      "tag": "0010_high_black_crow",
+      "breakpoints": true
     }
   ]
 }
