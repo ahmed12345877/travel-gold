@@ -1,0 +1,1 @@
+ALTER TABLE `ai_credits` ADD CONSTRAINT `ai_credits_userId_users_id_fk` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;

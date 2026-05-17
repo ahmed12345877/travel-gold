@@ -14,6 +14,10 @@
             "destination": "/dist/public/assets/$1"
         },
         {
+            "source": "/(.*\\.(png|jpg|jpeg|gif|svg|webp|woff2|woff|ttf))",
+            "destination": "/dist/public/$1"
+        },
+        {
             "source": "/(.*)",
             "destination": "/dist/public/index.html"
         }

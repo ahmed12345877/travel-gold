@@ -262,7 +262,7 @@ export type InsertAISubscription = typeof aiSubscriptions.$inferInsert;
  */
 export const aiCredits = mysqlTable("ai_credits", {
   id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().unique(),
+  userId: int("userId").references(() => users.id).notNull().unique(),
   /** Credit balance */
   balance: decimal("balance", { precision: 12, scale: 2 }).default("0").notNull(),
   /** Lifetime credits used */
