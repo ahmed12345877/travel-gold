@@ -41,6 +41,7 @@ export function getSessionCookieOptions(
 
   return {
     httpOnly: true,
+    domain: process.env.NODE_ENV === 'production' ? '.vanirgroup.com' : 'localhost',
     path: "/",
     sameSite: "none",
     secure: isSecureRequest(req),

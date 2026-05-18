@@ -41,7 +41,7 @@ export const backupRouter = router({
     const db = await getDb();
     if (!db) return [];
 
-    const sections = [];
+    const sections: { id: string; label: string; recordCount: number }[] = [];
     for (const [id, { table, label }] of Object.entries(TABLE_MAP)) {
       try {
         const [result] = await db
