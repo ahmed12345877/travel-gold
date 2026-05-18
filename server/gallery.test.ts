@@ -21,13 +21,22 @@ vi.mock("./db", async (importOriginal) => {
   return {
     ...actual,
     createGalleryItem: vi.fn((data: any) => {
-      const item = { id: nextItemId++, ...data, createdAt: new Date(), updatedAt: new Date() };
+      const item = {
+        id: nextItemId++,
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
       mockItems.push(item);
       return item;
     }),
-    getVisibleGalleryItems: vi.fn(() => mockItems.filter((i) => i.isVisible === "visible")),
+    getVisibleGalleryItems: vi.fn(() =>
+      mockItems.filter((i) => i.isVisible === "visible"),
+    ),
     getAllGalleryItems: vi.fn((_limit?: number, _offset?: number) => mockItems),
-    getGalleryItemById: vi.fn((id: number) => mockItems.find((i) => i.id === id) || null),
+    getGalleryItemById: vi.fn(
+      (id: number) => mockItems.find((i) => i.id === id) || null,
+    ),
     updateGalleryItem: vi.fn((id: number, data: any) => {
       const idx = mockItems.findIndex((i) => i.id === id);
       if (idx === -1) throw new Error("Not found");
@@ -39,13 +48,24 @@ vi.mock("./db", async (importOriginal) => {
       if (idx !== -1) mockItems.splice(idx, 1);
     }),
     createGalleryVideo: vi.fn((data: any) => {
-      const video = { id: nextVideoId++, ...data, createdAt: new Date(), updatedAt: new Date() };
+      const video = {
+        id: nextVideoId++,
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
       mockVideos.push(video);
       return video;
     }),
-    getVisibleGalleryVideos: vi.fn(() => mockVideos.filter((v) => v.isVisible === "visible")),
-    getAllGalleryVideos: vi.fn((_limit?: number, _offset?: number) => mockVideos),
-    getGalleryVideoById: vi.fn((id: number) => mockVideos.find((v) => v.id === id) || null),
+    getVisibleGalleryVideos: vi.fn(() =>
+      mockVideos.filter((v) => v.isVisible === "visible"),
+    ),
+    getAllGalleryVideos: vi.fn(
+      (_limit?: number, _offset?: number) => mockVideos,
+    ),
+    getGalleryVideoById: vi.fn(
+      (id: number) => mockVideos.find((v) => v.id === id) || null,
+    ),
     updateGalleryVideo: vi.fn((id: number, data: any) => {
       const idx = mockVideos.findIndex((v) => v.id === id);
       if (idx === -1) throw new Error("Not found");
@@ -124,7 +144,7 @@ describe("gallery.listVisible (public)", () => {
   it("returns only visible items", async () => {
     mockItems.push(
       { id: 1, title: "Visible", isVisible: "visible" },
-      { id: 2, title: "Hidden", isVisible: "hidden" }
+      { id: 2, title: "Hidden", isVisible: "hidden" },
     );
     const caller = appRouter.createCaller(createPublicContext());
     const result = await caller.gallery.listVisible();
@@ -143,7 +163,7 @@ describe("gallery.listVisibleVideos (public)", () => {
   it("returns only visible videos", async () => {
     mockVideos.push(
       { id: 1, title: "Visible Video", isVisible: "visible" },
-      { id: 2, title: "Hidden Video", isVisible: "hidden" }
+      { id: 2, title: "Hidden Video", isVisible: "hidden" },
     );
     const caller = appRouter.createCaller(createPublicContext());
     const result = await caller.gallery.listVisibleVideos();
@@ -176,7 +196,7 @@ describe("gallery.create (admin)", () => {
         imageUrl: "https://cdn.example.com/test.jpg",
         title: "Test",
         category: "Pyramids & Ancient Sites",
-      })
+      }),
     ).rejects.toThrow();
   });
 
@@ -187,7 +207,7 @@ describe("gallery.create (admin)", () => {
         imageUrl: "https://cdn.example.com/test.jpg",
         title: "Test",
         category: "Pyramids & Ancient Sites",
-      })
+      }),
     ).rejects.toThrow();
   });
 });
@@ -196,7 +216,7 @@ describe("gallery.listAll (admin)", () => {
   it("returns all items for admin", async () => {
     mockItems.push(
       { id: 1, title: "Item 1", isVisible: "visible" },
-      { id: 2, title: "Item 2", isVisible: "hidden" }
+      { id: 2, title: "Item 2", isVisible: "hidden" },
     );
     const caller = appRouter.createCaller(createAdminContext());
     const result = await caller.gallery.listAll({ limit: 100, offset: 0 });
@@ -205,7 +225,9 @@ describe("gallery.listAll (admin)", () => {
 
   it("rejects non-admin users", async () => {
     const caller = appRouter.createCaller(createUserContext());
-    await expect(caller.gallery.listAll({ limit: 100, offset: 0 })).rejects.toThrow();
+    await expect(
+      caller.gallery.listAll({ limit: 100, offset: 0 }),
+    ).rejects.toThrow();
   });
 });
 
@@ -254,7 +276,8 @@ describe("gallery.uploadImage (admin)", () => {
   it("uploads an image and returns URL", async () => {
     const caller = appRouter.createCaller(createAdminContext());
     // Small base64 encoded 1x1 pixel PNG
-    const tinyPng = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+    const tinyPng =
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
     const result = await caller.gallery.uploadImage({
       fileData: tinyPng,
       filename: "test.png",
@@ -271,7 +294,7 @@ describe("gallery.uploadImage (admin)", () => {
         fileData: "dGVzdA==",
         filename: "test.png",
         mimeType: "image/png",
-      })
+      }),
     ).rejects.toThrow();
   });
 });
@@ -302,7 +325,7 @@ describe("gallery.createVideo (admin)", () => {
         thumbnailUrl: "https://img.youtube.com/vi/test/maxresdefault.jpg",
         title: "Test",
         youtubeId: "test123",
-      })
+      }),
     ).rejects.toThrow();
   });
 });
@@ -311,7 +334,7 @@ describe("gallery.listAllVideos (admin)", () => {
   it("returns all videos for admin", async () => {
     mockVideos.push(
       { id: 1, title: "Video 1", isVisible: "visible" },
-      { id: 2, title: "Video 2", isVisible: "hidden" }
+      { id: 2, title: "Video 2", isVisible: "hidden" },
     );
     const caller = appRouter.createCaller(createAdminContext());
     const result = await caller.gallery.listAllVideos({ limit: 50, offset: 0 });

@@ -4,7 +4,14 @@
  * Mobile-optimized: single column on mobile, responsive padding
  */
 import { motion } from "framer-motion";
-import { ArrowRight, ChevronLeft, ChevronRight, Tent, Ship, Mountain } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Tent,
+  Ship,
+  Mountain,
+} from "lucide-react";
 import { useInView } from "@/hooks/useInView";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -13,19 +20,22 @@ const activities = [
   {
     icon: Tent,
     title: "Tent Camping",
-    description: "Our personalized itineraries meticulously designed to cater to your personalized itineraries are meticulously crafted.",
+    description:
+      "Our personalized itineraries meticulously designed to cater to your personalized itineraries are meticulously crafted.",
     color: "#D4A853",
   },
   {
     icon: Mountain,
     title: "Mountain Hiking",
-    description: "Our personalized itineraries meticulously designed to cater to your personalized itineraries are meticulously crafted.",
+    description:
+      "Our personalized itineraries meticulously designed to cater to your personalized itineraries are meticulously crafted.",
     color: "#F5E6B8",
   },
   {
     icon: Ship,
     title: "Fishing & Boat",
-    description: "Our personalized itineraries meticulously designed to cater to your personalized itineraries are meticulously crafted.",
+    description:
+      "Our personalized itineraries meticulously designed to cater to your personalized itineraries are meticulously crafted.",
     color: "#B8860B",
   },
 ];
@@ -35,7 +45,11 @@ export default function ActivitiesSection() {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   return (
-    <section id="activities" className="py-12 sm:py-16 md:py-24 bg-[var(--theme-surface)]" ref={ref}>
+    <section
+      id="activities"
+      className="py-12 sm:py-16 md:py-24 bg-[var(--theme-surface)]"
+      ref={ref}
+    >
       <div className="container">
         {/* Header */}
         <motion.div
@@ -53,8 +67,8 @@ export default function ActivitiesSection() {
             Travel Benefits
           </h2>
           <p className="text-white/50 max-w-md text-sm sm:text-base">
-            Credibly harness client-centric opportunities with
-            prospective bandwidth
+            Credibly harness client-centric opportunities with prospective
+            bandwidth
           </p>
 
           {/* Navigation arrows */}
@@ -66,7 +80,11 @@ export default function ActivitiesSection() {
               <ChevronLeft size={16} className="sm:w-[18px] sm:h-[18px]" />
             </button>
             <button
-              onClick={() => setCurrentSlide(Math.min(activities.length - 1, currentSlide + 1))}
+              onClick={() =>
+                setCurrentSlide(
+                  Math.min(activities.length - 1, currentSlide + 1),
+                )
+              }
               className="w-9 h-9 sm:w-10 sm:h-10 border border-[var(--theme-primary)]/40 flex items-center justify-center text-[var(--theme-primary)] hover:bg-[var(--theme-primary)] hover:text-[var(--theme-surface)] transition-all duration-300"
             >
               <ChevronRight size={16} className="sm:w-[18px] sm:h-[18px]" />
@@ -91,7 +109,10 @@ export default function ActivitiesSection() {
                 className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex items-center justify-center mb-4 sm:mb-6 border border-[var(--theme-primary)]/30"
                 style={{ color: activity.color }}
               >
-                <activity.icon size={24} className="sm:w-7 sm:h-7 md:w-7 md:h-7" />
+                <activity.icon
+                  size={24}
+                  className="sm:w-7 sm:h-7 md:w-7 md:h-7"
+                />
               </div>
 
               <h3 className="font-[var(--font-display)] text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4">
@@ -106,7 +127,10 @@ export default function ActivitiesSection() {
                 className="group/link inline-flex items-center gap-2 text-[var(--theme-primary)] text-xs sm:text-sm font-medium hover:text-white transition-colors"
               >
                 View Details
-                <ArrowRight size={14} className="group-hover/link:translate-x-1 transition-transform" />
+                <ArrowRight
+                  size={14}
+                  className="group-hover/link:translate-x-1 transition-transform"
+                />
               </button>
             </motion.div>
           ))}

@@ -10,7 +10,7 @@ describe("Gemini API Key Validation", () => {
   it("should be able to reach Gemini API", async () => {
     const apiKey = process.env.GEMINI_API_KEY;
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
     );
     expect(response.status).toBe(200);
     const data = await response.json();

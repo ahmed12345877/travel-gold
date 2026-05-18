@@ -26,7 +26,8 @@ export default function TripDescriptionGenerator() {
           { value: "family", label: "Family-Friendly" },
           { value: "budget", label: "Budget-Friendly" },
         ],
-        placeholderPrompt: "e.g., Write a vivid description for a 7-day luxury Nile cruise from Luxor to Aswan...",
+        placeholderPrompt:
+          "e.g., Write a vivid description for a 7-day luxury Nile cruise from Luxor to Aswan...",
         promptHints: [
           "7-day luxury Nile cruise",
           "Cairo & Pyramids day tour",

@@ -11,7 +11,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 
 function isPortAvailable(port: number): Promise<boolean> {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     const server = net.createServer();
     server.listen(port, () => {
       server.close(() => resolve(true));
@@ -47,7 +47,7 @@ export async function startServer() {
     createExpressMiddleware({
       router: appRouter,
       createContext,
-    })
+    }),
   );
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {

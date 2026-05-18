@@ -17,7 +17,13 @@ interface DustMote {
   opacity: number;
 }
 
-export function GoldDustParticles({ count = 20, className = "" }: { count?: number; className?: string }) {
+export function GoldDustParticles({
+  count = 20,
+  className = "",
+}: {
+  count?: number;
+  className?: string;
+}) {
   const motes = useMemo<DustMote[]>(() => {
     return Array.from({ length: count }, (_, i) => ({
       id: i,
@@ -31,7 +37,9 @@ export function GoldDustParticles({ count = 20, className = "" }: { count?: numb
   }, [count]);
 
   return (
-    <div className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`}>
+    <div
+      className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`}
+    >
       {motes.map((m) => (
         <motion.div
           key={m.id}
@@ -65,7 +73,12 @@ export function AmbientGlow({
   size = "md",
   className = "",
 }: {
-  position?: "center" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
+  position?:
+    | "center"
+    | "top-left"
+    | "top-right"
+    | "bottom-left"
+    | "bottom-right";
   size?: "sm" | "md" | "lg";
   className?: string;
 }) {
@@ -76,13 +89,18 @@ export function AmbientGlow({
     "bottom-left": "bottom-0 left-0 -translate-x-1/3 translate-y-1/3",
     "bottom-right": "bottom-0 right-0 translate-x-1/3 translate-y-1/3",
   };
-  const sizeMap = { sm: "w-[300px] h-[300px]", md: "w-[500px] h-[500px]", lg: "w-[700px] h-[700px]" };
+  const sizeMap = {
+    sm: "w-[300px] h-[300px]",
+    md: "w-[500px] h-[500px]",
+    lg: "w-[700px] h-[700px]",
+  };
 
   return (
     <div
       className={`absolute ${posMap[position]} ${sizeMap[size]} rounded-full pointer-events-none ${className}`}
       style={{
-        background: "radial-gradient(circle, rgba(212,168,83,0.06) 0%, transparent 70%)",
+        background:
+          "radial-gradient(circle, rgba(212,168,83,0.06) 0%, transparent 70%)",
         filter: "blur(60px)",
       }}
     />
@@ -152,7 +170,9 @@ export function GlowCard({
   return (
     <div
       className={`relative rounded-xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent backdrop-blur-sm overflow-hidden transition-all duration-500 ${
-        hoverGlow ? "hover:border-[var(--theme-primary)]/20 hover:shadow-lg hover:shadow-[var(--theme-primary)]/5" : ""
+        hoverGlow
+          ? "hover:border-[var(--theme-primary)]/20 hover:shadow-lg hover:shadow-[var(--theme-primary)]/5"
+          : ""
       } ${className}`}
     >
       {children}

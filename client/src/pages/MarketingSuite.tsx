@@ -35,7 +35,15 @@ import {
 } from "lucide-react";
 
 /* ─── Section Title (consistent with other pages) ─── */
-function SectionTitle({ subtitle, title, description }: { subtitle: string; title: string; description?: string }) {
+function SectionTitle({
+  subtitle,
+  title,
+  description,
+}: {
+  subtitle: string;
+  title: string;
+  description?: string;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -46,7 +54,9 @@ function SectionTitle({ subtitle, title, description }: { subtitle: string; titl
     >
       <div className="flex items-center justify-center gap-3 mb-4">
         <div className="h-px w-12 bg-gradient-to-r from-transparent to-[var(--theme-primary)]" />
-        <span className="text-[var(--theme-primary)] text-sm tracking-[0.3em] uppercase font-light">{subtitle}</span>
+        <span className="text-[var(--theme-primary)] text-sm tracking-[0.3em] uppercase font-light">
+          {subtitle}
+        </span>
         <div className="h-px w-12 bg-gradient-to-l from-transparent to-[var(--theme-primary)]" />
       </div>
       <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
@@ -73,7 +83,8 @@ const TOOLS = [
   {
     icon: Instagram,
     title: "Social Media Generator",
-    description: "Create engaging posts for Instagram, Facebook, Twitter, LinkedIn & TikTok optimized for each platform.",
+    description:
+      "Create engaging posts for Instagram, Facebook, Twitter, LinkedIn & TikTok optimized for each platform.",
     href: "/marketing/social-media",
     color: "#E1306C",
     platforms: ["Instagram", "Facebook", "Twitter", "LinkedIn", "TikTok"],
@@ -81,7 +92,8 @@ const TOOLS = [
   {
     icon: Mail,
     title: "Email Campaign Builder",
-    description: "Design compelling email campaigns with subject lines, preview text, and persuasive copy that drives bookings.",
+    description:
+      "Design compelling email campaigns with subject lines, preview text, and persuasive copy that drives bookings.",
     href: "/marketing/email",
     color: "#D4A853",
     platforms: ["Welcome", "Promo", "Newsletter", "Follow-up"],
@@ -89,7 +101,8 @@ const TOOLS = [
   {
     icon: FileText,
     title: "Trip Description Writer",
-    description: "Generate vivid, immersive trip descriptions in multiple languages that transport readers to the destination.",
+    description:
+      "Generate vivid, immersive trip descriptions in multiple languages that transport readers to the destination.",
     href: "/marketing/trip-description",
     color: "#4ECDC4",
     platforms: ["English", "Arabic", "French", "German", "Spanish"],
@@ -97,7 +110,8 @@ const TOOLS = [
   {
     icon: PenTool,
     title: "SEO Blog Generator",
-    description: "Create SEO-optimized blog articles about Egyptian travel, culture, and tourism that rank on Google.",
+    description:
+      "Create SEO-optimized blog articles about Egyptian travel, culture, and tourism that rank on Google.",
     href: "/marketing/blog-seo",
     color: "#FF6B6B",
     platforms: ["Articles", "Guides", "Lists", "Reviews"],
@@ -105,7 +119,8 @@ const TOOLS = [
   {
     icon: Megaphone,
     title: "Ad Copy Creator",
-    description: "Write compelling ad copy for Google Ads, Facebook Ads, and Display campaigns with high conversion rates.",
+    description:
+      "Write compelling ad copy for Google Ads, Facebook Ads, and Display campaigns with high conversion rates.",
     href: "/marketing/ad-copy",
     color: "#45B7D1",
     platforms: ["Google Ads", "Facebook Ads", "Display"],
@@ -113,14 +128,15 @@ const TOOLS = [
   {
     icon: Calendar,
     title: "Content Calendar",
-    description: "Plan and schedule your marketing content with a visual calendar. Track status and never miss a posting date.",
+    description:
+      "Plan and schedule your marketing content with a visual calendar. Track status and never miss a posting date.",
     href: "/marketing/calendar",
     color: "#96CEB4",
     platforms: ["Schedule", "Track", "Organize", "Plan"],
   },
 ];
 
-function ToolCard({ tool, index }: { tool: typeof TOOLS[0]; index: number }) {
+function ToolCard({ tool, index }: { tool: (typeof TOOLS)[0]; index: number }) {
   const Icon = tool.icon;
   return (
     <motion.div
@@ -130,8 +146,10 @@ function ToolCard({ tool, index }: { tool: typeof TOOLS[0]; index: number }) {
       transition={{ duration: 0.5, delay: index * 0.1 }}
     >
       <Link href={tool.href}>
-        <div className="group relative bg-[#111111] border border-[#2a2a2a] rounded-xl p-6 h-full cursor-pointer
-          hover:border-[var(--theme-primary)]/50 transition-all duration-500 overflow-hidden">
+        <div
+          className="group relative bg-[#111111] border border-[#2a2a2a] rounded-xl p-6 h-full cursor-pointer
+          hover:border-[var(--theme-primary)]/50 transition-all duration-500 overflow-hidden"
+        >
           {/* Corner accents */}
           <div className="absolute top-0 left-0 w-8 h-8 border-t border-l border-[var(--theme-primary)]/20 group-hover:border-[var(--theme-primary)]/60 transition-colors duration-500 rounded-tl-xl" />
           <div className="absolute bottom-0 right-0 w-8 h-8 border-b border-r border-[var(--theme-primary)]/20 group-hover:border-[var(--theme-primary)]/60 transition-colors duration-500 rounded-br-xl" />
@@ -143,7 +161,10 @@ function ToolCard({ tool, index }: { tool: typeof TOOLS[0]; index: number }) {
           <div className="relative mb-5">
             <div
               className="w-14 h-14 rounded-xl flex items-center justify-center transition-transform duration-500 group-hover:scale-110"
-              style={{ backgroundColor: `${tool.color}15`, border: `1px solid ${tool.color}30` }}
+              style={{
+                backgroundColor: `${tool.color}15`,
+                border: `1px solid ${tool.color}30`,
+              }}
             >
               <Icon className="w-7 h-7" style={{ color: tool.color }} />
             </div>
@@ -187,32 +208,38 @@ const FEATURES = [
   {
     icon: Sparkles,
     title: "AI-Powered Content",
-    description: "Advanced AI generates professional marketing content tailored for the tourism industry.",
+    description:
+      "Advanced AI generates professional marketing content tailored for the tourism industry.",
   },
   {
     icon: Languages,
     title: "Multi-Language Support",
-    description: "Generate content in 10+ languages to reach international travelers worldwide.",
+    description:
+      "Generate content in 10+ languages to reach international travelers worldwide.",
   },
   {
     icon: Target,
     title: "Platform Optimized",
-    description: "Content automatically formatted and optimized for each social media platform.",
+    description:
+      "Content automatically formatted and optimized for each social media platform.",
   },
   {
     icon: Zap,
     title: "Instant Generation",
-    description: "Get professional marketing content in seconds, not hours. Save time and resources.",
+    description:
+      "Get professional marketing content in seconds, not hours. Save time and resources.",
   },
   {
     icon: TrendingUp,
     title: "SEO Optimized",
-    description: "Built-in SEO best practices ensure your content ranks well on search engines.",
+    description:
+      "Built-in SEO best practices ensure your content ranks well on search engines.",
   },
   {
     icon: Copy,
     title: "One-Click Copy",
-    description: "Copy generated content directly to clipboard. Ready to paste and publish.",
+    description:
+      "Copy generated content directly to clipboard. Ready to paste and publish.",
   },
 ];
 
@@ -254,7 +281,9 @@ function StatsSection() {
                 className="bg-[#111111] border border-[#2a2a2a] rounded-xl p-5 text-center"
               >
                 <Icon className="w-6 h-6 text-[var(--theme-primary)] mx-auto mb-2" />
-                <div className="text-2xl font-bold text-white">{stat.value}</div>
+                <div className="text-2xl font-bold text-white">
+                  {stat.value}
+                </div>
                 <div className="text-xs text-gray-500 mt-1">{stat.label}</div>
               </motion.div>
             );
@@ -283,7 +312,11 @@ export default function MarketingSuite() {
       <section className="relative pt-32 pb-20 overflow-hidden">
         {/* Background image + overlay */}
         <div className="absolute inset-0">
-          <img src="/manus-storage/hero-marketing_8b0cdcda.jpg" alt="" className="w-full h-full object-cover" />
+          <img
+            src="/manus-storage/hero-marketing_8b0cdcda.jpg"
+            alt=""
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-b from-[var(--theme-background)]/90 via-[var(--theme-background)]/80 to-[var(--theme-background)]" />
           <div
             className="absolute inset-0 opacity-[0.03]"
@@ -301,19 +334,24 @@ export default function MarketingSuite() {
           >
             <div className="flex items-center justify-center gap-3 mb-6">
               <div className="h-px w-16 bg-gradient-to-r from-transparent to-[var(--theme-primary)]" />
-              <span className="text-[var(--theme-primary)] text-sm tracking-[0.3em] uppercase font-light">Marketing Suite</span>
+              <span className="text-[var(--theme-primary)] text-sm tracking-[0.3em] uppercase font-light">
+                Marketing Suite
+              </span>
               <div className="h-px w-16 bg-gradient-to-l from-transparent to-[var(--theme-primary)]" />
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
               AI-Powered Marketing
               <br />
-              <span className="text-[var(--theme-primary)]">for Tourism Companies</span>
+              <span className="text-[var(--theme-primary)]">
+                for Tourism Companies
+              </span>
             </h1>
 
             <p className="text-gray-400 text-lg md:text-xl max-w-3xl mx-auto mb-10 leading-relaxed">
-              Generate professional social media posts, email campaigns, trip descriptions,
-              SEO blog articles, and ad copy — all powered by AI and optimized for the tourism industry.
+              Generate professional social media posts, email campaigns, trip
+              descriptions, SEO blog articles, and ad copy — all powered by AI
+              and optimized for the tourism industry.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -413,8 +451,12 @@ export default function MarketingSuite() {
                     <Icon className="w-6 h-6 text-[var(--theme-primary)]" />
                   </div>
                   <div>
-                    <h3 className="text-white font-semibold mb-1">{feature.title}</h3>
-                    <p className="text-gray-500 text-sm leading-relaxed">{feature.description}</p>
+                    <h3 className="text-white font-semibold mb-1">
+                      {feature.title}
+                    </h3>
+                    <p className="text-gray-500 text-sm leading-relaxed">
+                      {feature.description}
+                    </p>
                   </div>
                 </motion.div>
               );
@@ -433,9 +475,21 @@ export default function MarketingSuite() {
           />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { step: "01", title: "Choose Your Tool", desc: "Select from social media, email, blog, trip descriptions, or ad copy generators." },
-              { step: "02", title: "Describe Your Need", desc: "Enter your destination, tone, language, and any specific requirements." },
-              { step: "03", title: "Generate & Publish", desc: "Get AI-generated content instantly. Copy, edit, and publish across your channels." },
+              {
+                step: "01",
+                title: "Choose Your Tool",
+                desc: "Select from social media, email, blog, trip descriptions, or ad copy generators.",
+              },
+              {
+                step: "02",
+                title: "Describe Your Need",
+                desc: "Enter your destination, tone, language, and any specific requirements.",
+              },
+              {
+                step: "03",
+                title: "Generate & Publish",
+                desc: "Get AI-generated content instantly. Copy, edit, and publish across your channels.",
+              },
             ].map((item, i) => (
               <motion.div
                 key={item.step}
@@ -445,8 +499,12 @@ export default function MarketingSuite() {
                 transition={{ delay: i * 0.15 }}
                 className="relative text-center"
               >
-                <div className="text-6xl font-bold text-[var(--theme-primary)]/10 mb-4">{item.step}</div>
-                <h3 className="text-xl font-bold text-white mb-2">{item.title}</h3>
+                <div className="text-6xl font-bold text-[var(--theme-primary)]/10 mb-4">
+                  {item.step}
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">
+                  {item.title}
+                </h3>
                 <p className="text-gray-500 text-sm">{item.desc}</p>
                 {i < 2 && (
                   <ChevronRight className="hidden md:block absolute top-8 -right-4 w-8 h-8 text-[var(--theme-primary)]/20" />
@@ -471,8 +529,8 @@ export default function MarketingSuite() {
               Ready to Transform Your Marketing?
             </h2>
             <p className="text-gray-400 text-lg mb-8 max-w-2xl mx-auto">
-              Join tourism companies worldwide using AI to create compelling marketing content
-              that drives bookings and grows their business.
+              Join tourism companies worldwide using AI to create compelling
+              marketing content that drives bookings and grows their business.
             </p>
             {isAuthenticated ? (
               <Link href="/marketing/social-media">

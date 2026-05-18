@@ -57,13 +57,7 @@ function StatCard({
   );
 }
 
-function StatusBadge({
-  status,
-  count,
-}: {
-  status: string;
-  count: number;
-}) {
+function StatusBadge({ status, count }: { status: string; count: number }) {
   const colors: Record<string, string> = {
     pending: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
     confirmed: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
@@ -101,7 +95,15 @@ export default function AdminDashboard() {
   const isLoading = bookingsLoading || reviewsLoading || messagesLoading;
 
   const bookingStats = useMemo(() => {
-    if (!bookings) return { total: 0, pending: 0, confirmed: 0, cancelled: 0, completed: 0, revenue: 0 };
+    if (!bookings)
+      return {
+        total: 0,
+        pending: 0,
+        confirmed: 0,
+        cancelled: 0,
+        completed: 0,
+        revenue: 0,
+      };
     const stats = {
       total: bookings.length,
       pending: bookings.filter((b: any) => b.status === "pending").length,
@@ -119,7 +121,8 @@ export default function AdminDashboard() {
   }, [bookings]);
 
   const messageStats = useMemo(() => {
-    if (!messages) return { total: 0, new: 0, read: 0, replied: 0, archived: 0 };
+    if (!messages)
+      return { total: 0, new: 0, read: 0, replied: 0, archived: 0 };
     return {
       total: messages.length,
       new: messages.filter((m: any) => m.status === "new").length,
@@ -145,12 +148,18 @@ export default function AdminDashboard() {
         <div className="h-8 w-48 bg-[var(--theme-primary)]/10 rounded" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-32 bg-[var(--theme-surface)] rounded-lg border border-white/5" />
+            <div
+              key={i}
+              className="h-32 bg-[var(--theme-surface)] rounded-lg border border-white/5"
+            />
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {[...Array(2)].map((_, i) => (
-            <div key={i} className="h-64 bg-[var(--theme-surface)] rounded-lg border border-white/5" />
+            <div
+              key={i}
+              className="h-64 bg-[var(--theme-surface)] rounded-lg border border-white/5"
+            />
           ))}
         </div>
       </div>
@@ -215,30 +224,46 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Clock size={14} className="text-yellow-400" />
-                <span className="text-white/70 text-sm font-[var(--font-body)]">Pending</span>
+                <span className="text-white/70 text-sm font-[var(--font-body)]">
+                  Pending
+                </span>
               </div>
-              <span className="text-white font-semibold">{bookingStats.pending}</span>
+              <span className="text-white font-semibold">
+                {bookingStats.pending}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CheckCircle size={14} className="text-emerald-400" />
-                <span className="text-white/70 text-sm font-[var(--font-body)]">Confirmed</span>
+                <span className="text-white/70 text-sm font-[var(--font-body)]">
+                  Confirmed
+                </span>
               </div>
-              <span className="text-white font-semibold">{bookingStats.confirmed}</span>
+              <span className="text-white font-semibold">
+                {bookingStats.confirmed}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <TrendingUp size={14} className="text-blue-400" />
-                <span className="text-white/70 text-sm font-[var(--font-body)]">Completed</span>
+                <span className="text-white/70 text-sm font-[var(--font-body)]">
+                  Completed
+                </span>
               </div>
-              <span className="text-white font-semibold">{bookingStats.completed}</span>
+              <span className="text-white font-semibold">
+                {bookingStats.completed}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <XCircle size={14} className="text-red-400" />
-                <span className="text-white/70 text-sm font-[var(--font-body)]">Cancelled</span>
+                <span className="text-white/70 text-sm font-[var(--font-body)]">
+                  Cancelled
+                </span>
               </div>
-              <span className="text-white font-semibold">{bookingStats.cancelled}</span>
+              <span className="text-white font-semibold">
+                {bookingStats.cancelled}
+              </span>
             </div>
           </div>
         </div>
@@ -255,29 +280,44 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <AlertCircle size={14} className="text-yellow-400" />
-                <span className="text-white/70 text-sm font-[var(--font-body)]">Pending</span>
+                <span className="text-white/70 text-sm font-[var(--font-body)]">
+                  Pending
+                </span>
               </div>
-              <span className="text-white font-semibold">{reviewModStats.pending}</span>
+              <span className="text-white font-semibold">
+                {reviewModStats.pending}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CheckCircle size={14} className="text-emerald-400" />
-                <span className="text-white/70 text-sm font-[var(--font-body)]">Approved</span>
+                <span className="text-white/70 text-sm font-[var(--font-body)]">
+                  Approved
+                </span>
               </div>
-              <span className="text-white font-semibold">{reviewModStats.approved}</span>
+              <span className="text-white font-semibold">
+                {reviewModStats.approved}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <XCircle size={14} className="text-red-400" />
-                <span className="text-white/70 text-sm font-[var(--font-body)]">Rejected</span>
+                <span className="text-white/70 text-sm font-[var(--font-body)]">
+                  Rejected
+                </span>
               </div>
-              <span className="text-white font-semibold">{reviewModStats.rejected}</span>
+              <span className="text-white font-semibold">
+                {reviewModStats.rejected}
+              </span>
             </div>
           </div>
           {reviewStats && (
             <div className="mt-4 pt-4 border-t border-white/5">
               <div className="flex items-center gap-2">
-                <Star size={14} className="text-[var(--theme-primary)] fill-[var(--theme-primary)]" />
+                <Star
+                  size={14}
+                  className="text-[var(--theme-primary)] fill-[var(--theme-primary)]"
+                />
                 <span className="text-white font-[var(--font-display)] font-bold text-lg">
                   {reviewStats.average?.toFixed(1)}
                 </span>
@@ -300,31 +340,50 @@ export default function AdminDashboard() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <AlertCircle size={14} className="text-[var(--theme-primary)]" />
-                <span className="text-white/70 text-sm font-[var(--font-body)]">New</span>
+                <AlertCircle
+                  size={14}
+                  className="text-[var(--theme-primary)]"
+                />
+                <span className="text-white/70 text-sm font-[var(--font-body)]">
+                  New
+                </span>
               </div>
-              <span className="text-white font-semibold">{messageStats.new}</span>
+              <span className="text-white font-semibold">
+                {messageStats.new}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Users size={14} className="text-blue-400" />
-                <span className="text-white/70 text-sm font-[var(--font-body)]">Read</span>
+                <span className="text-white/70 text-sm font-[var(--font-body)]">
+                  Read
+                </span>
               </div>
-              <span className="text-white font-semibold">{messageStats.read}</span>
+              <span className="text-white font-semibold">
+                {messageStats.read}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CheckCircle size={14} className="text-emerald-400" />
-                <span className="text-white/70 text-sm font-[var(--font-body)]">Replied</span>
+                <span className="text-white/70 text-sm font-[var(--font-body)]">
+                  Replied
+                </span>
               </div>
-              <span className="text-white font-semibold">{messageStats.replied}</span>
+              <span className="text-white font-semibold">
+                {messageStats.replied}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <XCircle size={14} className="text-gray-400" />
-                <span className="text-white/70 text-sm font-[var(--font-body)]">Archived</span>
+                <span className="text-white/70 text-sm font-[var(--font-body)]">
+                  Archived
+                </span>
               </div>
-              <span className="text-white font-semibold">{messageStats.archived}</span>
+              <span className="text-white font-semibold">
+                {messageStats.archived}
+              </span>
             </div>
           </div>
         </div>
@@ -340,16 +399,29 @@ export default function AdminDashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/5">
-                  <th className="text-left text-white/50 font-[var(--font-body)] font-medium py-2 px-3">Code</th>
-                  <th className="text-left text-white/50 font-[var(--font-body)] font-medium py-2 px-3">Package</th>
-                  <th className="text-left text-white/50 font-[var(--font-body)] font-medium py-2 px-3">Guest</th>
-                  <th className="text-left text-white/50 font-[var(--font-body)] font-medium py-2 px-3">Status</th>
-                  <th className="text-right text-white/50 font-[var(--font-body)] font-medium py-2 px-3">Price</th>
+                  <th className="text-left text-white/50 font-[var(--font-body)] font-medium py-2 px-3">
+                    Code
+                  </th>
+                  <th className="text-left text-white/50 font-[var(--font-body)] font-medium py-2 px-3">
+                    Package
+                  </th>
+                  <th className="text-left text-white/50 font-[var(--font-body)] font-medium py-2 px-3">
+                    Guest
+                  </th>
+                  <th className="text-left text-white/50 font-[var(--font-body)] font-medium py-2 px-3">
+                    Status
+                  </th>
+                  <th className="text-right text-white/50 font-[var(--font-body)] font-medium py-2 px-3">
+                    Price
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {bookings.slice(0, 5).map((booking: any) => (
-                  <tr key={booking.id} className="border-b border-[var(--theme-primary)]/5 hover:bg-[var(--theme-primary)]/5 transition-colors">
+                  <tr
+                    key={booking.id}
+                    className="border-b border-[var(--theme-primary)]/5 hover:bg-[var(--theme-primary)]/5 transition-colors"
+                  >
                     <td className="py-2.5 px-3 text-[var(--theme-primary)] font-mono text-xs">
                       {booking.confirmationCode}
                     </td>
@@ -363,7 +435,9 @@ export default function AdminDashboard() {
                       <StatusBadge status={booking.status} count={0} />
                     </td>
                     <td className="py-2.5 px-3 text-right text-white font-[var(--font-body)] font-medium">
-                      {booking.totalPrice ? `$${parseFloat(booking.totalPrice).toLocaleString()}` : "—"}
+                      {booking.totalPrice
+                        ? `$${parseFloat(booking.totalPrice).toLocaleString()}`
+                        : "—"}
                     </td>
                   </tr>
                 ))}
@@ -372,8 +446,13 @@ export default function AdminDashboard() {
           </div>
         ) : (
           <div className="text-center py-8">
-            <CalendarCheck size={32} className="text-[var(--theme-primary)]/30 mx-auto mb-3" />
-            <p className="text-white/40 text-sm font-[var(--font-body)]">No bookings yet</p>
+            <CalendarCheck
+              size={32}
+              className="text-[var(--theme-primary)]/30 mx-auto mb-3"
+            />
+            <p className="text-white/40 text-sm font-[var(--font-body)]">
+              No bookings yet
+            </p>
           </div>
         )}
       </div>

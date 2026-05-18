@@ -8,40 +8,56 @@ export const adminOffersRouter = router({
   /** List all offers with pagination and filtering */
   list: adminProcedure
     .input(
-      z.object({
-        limit: z.number().min(1).max(100).default(20),
-        offset: z.number().min(0).default(0),
-        search: z.string().optional(),
-        status: z.enum(["active", "inactive", "expired"]).optional(),
-        sortBy: z.enum(["title", "discount", "createdAt", "startDate"]).default("createdAt"),
-        sortOrder: z.enum(["asc", "desc"]).default("desc"),
-      }).optional()
+      z
+        .object({
+          limit: z.number().min(1).max(100).default(20),
+          offset: z.number().min(0).default(0),
+          search: z.string().optional(),
+          status: z.enum(["active", "inactive", "expired"]).optional(),
+          sortBy: z
+            .enum(["title", "discount", "createdAt", "startDate"])
+            .default("createdAt"),
+          sortOrder: z.enum(["asc", "desc"]).default("desc"),
+        })
+        .optional(),
     )
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
-      const { limit = 20, offset = 0, search = "", status, sortBy = "createdAt", sortOrder = "desc" } = input ?? {};
-      
+
+      const {
+        limit = 20,
+        offset = 0,
+        search = "",
+        status,
+        sortBy = "createdAt",
+        sortOrder = "desc",
+      } = input ?? {};
+
       let query: any = db.select().from(offers);
-      
+
       if (search) {
         query = query.where(like(offers.title, `%${search}%`));
       }
-      
+
       if (status) {
         query = query.where(eq(offers.isActive, status));
       }
-      
-      const orderColumn = 
-        sortBy === "title" ? offers.title :
-        sortBy === "discount" ? offers.discountValue :
-        sortBy === "startDate" ? offers.startDate :
-        offers.createdAt;
-      
-      query = query.orderBy(sortOrder === "desc" ? desc(orderColumn) : asc(orderColumn));
+
+      const orderColumn =
+        sortBy === "title"
+          ? offers.title
+          : sortBy === "discount"
+            ? offers.discountValue
+            : sortBy === "startDate"
+              ? offers.startDate
+              : offers.createdAt;
+
+      query = query.orderBy(
+        sortOrder === "desc" ? desc(orderColumn) : asc(orderColumn),
+      );
       query = query.limit(limit).offset(offset);
-      
+
       return await query;
     }),
 
@@ -51,7 +67,7 @@ export const adminOffersRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
+
       const result = await db
         .select()
         .from(offers)
@@ -76,12 +92,12 @@ export const adminOffersRouter = router({
         totalSpots: z.number().optional(),
         badgeText: z.string().optional(),
         badgeColor: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
+
       const result = await db.insert(offers).values({
         ...input,
         isActive: "active",
@@ -109,18 +125,15 @@ export const adminOffersRouter = router({
         badgeText: z.string().optional(),
         badgeColor: z.string().optional(),
         isActive: z.enum(["active", "inactive", "expired"]).optional(),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
+
       const { id, ...data } = input;
-      
-      await db
-        .update(offers)
-        .set(data)
-        .where(eq(offers.id, id));
+
+      await db.update(offers).set(data).where(eq(offers.id, id));
       return { success: true };
     }),
 
@@ -130,10 +143,8 @@ export const adminOffersRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
-      await db
-        .delete(offers)
-        .where(eq(offers.id, input.id));
+
+      await db.delete(offers).where(eq(offers.id, input.id));
       return { success: true };
     }),
 
@@ -143,20 +154,23 @@ export const adminOffersRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
-      await db
-        .delete(offers)
-        .where(inArray(offers.id, input.ids));
+
+      await db.delete(offers).where(inArray(offers.id, input.ids));
       return { success: true, deleted: input.ids.length };
     }),
 
   /** Update offer status */
   updateStatus: adminProcedure
-    .input(z.object({ id: z.number(), isActive: z.enum(["active", "inactive", "expired"]) }))
+    .input(
+      z.object({
+        id: z.number(),
+        isActive: z.enum(["active", "inactive", "expired"]),
+      }),
+    )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
+
       await db
         .update(offers)
         .set({
@@ -170,11 +184,18 @@ export const adminOffersRouter = router({
   getStats: adminProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
-    
+
     const allOffers = await db.select().from(offers);
-    const activeCount = allOffers.filter((o: any) => o.isActive === "active").length;
-    const totalDiscount = allOffers.reduce((sum: number, o: any) => sum + (parseFloat(o.discountValue as string) || 0), 0);
-    const avgDiscount = allOffers.length > 0 ? (totalDiscount / allOffers.length).toFixed(2) : 0;
+    const activeCount = allOffers.filter(
+      (o: any) => o.isActive === "active",
+    ).length;
+    const totalDiscount = allOffers.reduce(
+      (sum: number, o: any) =>
+        sum + (parseFloat(o.discountValue as string) || 0),
+      0,
+    );
+    const avgDiscount =
+      allOffers.length > 0 ? (totalDiscount / allOffers.length).toFixed(2) : 0;
 
     return {
       total: allOffers.length,

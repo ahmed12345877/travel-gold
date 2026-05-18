@@ -19,10 +19,12 @@ export const reviewsRouter = router({
   /** List approved reviews (public) */
   list: publicProcedure
     .input(
-      z.object({
-        limit: z.number().min(1).max(100).default(50),
-        offset: z.number().min(0).default(0),
-      }).optional()
+      z
+        .object({
+          limit: z.number().min(1).max(100).default(50),
+          offset: z.number().min(0).default(0),
+        })
+        .optional(),
     )
     .query(async ({ input }) => {
       const { limit = 50, offset = 0 } = input ?? {};
@@ -54,7 +56,7 @@ export const reviewsRouter = router({
         travelDate: z.number().optional(),
         guestName: z.string().optional(),
         guestAvatarUrl: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       return createReview({
@@ -86,10 +88,12 @@ export const reviewsRouter = router({
   /** List all reviews including pending (admin only) */
   listAll: adminProcedure
     .input(
-      z.object({
-        limit: z.number().min(1).max(100).default(50),
-        offset: z.number().min(0).default(0),
-      }).optional()
+      z
+        .object({
+          limit: z.number().min(1).max(100).default(50),
+          offset: z.number().min(0).default(0),
+        })
+        .optional(),
     )
     .query(async ({ input }) => {
       const { limit = 50, offset = 0 } = input ?? {};
@@ -102,7 +106,7 @@ export const reviewsRouter = router({
       z.object({
         id: z.number(),
         isApproved: z.enum(["pending", "approved", "rejected"]),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       return updateReviewApproval(input.id, input.isApproved);
@@ -114,7 +118,7 @@ export const reviewsRouter = router({
       z.object({
         id: z.number(),
         adminReply: z.string().min(1),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       return addAdminReply(input.id, input.adminReply);

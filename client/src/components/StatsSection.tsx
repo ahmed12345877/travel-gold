@@ -17,7 +17,10 @@ export default function StatsSection() {
   const { ref, inView } = useInView({ threshold: 0.3 });
 
   return (
-    <section ref={ref} className="py-10 sm:py-12 md:py-16 bg-[var(--theme-surface)] border-y border-white/5">
+    <section
+      ref={ref}
+      className="py-10 sm:py-12 md:py-16 bg-[var(--theme-surface)] border-y border-white/5"
+    >
       <div className="container">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
           {stats.map((stat, index) => (
@@ -28,7 +31,10 @@ export default function StatsSection() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="text-center"
             >
-              <stat.icon size={22} className="text-[var(--theme-primary)] mx-auto mb-2 sm:mb-3 sm:w-7 sm:h-7" />
+              <stat.icon
+                size={22}
+                className="text-[var(--theme-primary)] mx-auto mb-2 sm:mb-3 sm:w-7 sm:h-7"
+              />
               <div className="font-[var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-[var(--theme-primary)] mb-1">
                 {stat.value}
               </div>

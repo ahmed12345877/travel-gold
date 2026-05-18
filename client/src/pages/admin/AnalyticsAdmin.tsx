@@ -1,23 +1,71 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import {
-  BarChart3, TrendingUp, Users, Eye, Globe, DollarSign,
-  ArrowUpRight, ArrowDownRight, Calendar, Activity, MapPin, Image
+  BarChart3,
+  TrendingUp,
+  Users,
+  Eye,
+  Globe,
+  DollarSign,
+  ArrowUpRight,
+  ArrowDownRight,
+  Calendar,
+  Activity,
+  MapPin,
+  Image,
 } from "lucide-react";
 
 export default function AnalyticsAdmin() {
   const [period, setPeriod] = useState<"7d" | "30d" | "90d">("30d");
 
-  const { data: usersData } = trpc.users.list.useQuery({ limit: 100, offset: 0 });
+  const { data: usersData } = trpc.users.list.useQuery({
+    limit: 100,
+    offset: 0,
+  });
   const users = usersData?.users || [];
   const totalUsers = users.length;
-  const totalCredits = users.reduce((sum: number, u: any) => sum + (u.credits || 0), 0);
+  const totalCredits = users.reduce(
+    (sum: number, u: any) => sum + (u.credits || 0),
+    0,
+  );
 
   const stats = [
-    { label: "إجمالي المستخدمين", value: totalUsers, icon: Users, color: "text-blue-400", bg: "bg-blue-500/10", change: "+12%", up: true },
-    { label: "إجمالي الرصيد", value: totalCredits.toLocaleString(), icon: DollarSign, color: "text-[var(--theme-primary)]", bg: "bg-[var(--theme-primary)]/10", change: "+8%", up: true },
-    { label: "الصور المولدة", value: "—", icon: Image, color: "text-purple-400", bg: "bg-purple-500/10", change: "+24%", up: true },
-    { label: "الحجوزات", value: "—", icon: Calendar, color: "text-emerald-400", bg: "bg-emerald-500/10", change: "+5%", up: true },
+    {
+      label: "إجمالي المستخدمين",
+      value: totalUsers,
+      icon: Users,
+      color: "text-blue-400",
+      bg: "bg-blue-500/10",
+      change: "+12%",
+      up: true,
+    },
+    {
+      label: "إجمالي الرصيد",
+      value: totalCredits.toLocaleString(),
+      icon: DollarSign,
+      color: "text-[var(--theme-primary)]",
+      bg: "bg-[var(--theme-primary)]/10",
+      change: "+8%",
+      up: true,
+    },
+    {
+      label: "الصور المولدة",
+      value: "—",
+      icon: Image,
+      color: "text-purple-400",
+      bg: "bg-purple-500/10",
+      change: "+24%",
+      up: true,
+    },
+    {
+      label: "الحجوزات",
+      value: "—",
+      icon: Calendar,
+      color: "text-emerald-400",
+      bg: "bg-emerald-500/10",
+      change: "+5%",
+      up: true,
+    },
   ];
 
   const topDestinations = [
@@ -30,9 +78,21 @@ export default function AnalyticsAdmin() {
 
   const recentActivity = [
     { type: "user", text: "مستخدم جديد سجل في الموقع", time: "منذ 5 دقائق" },
-    { type: "booking", text: "حجز جديد - رحلة نيلية فاخرة", time: "منذ 15 دقيقة" },
-    { type: "image", text: "تم توليد 3 صور بالذكاء الاصطناعي", time: "منذ 30 دقيقة" },
-    { type: "review", text: "تقييم جديد 5 نجوم من Benjamin Carter", time: "منذ ساعة" },
+    {
+      type: "booking",
+      text: "حجز جديد - رحلة نيلية فاخرة",
+      time: "منذ 15 دقيقة",
+    },
+    {
+      type: "image",
+      text: "تم توليد 3 صور بالذكاء الاصطناعي",
+      time: "منذ 30 دقيقة",
+    },
+    {
+      type: "review",
+      text: "تقييم جديد 5 نجوم من Benjamin Carter",
+      time: "منذ ساعة",
+    },
     { type: "contact", text: "رسالة اتصال جديدة", time: "منذ ساعتين" },
   ];
 
@@ -44,15 +104,19 @@ export default function AnalyticsAdmin() {
             <BarChart3 className="text-[var(--theme-primary)]" size={24} />
             التحليلات والإحصائيات
           </h1>
-          <p className="text-white/50 text-sm mt-1">نظرة شاملة على أداء الموقع</p>
+          <p className="text-white/50 text-sm mt-1">
+            نظرة شاملة على أداء الموقع
+          </p>
         </div>
         <div className="flex gap-1">
-          {(["7d", "30d", "90d"] as const).map(p => (
+          {(["7d", "30d", "90d"] as const).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
               className={`px-3 py-1.5 rounded-full text-xs transition-colors ${
-                period === p ? "bg-[var(--theme-primary)] text-black" : "bg-white/5 text-white/50"
+                period === p
+                  ? "bg-[var(--theme-primary)] text-black"
+                  : "bg-white/5 text-white/50"
               }`}
             >
               {p === "7d" ? "7 أيام" : p === "30d" ? "30 يوم" : "90 يوم"}
@@ -64,13 +128,24 @@ export default function AnalyticsAdmin() {
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, i) => (
-          <div key={i} className="bg-[var(--theme-surface)] border border-white/5 rounded-lg p-4">
+          <div
+            key={i}
+            className="bg-[var(--theme-surface)] border border-white/5 rounded-lg p-4"
+          >
             <div className="flex items-center justify-between mb-3">
-              <div className={`w-10 h-10 rounded-lg ${stat.bg} flex items-center justify-center`}>
+              <div
+                className={`w-10 h-10 rounded-lg ${stat.bg} flex items-center justify-center`}
+              >
                 <stat.icon size={18} className={stat.color} />
               </div>
-              <span className={`text-xs flex items-center gap-0.5 ${stat.up ? "text-emerald-400" : "text-red-400"}`}>
-                {stat.up ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+              <span
+                className={`text-xs flex items-center gap-0.5 ${stat.up ? "text-emerald-400" : "text-red-400"}`}
+              >
+                {stat.up ? (
+                  <ArrowUpRight size={10} />
+                ) : (
+                  <ArrowDownRight size={10} />
+                )}
                 {stat.change}
               </span>
             </div>
@@ -94,7 +169,9 @@ export default function AnalyticsAdmin() {
               <div key={i}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm text-white/70">{dest.name}</span>
-                  <span className="text-xs text-white/40">{dest.visits.toLocaleString()} زيارة</span>
+                  <span className="text-xs text-white/40">
+                    {dest.visits.toLocaleString()} زيارة
+                  </span>
                 </div>
                 <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
                   <div
@@ -117,17 +194,35 @@ export default function AnalyticsAdmin() {
           </div>
           <div className="space-y-3">
             {recentActivity.map((activity, i) => (
-              <div key={i} className="flex items-start gap-3 p-2 rounded-lg hover:bg-white/[0.02]">
+              <div
+                key={i}
+                className="flex items-start gap-3 p-2 rounded-lg hover:bg-white/[0.02]"
+              >
                 <div className="w-8 h-8 rounded-full bg-[var(--theme-primary)]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  {activity.type === "user" && <Users size={12} className="text-blue-400" />}
-                  {activity.type === "booking" && <Calendar size={12} className="text-emerald-400" />}
-                  {activity.type === "image" && <Image size={12} className="text-purple-400" />}
-                  {activity.type === "review" && <TrendingUp size={12} className="text-[var(--theme-primary)]" />}
-                  {activity.type === "contact" && <Globe size={12} className="text-cyan-400" />}
+                  {activity.type === "user" && (
+                    <Users size={12} className="text-blue-400" />
+                  )}
+                  {activity.type === "booking" && (
+                    <Calendar size={12} className="text-emerald-400" />
+                  )}
+                  {activity.type === "image" && (
+                    <Image size={12} className="text-purple-400" />
+                  )}
+                  {activity.type === "review" && (
+                    <TrendingUp
+                      size={12}
+                      className="text-[var(--theme-primary)]"
+                    />
+                  )}
+                  {activity.type === "contact" && (
+                    <Globe size={12} className="text-cyan-400" />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-white/70">{activity.text}</p>
-                  <p className="text-xs text-white/30 mt-0.5">{activity.time}</p>
+                  <p className="text-xs text-white/30 mt-0.5">
+                    {activity.time}
+                  </p>
                 </div>
               </div>
             ))}

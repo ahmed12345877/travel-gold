@@ -68,9 +68,10 @@ export default function Contact() {
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
 
-
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -103,8 +104,6 @@ export default function Contact() {
     });
   };
 
-
-
   return (
     <div className="min-h-screen bg-[var(--theme-surface)]">
       <PageMeta
@@ -123,7 +122,11 @@ export default function Contact() {
       {/* Hero Banner */}
       <section className="relative py-14 sm:py-20 md:py-24 lg:py-32 overflow-hidden">
         <div className="absolute inset-0">
-          <img src="/manus-storage/hero-contact_3d764475.jpg" alt="" className="w-full h-full object-cover" />
+          <img
+            src="/manus-storage/hero-contact_3d764475.jpg"
+            alt=""
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-b from-[var(--theme-surface)]/85 via-[var(--theme-surface)]/75 to-[var(--theme-surface)]" />
         </div>
         <div className="absolute inset-0 opacity-5">
@@ -137,7 +140,13 @@ export default function Contact() {
 
         {/* Watermark */}
         <div className="absolute bottom-6 right-8 opacity-10 pointer-events-none">
-          <OptimizedImage src={LOGO_URL} alt="VANIR Logo" className="h-16 w-auto" containerClassName="h-16 w-auto" lazy={true} />
+          <OptimizedImage
+            src={LOGO_URL}
+            alt="VANIR Logo"
+            className="h-16 w-auto"
+            containerClassName="h-16 w-auto"
+            lazy={true}
+          />
         </div>
 
         <div className="container relative z-10">
@@ -155,8 +164,9 @@ export default function Contact() {
             </h1>
             <div className="w-20 h-[2px] bg-gradient-to-r from-transparent via-[var(--theme-primary)] to-transparent mx-auto mt-4 mb-6" />
             <p className="text-white/60 max-w-xl mx-auto text-sm sm:text-base leading-relaxed">
-              Have a question or ready to plan your next adventure? We'd love to hear from you.
-              Reach out and let us turn your travel dreams into reality.
+              Have a question or ready to plan your next adventure? We'd love to
+              hear from you. Reach out and let us turn your travel dreams into
+              reality.
             </p>
           </motion.div>
         </div>
@@ -175,7 +185,10 @@ export default function Contact() {
                 className="bg-[var(--theme-surface)] border border-white/8 p-6 text-center group hover:border-[var(--theme-primary)]/40 transition-all duration-500"
               >
                 <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 mx-auto mb-3 sm:mb-4 flex items-center justify-center border border-[var(--theme-primary)]/30 text-[var(--theme-primary)] group-hover:bg-[var(--theme-primary)] group-hover:text-[var(--theme-surface)] transition-all duration-300">
-                  <item.icon size={18} className="sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                  <item.icon
+                    size={18}
+                    className="sm:w-5 sm:h-5 md:w-6 md:h-6"
+                  />
                 </div>
                 <h3 className="font-[var(--font-display)] text-white font-semibold text-sm sm:text-base md:text-lg mb-2 sm:mb-3">
                   {item.title}
@@ -190,10 +203,13 @@ export default function Contact() {
                       {detail}
                     </a>
                   ) : (
-                    <p key={i} className="text-white/50 text-sm leading-relaxed">
+                    <p
+                      key={i}
+                      className="text-white/50 text-sm leading-relaxed"
+                    >
                       {detail}
                     </p>
-                  )
+                  ),
                 )}
               </motion.div>
             ))}
@@ -226,17 +242,27 @@ export default function Contact() {
                   animate={{ opacity: 1, scale: 1 }}
                   className="bg-[var(--theme-surface)] border border-white/10 p-6 sm:p-8 md:p-12 text-center"
                 >
-                  <CheckCircle size={64} className="text-[var(--theme-primary)] mx-auto mb-6" />
+                  <CheckCircle
+                    size={64}
+                    className="text-[var(--theme-primary)] mx-auto mb-6"
+                  />
                   <h3 className="font-[var(--font-display)] text-2xl text-white font-bold mb-3">
                     Message Sent!
                   </h3>
                   <p className="text-white/60 mb-6">
-                    Thank you for reaching out. Our team will get back to you within 24 hours.
+                    Thank you for reaching out. Our team will get back to you
+                    within 24 hours.
                   </p>
                   <button
                     onClick={() => {
                       setSubmitted(false);
-                      setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
+                      setFormData({
+                        name: "",
+                        email: "",
+                        phone: "",
+                        subject: "",
+                        message: "",
+                      });
                     }}
                     className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--theme-primary)] text-[var(--theme-surface)] font-semibold text-sm tracking-wide hover:bg-[var(--theme-primary-light)] transition-all duration-300"
                   >
@@ -307,12 +333,39 @@ export default function Contact() {
                         onChange={handleChange}
                         className="w-full bg-[var(--theme-surface)] border border-white/10 text-white pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:border-[var(--theme-primary)]/60 transition-colors appearance-none"
                       >
-                        <option value="" className="bg-[var(--theme-surface)]">Select Subject</option>
-                        <option value="general" className="bg-[var(--theme-surface)]">General Inquiry</option>
-                        <option value="booking" className="bg-[var(--theme-surface)]">Trip Booking</option>
-                        <option value="custom" className="bg-[var(--theme-surface)]">Custom Package</option>
-                        <option value="support" className="bg-[var(--theme-surface)]">Customer Support</option>
-                        <option value="partnership" className="bg-[var(--theme-surface)]">Partnership</option>
+                        <option value="" className="bg-[var(--theme-surface)]">
+                          Select Subject
+                        </option>
+                        <option
+                          value="general"
+                          className="bg-[var(--theme-surface)]"
+                        >
+                          General Inquiry
+                        </option>
+                        <option
+                          value="booking"
+                          className="bg-[var(--theme-surface)]"
+                        >
+                          Trip Booking
+                        </option>
+                        <option
+                          value="custom"
+                          className="bg-[var(--theme-surface)]"
+                        >
+                          Custom Package
+                        </option>
+                        <option
+                          value="support"
+                          className="bg-[var(--theme-surface)]"
+                        >
+                          Customer Support
+                        </option>
+                        <option
+                          value="partnership"
+                          className="bg-[var(--theme-surface)]"
+                        >
+                          Partnership
+                        </option>
                       </select>
                     </div>
                   </div>

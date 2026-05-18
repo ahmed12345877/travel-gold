@@ -2,8 +2,21 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit2, Trash2, Search } from "lucide-react";
 import { trpc } from "@/lib/trpc";
@@ -28,7 +41,11 @@ export default function DestinationsAdmin() {
     exclusions: "",
   });
 
-  const { data: destinations, isLoading, refetch } = trpc.admin.destinations.list.useQuery({
+  const {
+    data: destinations,
+    isLoading,
+    refetch,
+  } = trpc.admin.destinations.list.useQuery({
     search,
     limit: 20,
   });
@@ -110,34 +127,46 @@ export default function DestinationsAdmin() {
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>{editingId ? "تعديل الوجهة" : "إضافة وجهة جديدة"}</DialogTitle>
+              <DialogTitle>
+                {editingId ? "تعديل الوجهة" : "إضافة وجهة جديدة"}
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <Input
                 placeholder="اسم الوجهة"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
               />
               <Input
                 placeholder="الموقع"
                 value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, location: e.target.value })
+                }
               />
               <Textarea
                 placeholder="الوصف"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
               />
               <Input
                 placeholder="السعر لكل شخص"
                 type="number"
                 value={formData.pricePerPerson}
-                onChange={(e) => setFormData({ ...formData, pricePerPerson: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, pricePerPerson: e.target.value })
+                }
               />
               <Input
                 placeholder="رابط الصورة"
                 value={formData.imageUrl}
-                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, imageUrl: e.target.value })
+                }
               />
               <Button onClick={handleSubmit} className="w-full">
                 {editingId ? "تحديث" : "إضافة"}
@@ -179,14 +208,22 @@ export default function DestinationsAdmin() {
             ) : destinations && destinations.length > 0 ? (
               destinations.map((destination: any) => (
                 <TableRow key={destination.id}>
-                  <TableCell className="font-medium">{destination.name}</TableCell>
+                  <TableCell className="font-medium">
+                    {destination.name}
+                  </TableCell>
                   <TableCell>{destination.location}</TableCell>
                   <TableCell>${destination.pricePerPerson}</TableCell>
                   <TableCell>
                     <Badge variant="outline">{destination.rating} ⭐</Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={destination.isActive === "active" ? "default" : "secondary"}>
+                    <Badge
+                      variant={
+                        destination.isActive === "active"
+                          ? "default"
+                          : "secondary"
+                      }
+                    >
                       {destination.isActive === "active" ? "نشطة" : "غير نشطة"}
                     </Badge>
                   </TableCell>
@@ -205,7 +242,9 @@ export default function DestinationsAdmin() {
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => deleteMutation.mutate({ id: destination.id })}
+                      onClick={() =>
+                        deleteMutation.mutate({ id: destination.id })
+                      }
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>

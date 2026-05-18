@@ -26,7 +26,7 @@ export function useInView(options: UseInViewOptions = {}) {
           setInView(false);
         }
       },
-      { threshold, rootMargin }
+      { threshold, rootMargin },
     );
 
     observer.observe(element);

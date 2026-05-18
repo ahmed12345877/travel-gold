@@ -70,9 +70,13 @@ describe("AI Studio Router", () => {
         startDate: Date.now(),
       };
 
-      vi.mocked(db.getOrCreateAISubscription).mockResolvedValue(mockSubscription as any);
+      vi.mocked(db.getOrCreateAISubscription).mockResolvedValue(
+        mockSubscription as any,
+      );
 
-      const result = await aiStudioRouter.createCaller(mockContext as any).getSubscription();
+      const result = await aiStudioRouter
+        .createCaller(mockContext as any)
+        .getSubscription();
 
       expect(db.getOrCreateAISubscription).toHaveBeenCalledWith(mockUserId);
       expect(result).toEqual(mockSubscription);
@@ -90,7 +94,9 @@ describe("AI Studio Router", () => {
 
       vi.mocked(db.getOrCreateAICredits).mockResolvedValue(mockCredits as any);
 
-      const result = await aiStudioRouter.createCaller(mockContext as any).getCredits();
+      const result = await aiStudioRouter
+        .createCaller(mockContext as any)
+        .getCredits();
 
       expect(db.getOrCreateAICredits).toHaveBeenCalledWith(mockUserId);
       expect(result).toEqual(mockCredits);
@@ -146,7 +152,8 @@ describe("AI Studio Router", () => {
       vi.mocked(openaiImageGen.generateImageWithDALLE).mockResolvedValue({
         url: "https://s3.example.com/ai-generated/123.png",
         s3Key: "ai-generated/123.png",
-        revisedPrompt: "A stunning photograph of a beautiful pyramid in Egypt at golden hour",
+        revisedPrompt:
+          "A stunning photograph of a beautiful pyramid in Egypt at golden hour",
       });
 
       // Mock usage status update
@@ -167,8 +174,12 @@ describe("AI Studio Router", () => {
         });
 
       expect(result.success).toBe(true);
-      expect(result.imageUrl).toBe("https://s3.example.com/ai-generated/123.png");
-      expect(result.revisedPrompt).toBe("A stunning photograph of a beautiful pyramid in Egypt at golden hour");
+      expect(result.imageUrl).toBe(
+        "https://s3.example.com/ai-generated/123.png",
+      );
+      expect(result.revisedPrompt).toBe(
+        "A stunning photograph of a beautiful pyramid in Egypt at golden hour",
+      );
       expect(result.usageId).toBe(42);
 
       // Verify credit deduction was called
@@ -197,7 +208,7 @@ describe("AI Studio Router", () => {
       expect(db.updateAIUsageStatus).toHaveBeenCalledWith(
         42,
         "completed",
-        "https://s3.example.com/ai-generated/123.png"
+        "https://s3.example.com/ai-generated/123.png",
       );
     });
 
@@ -208,13 +219,11 @@ describe("AI Studio Router", () => {
       } as any);
 
       await expect(
-        aiStudioRouter
-          .createCaller(mockContext as any)
-          .generateImage({
-            prompt: "A beautiful pyramid",
-            size: "1024x1024",
-            creditCost: 2,
-          })
+        aiStudioRouter.createCaller(mockContext as any).generateImage({
+          prompt: "A beautiful pyramid",
+          size: "1024x1024",
+          creditCost: 2,
+        }),
       ).rejects.toThrow("Insufficient credits");
     });
 
@@ -238,7 +247,7 @@ describe("AI Studio Router", () => {
 
       // Mock DALL-E failure
       vi.mocked(openaiImageGen.generateImageWithDALLE).mockRejectedValue(
-        new Error("OpenAI API rate limit exceeded")
+        new Error("OpenAI API rate limit exceeded"),
       );
 
       vi.mocked(db.addAICredits).mockResolvedValue({
@@ -252,13 +261,11 @@ describe("AI Studio Router", () => {
       } as any);
 
       await expect(
-        aiStudioRouter
-          .createCaller(mockContext as any)
-          .generateImage({
-            prompt: "A beautiful pyramid",
-            size: "1024x1024",
-            creditCost: 2,
-          })
+        aiStudioRouter.createCaller(mockContext as any).generateImage({
+          prompt: "A beautiful pyramid",
+          size: "1024x1024",
+          creditCost: 2,
+        }),
       ).rejects.toThrow("Image generation failed");
 
       // Verify credits were refunded
@@ -269,7 +276,7 @@ describe("AI Studio Router", () => {
         43,
         "failed",
         undefined,
-        "OpenAI API rate limit exceeded"
+        "OpenAI API rate limit exceeded",
       );
     });
 
@@ -362,7 +369,9 @@ describe("AI Studio Router", () => {
         });
 
       expect(result.success).toBe(true);
-      expect(result.imageUrl).toBe("https://s3.example.com/ai-generated/gemini-789.png");
+      expect(result.imageUrl).toBe(
+        "https://s3.example.com/ai-generated/gemini-789.png",
+      );
       expect(result.usageId).toBe(50);
 
       expect(db.deductAICredits).toHaveBeenCalledWith(mockUserId, 1);
@@ -396,7 +405,7 @@ describe("AI Studio Router", () => {
       } as any);
 
       vi.mocked(geminiImageGen.generateImageWithGemini).mockRejectedValue(
-        new Error("Gemini API quota exceeded")
+        new Error("Gemini API quota exceeded"),
       );
 
       vi.mocked(db.addAICredits).mockResolvedValue({
@@ -410,14 +419,12 @@ describe("AI Studio Router", () => {
       } as any);
 
       await expect(
-        aiStudioRouter
-          .createCaller(mockContext as any)
-          .generateImage({
-            prompt: "Egyptian temple at sunset",
-            model: "nano-banana",
-            aspectRatio: "1:1",
-            creditCost: 1,
-          })
+        aiStudioRouter.createCaller(mockContext as any).generateImage({
+          prompt: "Egyptian temple at sunset",
+          model: "nano-banana",
+          aspectRatio: "1:1",
+          creditCost: 1,
+        }),
       ).rejects.toThrow("Image generation failed");
 
       expect(db.addAICredits).toHaveBeenCalledWith(mockUserId, 1, "bonus");
@@ -425,7 +432,7 @@ describe("AI Studio Router", () => {
         51,
         "failed",
         undefined,
-        "Gemini API quota exceeded"
+        "Gemini API quota exceeded",
       );
     });
   });
@@ -473,7 +480,9 @@ describe("AI Studio Router", () => {
         });
 
       expect(result.success).toBe(true);
-      expect(result.imageUrl).toBe("https://s3.example.com/ai-generated/pro-123.png");
+      expect(result.imageUrl).toBe(
+        "https://s3.example.com/ai-generated/pro-123.png",
+      );
       expect(result.model).toBe("nano-banana-pro");
 
       expect(db.deductAICredits).toHaveBeenCalledWith(mockUserId, 3);
@@ -531,7 +540,9 @@ describe("AI Studio Router", () => {
         });
 
       expect(result.success).toBe(true);
-      expect(result.imageUrl).toBe("https://s3.example.com/ai-generated/nb2-456.png");
+      expect(result.imageUrl).toBe(
+        "https://s3.example.com/ai-generated/nb2-456.png",
+      );
       expect(result.model).toBe("nano-banana-2");
 
       expect(db.deductAICredits).toHaveBeenCalledWith(mockUserId, 2);
@@ -593,9 +604,7 @@ describe("AI Studio Router", () => {
 
   describe("getModels", () => {
     it("should return all 4 AI models", async () => {
-      const result = await aiStudioRouter
-        .createCaller({} as any)
-        .getModels();
+      const result = await aiStudioRouter.createCaller({} as any).getModels();
 
       expect(result).toHaveLength(4);
       expect(result[0].id).toBe("dall-e-3");
@@ -648,13 +657,11 @@ describe("AI Studio Router", () => {
       } as any);
 
       await expect(
-        aiStudioRouter
-          .createCaller(mockContext as any)
-          .deductCreditsForImage({
-            amount: 1,
-            prompt: "A beautiful beach",
-            imageModel: "dall-e-3",
-          })
+        aiStudioRouter.createCaller(mockContext as any).deductCreditsForImage({
+          amount: 1,
+          prompt: "A beautiful beach",
+          imageModel: "dall-e-3",
+        }),
       ).rejects.toThrow("Insufficient credits");
     });
   });
@@ -709,9 +716,7 @@ describe("AI Studio Router", () => {
 
   describe("getPlans", () => {
     it("should return subscription plans", async () => {
-      const result = await aiStudioRouter
-        .createCaller({} as any)
-        .getPlans();
+      const result = await aiStudioRouter.createCaller({} as any).getPlans();
 
       expect(result).toHaveLength(3);
       expect(result[0].id).toBe("free");

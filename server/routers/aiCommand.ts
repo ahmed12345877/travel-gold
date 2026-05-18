@@ -249,7 +249,8 @@ const ALL_TASK_TYPES = [
     id: "content_writer",
     name: "Content Writer",
     nameAr: "كاتب المحتوى",
-    description: "Write compelling travel content, blog posts, and descriptions",
+    description:
+      "Write compelling travel content, blog posts, and descriptions",
     descriptionAr: "كتابة محتوى سياحي جذاب ومقالات ووصف الرحلات",
     icon: "pen-tool",
     color: "blue",
@@ -463,7 +464,7 @@ const ALL_TASK_TYPES = [
 
 function buildMessageContent(
   text: string,
-  attachments?: { url: string; mimeType: string }[]
+  attachments?: { url: string; mimeType: string }[],
 ): string | Array<{ type: string; [key: string]: any }> {
   if (!attachments || attachments.length === 0) return text;
 
@@ -482,7 +483,13 @@ function buildMessageContent(
         image_url: { url: att.url, detail: "auto" },
       });
     } else if (
-      ["application/pdf", "audio/mpeg", "audio/wav", "audio/mp4", "video/mp4"].includes(att.mimeType)
+      [
+        "application/pdf",
+        "audio/mpeg",
+        "audio/wav",
+        "audio/mp4",
+        "video/mp4",
+      ].includes(att.mimeType)
     ) {
       parts.push({
         type: "file_url",
@@ -506,10 +513,10 @@ function buildMessageContent(
    ═══════════════════════════════════════════════════════════════ */
 
 const allTaskTypeIds = ALL_TASK_TYPES.map((t) => t.id);
-const taskTypeEnum = z.enum([
-  "general",
-  ...allTaskTypeIds,
-] as [string, ...string[]]);
+const taskTypeEnum = z.enum(["general", ...allTaskTypeIds] as [
+  string,
+  ...string[],
+]);
 
 const attachmentSchema = z.object({
   url: z.string().url(),
@@ -527,7 +534,7 @@ export const aiCommandRouter = router({
         fileData: z.string(), // base64
         filename: z.string(),
         mimeType: z.string(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const buffer = Buffer.from(input.fileData, "base64");
@@ -564,10 +571,10 @@ export const aiCommandRouter = router({
             role: z.enum(["system", "user", "assistant"]),
             content: z.string(),
             attachments: z.array(attachmentSchema).optional(),
-          })
+          }),
         ),
         taskType: taskTypeEnum.default("general"),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       const systemPrompt = TASK_PROMPTS[input.taskType] || TASK_PROMPTS.general;
@@ -588,7 +595,9 @@ export const aiCommandRouter = router({
           ? content
           : Array.isArray(content)
             ? content
-                .filter((c): c is { type: "text"; text: string } => c.type === "text")
+                .filter(
+                  (c): c is { type: "text"; text: string } => c.type === "text",
+                )
                 .map((c) => c.text)
                 .join("\n")
             : "No response generated.";
@@ -612,7 +621,7 @@ export const aiCommandRouter = router({
         context: z.string().optional(),
         language: z.enum(["ar", "en", "auto"]).default("auto"),
         attachments: z.array(attachmentSchema).optional(),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       const systemPrompt = TASK_PROMPTS[input.taskType];
@@ -640,7 +649,9 @@ export const aiCommandRouter = router({
           ? content
           : Array.isArray(content)
             ? content
-                .filter((c): c is { type: "text"; text: string } => c.type === "text")
+                .filter(
+                  (c): c is { type: "text"; text: string } => c.type === "text",
+                )
                 .map((c) => c.text)
                 .join("\n")
             : "No response generated.";

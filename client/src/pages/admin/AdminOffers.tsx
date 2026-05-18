@@ -22,17 +22,34 @@ import {
 } from "lucide-react";
 
 /* ─── Status Helpers ─── */
-const statusConfig: Record<string, { color: string; icon: React.ElementType; label: string }> = {
-  active: { color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", icon: CheckCircle, label: "Active" },
-  inactive: { color: "bg-gray-500/10 text-gray-400 border-gray-500/20", icon: PowerOff, label: "Inactive" },
-  expired: { color: "bg-red-500/10 text-red-400 border-red-500/20", icon: Clock, label: "Expired" },
+const statusConfig: Record<
+  string,
+  { color: string; icon: React.ElementType; label: string }
+> = {
+  active: {
+    color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    icon: CheckCircle,
+    label: "Active",
+  },
+  inactive: {
+    color: "bg-gray-500/10 text-gray-400 border-gray-500/20",
+    icon: PowerOff,
+    label: "Inactive",
+  },
+  expired: {
+    color: "bg-red-500/10 text-red-400 border-red-500/20",
+    icon: Clock,
+    label: "Expired",
+  },
 };
 
 function StatusBadge({ status }: { status: string }) {
   const config = statusConfig[status] || statusConfig.inactive;
   const Icon = config.icon;
   return (
-    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-[var(--font-body)] font-medium border ${config.color}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-[var(--font-body)] font-medium border ${config.color}`}
+    >
       <Icon size={10} />
       {config.label}
     </span>
@@ -109,7 +126,8 @@ function OfferModal({
 
   const inputClass =
     "w-full bg-[var(--theme-surface)] border border-white/10 text-white px-3 py-2.5 text-sm rounded-lg focus:outline-none focus:border-[var(--theme-primary)]/50 transition-colors placeholder:text-white/20 font-[var(--font-body)]";
-  const labelClass = "text-white/60 text-xs font-[var(--font-body)] uppercase tracking-wider mb-1.5 block";
+  const labelClass =
+    "text-white/60 text-xs font-[var(--font-body)] uppercase tracking-wider mb-1.5 block";
 
   return (
     <div
@@ -126,10 +144,15 @@ function OfferModal({
               {isEdit ? "Edit Offer" : "Create New Offer"}
             </h3>
             <p className="text-white/40 text-xs font-[var(--font-body)] mt-0.5">
-              {isEdit ? "Update the offer details below" : "Fill in the details to create a new promotional offer"}
+              {isEdit
+                ? "Update the offer details below"
+                : "Fill in the details to create a new promotional offer"}
             </p>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
+          <button
+            onClick={onClose}
+            className="text-white/40 hover:text-white transition-colors"
+          >
             <X size={20} />
           </button>
         </div>
@@ -143,7 +166,9 @@ function OfferModal({
               <input
                 type="text"
                 value={form.title}
-                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, title: e.target.value }))
+                }
                 placeholder="e.g. Summer Flash Sale"
                 className={inputClass}
                 required
@@ -154,7 +179,9 @@ function OfferModal({
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setForm((f) => ({ ...f, discountType: "percentage" }))}
+                  onClick={() =>
+                    setForm((f) => ({ ...f, discountType: "percentage" }))
+                  }
                   className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-[var(--font-body)] rounded-lg border transition-all ${
                     form.discountType === "percentage"
                       ? "bg-[var(--theme-primary)]/15 border-[var(--theme-primary)]/40 text-[var(--theme-primary)]"
@@ -165,7 +192,9 @@ function OfferModal({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setForm((f) => ({ ...f, discountType: "fixed" }))}
+                  onClick={() =>
+                    setForm((f) => ({ ...f, discountType: "fixed" }))
+                  }
                   className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-[var(--font-body)] rounded-lg border transition-all ${
                     form.discountType === "fixed"
                       ? "bg-[var(--theme-primary)]/15 border-[var(--theme-primary)]/40 text-[var(--theme-primary)]"
@@ -178,13 +207,21 @@ function OfferModal({
             </div>
             <div>
               <label className={labelClass}>
-                Discount Value * {form.discountType === "percentage" ? "(%)" : "($)"}
+                Discount Value *{" "}
+                {form.discountType === "percentage" ? "(%)" : "($)"}
               </label>
               <input
                 type="text"
                 value={form.discountValue}
-                onChange={(e) => setForm((f) => ({ ...f, discountValue: e.target.value.replace(/[^0-9.]/g, "") }))}
-                placeholder={form.discountType === "percentage" ? "e.g. 30" : "e.g. 150"}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    discountValue: e.target.value.replace(/[^0-9.]/g, ""),
+                  }))
+                }
+                placeholder={
+                  form.discountType === "percentage" ? "e.g. 30" : "e.g. 150"
+                }
                 className={inputClass}
                 required
               />
@@ -196,7 +233,9 @@ function OfferModal({
             <label className={labelClass}>Description</label>
             <textarea
               value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, description: e.target.value }))
+              }
               placeholder="Brief description of the offer..."
               rows={3}
               className={`${inputClass} resize-none`}
@@ -206,11 +245,18 @@ function OfferModal({
           {/* Promo Code & Spots */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className={labelClass}>Promo Code {isEdit && "(read-only)"}</label>
+              <label className={labelClass}>
+                Promo Code {isEdit && "(read-only)"}
+              </label>
               <input
                 type="text"
                 value={form.promoCode}
-                onChange={(e) => setForm((f) => ({ ...f, promoCode: e.target.value.toUpperCase().replace(/\s/g, "") }))}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    promoCode: e.target.value.toUpperCase().replace(/\s/g, ""),
+                  }))
+                }
                 placeholder="e.g. SUMMER30"
                 className={inputClass}
                 disabled={isEdit}
@@ -221,7 +267,12 @@ function OfferModal({
               <input
                 type="text"
                 value={form.totalSpots}
-                onChange={(e) => setForm((f) => ({ ...f, totalSpots: e.target.value.replace(/\D/g, "") }))}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    totalSpots: e.target.value.replace(/\D/g, ""),
+                  }))
+                }
                 placeholder="Leave empty for unlimited"
                 className={inputClass}
               />
@@ -235,7 +286,9 @@ function OfferModal({
               <input
                 type="datetime-local"
                 value={form.startDate}
-                onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, startDate: e.target.value }))
+                }
                 className={inputClass}
                 required
               />
@@ -245,7 +298,9 @@ function OfferModal({
               <input
                 type="datetime-local"
                 value={form.endDate}
-                onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, endDate: e.target.value }))
+                }
                 className={inputClass}
                 required
               />
@@ -259,7 +314,9 @@ function OfferModal({
               <input
                 type="text"
                 value={form.category}
-                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, category: e.target.value }))
+                }
                 placeholder="e.g. Beach, Adventure, Cultural"
                 className={inputClass}
               />
@@ -269,7 +326,9 @@ function OfferModal({
               <input
                 type="text"
                 value={form.destination}
-                onChange={(e) => setForm((f) => ({ ...f, destination: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, destination: e.target.value }))
+                }
                 placeholder="e.g. Cairo, Sharm El Sheikh"
                 className={inputClass}
               />
@@ -283,7 +342,9 @@ function OfferModal({
               <input
                 type="text"
                 value={form.badgeText}
-                onChange={(e) => setForm((f) => ({ ...f, badgeText: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, badgeText: e.target.value }))
+                }
                 placeholder="e.g. HOT DEAL"
                 className={inputClass}
               />
@@ -294,13 +355,17 @@ function OfferModal({
                 <input
                   type="color"
                   value={form.badgeColor}
-                  onChange={(e) => setForm((f) => ({ ...f, badgeColor: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, badgeColor: e.target.value }))
+                  }
                   className="h-[42px] w-12 rounded-lg border border-white/10 bg-[var(--theme-surface)] cursor-pointer"
                 />
                 <input
                   type="text"
                   value={form.badgeColor}
-                  onChange={(e) => setForm((f) => ({ ...f, badgeColor: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, badgeColor: e.target.value }))
+                  }
                   className={`${inputClass} flex-1`}
                 />
               </div>
@@ -310,7 +375,9 @@ function OfferModal({
               <input
                 type="text"
                 value={form.imageUrl}
-                onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, imageUrl: e.target.value }))
+                }
                 placeholder="https://..."
                 className={inputClass}
               />
@@ -358,7 +425,10 @@ export default function AdminOffers() {
   const [editingOffer, setEditingOffer] = useState<any>(null);
 
   const utils = trpc.useUtils();
-  const { data: offers, isLoading } = trpc.offers.listAll.useQuery({ limit: 100, offset: 0 });
+  const { data: offers, isLoading } = trpc.offers.listAll.useQuery({
+    limit: 100,
+    offset: 0,
+  });
 
   const createMutation = trpc.offers.create.useMutation({
     onSuccess: () => {
@@ -424,7 +494,10 @@ export default function AdminOffers() {
         <div className="h-12 bg-[var(--theme-surface)] rounded-lg border border-white/5" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-64 bg-[var(--theme-surface)] rounded-lg border border-white/5" />
+            <div
+              key={i}
+              className="h-64 bg-[var(--theme-surface)] rounded-lg border border-white/5"
+            />
           ))}
         </div>
       </div>
@@ -436,7 +509,9 @@ export default function AdminOffers() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-[var(--font-display)] font-bold text-white">Offers</h1>
+          <h1 className="text-2xl font-[var(--font-display)] font-bold text-white">
+            Offers
+          </h1>
           <p className="text-white/50 text-sm font-[var(--font-body)] mt-1">
             Create and manage promotional offers and discount codes
           </p>
@@ -456,7 +531,10 @@ export default function AdminOffers() {
       {/* Search & Filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-primary)]/50" />
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-primary)]/50"
+          />
           <input
             type="text"
             placeholder="Search by title, promo code, destination..."
@@ -476,7 +554,9 @@ export default function AdminOffers() {
                   : "bg-[var(--theme-surface)] border-white/5 text-white/50 hover:border-[var(--theme-primary)]/30"
               }`}
             >
-              {status === "all" ? "All" : status.charAt(0).toUpperCase() + status.slice(1)}
+              {status === "all"
+                ? "All"
+                : status.charAt(0).toUpperCase() + status.slice(1)}
             </button>
           ))}
         </div>
@@ -518,7 +598,9 @@ export default function AdminOffers() {
                   </div>
                   {/* Status Badge */}
                   <div className="absolute top-2 right-2">
-                    <StatusBadge status={expired ? "expired" : offer.isActive} />
+                    <StatusBadge
+                      status={expired ? "expired" : offer.isActive}
+                    />
                   </div>
                   {/* Badge */}
                   {offer.badgeText && (
@@ -551,14 +633,20 @@ export default function AdminOffers() {
                       <span className="text-[var(--theme-primary)] font-mono text-sm font-bold tracking-wider">
                         {offer.promoCode}
                       </span>
-                      <Copy size={12} className="text-white/30 group-hover:text-[var(--theme-primary)] transition-colors" />
+                      <Copy
+                        size={12}
+                        className="text-white/30 group-hover:text-[var(--theme-primary)] transition-colors"
+                      />
                     </button>
                   )}
 
                   {/* Meta Info */}
                   <div className="grid grid-cols-2 gap-2 text-xs font-[var(--font-body)]">
                     <div className="flex items-center gap-1.5 text-white/40">
-                      <Calendar size={10} className="text-[var(--theme-primary)]/50" />
+                      <Calendar
+                        size={10}
+                        className="text-[var(--theme-primary)]/50"
+                      />
                       <span>
                         {offer.startDate
                           ? new Date(offer.startDate).toLocaleDateString()
@@ -566,7 +654,10 @@ export default function AdminOffers() {
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 text-white/40">
-                      <Calendar size={10} className="text-[var(--theme-primary)]/50" />
+                      <Calendar
+                        size={10}
+                        className="text-[var(--theme-primary)]/50"
+                      />
                       <span>
                         {offer.endDate
                           ? new Date(offer.endDate).toLocaleDateString()
@@ -575,7 +666,10 @@ export default function AdminOffers() {
                     </div>
                     {offer.totalSpots != null && (
                       <div className="flex items-center gap-1.5 text-white/40">
-                        <Users size={10} className="text-[var(--theme-primary)]/50" />
+                        <Users
+                          size={10}
+                          className="text-[var(--theme-primary)]/50"
+                        />
                         <span>
                           {offer.bookedSpots || 0}/{offer.totalSpots} spots
                         </span>
@@ -647,7 +741,10 @@ export default function AdminOffers() {
         </div>
       ) : (
         <div className="bg-[var(--theme-surface)] border border-white/8 rounded-lg p-12 text-center">
-          <Sparkles size={40} className="text-[var(--theme-primary)]/20 mx-auto mb-3" />
+          <Sparkles
+            size={40}
+            className="text-[var(--theme-primary)]/20 mx-auto mb-3"
+          />
           <p className="text-white/40 text-sm font-[var(--font-body)] mb-4">
             {searchTerm || filterStatus !== "all"
               ? "No offers match your filters"

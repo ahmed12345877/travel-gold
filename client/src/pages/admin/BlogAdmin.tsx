@@ -2,8 +2,21 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit2, Trash2, Search, Eye, Archive } from "lucide-react";
 import { trpc } from "@/lib/trpc";
@@ -24,7 +37,11 @@ export default function BlogAdmin() {
     status: "draft" as "published" | "draft" | "archived",
   });
 
-  const { data: articles, isLoading, refetch } = trpc.admin.blog.list.useQuery({
+  const {
+    data: articles,
+    isLoading,
+    refetch,
+  } = trpc.admin.blog.list.useQuery({
     search,
     limit: 20,
   });
@@ -156,7 +173,9 @@ export default function BlogAdmin() {
           </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingId ? "تعديل المقالة" : "إضافة مقالة جديدة"}</DialogTitle>
+              <DialogTitle>
+                {editingId ? "تعديل المقالة" : "إضافة مقالة جديدة"}
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <Input
@@ -174,47 +193,63 @@ export default function BlogAdmin() {
               <Input
                 placeholder="الـ Slug (URL)"
                 value={formData.slug}
-                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, slug: e.target.value })
+                }
               />
               <Textarea
                 placeholder="الملخص"
                 value={formData.excerpt}
-                onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, excerpt: e.target.value })
+                }
                 rows={2}
               />
               <Textarea
                 placeholder="محتوى المقالة"
                 value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, content: e.target.value })
+                }
                 rows={6}
               />
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   placeholder="الفئة"
                   value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, category: e.target.value })
+                  }
                 />
                 <Input
                   placeholder="المؤلف"
                   value={formData.author}
-                  onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, author: e.target.value })
+                  }
                 />
               </div>
               <Input
                 placeholder="الوسوم (مفصولة بفواصل)"
                 value={formData.tags}
-                onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, tags: e.target.value })
+                }
               />
               <Input
                 placeholder="رابط الصورة"
                 value={formData.imageUrl}
-                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, imageUrl: e.target.value })
+                }
               />
               <div>
                 <label className="text-sm text-gray-600">الحالة</label>
                 <select
                   value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, status: e.target.value as any })
+                  }
                   className="w-full px-3 py-2 border rounded-md"
                 >
                   <option value="draft">مسودة</option>
@@ -271,24 +306,28 @@ export default function BlogAdmin() {
                         article.status === "published"
                           ? "default"
                           : article.status === "archived"
-                          ? "secondary"
-                          : "outline"
+                            ? "secondary"
+                            : "outline"
                       }
                     >
                       {article.status === "published"
                         ? "منشورة"
                         : article.status === "archived"
-                        ? "مؤرشفة"
-                        : "مسودة"}
+                          ? "مؤرشفة"
+                          : "مسودة"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-sm">{formatDate(article.createdAt)}</TableCell>
+                  <TableCell className="text-sm">
+                    {formatDate(article.createdAt)}
+                  </TableCell>
                   <TableCell className="space-x-1">
                     {article.status !== "published" && (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => publishMutation.mutate({ id: article.id })}
+                        onClick={() =>
+                          publishMutation.mutate({ id: article.id })
+                        }
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
@@ -297,7 +336,9 @@ export default function BlogAdmin() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => archiveMutation.mutate({ id: article.id })}
+                        onClick={() =>
+                          archiveMutation.mutate({ id: article.id })
+                        }
                       >
                         <Archive className="w-4 h-4" />
                       </Button>

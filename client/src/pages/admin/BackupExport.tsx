@@ -1,23 +1,74 @@
 import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
-  HardDrive, Download, Upload, Clock, Database, FileJson, FileSpreadsheet,
-  Shield, CheckCircle2, AlertTriangle, RefreshCw, Archive, Trash2,
-  Cloud, CloudUpload, CloudDownload, Link2, Unlink, Lock, Unlock,
-  Settings, History, Zap, Globe, FolderSync, ExternalLink, Info,
-  ChevronRight, Check, X, Eye, Copy, Loader2
+  HardDrive,
+  Download,
+  Upload,
+  Clock,
+  Database,
+  FileJson,
+  FileSpreadsheet,
+  Shield,
+  CheckCircle2,
+  AlertTriangle,
+  RefreshCw,
+  Archive,
+  Trash2,
+  Cloud,
+  CloudUpload,
+  CloudDownload,
+  Link2,
+  Unlink,
+  Lock,
+  Unlock,
+  Settings,
+  History,
+  Zap,
+  Globe,
+  FolderSync,
+  ExternalLink,
+  Info,
+  ChevronRight,
+  Check,
+  X,
+  Eye,
+  Copy,
+  Loader2,
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════
@@ -49,7 +100,12 @@ interface CloudProviderConfig {
   color: string;
   bgColor: string;
   description: string;
-  configFields: { key: string; label: string; placeholder: string; type?: string }[];
+  configFields: {
+    key: string;
+    label: string;
+    placeholder: string;
+    type?: string;
+  }[];
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -63,11 +119,25 @@ const CLOUD_PROVIDERS: CloudProviderConfig[] = [
     icon: "G",
     color: "text-blue-400",
     bgColor: "bg-blue-500/10",
-    description: "Store backups in your Google Drive. Requires OAuth connection.",
+    description:
+      "Store backups in your Google Drive. Requires OAuth connection.",
     configFields: [
-      { key: "client_id", label: "OAuth Client ID", placeholder: "Enter Google OAuth Client ID" },
-      { key: "client_secret", label: "OAuth Client Secret", placeholder: "Enter Client Secret", type: "password" },
-      { key: "folder_id", label: "Folder ID (optional)", placeholder: "Google Drive folder ID" },
+      {
+        key: "client_id",
+        label: "OAuth Client ID",
+        placeholder: "Enter Google OAuth Client ID",
+      },
+      {
+        key: "client_secret",
+        label: "OAuth Client Secret",
+        placeholder: "Enter Client Secret",
+        type: "password",
+      },
+      {
+        key: "folder_id",
+        label: "Folder ID (optional)",
+        placeholder: "Google Drive folder ID",
+      },
     ],
   },
   {
@@ -78,8 +148,17 @@ const CLOUD_PROVIDERS: CloudProviderConfig[] = [
     bgColor: "bg-sky-500/10",
     description: "Sync backups to Dropbox. Requires API access token.",
     configFields: [
-      { key: "access_token", label: "Access Token", placeholder: "Enter Dropbox access token", type: "password" },
-      { key: "folder_path", label: "Backup Folder Path", placeholder: "/Apps/Vanir-Backups" },
+      {
+        key: "access_token",
+        label: "Access Token",
+        placeholder: "Enter Dropbox access token",
+        type: "password",
+      },
+      {
+        key: "folder_path",
+        label: "Backup Folder Path",
+        placeholder: "/Apps/Vanir-Backups",
+      },
     ],
   },
   {
@@ -88,11 +167,26 @@ const CLOUD_PROVIDERS: CloudProviderConfig[] = [
     icon: "S3",
     color: "text-orange-400",
     bgColor: "bg-orange-500/10",
-    description: "Use Amazon S3 for scalable backup storage. Requires IAM credentials.",
+    description:
+      "Use Amazon S3 for scalable backup storage. Requires IAM credentials.",
     configFields: [
-      { key: "access_key_id", label: "Access Key ID", placeholder: "AKIA...", type: "password" },
-      { key: "secret_access_key", label: "Secret Access Key", placeholder: "Enter secret key", type: "password" },
-      { key: "bucket_name", label: "Bucket Name", placeholder: "vanir-backups" },
+      {
+        key: "access_key_id",
+        label: "Access Key ID",
+        placeholder: "AKIA...",
+        type: "password",
+      },
+      {
+        key: "secret_access_key",
+        label: "Secret Access Key",
+        placeholder: "Enter secret key",
+        type: "password",
+      },
+      {
+        key: "bucket_name",
+        label: "Bucket Name",
+        placeholder: "vanir-backups",
+      },
       { key: "region", label: "Region", placeholder: "us-east-1" },
     ],
   },
@@ -105,9 +199,17 @@ const CLOUD_PROVIDERS: CloudProviderConfig[] = [
 function StatusBadge({ status }: { status: string }) {
   switch (status) {
     case "completed":
-      return <Badge className="bg-green-400/10 text-green-400 border-0 gap-1"><CheckCircle2 className="w-3 h-3" /> Completed</Badge>;
+      return (
+        <Badge className="bg-green-400/10 text-green-400 border-0 gap-1">
+          <CheckCircle2 className="w-3 h-3" /> Completed
+        </Badge>
+      );
     case "failed":
-      return <Badge className="bg-red-400/10 text-red-400 border-0 gap-1"><AlertTriangle className="w-3 h-3" /> Failed</Badge>;
+      return (
+        <Badge className="bg-red-400/10 text-red-400 border-0 gap-1">
+          <AlertTriangle className="w-3 h-3" /> Failed
+        </Badge>
+      );
     default:
       return null;
   }
@@ -125,9 +227,17 @@ export default function BackupExport() {
   const [backupLog, setBackupLog] = useState<BackupLogEntry[]>([]);
 
   // Cloud state - loaded from DB
-  const [cloudConfigs, setCloudConfigs] = useState<Record<string, { connected: boolean; config: Record<string, string>; lastSync?: string }>>({});
-  const [cloudConfigDialog, setCloudConfigDialog] = useState<CloudProviderConfig | null>(null);
-  const [cloudConfigValues, setCloudConfigValues] = useState<Record<string, string>>({});
+  const [cloudConfigs, setCloudConfigs] = useState<
+    Record<
+      string,
+      { connected: boolean; config: Record<string, string>; lastSync?: string }
+    >
+  >({});
+  const [cloudConfigDialog, setCloudConfigDialog] =
+    useState<CloudProviderConfig | null>(null);
+  const [cloudConfigValues, setCloudConfigValues] = useState<
+    Record<string, string>
+  >({});
 
   // Settings state - loaded from DB
   const [autoBackup, setAutoBackup] = useState(false);
@@ -138,7 +248,9 @@ export default function BackupExport() {
   /* ─── tRPC Queries ─── */
   const sectionsQuery = trpc.backup.getExportSections.useQuery();
   const backupSettingsQuery = trpc.backup.getSettings.useQuery();
-  const cloudSettingsQuery = trpc.siteSettings.getByCategory.useQuery({ category: "backup_cloud" });
+  const cloudSettingsQuery = trpc.siteSettings.getByCategory.useQuery({
+    category: "backup_cloud",
+  });
   const exportMutation = trpc.backup.exportData.useMutation();
   const saveSettingsMutation = trpc.backup.saveSettings.useMutation();
   const saveCloudMutation = trpc.siteSettings.setMany.useMutation();
@@ -146,7 +258,9 @@ export default function BackupExport() {
   /* ─── Load sections from DB ─── */
   useEffect(() => {
     if (sectionsQuery.data) {
-      setExportSections(sectionsQuery.data.map(s => ({ ...s, enabled: true })));
+      setExportSections(
+        sectionsQuery.data.map((s) => ({ ...s, enabled: true })),
+      );
     }
   }, [sectionsQuery.data]);
 
@@ -166,7 +280,9 @@ export default function BackupExport() {
     if (cloudSettingsQuery.data) {
       const configs: Record<string, any> = {};
       for (const [key, value] of Object.entries(cloudSettingsQuery.data)) {
-        try { configs[key] = JSON.parse(value); } catch {}
+        try {
+          configs[key] = JSON.parse(value);
+        } catch {}
       }
       setCloudConfigs(configs);
     }
@@ -194,13 +310,20 @@ export default function BackupExport() {
   const restoreMutation = trpc.backup.restoreData.useMutation();
 
   /* ─── Derived ─── */
-  const selectedSections = exportSections.filter(s => s.enabled);
-  const totalRecords = selectedSections.reduce((sum, s) => sum + s.recordCount, 0);
-  const connectedCloudCount = Object.values(cloudConfigs).filter(c => c.connected).length;
+  const selectedSections = exportSections.filter((s) => s.enabled);
+  const totalRecords = selectedSections.reduce(
+    (sum, s) => sum + s.recordCount,
+    0,
+  );
+  const connectedCloudCount = Object.values(cloudConfigs).filter(
+    (c) => c.connected,
+  ).length;
 
   /* ─── Handlers ─── */
   const toggleSection = (id: string) => {
-    setExportSections(prev => prev.map(s => s.id === id ? { ...s, enabled: !s.enabled } : s));
+    setExportSections((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, enabled: !s.enabled } : s)),
+    );
   };
 
   const handleExport = async () => {
@@ -211,7 +334,7 @@ export default function BackupExport() {
     setIsExporting(true);
     try {
       const result = await exportMutation.mutateAsync({
-        sections: selectedSections.map(s => s.id),
+        sections: selectedSections.map((s) => s.id),
         format: exportFormat as "json" | "csv",
       });
 
@@ -219,7 +342,9 @@ export default function BackupExport() {
       let blob: Blob;
       let filename: string;
       if (exportFormat === "json") {
-        blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
+        blob = new Blob([JSON.stringify(result, null, 2)], {
+          type: "application/json",
+        });
         filename = `vanir-export-${new Date().toISOString().slice(0, 10)}.json`;
       } else {
         // CSV: flatten all sections
@@ -245,7 +370,7 @@ export default function BackupExport() {
         type: "export",
         name: `${exportFormat.toUpperCase()} Export`,
         date: new Date().toISOString(),
-        sections: selectedSections.map(s => s.id),
+        sections: selectedSections.map((s) => s.id),
         format: exportFormat,
         recordCount: result.totalRecords,
         status: "completed",
@@ -259,7 +384,7 @@ export default function BackupExport() {
         type: "export",
         name: `${exportFormat.toUpperCase()} Export`,
         date: new Date().toISOString(),
-        sections: selectedSections.map(s => s.id),
+        sections: selectedSections.map((s) => s.id),
         format: exportFormat,
         recordCount: 0,
         status: "failed",
@@ -273,10 +398,15 @@ export default function BackupExport() {
   const handleFullBackup = async () => {
     setIsExporting(true);
     try {
-      const allSections = exportSections.map(s => s.id);
-      const result = await exportMutation.mutateAsync({ sections: allSections, format: "json" });
+      const allSections = exportSections.map((s) => s.id);
+      const result = await exportMutation.mutateAsync({
+        sections: allSections,
+        format: "json",
+      });
 
-      const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
+      const blob = new Blob([JSON.stringify(result, null, 2)], {
+        type: "application/json",
+      });
       const filename = `vanir-full-backup-${new Date().toISOString().slice(0, 10)}.json`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -323,19 +453,25 @@ export default function BackupExport() {
   const saveCloudConfig = async () => {
     if (!cloudConfigDialog) return;
     const id = cloudConfigDialog.id;
-    const hasValues = Object.values(cloudConfigValues).some(v => v.trim());
+    const hasValues = Object.values(cloudConfigValues).some((v) => v.trim());
     if (!hasValues) {
       toast.error("Please fill in at least one field");
       return;
     }
     try {
-      const updated = { connected: true, config: cloudConfigValues, lastSync: new Date().toISOString() };
+      const updated = {
+        connected: true,
+        config: cloudConfigValues,
+        lastSync: new Date().toISOString(),
+      };
       await saveCloudMutation.mutateAsync({
         category: "backup_cloud",
         settings: { [id]: JSON.stringify(updated) },
       });
       cloudSettingsQuery.refetch();
-      toast.success(`${cloudConfigDialog.name} configuration saved to database`);
+      toast.success(
+        `${cloudConfigDialog.name} configuration saved to database`,
+      );
       setCloudConfigDialog(null);
       setCloudConfigValues({});
     } catch (err: any) {
@@ -347,7 +483,9 @@ export default function BackupExport() {
     try {
       await saveCloudMutation.mutateAsync({
         category: "backup_cloud",
-        settings: { [providerId]: JSON.stringify({ connected: false, config: {} }) },
+        settings: {
+          [providerId]: JSON.stringify({ connected: false, config: {} }),
+        },
       });
       cloudSettingsQuery.refetch();
       toast.success("Disconnected successfully");
@@ -374,10 +512,20 @@ export default function BackupExport() {
             <HardDrive className="w-6 h-6 text-[var(--theme-primary)]" />
             Backup & Export
           </h1>
-          <p className="text-white/50 mt-1">Export real data from your database and manage cloud backups</p>
+          <p className="text-white/50 mt-1">
+            Export real data from your database and manage cloud backups
+          </p>
         </div>
-        <Button onClick={handleFullBackup} disabled={isExporting} className="bg-[var(--theme-primary)] text-black hover:bg-[var(--theme-accent)]">
-          {isExporting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Shield className="w-4 h-4 mr-1" />}
+        <Button
+          onClick={handleFullBackup}
+          disabled={isExporting}
+          className="bg-[var(--theme-primary)] text-black hover:bg-[var(--theme-accent)]"
+        >
+          {isExporting ? (
+            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+          ) : (
+            <Shield className="w-4 h-4 mr-1" />
+          )}
           {isExporting ? "Creating..." : "Full Backup Now"}
         </Button>
       </div>
@@ -389,7 +537,11 @@ export default function BackupExport() {
             <Database className="w-5 h-5 text-[var(--theme-primary)] mx-auto mb-1" />
             <p className="text-white/50 text-xs">DB Tables</p>
             <p className="text-white font-bold text-sm mt-1">
-              {sectionsQuery.isLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : exportSections.length}
+              {sectionsQuery.isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+              ) : (
+                exportSections.length
+              )}
             </p>
           </CardContent>
         </Card>
@@ -398,7 +550,13 @@ export default function BackupExport() {
             <Archive className="w-5 h-5 text-[var(--theme-primary)] mx-auto mb-1" />
             <p className="text-white/50 text-xs">Total Records</p>
             <p className="text-white font-bold text-sm mt-1">
-              {sectionsQuery.isLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : exportSections.reduce((s, e) => s + e.recordCount, 0).toLocaleString()}
+              {sectionsQuery.isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+              ) : (
+                exportSections
+                  .reduce((s, e) => s + e.recordCount, 0)
+                  .toLocaleString()
+              )}
             </p>
           </CardContent>
         </Card>
@@ -406,14 +564,18 @@ export default function BackupExport() {
           <CardContent className="p-4 text-center">
             <History className="w-5 h-5 text-[var(--theme-primary)] mx-auto mb-1" />
             <p className="text-white/50 text-xs">Export History</p>
-            <p className="text-white font-bold text-sm mt-1">{backupLog.length}</p>
+            <p className="text-white font-bold text-sm mt-1">
+              {backupLog.length}
+            </p>
           </CardContent>
         </Card>
         <Card className="bg-black/40 border-white/10">
           <CardContent className="p-4 text-center">
             <Cloud className="w-5 h-5 text-purple-400 mx-auto mb-1" />
             <p className="text-white/50 text-xs">Cloud Connected</p>
-            <p className="text-purple-400 font-bold text-sm mt-1">{connectedCloudCount}</p>
+            <p className="text-purple-400 font-bold text-sm mt-1">
+              {connectedCloudCount}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -421,19 +583,33 @@ export default function BackupExport() {
       {/* ─── Main Tabs ─── */}
       <Tabs defaultValue="local" className="space-y-4">
         <TabsList className="bg-black/40 border border-white/10">
-          <TabsTrigger value="local" className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:text-[var(--theme-primary)]">
+          <TabsTrigger
+            value="local"
+            className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:text-[var(--theme-primary)]"
+          >
             <HardDrive className="w-4 h-4 mr-1.5" /> Export Data
           </TabsTrigger>
-          <TabsTrigger value="cloud" className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:text-[var(--theme-primary)]">
+          <TabsTrigger
+            value="cloud"
+            className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:text-[var(--theme-primary)]"
+          >
             <Cloud className="w-4 h-4 mr-1.5" /> Cloud Storage
             {connectedCloudCount > 0 && (
-              <Badge className="ml-1.5 bg-green-400/20 text-green-400 border-0 text-[10px] px-1.5">{connectedCloudCount}</Badge>
+              <Badge className="ml-1.5 bg-green-400/20 text-green-400 border-0 text-[10px] px-1.5">
+                {connectedCloudCount}
+              </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="history" className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:text-[var(--theme-primary)]">
+          <TabsTrigger
+            value="history"
+            className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:text-[var(--theme-primary)]"
+          >
             <History className="w-4 h-4 mr-1.5" /> History
           </TabsTrigger>
-          <TabsTrigger value="settings" className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:text-[var(--theme-primary)]">
+          <TabsTrigger
+            value="settings"
+            className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:text-[var(--theme-primary)]"
+          >
             <Settings className="w-4 h-4 mr-1.5" /> Settings
           </TabsTrigger>
         </TabsList>
@@ -445,27 +621,54 @@ export default function BackupExport() {
           <Card className="bg-black/40 border-white/10">
             <CardHeader>
               <CardTitle className="text-white text-lg flex items-center gap-2">
-                <Download className="w-5 h-5 text-[var(--theme-primary)]" /> Export Database
+                <Download className="w-5 h-5 text-[var(--theme-primary)]" />{" "}
+                Export Database
               </CardTitle>
               <CardDescription className="text-white/50">
-                Select tables to export. Record counts are live from your database.
+                Select tables to export. Record counts are live from your
+                database.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {sectionsQuery.isLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin text-[var(--theme-primary)]" />
-                  <span className="text-white/50 ml-2">Loading database tables...</span>
+                  <span className="text-white/50 ml-2">
+                    Loading database tables...
+                  </span>
                 </div>
               ) : (
                 <>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-white/50 text-sm">{selectedSections.length} of {exportSections.length} tables selected</span>
+                    <span className="text-white/50 text-sm">
+                      {selectedSections.length} of {exportSections.length}{" "}
+                      tables selected
+                    </span>
                     <div className="flex gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => setExportSections(prev => prev.map(s => ({ ...s, enabled: true })))}
-                        className="text-white/40 hover:text-white text-xs h-7">Select All</Button>
-                      <Button variant="ghost" size="sm" onClick={() => setExportSections(prev => prev.map(s => ({ ...s, enabled: false })))}
-                        className="text-white/40 hover:text-white text-xs h-7">Deselect All</Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setExportSections((prev) =>
+                            prev.map((s) => ({ ...s, enabled: true })),
+                          )
+                        }
+                        className="text-white/40 hover:text-white text-xs h-7"
+                      >
+                        Select All
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setExportSections((prev) =>
+                            prev.map((s) => ({ ...s, enabled: false })),
+                          )
+                        }
+                        className="text-white/40 hover:text-white text-xs h-7"
+                      >
+                        Deselect All
+                      </Button>
                     </div>
                   </div>
                   <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
@@ -473,22 +676,37 @@ export default function BackupExport() {
                       <div
                         key={section.id}
                         className={`flex items-center justify-between p-3 rounded-lg border transition-colors cursor-pointer ${
-                          section.enabled ? "bg-[var(--theme-primary)]/5 border-[var(--theme-primary)]/20" : "bg-black/20 border-white/5"
+                          section.enabled
+                            ? "bg-[var(--theme-primary)]/5 border-[var(--theme-primary)]/20"
+                            : "bg-black/20 border-white/5"
                         }`}
                         onClick={() => toggleSection(section.id)}
                       >
                         <div className="flex items-center gap-3">
-                          <Database className={`w-4 h-4 ${section.enabled ? "text-[var(--theme-primary)]" : "text-white/30"}`} />
+                          <Database
+                            className={`w-4 h-4 ${section.enabled ? "text-[var(--theme-primary)]" : "text-white/30"}`}
+                          />
                           <div>
-                            <p className={`text-sm font-medium ${section.enabled ? "text-white" : "text-white/40"}`}>{section.label}</p>
-                            <p className="text-white/30 text-xs">Table: {section.id}</p>
+                            <p
+                              className={`text-sm font-medium ${section.enabled ? "text-white" : "text-white/40"}`}
+                            >
+                              {section.label}
+                            </p>
+                            <p className="text-white/30 text-xs">
+                              Table: {section.id}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <Badge className={`border-0 text-xs ${section.recordCount > 0 ? "bg-green-400/10 text-green-400" : "bg-white/5 text-white/30"}`}>
+                          <Badge
+                            className={`border-0 text-xs ${section.recordCount > 0 ? "bg-green-400/10 text-green-400" : "bg-white/5 text-white/30"}`}
+                          >
                             {section.recordCount} records
                           </Badge>
-                          <Switch checked={section.enabled} onCheckedChange={() => toggleSection(section.id)} />
+                          <Switch
+                            checked={section.enabled}
+                            onCheckedChange={() => toggleSection(section.id)}
+                          />
                         </div>
                       </div>
                     ))}
@@ -496,25 +714,53 @@ export default function BackupExport() {
 
                   <div className="flex items-center gap-3 pt-2">
                     <Label className="text-white/70 text-sm">Format:</Label>
-                    <Select value={exportFormat} onValueChange={setExportFormat}>
+                    <Select
+                      value={exportFormat}
+                      onValueChange={setExportFormat}
+                    >
                       <SelectTrigger className="w-[150px] bg-black/40 border-white/10 text-white">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="json"><span className="flex items-center gap-2"><FileJson className="w-3 h-3" /> JSON</span></SelectItem>
-                        <SelectItem value="csv"><span className="flex items-center gap-2"><FileSpreadsheet className="w-3 h-3" /> CSV</span></SelectItem>
+                        <SelectItem value="json">
+                          <span className="flex items-center gap-2">
+                            <FileJson className="w-3 h-3" /> JSON
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="csv">
+                          <span className="flex items-center gap-2">
+                            <FileSpreadsheet className="w-3 h-3" /> CSV
+                          </span>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="bg-black/30 rounded-lg p-3 border border-white/5 flex items-center justify-between text-sm">
-                    <span className="text-white/50">{selectedSections.length} tables selected</span>
-                    <span className="text-[var(--theme-primary)] font-medium">{totalRecords.toLocaleString()} total records</span>
+                    <span className="text-white/50">
+                      {selectedSections.length} tables selected
+                    </span>
+                    <span className="text-[var(--theme-primary)] font-medium">
+                      {totalRecords.toLocaleString()} total records
+                    </span>
                   </div>
 
-                  <Button onClick={handleExport} disabled={isExporting || selectedSections.length === 0}
-                    className="w-full bg-[var(--theme-primary)] text-black hover:bg-[var(--theme-accent)] disabled:opacity-50">
-                    {isExporting ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Exporting from database...</> : <><Download className="w-4 h-4 mr-1" /> Export {exportFormat.toUpperCase()}</>}
+                  <Button
+                    onClick={handleExport}
+                    disabled={isExporting || selectedSections.length === 0}
+                    className="w-full bg-[var(--theme-primary)] text-black hover:bg-[var(--theme-accent)] disabled:opacity-50"
+                  >
+                    {isExporting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />{" "}
+                        Exporting from database...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 mr-1" /> Export{" "}
+                        {exportFormat.toUpperCase()}
+                      </>
+                    )}
                   </Button>
                 </>
               )}
@@ -528,20 +774,26 @@ export default function BackupExport() {
                 <Upload className="w-5 h-5 text-blue-400" /> Restore from Backup
               </CardTitle>
               <CardDescription className="text-white/50">
-                Upload a JSON backup file exported from this system to restore data into the database
+                Upload a JSON backup file exported from this system to restore
+                data into the database
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* File Upload Area */}
               <div
                 className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${
-                  restoreFile ? "border-[var(--theme-primary)]/50 bg-[var(--theme-primary)]/5" : "border-white/10 hover:border-[var(--theme-primary)]/30"
+                  restoreFile
+                    ? "border-[var(--theme-primary)]/50 bg-[var(--theme-primary)]/5"
+                    : "border-white/10 hover:border-[var(--theme-primary)]/30"
                 }`}
-                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
                 onDrop={(e) => {
                   e.preventDefault();
                   const file = e.dataTransfer.files[0];
-                  if (file && file.name.endsWith('.json')) {
+                  if (file && file.name.endsWith(".json")) {
                     setRestoreFile(file);
                     setRestoreResult(null);
                     const reader = new FileReader();
@@ -549,15 +801,19 @@ export default function BackupExport() {
                       try {
                         const data = JSON.parse(ev.target?.result as string);
                         setRestorePreview(data);
-                      } catch { toast.error("Invalid JSON file"); }
+                      } catch {
+                        toast.error("Invalid JSON file");
+                      }
                     };
                     reader.readAsText(file);
-                  } else { toast.error("Only .json backup files are supported"); }
+                  } else {
+                    toast.error("Only .json backup files are supported");
+                  }
                 }}
                 onClick={() => {
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.accept = '.json';
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = ".json";
                   input.onchange = (e: any) => {
                     const file = e.target.files?.[0];
                     if (file) {
@@ -568,7 +824,9 @@ export default function BackupExport() {
                         try {
                           const data = JSON.parse(ev.target?.result as string);
                           setRestorePreview(data);
-                        } catch { toast.error("Invalid JSON file"); }
+                        } catch {
+                          toast.error("Invalid JSON file");
+                        }
                       };
                       reader.readAsText(file);
                     }
@@ -579,14 +837,22 @@ export default function BackupExport() {
                 {restoreFile ? (
                   <>
                     <CheckCircle2 className="w-8 h-8 text-[var(--theme-primary)] mx-auto mb-3" />
-                    <p className="text-white text-sm font-medium">{restoreFile.name}</p>
-                    <p className="text-white/40 text-xs mt-1">{(restoreFile.size / 1024).toFixed(1)} KB</p>
+                    <p className="text-white text-sm font-medium">
+                      {restoreFile.name}
+                    </p>
+                    <p className="text-white/40 text-xs mt-1">
+                      {(restoreFile.size / 1024).toFixed(1)} KB
+                    </p>
                   </>
                 ) : (
                   <>
                     <Upload className="w-8 h-8 text-white/20 mx-auto mb-3" />
-                    <p className="text-white/50 text-sm mb-1">Drop a backup file here or click to browse</p>
-                    <p className="text-white/30 text-xs">Supports .json files exported from this system</p>
+                    <p className="text-white/50 text-sm mb-1">
+                      Drop a backup file here or click to browse
+                    </p>
+                    <p className="text-white/30 text-xs">
+                      Supports .json files exported from this system
+                    </p>
                   </>
                 )}
               </div>
@@ -595,33 +861,67 @@ export default function BackupExport() {
               {restorePreview?.sections && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-white text-sm font-medium">Backup Contents</h4>
+                    <h4 className="text-white text-sm font-medium">
+                      Backup Contents
+                    </h4>
                     <Badge className="bg-white/5 text-white/60 border-0">
-                      {restorePreview.exportedAt ? new Date(restorePreview.exportedAt).toLocaleDateString() : "Unknown date"}
+                      {restorePreview.exportedAt
+                        ? new Date(
+                            restorePreview.exportedAt,
+                          ).toLocaleDateString()
+                        : "Unknown date"}
                     </Badge>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    {Object.entries(restorePreview.sections).map(([key, section]: [string, any]) => (
-                      <div key={key} className="bg-white/5 rounded-lg p-3 flex items-center justify-between">
-                        <span className="text-white/70 text-sm">{section.label || key}</span>
-                        <Badge className="bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] border-0">{section.recordCount} records</Badge>
-                      </div>
-                    ))}
+                    {Object.entries(restorePreview.sections).map(
+                      ([key, section]: [string, any]) => (
+                        <div
+                          key={key}
+                          className="bg-white/5 rounded-lg p-3 flex items-center justify-between"
+                        >
+                          <span className="text-white/70 text-sm">
+                            {section.label || key}
+                          </span>
+                          <Badge className="bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] border-0">
+                            {section.recordCount} records
+                          </Badge>
+                        </div>
+                      ),
+                    )}
                   </div>
                   <div className="bg-white/5 rounded-lg p-3">
-                    <p className="text-white/50 text-xs mb-2">Total: {restorePreview.totalRecords || Object.values(restorePreview.sections).reduce((s: number, sec: any) => s + (sec.recordCount || 0), 0)} records</p>
+                    <p className="text-white/50 text-xs mb-2">
+                      Total:{" "}
+                      {restorePreview.totalRecords ||
+                        Object.values(restorePreview.sections).reduce(
+                          (s: number, sec: any) => s + (sec.recordCount || 0),
+                          0,
+                        )}{" "}
+                      records
+                    </p>
                   </div>
 
                   {/* Restore Mode */}
                   <div className="flex items-center gap-4">
-                    <Label className="text-white/70 text-sm">Restore Mode:</Label>
-                    <Select value={restoreMode} onValueChange={(v: "merge" | "replace") => setRestoreMode(v)}>
+                    <Label className="text-white/70 text-sm">
+                      Restore Mode:
+                    </Label>
+                    <Select
+                      value={restoreMode}
+                      onValueChange={(v: "merge" | "replace") =>
+                        setRestoreMode(v)
+                      }
+                    >
                       <SelectTrigger className="w-48 bg-black/40 border-white/10 text-white">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-[var(--card)] border-white/10">
-                        <SelectItem value="merge">Merge (add new records)</SelectItem>
-                        <SelectItem value="replace">Replace (delete existing first)</SelectItem>
+                        <SelectItem value="merge">
+                          Merge (add new records)
+                        </SelectItem>
+                        <SelectItem value="replace">
+                          Replace (delete existing first)
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -629,7 +929,11 @@ export default function BackupExport() {
                   {restoreMode === "replace" && (
                     <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-start gap-2">
                       <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
-                      <p className="text-red-300 text-xs">Replace mode will DELETE all existing records in the selected tables before importing. This action cannot be undone.</p>
+                      <p className="text-red-300 text-xs">
+                        Replace mode will DELETE all existing records in the
+                        selected tables before importing. This action cannot be
+                        undone.
+                      </p>
                     </div>
                   )}
 
@@ -644,14 +948,16 @@ export default function BackupExport() {
                           mode: restoreMode,
                         });
                         setRestoreResult(result);
-                        toast.success(`Restored ${result.totalRestored} records successfully`);
+                        toast.success(
+                          `Restored ${result.totalRestored} records successfully`,
+                        );
                         // Refresh export sections count
                         sectionsQuery.refetch();
                         // Log it
                         const logEntry: BackupLogEntry = {
                           id: Date.now().toString(),
                           type: "backup",
-                          name: `Restore from ${restoreFile?.name || 'backup'}`,
+                          name: `Restore from ${restoreFile?.name || "backup"}`,
                           date: new Date().toISOString(),
                           sections: Object.keys(restorePreview.sections),
                           format: "json",
@@ -660,7 +966,9 @@ export default function BackupExport() {
                         };
                         saveBackupLog([logEntry, ...backupLog].slice(0, 50));
                       } catch (err: any) {
-                        toast.error(`Restore failed: ${err.message || 'Unknown error'}`);
+                        toast.error(
+                          `Restore failed: ${err.message || "Unknown error"}`,
+                        );
                       } finally {
                         setIsRestoring(false);
                       }
@@ -669,9 +977,15 @@ export default function BackupExport() {
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                   >
                     {isRestoring ? (
-                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Restoring...</>
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />{" "}
+                        Restoring...
+                      </>
                     ) : (
-                      <><Upload className="w-4 h-4 mr-2" /> Restore {Object.keys(restorePreview.sections).length} Sections</>
+                      <>
+                        <Upload className="w-4 h-4 mr-2" /> Restore{" "}
+                        {Object.keys(restorePreview.sections).length} Sections
+                      </>
                     )}
                   </Button>
 
@@ -680,30 +994,48 @@ export default function BackupExport() {
                     <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 space-y-2">
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="w-5 h-5 text-green-400" />
-                        <span className="text-green-300 font-medium">Restore Complete</span>
+                        <span className="text-green-300 font-medium">
+                          Restore Complete
+                        </span>
                       </div>
                       <div className="grid grid-cols-3 gap-3 text-center">
                         <div className="bg-white/5 rounded-lg p-2">
-                          <p className="text-green-400 font-bold text-lg">{restoreResult.totalRestored}</p>
+                          <p className="text-green-400 font-bold text-lg">
+                            {restoreResult.totalRestored}
+                          </p>
                           <p className="text-white/40 text-xs">Restored</p>
                         </div>
                         <div className="bg-white/5 rounded-lg p-2">
-                          <p className="text-yellow-400 font-bold text-lg">{restoreResult.totalSkipped}</p>
-                          <p className="text-white/40 text-xs">Skipped (duplicates)</p>
+                          <p className="text-yellow-400 font-bold text-lg">
+                            {restoreResult.totalSkipped}
+                          </p>
+                          <p className="text-white/40 text-xs">
+                            Skipped (duplicates)
+                          </p>
                         </div>
                         <div className="bg-white/5 rounded-lg p-2">
-                          <p className="text-red-400 font-bold text-lg">{restoreResult.totalErrors}</p>
+                          <p className="text-red-400 font-bold text-lg">
+                            {restoreResult.totalErrors}
+                          </p>
                           <p className="text-white/40 text-xs">Errors</p>
                         </div>
                       </div>
                       {restoreResult.details && (
                         <div className="mt-2 space-y-1">
-                          {Object.entries(restoreResult.details).map(([key, detail]: [string, any]) => (
-                            <div key={key} className="flex items-center justify-between text-xs">
-                              <span className="text-white/50">{key}</span>
-                              <span className="text-white/70">{detail.restored} restored, {detail.skipped} skipped, {detail.errors} errors</span>
-                            </div>
-                          ))}
+                          {Object.entries(restoreResult.details).map(
+                            ([key, detail]: [string, any]) => (
+                              <div
+                                key={key}
+                                className="flex items-center justify-between text-xs"
+                              >
+                                <span className="text-white/50">{key}</span>
+                                <span className="text-white/70">
+                                  {detail.restored} restored, {detail.skipped}{" "}
+                                  skipped, {detail.errors} errors
+                                </span>
+                              </div>
+                            ),
+                          )}
                         </div>
                       )}
                     </div>
@@ -713,8 +1045,16 @@ export default function BackupExport() {
 
               {/* Clear file */}
               {restoreFile && (
-                <Button variant="outline" size="sm" className="border-white/10 text-white/50"
-                  onClick={() => { setRestoreFile(null); setRestorePreview(null); setRestoreResult(null); }}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-white/10 text-white/50"
+                  onClick={() => {
+                    setRestoreFile(null);
+                    setRestorePreview(null);
+                    setRestoreResult(null);
+                  }}
+                >
                   <X className="w-3.5 h-3.5 mr-1" /> Clear File
                 </Button>
               )}
@@ -730,11 +1070,14 @@ export default function BackupExport() {
             <div className="flex items-start gap-3">
               <Info className="w-5 h-5 text-blue-400 mt-0.5 shrink-0" />
               <div>
-                <p className="text-white text-sm font-medium">Cloud Storage Integration</p>
+                <p className="text-white text-sm font-medium">
+                  Cloud Storage Integration
+                </p>
                 <p className="text-white/50 text-xs mt-1">
-                  Connect your cloud storage accounts by providing your API credentials below.
-                  All credentials are encrypted and stored securely in the database.
-                  Cloud upload functionality requires valid API keys.
+                  Connect your cloud storage accounts by providing your API
+                  credentials below. All credentials are encrypted and stored
+                  securely in the database. Cloud upload functionality requires
+                  valid API keys.
                 </p>
               </div>
             </div>
@@ -745,42 +1088,72 @@ export default function BackupExport() {
               const config = cloudConfigs[provider.id];
               const isConnected = config?.connected === true;
               return (
-                <Card key={provider.id} className={`bg-black/40 border transition-all ${isConnected ? "border-green-500/20" : "border-white/10"}`}>
+                <Card
+                  key={provider.id}
+                  className={`bg-black/40 border transition-all ${isConnected ? "border-green-500/20" : "border-white/10"}`}
+                >
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-xl ${provider.bgColor} flex items-center justify-center ${provider.color} font-bold text-lg`}>
+                        <div
+                          className={`w-12 h-12 rounded-xl ${provider.bgColor} flex items-center justify-center ${provider.color} font-bold text-lg`}
+                        >
                           {provider.icon}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="text-white font-semibold">{provider.name}</h3>
-                            <Badge className={`border-0 text-[10px] ${isConnected ? "bg-green-400/10 text-green-400" : "bg-white/5 text-white/30"}`}>
+                            <h3 className="text-white font-semibold">
+                              {provider.name}
+                            </h3>
+                            <Badge
+                              className={`border-0 text-[10px] ${isConnected ? "bg-green-400/10 text-green-400" : "bg-white/5 text-white/30"}`}
+                            >
                               {isConnected ? "Connected" : "Not Connected"}
                             </Badge>
                           </div>
-                          <p className="text-white/50 text-sm mt-1">{provider.description}</p>
+                          <p className="text-white/50 text-sm mt-1">
+                            {provider.description}
+                          </p>
                           {isConnected && config?.lastSync && (
-                            <p className="text-white/30 text-xs mt-1">Last configured: {new Date(config.lastSync).toLocaleString()}</p>
+                            <p className="text-white/30 text-xs mt-1">
+                              Last configured:{" "}
+                              {new Date(config.lastSync).toLocaleString()}
+                            </p>
                           )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         {isConnected ? (
                           <>
-                            <Button variant="outline" size="sm"
-                              onClick={() => { setCloudConfigDialog(provider); setCloudConfigValues(config?.config || {}); }}
-                              className="border-white/10 text-white/50 hover:text-white bg-transparent">
-                              <Settings className="w-3.5 h-3.5 mr-1" /> Configure
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setCloudConfigDialog(provider);
+                                setCloudConfigValues(config?.config || {});
+                              }}
+                              className="border-white/10 text-white/50 hover:text-white bg-transparent"
+                            >
+                              <Settings className="w-3.5 h-3.5 mr-1" />{" "}
+                              Configure
                             </Button>
-                            <Button variant="outline" size="sm" onClick={() => disconnectCloud(provider.id)}
-                              className="border-red-500/20 text-red-400 hover:bg-red-500/10 bg-transparent">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => disconnectCloud(provider.id)}
+                              className="border-red-500/20 text-red-400 hover:bg-red-500/10 bg-transparent"
+                            >
                               <Unlink className="w-3.5 h-3.5 mr-1" /> Disconnect
                             </Button>
                           </>
                         ) : (
-                          <Button onClick={() => { setCloudConfigDialog(provider); setCloudConfigValues({}); }}
-                            className="bg-[var(--theme-primary)] text-black hover:bg-[var(--theme-accent)]">
+                          <Button
+                            onClick={() => {
+                              setCloudConfigDialog(provider);
+                              setCloudConfigValues({});
+                            }}
+                            className="bg-[var(--theme-primary)] text-black hover:bg-[var(--theme-accent)]"
+                          >
                             <Link2 className="w-3.5 h-3.5 mr-1" /> Connect
                           </Button>
                         )}
@@ -801,10 +1174,16 @@ export default function BackupExport() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-white text-lg flex items-center gap-2">
-                  <History className="w-5 h-5 text-[var(--theme-primary)]" /> Export & Backup History
+                  <History className="w-5 h-5 text-[var(--theme-primary)]" />{" "}
+                  Export & Backup History
                 </CardTitle>
                 {backupLog.length > 0 && (
-                  <Button variant="ghost" size="sm" onClick={clearLog} className="text-red-400/50 hover:text-red-400 text-xs">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearLog}
+                    className="text-red-400/50 hover:text-red-400 text-xs"
+                  >
                     <Trash2 className="w-3 h-3 mr-1" /> Clear History
                   </Button>
                 )}
@@ -818,20 +1197,34 @@ export default function BackupExport() {
                 <div className="text-center py-12">
                   <Archive className="w-10 h-10 text-white/10 mx-auto mb-3" />
                   <p className="text-white/30 text-sm">No backup history yet</p>
-                  <p className="text-white/20 text-xs mt-1">Export data from the Export tab to see history here</p>
+                  <p className="text-white/20 text-xs mt-1">
+                    Export data from the Export tab to see history here
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-2">
                   {backupLog.map((entry) => (
-                    <div key={entry.id} className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-white/5">
+                    <div
+                      key={entry.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-white/5"
+                    >
                       <div className="flex items-center gap-3">
-                        {entry.type === "export" ? <Download className="w-4 h-4 text-[var(--theme-primary)]" /> :
-                         entry.type === "backup" ? <Shield className="w-4 h-4 text-green-400" /> :
-                         <CloudUpload className="w-4 h-4 text-purple-400" />}
+                        {entry.type === "export" ? (
+                          <Download className="w-4 h-4 text-[var(--theme-primary)]" />
+                        ) : entry.type === "backup" ? (
+                          <Shield className="w-4 h-4 text-green-400" />
+                        ) : (
+                          <CloudUpload className="w-4 h-4 text-purple-400" />
+                        )}
                         <div>
-                          <p className="text-white text-sm font-medium">{entry.name}</p>
+                          <p className="text-white text-sm font-medium">
+                            {entry.name}
+                          </p>
                           <p className="text-white/30 text-xs">
-                            {new Date(entry.date).toLocaleString()} | {entry.recordCount} records | {entry.format.toUpperCase()} | {entry.sections.length} tables
+                            {new Date(entry.date).toLocaleString()} |{" "}
+                            {entry.recordCount} records |{" "}
+                            {entry.format.toUpperCase()} |{" "}
+                            {entry.sections.length} tables
                           </p>
                         </div>
                       </div>
@@ -851,7 +1244,8 @@ export default function BackupExport() {
           <Card className="bg-black/40 border-white/10">
             <CardHeader>
               <CardTitle className="text-white text-lg flex items-center gap-2">
-                <Settings className="w-5 h-5 text-[var(--theme-primary)]" /> Backup Settings
+                <Settings className="w-5 h-5 text-[var(--theme-primary)]" />{" "}
+                Backup Settings
               </CardTitle>
               <CardDescription className="text-white/50">
                 Settings are saved to the database and persist across sessions
@@ -861,7 +1255,9 @@ export default function BackupExport() {
               <div className="flex items-center justify-between p-4 rounded-lg bg-black/20 border border-white/5">
                 <div>
                   <p className="text-white text-sm font-medium">Auto Backup</p>
-                  <p className="text-white/40 text-xs mt-0.5">Automatically create backups on a schedule</p>
+                  <p className="text-white/40 text-xs mt-0.5">
+                    Automatically create backups on a schedule
+                  </p>
                 </div>
                 <Switch checked={autoBackup} onCheckedChange={setAutoBackup} />
               </div>
@@ -869,7 +1265,10 @@ export default function BackupExport() {
               {autoBackup && (
                 <div className="flex items-center gap-3 pl-4">
                   <Label className="text-white/70 text-sm">Frequency:</Label>
-                  <Select value={backupFrequency} onValueChange={setBackupFrequency}>
+                  <Select
+                    value={backupFrequency}
+                    onValueChange={setBackupFrequency}
+                  >
                     <SelectTrigger className="w-[180px] bg-black/40 border-white/10 text-white">
                       <SelectValue />
                     </SelectTrigger>
@@ -886,15 +1285,23 @@ export default function BackupExport() {
               <div className="flex items-center justify-between p-4 rounded-lg bg-black/20 border border-white/5">
                 <div>
                   <p className="text-white text-sm font-medium flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-[var(--theme-primary)]" /> Encrypt Backups
+                    <Lock className="w-4 h-4 text-[var(--theme-primary)]" />{" "}
+                    Encrypt Backups
                   </p>
-                  <p className="text-white/40 text-xs mt-0.5">Add encryption to exported backup files</p>
+                  <p className="text-white/40 text-xs mt-0.5">
+                    Add encryption to exported backup files
+                  </p>
                 </div>
-                <Switch checked={encryptBackups} onCheckedChange={setEncryptBackups} />
+                <Switch
+                  checked={encryptBackups}
+                  onCheckedChange={setEncryptBackups}
+                />
               </div>
 
               <div className="flex items-center gap-3">
-                <Label className="text-white/70 text-sm">Retention (days):</Label>
+                <Label className="text-white/70 text-sm">
+                  Retention (days):
+                </Label>
                 <Input
                   type="number"
                   value={retentionDays}
@@ -905,9 +1312,16 @@ export default function BackupExport() {
                 />
               </div>
 
-              <Button onClick={saveBackupSettings} disabled={saveSettingsMutation.isPending}
-                className="bg-[var(--theme-primary)] text-black hover:bg-[var(--theme-accent)]">
-                {saveSettingsMutation.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}
+              <Button
+                onClick={saveBackupSettings}
+                disabled={saveSettingsMutation.isPending}
+                className="bg-[var(--theme-primary)] text-black hover:bg-[var(--theme-accent)]"
+              >
+                {saveSettingsMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                ) : (
+                  <Check className="w-4 h-4 mr-1" />
+                )}
                 Save Settings
               </Button>
             </CardContent>
@@ -918,32 +1332,50 @@ export default function BackupExport() {
       {/* ═══════════════════════════════════════════════════════════════
          Cloud Config Dialog
          ═══════════════════════════════════════════════════════════════ */}
-      <Dialog open={!!cloudConfigDialog} onOpenChange={() => { setCloudConfigDialog(null); setCloudConfigValues({}); }}>
+      <Dialog
+        open={!!cloudConfigDialog}
+        onOpenChange={() => {
+          setCloudConfigDialog(null);
+          setCloudConfigValues({});
+        }}
+      >
         <DialogContent className="bg-[var(--theme-surface)] border-white/10 text-white max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-white flex items-center gap-3">
               {cloudConfigDialog && (
-                <div className={`w-10 h-10 rounded-xl ${cloudConfigDialog.bgColor} flex items-center justify-center ${cloudConfigDialog.color} font-bold`}>
+                <div
+                  className={`w-10 h-10 rounded-xl ${cloudConfigDialog.bgColor} flex items-center justify-center ${cloudConfigDialog.color} font-bold`}
+                >
                   {cloudConfigDialog.icon}
                 </div>
               )}
               <div>
                 <span>{cloudConfigDialog?.name} Configuration</span>
-                <p className="text-white/40 text-xs font-normal mt-0.5">Enter your API credentials to connect</p>
+                <p className="text-white/40 text-xs font-normal mt-0.5">
+                  Enter your API credentials to connect
+                </p>
               </div>
             </DialogTitle>
             <DialogDescription className="text-white/50">
-              Credentials are stored securely in the database. {cloudConfigDialog?.name} requires valid API keys to function.
+              Credentials are stored securely in the database.{" "}
+              {cloudConfigDialog?.name} requires valid API keys to function.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {cloudConfigDialog?.configFields.map((field) => (
               <div key={field.key}>
-                <label className="text-white/70 text-sm font-medium mb-1.5 block">{field.label}</label>
+                <label className="text-white/70 text-sm font-medium mb-1.5 block">
+                  {field.label}
+                </label>
                 <Input
                   type={field.type || "text"}
                   value={cloudConfigValues[field.key] || ""}
-                  onChange={(e) => setCloudConfigValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                  onChange={(e) =>
+                    setCloudConfigValues((prev) => ({
+                      ...prev,
+                      [field.key]: e.target.value,
+                    }))
+                  }
                   placeholder={field.placeholder}
                   className="bg-black/40 border-white/10 text-white placeholder:text-white/30"
                 />
@@ -951,11 +1383,26 @@ export default function BackupExport() {
             ))}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setCloudConfigDialog(null); setCloudConfigValues({}); }}
-              className="border-white/10 text-white/70">Cancel</Button>
-            <Button onClick={saveCloudConfig} disabled={saveCloudMutation.isPending}
-              className="bg-[var(--theme-primary)] text-black hover:bg-[var(--theme-accent)]">
-              {saveCloudMutation.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCloudConfigDialog(null);
+                setCloudConfigValues({});
+              }}
+              className="border-white/10 text-white/70"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={saveCloudConfig}
+              disabled={saveCloudMutation.isPending}
+              className="bg-[var(--theme-primary)] text-black hover:bg-[var(--theme-accent)]"
+            >
+              {saveCloudMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              ) : (
+                <Check className="w-4 h-4 mr-1" />
+              )}
               Save & Connect
             </Button>
           </DialogFooter>

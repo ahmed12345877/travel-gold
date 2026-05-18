@@ -9,15 +9,18 @@ import WatermarkImage from "@/components/WatermarkImage";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 
-const EGYPT_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/destination-egypt-YcosuhKLMYbaJ475QVrVxy.webp";
-const SHARM_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/destination-sharm-Fh2PhqqrRQGfdg6EtwXedu.webp";
+const EGYPT_IMG =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/destination-egypt-YcosuhKLMYbaJ475QVrVxy.webp";
+const SHARM_IMG =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/destination-sharm-Fh2PhqqrRQGfdg6EtwXedu.webp";
 
 const fallbackBlogs = [
   {
     slug: "ultimate-guide-pyramids-of-giza",
     image: EGYPT_IMG,
     title: "Discover the Ancient Wonders of Egypt",
-    excerpt: "Explore the timeless beauty of pyramids, temples, and the Nile River on an unforgettable journey.",
+    excerpt:
+      "Explore the timeless beauty of pyramids, temples, and the Nile River on an unforgettable journey.",
     date: "Mar 15, 2026",
     author: "VANIR GROUP",
   },
@@ -25,15 +28,18 @@ const fallbackBlogs = [
     slug: "luxury-nile-cruise-experience",
     image: SHARM_IMG,
     title: "Luxury Nile Cruise: A Journey Through Ancient Egypt's Heart",
-    excerpt: "Discover why a Nile cruise remains the most enchanting way to explore Egypt.",
+    excerpt:
+      "Discover why a Nile cruise remains the most enchanting way to explore Egypt.",
     date: "Mar 10, 2026",
     author: "VANIR GROUP",
   },
   {
     slug: "top-10-egypt-travel-tips-2026",
-    image: "https://images.unsplash.com/photo-1539768942893-daf53e736b68?w=600&h=400&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1539768942893-daf53e736b68?w=600&h=400&fit=crop",
     title: "Top 10 Essential Egypt Travel Tips",
-    excerpt: "Planning your first trip to Egypt? These essential tips will help you navigate culture, currency, and more.",
+    excerpt:
+      "Planning your first trip to Egypt? These essential tips will help you navigate culture, currency, and more.",
     date: "Mar 05, 2026",
     author: "VANIR GROUP",
   },
@@ -43,19 +49,30 @@ export default function BlogSection() {
   const { ref, inView } = useInView({ threshold: 0.1 });
   const { data: dbPosts } = trpc.blog.list.useQuery({ limit: 3 });
 
-  const blogs = dbPosts && dbPosts.length > 0
-    ? dbPosts.map(p => ({
-        slug: p.slug,
-        image: p.coverImageUrl || EGYPT_IMG,
-        title: p.title,
-        excerpt: p.excerpt,
-        date: p.publishedAt ? new Date(p.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "",
-        author: p.authorName || "VANIR GROUP",
-      }))
-    : fallbackBlogs;
+  const blogs =
+    dbPosts && dbPosts.length > 0
+      ? dbPosts.map((p) => ({
+          slug: p.slug,
+          image: p.coverImageUrl || EGYPT_IMG,
+          title: p.title,
+          excerpt: p.excerpt,
+          date: p.publishedAt
+            ? new Date(p.publishedAt).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })
+            : "",
+          author: p.authorName || "VANIR GROUP",
+        }))
+      : fallbackBlogs;
 
   return (
-    <section id="blog" className="py-12 sm:py-16 md:py-24 bg-[var(--theme-surface)]" ref={ref}>
+    <section
+      id="blog"
+      className="py-12 sm:py-16 md:py-24 bg-[var(--theme-surface)]"
+      ref={ref}
+    >
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -118,7 +135,10 @@ export default function BlogSection() {
                   className="group/btn inline-flex items-center gap-2 text-[var(--theme-primary)] text-sm font-medium hover:text-white transition-colors"
                 >
                   Read More
-                  <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                  <ArrowRight
+                    size={14}
+                    className="group-hover/btn:translate-x-1 transition-transform"
+                  />
                 </Link>
               </div>
             </motion.article>

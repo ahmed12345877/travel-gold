@@ -6,7 +6,11 @@ import { TRPCError } from "@trpc/server";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { invokeLLM } from "../_core/llm";
 import { getDb } from "../db";
-import { marketingContent, marketingCalendar, marketingTemplates } from "../../drizzle/schema";
+import {
+  marketingContent,
+  marketingCalendar,
+  marketingTemplates,
+} from "../../drizzle/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
 
 // ─── System Prompts for Different Content Types ───
@@ -48,12 +52,18 @@ Focus on unique selling points, urgency, and luxury appeal.`,
 };
 
 const TONE_INSTRUCTIONS: Record<string, string> = {
-  luxurious: "Use elegant, sophisticated language that conveys exclusivity and premium quality.",
-  adventurous: "Use exciting, dynamic language that inspires exploration and discovery.",
-  professional: "Use formal, authoritative language suitable for business communications.",
-  casual: "Use friendly, conversational language that feels approachable and warm.",
-  romantic: "Use poetic, evocative language that appeals to couples and honeymoon travelers.",
-  cultural: "Use educational, respectful language that highlights heritage and traditions.",
+  luxurious:
+    "Use elegant, sophisticated language that conveys exclusivity and premium quality.",
+  adventurous:
+    "Use exciting, dynamic language that inspires exploration and discovery.",
+  professional:
+    "Use formal, authoritative language suitable for business communications.",
+  casual:
+    "Use friendly, conversational language that feels approachable and warm.",
+  romantic:
+    "Use poetic, evocative language that appeals to couples and honeymoon travelers.",
+  cultural:
+    "Use educational, respectful language that highlights heritage and traditions.",
 };
 
 export const marketingRouter = router({
@@ -63,32 +73,51 @@ export const marketingRouter = router({
   generate: protectedProcedure
     .input(
       z.object({
-        type: z.enum(["social_media", "email", "trip_description", "blog_seo", "ad_copy"]),
+        type: z.enum([
+          "social_media",
+          "email",
+          "trip_description",
+          "blog_seo",
+          "ad_copy",
+        ]),
         platform: z.string().optional(),
         prompt: z.string().min(5, "Prompt must be at least 5 characters"),
         language: z.string().default("en"),
         tone: z.string().default("luxurious"),
         destination: z.string().optional(),
         templateId: z.number().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      if (!db)
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Database unavailable",
+        });
 
       // Build the system prompt
-      let systemPrompt = SYSTEM_PROMPTS[input.type] || SYSTEM_PROMPTS.social_media;
+      let systemPrompt =
+        SYSTEM_PROMPTS[input.type] || SYSTEM_PROMPTS.social_media;
 
       // Add tone instruction
-      const toneInstruction = TONE_INSTRUCTIONS[input.tone] || TONE_INSTRUCTIONS.luxurious;
+      const toneInstruction =
+        TONE_INSTRUCTIONS[input.tone] || TONE_INSTRUCTIONS.luxurious;
       systemPrompt += `\n\nTone: ${toneInstruction}`;
 
       // Add language instruction
       if (input.language !== "en") {
         const langMap: Record<string, string> = {
-          ar: "Arabic", fr: "French", de: "German", es: "Spanish",
-          it: "Italian", pt: "Portuguese", zh: "Chinese", ja: "Japanese",
-          ko: "Korean", ru: "Russian",
+          ar: "Arabic",
+          fr: "French",
+          de: "German",
+          es: "Spanish",
+          it: "Italian",
+          pt: "Portuguese",
+          zh: "Chinese",
+          ja: "Japanese",
+          ko: "Korean",
+          ru: "Russian",
         };
         const langName = langMap[input.language] || input.language;
         systemPrompt += `\n\nIMPORTANT: Write the entire content in ${langName}.`;
@@ -134,8 +163,14 @@ export const marketingRouter = router({
             schema: {
               type: "object",
               properties: {
-                title: { type: "string", description: "Content title or subject line" },
-                content: { type: "string", description: "The main generated content" },
+                title: {
+                  type: "string",
+                  description: "Content title or subject line",
+                },
+                content: {
+                  type: "string",
+                  description: "The main generated content",
+                },
                 hashtags: {
                   type: "array",
                   items: { type: "string" },
@@ -144,9 +179,19 @@ export const marketingRouter = router({
                 metadata: {
                   type: "object",
                   properties: {
-                    wordCount: { type: "number", description: "Approximate word count" },
-                    readingTime: { type: "number", description: "Estimated reading time in minutes" },
-                    seoScore: { type: "number", description: "Estimated SEO score 1-100 (for blog/SEO content)" },
+                    wordCount: {
+                      type: "number",
+                      description: "Approximate word count",
+                    },
+                    readingTime: {
+                      type: "number",
+                      description: "Estimated reading time in minutes",
+                    },
+                    seoScore: {
+                      type: "number",
+                      description:
+                        "Estimated SEO score 1-100 (for blog/SEO content)",
+                    },
                   },
                   required: ["wordCount", "readingTime", "seoScore"],
                   additionalProperties: false,
@@ -161,7 +206,12 @@ export const marketingRouter = router({
 
       const rawContent = response.choices[0]?.message?.content;
       const contentStr = typeof rawContent === "string" ? rawContent : "";
-      let parsed: { title: string; content: string; hashtags: string[]; metadata: { wordCount: number; readingTime: number; seoScore: number } };
+      let parsed: {
+        title: string;
+        content: string;
+        hashtags: string[];
+        metadata: { wordCount: number; readingTime: number; seoScore: number };
+      };
 
       try {
         parsed = JSON.parse(contentStr);
@@ -210,14 +260,26 @@ export const marketingRouter = router({
   listContent: protectedProcedure
     .input(
       z.object({
-        type: z.enum(["social_media", "email", "trip_description", "blog_seo", "ad_copy"]).optional(),
+        type: z
+          .enum([
+            "social_media",
+            "email",
+            "trip_description",
+            "blog_seo",
+            "ad_copy",
+          ])
+          .optional(),
         limit: z.number().min(1).max(50).default(20),
         offset: z.number().min(0).default(0),
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
       const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      if (!db)
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Database unavailable",
+        });
       const conditions = [eq(marketingContent.userId, ctx.user.id)];
       if (input.type) {
         conditions.push(eq(marketingContent.type, input.type));
@@ -249,11 +311,20 @@ export const marketingRouter = router({
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      if (!db)
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Database unavailable",
+        });
       const [item] = await db
         .select()
         .from(marketingContent)
-        .where(and(eq(marketingContent.id, input.id), eq(marketingContent.userId, ctx.user.id)))
+        .where(
+          and(
+            eq(marketingContent.id, input.id),
+            eq(marketingContent.userId, ctx.user.id),
+          ),
+        )
         .limit(1);
 
       if (!item) throw new TRPCError({ code: "NOT_FOUND" });
@@ -274,16 +345,27 @@ export const marketingRouter = router({
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      if (!db)
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Database unavailable",
+        });
       const [item] = await db
         .select()
         .from(marketingContent)
-        .where(and(eq(marketingContent.id, input.id), eq(marketingContent.userId, ctx.user.id)))
+        .where(
+          and(
+            eq(marketingContent.id, input.id),
+            eq(marketingContent.userId, ctx.user.id),
+          ),
+        )
         .limit(1);
 
       if (!item) throw new TRPCError({ code: "NOT_FOUND" });
 
-      await db.delete(marketingContent).where(eq(marketingContent.id, input.id));
+      await db
+        .delete(marketingContent)
+        .where(eq(marketingContent.id, input.id));
       return { success: true };
     }),
 
@@ -297,18 +379,26 @@ export const marketingRouter = router({
       z.object({
         startDate: z.number().optional(),
         endDate: z.number().optional(),
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
       const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      if (!db)
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Database unavailable",
+        });
       const conditions = [eq(marketingCalendar.userId, ctx.user.id)];
 
       if (input.startDate) {
-        conditions.push(sql`${marketingCalendar.scheduledDate} >= ${input.startDate}`);
+        conditions.push(
+          sql`${marketingCalendar.scheduledDate} >= ${input.startDate}`,
+        );
       }
       if (input.endDate) {
-        conditions.push(sql`${marketingCalendar.scheduledDate} <= ${input.endDate}`);
+        conditions.push(
+          sql`${marketingCalendar.scheduledDate} <= ${input.endDate}`,
+        );
       }
 
       return db
@@ -329,13 +419,19 @@ export const marketingRouter = router({
         description: z.string().optional(),
         platform: z.string().optional(),
         scheduledDate: z.number(),
-        status: z.enum(["draft", "scheduled", "published", "cancelled"]).default("draft"),
+        status: z
+          .enum(["draft", "scheduled", "published", "cancelled"])
+          .default("draft"),
         colorTag: z.string().default("#D4A853"),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      if (!db)
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Database unavailable",
+        });
       const [entry] = await db
         .insert(marketingCalendar)
         .values({
@@ -363,29 +459,43 @@ export const marketingRouter = router({
         title: z.string().optional(),
         description: z.string().optional(),
         scheduledDate: z.number().optional(),
-        status: z.enum(["draft", "scheduled", "published", "cancelled"]).optional(),
+        status: z
+          .enum(["draft", "scheduled", "published", "cancelled"])
+          .optional(),
         colorTag: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      if (!db)
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Database unavailable",
+        });
       const { id, ...updates } = input;
 
       const [item] = await db
         .select()
         .from(marketingCalendar)
-        .where(and(eq(marketingCalendar.id, id), eq(marketingCalendar.userId, ctx.user.id)))
+        .where(
+          and(
+            eq(marketingCalendar.id, id),
+            eq(marketingCalendar.userId, ctx.user.id),
+          ),
+        )
         .limit(1);
 
       if (!item) throw new TRPCError({ code: "NOT_FOUND" });
 
       const cleanUpdates: Record<string, unknown> = {};
       if (updates.title !== undefined) cleanUpdates.title = updates.title;
-      if (updates.description !== undefined) cleanUpdates.description = updates.description;
-      if (updates.scheduledDate !== undefined) cleanUpdates.scheduledDate = updates.scheduledDate;
+      if (updates.description !== undefined)
+        cleanUpdates.description = updates.description;
+      if (updates.scheduledDate !== undefined)
+        cleanUpdates.scheduledDate = updates.scheduledDate;
       if (updates.status !== undefined) cleanUpdates.status = updates.status;
-      if (updates.colorTag !== undefined) cleanUpdates.colorTag = updates.colorTag;
+      if (updates.colorTag !== undefined)
+        cleanUpdates.colorTag = updates.colorTag;
 
       if (Object.keys(cleanUpdates).length > 0) {
         await db
@@ -404,16 +514,27 @@ export const marketingRouter = router({
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      if (!db)
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Database unavailable",
+        });
       const [item] = await db
         .select()
         .from(marketingCalendar)
-        .where(and(eq(marketingCalendar.id, input.id), eq(marketingCalendar.userId, ctx.user.id)))
+        .where(
+          and(
+            eq(marketingCalendar.id, input.id),
+            eq(marketingCalendar.userId, ctx.user.id),
+          ),
+        )
         .limit(1);
 
       if (!item) throw new TRPCError({ code: "NOT_FOUND" });
 
-      await db.delete(marketingCalendar).where(eq(marketingCalendar.id, input.id));
+      await db
+        .delete(marketingCalendar)
+        .where(eq(marketingCalendar.id, input.id));
       return { success: true };
     }),
 
@@ -425,12 +546,24 @@ export const marketingRouter = router({
   listTemplates: publicProcedure
     .input(
       z.object({
-        type: z.enum(["social_media", "email", "trip_description", "blog_seo", "ad_copy"]).optional(),
-      })
+        type: z
+          .enum([
+            "social_media",
+            "email",
+            "trip_description",
+            "blog_seo",
+            "ad_copy",
+          ])
+          .optional(),
+      }),
     )
     .query(async ({ input }) => {
       const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      if (!db)
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Database unavailable",
+        });
       const conditions = [];
       if (input.type) {
         conditions.push(eq(marketingTemplates.type, input.type));
@@ -448,8 +581,16 @@ export const marketingRouter = router({
    */
   getStats: protectedProcedure.query(async ({ ctx }) => {
     const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    if (!db)
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Database unavailable",
+      });
+    if (!db)
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Database unavailable",
+      });
 
     const [totalContent] = await db
       .select({ count: sql<number>`count(*)` })
@@ -459,17 +600,32 @@ export const marketingRouter = router({
     const [socialCount] = await db
       .select({ count: sql<number>`count(*)` })
       .from(marketingContent)
-      .where(and(eq(marketingContent.userId, ctx.user.id), eq(marketingContent.type, "social_media")));
+      .where(
+        and(
+          eq(marketingContent.userId, ctx.user.id),
+          eq(marketingContent.type, "social_media"),
+        ),
+      );
 
     const [emailCount] = await db
       .select({ count: sql<number>`count(*)` })
       .from(marketingContent)
-      .where(and(eq(marketingContent.userId, ctx.user.id), eq(marketingContent.type, "email")));
+      .where(
+        and(
+          eq(marketingContent.userId, ctx.user.id),
+          eq(marketingContent.type, "email"),
+        ),
+      );
 
     const [blogCount] = await db
       .select({ count: sql<number>`count(*)` })
       .from(marketingContent)
-      .where(and(eq(marketingContent.userId, ctx.user.id), eq(marketingContent.type, "blog_seo")));
+      .where(
+        and(
+          eq(marketingContent.userId, ctx.user.id),
+          eq(marketingContent.type, "blog_seo"),
+        ),
+      );
 
     const [calendarCount] = await db
       .select({ count: sql<number>`count(*)` })

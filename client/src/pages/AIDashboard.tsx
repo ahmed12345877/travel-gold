@@ -6,13 +6,32 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area,
-  XAxis, YAxis, Tooltip as ReTooltip,
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip as ReTooltip,
 } from "recharts";
 import {
-  Download, Zap, Image as ImageIcon, Video, TrendingUp,
-  Calendar, ArrowRight, Crown, Sparkles, Activity,
-  Clock, BarChart3, Eye, Cpu, ChevronRight,
+  Download,
+  Zap,
+  Image as ImageIcon,
+  Video,
+  TrendingUp,
+  Calendar,
+  ArrowRight,
+  Crown,
+  Sparkles,
+  Activity,
+  Clock,
+  BarChart3,
+  Eye,
+  Cpu,
+  ChevronRight,
 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -98,9 +117,12 @@ export default function AIDashboard() {
     injectDashStyles();
   }, []);
 
-  const { data: subscription } = trpc.aiStudio.getSubscription.useQuery(undefined, {
-    enabled: isAuthenticated,
-  });
+  const { data: subscription } = trpc.aiStudio.getSubscription.useQuery(
+    undefined,
+    {
+      enabled: isAuthenticated,
+    },
+  );
   const { data: credits } = trpc.aiStudio.getCredits.useQuery(undefined, {
     enabled: isAuthenticated,
   });
@@ -117,13 +139,17 @@ export default function AIDashboard() {
       <div className="min-h-screen bg-[#050508] text-white">
         <Navbar />
         <div className="pt-32 pb-16 px-4 text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
             <div className="w-20 h-20 rounded-full dash-glass-gold flex items-center justify-center mx-auto mb-6">
               <Cpu size={32} className="text-[var(--theme-primary)]" />
             </div>
             <h1 className="text-3xl font-bold mb-3">Sign In Required</h1>
             <p className="text-white/30 mb-8 max-w-md mx-auto">
-              Access your AI Studio dashboard to track generations, manage credits, and view analytics
+              Access your AI Studio dashboard to track generations, manage
+              credits, and view analytics
             </p>
             <button
               onClick={() => (window.location.href = getLoginUrl())}
@@ -137,11 +163,18 @@ export default function AIDashboard() {
     );
   }
 
-  const creditPlanMap: Record<string, number> = { free: 10, pro: 100, enterprise: 1000 };
+  const creditPlanMap: Record<string, number> = {
+    free: 10,
+    pro: 100,
+    enterprise: 1000,
+  };
   const monthlyAllowance = creditPlanMap[subscription?.plan || "free"] || 10;
-  const currentBalance = credits?.balance ? parseFloat(credits.balance.toString()) : 0;
+  const currentBalance = credits?.balance
+    ? parseFloat(credits.balance.toString())
+    : 0;
   const creditsUsed = Math.max(0, monthlyAllowance - currentBalance);
-  const usagePercent = monthlyAllowance > 0 ? (creditsUsed / monthlyAllowance) * 100 : 0;
+  const usagePercent =
+    monthlyAllowance > 0 ? (creditsUsed / monthlyAllowance) * 100 : 0;
 
   const usageByType = [
     { name: "Images", value: stats?.byType?.image || 0, color: "#D4A853" },
@@ -180,7 +213,6 @@ export default function AIDashboard() {
 
       <div className="relative z-10 pt-24 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -191,11 +223,17 @@ export default function AIDashboard() {
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-3xl font-bold">Dashboard</h1>
                 <span className="text-xs dash-glass px-3 py-1 rounded-full text-white/30">
-                  {new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                  {new Date().toLocaleDateString("en-US", {
+                    month: "long",
+                    year: "numeric",
+                  })}
                 </span>
               </div>
               <p className="text-white/30">
-                Welcome back, <span className="text-[var(--theme-primary)]">{user?.name}</span>
+                Welcome back,{" "}
+                <span className="text-[var(--theme-primary)]">
+                  {user?.name}
+                </span>
               </p>
             </div>
 
@@ -212,7 +250,11 @@ export default function AIDashboard() {
                         : "text-white/30 hover:text-white/50"
                     }`}
                   >
-                    {range === "week" ? "7D" : range === "month" ? "30D" : "All"}
+                    {range === "week"
+                      ? "7D"
+                      : range === "month"
+                        ? "30D"
+                        : "All"}
                   </button>
                 ))}
               </div>
@@ -278,13 +320,19 @@ export default function AIDashboard() {
                     <span className="text-xs text-white/30">{stat.label}</span>
                     <div
                       className="w-8 h-8 rounded-lg flex items-center justify-center"
-                      style={{ background: `${stat.color}15`, color: stat.color }}
+                      style={{
+                        background: `${stat.color}15`,
+                        color: stat.color,
+                      }}
                     >
                       {stat.icon}
                     </div>
                   </div>
 
-                  <div className={`text-2xl font-bold mb-1 ${stat.isText ? "capitalize" : ""}`} style={{ color: stat.color }}>
+                  <div
+                    className={`text-2xl font-bold mb-1 ${stat.isText ? "capitalize" : ""}`}
+                    style={{ color: stat.color }}
+                  >
                     {stat.value}
                   </div>
                   <p className="text-xs text-white/20">{stat.sub}</p>
@@ -303,37 +351,64 @@ export default function AIDashboard() {
               className="dash-glass rounded-2xl p-6"
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-white/50">Monthly Usage</h3>
-                <span className="text-xs text-white/20">{Math.floor(usagePercent)}%</span>
+                <h3 className="text-sm font-medium text-white/50">
+                  Monthly Usage
+                </h3>
+                <span className="text-xs text-white/20">
+                  {Math.floor(usagePercent)}%
+                </span>
               </div>
 
               <div className="flex items-center justify-center py-4">
                 <div className="relative w-36 h-36">
                   <svg className="w-36 h-36 -rotate-90" viewBox="0 0 120 120">
-                    <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="10" />
                     <circle
-                      cx="60" cy="60" r="50" fill="none"
-                      stroke="url(#creditGrad)" strokeWidth="10"
+                      cx="60"
+                      cy="60"
+                      r="50"
+                      fill="none"
+                      stroke="rgba(255,255,255,0.03)"
+                      strokeWidth="10"
+                    />
+                    <circle
+                      cx="60"
+                      cy="60"
+                      r="50"
+                      fill="none"
+                      stroke="url(#creditGrad)"
+                      strokeWidth="10"
                       strokeDasharray={`${Math.min(usagePercent, 100) * 3.14} 314`}
                       strokeLinecap="round"
                     />
                     <defs>
-                      <linearGradient id="creditGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <linearGradient
+                        id="creditGrad"
+                        x1="0%"
+                        y1="0%"
+                        x2="100%"
+                        y2="0%"
+                      >
                         <stop offset="0%" stopColor="#D4A853" />
                         <stop offset="100%" stopColor="#E5B86B" />
                       </linearGradient>
                     </defs>
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold text-white">{Math.floor(creditsUsed)}</span>
-                    <span className="text-xs text-white/20">of {monthlyAllowance}</span>
+                    <span className="text-2xl font-bold text-white">
+                      {Math.floor(creditsUsed)}
+                    </span>
+                    <span className="text-xs text-white/20">
+                      of {monthlyAllowance}
+                    </span>
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center justify-between mt-2">
                 <span className="text-xs text-white/30">Remaining</span>
-                <span className="text-xs font-semibold text-[var(--theme-primary)]">{Math.floor(currentBalance)}</span>
+                <span className="text-xs font-semibold text-[var(--theme-primary)]">
+                  {Math.floor(currentBalance)}
+                </span>
               </div>
             </motion.div>
 
@@ -344,12 +419,24 @@ export default function AIDashboard() {
               transition={{ delay: 0.5 }}
               className="dash-glass rounded-2xl p-6"
             >
-              <h3 className="text-sm font-medium text-white/50 mb-4">By Type</h3>
+              <h3 className="text-sm font-medium text-white/50 mb-4">
+                By Type
+              </h3>
 
               <ResponsiveContainer width="100%" height={140}>
                 <PieChart>
                   <Pie
-                    data={usageByType.filter((d) => d.value > 0).length > 0 ? usageByType : [{ name: "No data", value: 1, color: "rgba(255,255,255,0.05)" }]}
+                    data={
+                      usageByType.filter((d) => d.value > 0).length > 0
+                        ? usageByType
+                        : [
+                            {
+                              name: "No data",
+                              value: 1,
+                              color: "rgba(255,255,255,0.05)",
+                            },
+                          ]
+                    }
                     cx="50%"
                     cy="50%"
                     innerRadius={40}
@@ -367,12 +454,23 @@ export default function AIDashboard() {
 
               <div className="space-y-2 mt-4">
                 {usageByType.map((item) => (
-                  <div key={item.name} className="flex items-center justify-between">
+                  <div
+                    key={item.name}
+                    className="flex items-center justify-between"
+                  >
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
+                      <div
+                        className="w-2 h-2 rounded-full"
+                        style={{ background: item.color }}
+                      />
                       <span className="text-xs text-white/40">{item.name}</span>
                     </div>
-                    <span className="text-xs font-semibold" style={{ color: item.color }}>{item.value}</span>
+                    <span
+                      className="text-xs font-semibold"
+                      style={{ color: item.color }}
+                    >
+                      {item.value}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -385,7 +483,9 @@ export default function AIDashboard() {
               transition={{ delay: 0.6 }}
               className="dash-glass rounded-2xl p-6"
             >
-              <h3 className="text-sm font-medium text-white/50 mb-4">Weekly Activity</h3>
+              <h3 className="text-sm font-medium text-white/50 mb-4">
+                Weekly Activity
+              </h3>
 
               <ResponsiveContainer width="100%" height={160}>
                 <AreaChart data={areaData}>
@@ -395,7 +495,12 @@ export default function AIDashboard() {
                       <stop offset="100%" stopColor="#D4A853" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="day" tick={{ fontSize: 10, fill: "rgba(255,255,255,0.2)" }} axisLine={false} tickLine={false} />
+                  <XAxis
+                    dataKey="day"
+                    tick={{ fontSize: 10, fill: "rgba(255,255,255,0.2)" }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
                   <YAxis hide />
                   <ReTooltip
                     contentStyle={{
@@ -405,7 +510,13 @@ export default function AIDashboard() {
                       fontSize: "12px",
                     }}
                   />
-                  <Area type="monotone" dataKey="credits" stroke="#D4A853" fill="url(#areaGrad)" strokeWidth={2} />
+                  <Area
+                    type="monotone"
+                    dataKey="credits"
+                    stroke="#D4A853"
+                    fill="url(#areaGrad)"
+                    strokeWidth={2}
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             </motion.div>
@@ -421,9 +532,13 @@ export default function AIDashboard() {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
                 <Activity size={16} className="text-[var(--theme-primary)]" />
-                <h3 className="text-sm font-medium text-white/50">Recent Activity</h3>
+                <h3 className="text-sm font-medium text-white/50">
+                  Recent Activity
+                </h3>
               </div>
-              <span className="text-xs text-white/20">{(usageHistory || []).length} total</span>
+              <span className="text-xs text-white/20">
+                {(usageHistory || []).length} total
+              </span>
             </div>
 
             {(usageHistory || []).length === 0 ? (
@@ -443,51 +558,68 @@ export default function AIDashboard() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-white/5">
-                      <th className="text-left py-3 px-4 text-xs font-medium text-white/20">Date</th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-white/20">Type</th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-white/20">Credits</th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-white/20">Status</th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-white/20">
+                        Date
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-white/20">
+                        Type
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-white/20">
+                        Credits
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-white/20">
+                        Status
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {(usageHistory || []).slice(0, 10).map((item: any, idx: number) => (
-                      <motion.tr
-                        key={idx}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: idx * 0.05 }}
-                        className="border-b border-white/3 hover:bg-white/2 transition-colors"
-                      >
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <Clock size={12} className="text-white/15" />
-                            <span className="text-xs text-white/40">
-                              {new Date(item.createdAt).toLocaleDateString()}
+                    {(usageHistory || [])
+                      .slice(0, 10)
+                      .map((item: any, idx: number) => (
+                        <motion.tr
+                          key={idx}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className="border-b border-white/3 hover:bg-white/2 transition-colors"
+                        >
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <Clock size={12} className="text-white/15" />
+                              <span className="text-xs text-white/40">
+                                {new Date(item.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              {item.type === "image" ? (
+                                <ImageIcon
+                                  size={14}
+                                  className="text-[var(--theme-primary)]"
+                                />
+                              ) : (
+                                <Video size={14} className="text-purple-400" />
+                              )}
+                              <span className="text-xs text-white/60 capitalize">
+                                {item.type}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-xs font-semibold text-[var(--theme-primary)]">
+                              {parseFloat(item.creditsCost?.toString() || "0")}
                             </span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            {item.type === "image" ? (
-                              <ImageIcon size={14} className="text-[var(--theme-primary)]" />
-                            ) : (
-                              <Video size={14} className="text-purple-400" />
-                            )}
-                            <span className="text-xs text-white/60 capitalize">{item.type}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="text-xs font-semibold text-[var(--theme-primary)]">
-                            {parseFloat(item.creditsCost?.toString() || "0")}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className={`text-[10px] font-medium px-2.5 py-1 rounded-full border ${statusColors[item.status] || statusColors.pending}`}>
-                            {item.status}
-                          </span>
-                        </td>
-                      </motion.tr>
-                    ))}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span
+                              className={`text-[10px] font-medium px-2.5 py-1 rounded-full border ${statusColors[item.status] || statusColors.pending}`}
+                            >
+                              {item.status}
+                            </span>
+                          </td>
+                        </motion.tr>
+                      ))}
                   </tbody>
                 </table>
               </div>
@@ -497,10 +629,30 @@ export default function AIDashboard() {
           {/* Quick Actions */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
             {[
-              { label: "Generate Image", icon: <ImageIcon size={18} />, href: "/ai-image-generator", color: "#D4A853" },
-              { label: "AI Studio", icon: <Sparkles size={18} />, href: "/ai-studio", color: "#8B5CF6" },
-              { label: "View Plans", icon: <Crown size={18} />, href: "/ai-pricing", color: "#06B6D4" },
-              { label: "Back to Home", icon: <ArrowRight size={18} />, href: "/", color: "#10B981" },
+              {
+                label: "Generate Image",
+                icon: <ImageIcon size={18} />,
+                href: "/ai-image-generator",
+                color: "#D4A853",
+              },
+              {
+                label: "AI Studio",
+                icon: <Sparkles size={18} />,
+                href: "/ai-studio",
+                color: "#8B5CF6",
+              },
+              {
+                label: "View Plans",
+                icon: <Crown size={18} />,
+                href: "/ai-pricing",
+                color: "#06B6D4",
+              },
+              {
+                label: "Back to Home",
+                icon: <ArrowRight size={18} />,
+                href: "/",
+                color: "#10B981",
+              },
             ].map((action, i) => (
               <motion.div
                 key={i}
@@ -512,14 +664,22 @@ export default function AIDashboard() {
                   <div className="dash-glass rounded-xl p-4 cursor-pointer hover:bg-white/5 transition-all group flex items-center gap-3">
                     <div
                       className="w-10 h-10 rounded-lg flex items-center justify-center"
-                      style={{ background: `${action.color}15`, color: action.color }}
+                      style={{
+                        background: `${action.color}15`,
+                        color: action.color,
+                      }}
                     >
                       {action.icon}
                     </div>
                     <div className="flex-1">
-                      <span className="text-sm text-white/60 group-hover:text-white transition-colors">{action.label}</span>
+                      <span className="text-sm text-white/60 group-hover:text-white transition-colors">
+                        {action.label}
+                      </span>
                     </div>
-                    <ChevronRight size={14} className="text-white/10 group-hover:text-white/30 transition-colors" />
+                    <ChevronRight
+                      size={14}
+                      className="text-white/10 group-hover:text-white/30 transition-colors"
+                    />
                   </div>
                 </Link>
               </motion.div>

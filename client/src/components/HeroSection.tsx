@@ -4,7 +4,12 @@
  * elegant text below with animated "Discover" shimmer.
  * Mobile-optimized: 2x2 grid on small screens, 4-column on desktop.
  */
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  AnimatePresence,
+} from "framer-motion";
 import { ArrowRight, Facebook, Instagram } from "lucide-react";
 import { useRef, useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
@@ -150,7 +155,8 @@ function CinematicCard({
         <motion.div
           className="absolute top-0 left-0 right-0 h-[2px]"
           style={{
-            background: "linear-gradient(90deg, transparent, #D4A853, transparent)",
+            background:
+              "linear-gradient(90deg, transparent, #D4A853, transparent)",
           }}
           animate={{
             opacity: isActive || isHovered ? 1 : 0.3,
@@ -206,10 +212,9 @@ function CinematicCard({
         <motion.div
           className="absolute inset-0 rounded-xl pointer-events-none"
           animate={{
-            boxShadow:
-              isHovered
-                ? "inset 0 0 0 1px rgba(212,168,83,0.5), 0 0 30px rgba(212,168,83,0.15)"
-                : "inset 0 0 0 1px rgba(255,255,255,0.08), 0 0 0 rgba(0,0,0,0)",
+            boxShadow: isHovered
+              ? "inset 0 0 0 1px rgba(212,168,83,0.5), 0 0 30px rgba(212,168,83,0.15)"
+              : "inset 0 0 0 1px rgba(255,255,255,0.08), 0 0 0 rgba(0,0,0,0)",
           }}
           transition={{ duration: 0.4 }}
         />
@@ -232,7 +237,10 @@ function CinematicCardsRow() {
   return (
     <>
       {/* Mobile: 2x2 grid */}
-      <div className="grid grid-cols-2 gap-2 sm:hidden" style={{ height: "280px" }}>
+      <div
+        className="grid grid-cols-2 gap-2 sm:hidden"
+        style={{ height: "280px" }}
+      >
         {CARD_IMAGES.map((img, i) => (
           <CinematicCard
             key={i}
@@ -244,7 +252,10 @@ function CinematicCardsRow() {
         ))}
       </div>
       {/* Tablet+: flex row with accordion effect */}
-      <div className="hidden sm:flex gap-2 md:gap-3 lg:gap-4" style={{ height: "clamp(180px, 25vw, 300px)" }}>
+      <div
+        className="hidden sm:flex gap-2 md:gap-3 lg:gap-4"
+        style={{ height: "clamp(180px, 25vw, 300px)" }}
+      >
         {CARD_IMAGES.map((img, i) => (
           <CinematicCard
             key={i}
@@ -272,7 +283,10 @@ function RotatingWord() {
   }, []);
 
   return (
-    <span className="inline-block relative overflow-hidden" style={{ minWidth: "3ch" }}>
+    <span
+      className="inline-block relative overflow-hidden"
+      style={{ minWidth: "3ch" }}
+    >
       <AnimatePresence mode="wait">
         <motion.span
           key={ROTATING_WORDS[wordIndex]}
@@ -341,9 +355,11 @@ export default function HeroSection() {
 
       {/* ── Content ── */}
       <div className="container relative z-[8] flex flex-col pt-12 sm:pt-20 md:pt-24 pb-8 sm:pb-14">
-        
         {/* ── TOP: Cinematic Cards Row ── */}
-        <motion.div style={{ y: cardsY }} className="w-full mb-4 sm:mb-8 md:mb-10">
+        <motion.div
+          style={{ y: cardsY }}
+          className="w-full mb-4 sm:mb-8 md:mb-10"
+        >
           <CinematicCardsRow />
         </motion.div>
 

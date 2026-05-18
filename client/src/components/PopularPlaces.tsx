@@ -6,9 +6,12 @@ import { motion } from "framer-motion";
 import { useInView } from "@/hooks/useInView";
 import WatermarkImage from "@/components/WatermarkImage";
 
-const EGYPT_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/destination-egypt-YcosuhKLMYbaJ475QVrVxy.webp";
-const SHARM_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/destination-sharm-Fh2PhqqrRQGfdg6EtwXedu.webp";
-const HERO_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/hero-bg-YvjFWtPTFizkPySUcokQvt.webp";
+const EGYPT_IMG =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/destination-egypt-YcosuhKLMYbaJ475QVrVxy.webp";
+const SHARM_IMG =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/destination-sharm-Fh2PhqqrRQGfdg6EtwXedu.webp";
+const HERO_BG =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/hero-bg-YvjFWtPTFizkPySUcokQvt.webp";
 
 const places = [
   {
@@ -27,7 +30,8 @@ const places = [
     travelers: "65,320 Travelers",
   },
   {
-    image: "https://images.unsplash.com/photo-1486299267070-83823f5448dd?w=500&h=600&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1486299267070-83823f5448dd?w=500&h=600&fit=crop",
     name: "United Kingdom",
     travelers: "174,688 Travelers",
   },
@@ -37,7 +41,10 @@ export default function PopularPlaces() {
   const { ref, inView } = useInView({ threshold: 0.1 });
 
   return (
-    <section className="py-12 sm:py-16 md:py-24 bg-[var(--theme-surface)]" ref={ref}>
+    <section
+      className="py-12 sm:py-16 md:py-24 bg-[var(--theme-surface)]"
+      ref={ref}
+    >
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -80,7 +87,9 @@ export default function PopularPlaces() {
                   <h3 className="font-[var(--font-display)] text-white text-sm sm:text-base md:text-lg font-bold mb-0.5 sm:mb-1 group-hover:text-[var(--theme-primary)] transition-colors">
                     {place.name}
                   </h3>
-                  <p className="text-[var(--theme-primary)]/70 text-[10px] sm:text-xs">{place.travelers}</p>
+                  <p className="text-[var(--theme-primary)]/70 text-[10px] sm:text-xs">
+                    {place.travelers}
+                  </p>
                 </div>
               </WatermarkImage>
             </motion.div>

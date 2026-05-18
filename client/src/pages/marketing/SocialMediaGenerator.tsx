@@ -19,7 +19,8 @@ export default function SocialMediaGenerator() {
           { value: "linkedin", label: "LinkedIn" },
           { value: "tiktok", label: "TikTok" },
         ],
-        placeholderPrompt: "e.g., Create a post promoting our luxury Nile cruise package for couples...",
+        placeholderPrompt:
+          "e.g., Create a post promoting our luxury Nile cruise package for couples...",
         promptHints: [
           "Luxury Nile cruise promo",
           "Pyramids sunrise experience",

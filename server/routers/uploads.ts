@@ -14,7 +14,7 @@ export const uploadsRouter = router({
         filename: z.string(),
         mimeType: z.string(),
         purpose: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const buffer = Buffer.from(input.fileData, "base64");

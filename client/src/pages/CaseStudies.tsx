@@ -7,9 +7,27 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Award, TrendingUp, Users, Globe, Star, ChevronRight, ChevronDown,
-  X, Calendar, MapPin, Target, CheckCircle, Quote, ArrowRight,
-  Briefcase, Building2, Plane, Palette, BarChart3, Clock, Heart
+  Award,
+  TrendingUp,
+  Users,
+  Globe,
+  Star,
+  ChevronRight,
+  ChevronDown,
+  X,
+  Calendar,
+  MapPin,
+  Target,
+  CheckCircle,
+  Quote,
+  ArrowRight,
+  Briefcase,
+  Building2,
+  Plane,
+  Palette,
+  BarChart3,
+  Clock,
+  Heart,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -17,7 +35,8 @@ import SEO from "@/components/SEO";
 import PageMeta from "@/components/PageMeta";
 
 /* ─── CDN URLs ─── */
-const CDN = "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8";
+const CDN =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8";
 const LOGO_URL = `${CDN}/vanir-logo-white_74cd1f52.png`;
 
 /* ─── Types ─── */
@@ -43,12 +62,42 @@ interface CaseStudy {
 
 /* ─── Categories ─── */
 const categories = [
-  { id: "all", label: "All Projects", labelAr: "جميع المشاريع", icon: <Globe size={16} /> },
-  { id: "tourism", label: "Tourism", labelAr: "سياحة", icon: <Plane size={16} /> },
-  { id: "branding", label: "Branding", labelAr: "هوية بصرية", icon: <Palette size={16} /> },
-  { id: "investment", label: "Investment", labelAr: "استثمار", icon: <TrendingUp size={16} /> },
-  { id: "events", label: "Events", labelAr: "فعاليات", icon: <Building2 size={16} /> },
-  { id: "corporate", label: "Corporate", labelAr: "شركات", icon: <Briefcase size={16} /> },
+  {
+    id: "all",
+    label: "All Projects",
+    labelAr: "جميع المشاريع",
+    icon: <Globe size={16} />,
+  },
+  {
+    id: "tourism",
+    label: "Tourism",
+    labelAr: "سياحة",
+    icon: <Plane size={16} />,
+  },
+  {
+    id: "branding",
+    label: "Branding",
+    labelAr: "هوية بصرية",
+    icon: <Palette size={16} />,
+  },
+  {
+    id: "investment",
+    label: "Investment",
+    labelAr: "استثمار",
+    icon: <TrendingUp size={16} />,
+  },
+  {
+    id: "events",
+    label: "Events",
+    labelAr: "فعاليات",
+    icon: <Building2 size={16} />,
+  },
+  {
+    id: "corporate",
+    label: "Corporate",
+    labelAr: "شركات",
+    icon: <Briefcase size={16} />,
+  },
 ];
 
 /* ─── Case Studies Data ─── */
@@ -63,18 +112,25 @@ const caseStudies: CaseStudy[] = [
     year: "2024",
     duration: "6 months",
     location: "Luxor - Aswan, Egypt",
-    summary: "Designed and launched a premium Nile cruise package that redefined luxury river travel in Egypt, combining ancient heritage with five-star hospitality.",
-    challenge: "The client needed to differentiate their cruise offerings in an increasingly competitive market. Existing packages lacked the premium positioning needed to attract high-net-worth international travelers.",
-    solution: "We developed an exclusive luxury cruise experience featuring private guided tours of temples, gourmet Egyptian cuisine by award-winning chefs, and personalized concierge services. The marketing strategy targeted affluent travelers through partnerships with luxury travel agencies worldwide.",
+    summary:
+      "Designed and launched a premium Nile cruise package that redefined luxury river travel in Egypt, combining ancient heritage with five-star hospitality.",
+    challenge:
+      "The client needed to differentiate their cruise offerings in an increasingly competitive market. Existing packages lacked the premium positioning needed to attract high-net-worth international travelers.",
+    solution:
+      "We developed an exclusive luxury cruise experience featuring private guided tours of temples, gourmet Egyptian cuisine by award-winning chefs, and personalized concierge services. The marketing strategy targeted affluent travelers through partnerships with luxury travel agencies worldwide.",
     results: [
       "Revenue increased by 340% in the first year",
       "Average booking value rose from $2,500 to $8,500 per person",
       "Featured in Condé Nast Traveler's Top 10 River Cruises",
       "Customer satisfaction rating of 4.9/5 across 500+ reviews",
-      "Expanded fleet from 2 to 5 luxury vessels"
+      "Expanded fleet from 2 to 5 luxury vessels",
     ],
     metrics: [
-      { label: "Revenue Growth", value: "340%", icon: <TrendingUp size={20} /> },
+      {
+        label: "Revenue Growth",
+        value: "340%",
+        icon: <TrendingUp size={20} />,
+      },
       { label: "Guests Served", value: "2,500+", icon: <Users size={20} /> },
       { label: "Satisfaction", value: "4.9/5", icon: <Star size={20} /> },
       { label: "Awards Won", value: "3", icon: <Award size={20} /> },
@@ -82,9 +138,14 @@ const caseStudies: CaseStudy[] = [
     testimonial: {
       text: "VANIR GROUP transformed our cruise business from a standard offering to the most sought-after luxury experience on the Nile. Their strategic vision and attention to detail exceeded every expectation.",
       author: "Mohamed Hassan",
-      role: "CEO, Royal Nile Cruises"
+      role: "CEO, Royal Nile Cruises",
     },
-    tags: ["Luxury Travel", "Nile Cruise", "Tourism Strategy", "Brand Positioning"],
+    tags: [
+      "Luxury Travel",
+      "Nile Cruise",
+      "Tourism Strategy",
+      "Brand Positioning",
+    ],
     featured: true,
   },
   {
@@ -97,28 +158,44 @@ const caseStudies: CaseStudy[] = [
     year: "2023",
     duration: "8 months",
     location: "El Gouna, Red Sea",
-    summary: "Complete brand identity overhaul for a premium Red Sea resort, creating a cohesive visual language that elevated the property's international appeal.",
-    challenge: "The resort had a dated brand identity that failed to communicate its luxury positioning. International guests often overlooked it in favor of better-branded competitors despite superior facilities.",
-    solution: "We conducted extensive market research and developed a comprehensive brand strategy including new visual identity, photography direction, digital presence, and guest experience touchpoints. Every element was designed to reflect Egyptian elegance with modern luxury.",
+    summary:
+      "Complete brand identity overhaul for a premium Red Sea resort, creating a cohesive visual language that elevated the property's international appeal.",
+    challenge:
+      "The resort had a dated brand identity that failed to communicate its luxury positioning. International guests often overlooked it in favor of better-branded competitors despite superior facilities.",
+    solution:
+      "We conducted extensive market research and developed a comprehensive brand strategy including new visual identity, photography direction, digital presence, and guest experience touchpoints. Every element was designed to reflect Egyptian elegance with modern luxury.",
     results: [
       "International bookings increased by 185%",
       "Brand recognition improved by 220% in target markets",
       "Social media following grew from 15K to 120K",
       "Won 'Best Resort Branding' at Middle East Hospitality Awards",
-      "Average room rate increased by 45%"
+      "Average room rate increased by 45%",
     ],
     metrics: [
-      { label: "Bookings Growth", value: "185%", icon: <TrendingUp size={20} /> },
-      { label: "Brand Recognition", value: "220%", icon: <BarChart3 size={20} /> },
+      {
+        label: "Bookings Growth",
+        value: "185%",
+        icon: <TrendingUp size={20} />,
+      },
+      {
+        label: "Brand Recognition",
+        value: "220%",
+        icon: <BarChart3 size={20} />,
+      },
       { label: "Social Growth", value: "8x", icon: <Heart size={20} /> },
       { label: "Rate Increase", value: "45%", icon: <Award size={20} /> },
     ],
     testimonial: {
       text: "The rebranding by VANIR GROUP was nothing short of revolutionary. Our resort went from being a hidden gem to a must-visit destination. The ROI has been extraordinary.",
       author: "Sarah El-Masry",
-      role: "Marketing Director, Oasis Resorts"
+      role: "Marketing Director, Oasis Resorts",
     },
-    tags: ["Brand Identity", "Resort Marketing", "Visual Design", "Hospitality"],
+    tags: [
+      "Brand Identity",
+      "Resort Marketing",
+      "Visual Design",
+      "Hospitality",
+    ],
     featured: true,
   },
   {
@@ -131,15 +208,18 @@ const caseStudies: CaseStudy[] = [
     year: "2024",
     duration: "4 months",
     location: "Abu Simbel, Aswan",
-    summary: "Launched a digital-first tourism campaign that brought global attention to Abu Simbel's magnificent temples, resulting in record visitor numbers.",
-    challenge: "Despite being one of Egypt's most impressive archaeological sites, Abu Simbel received significantly fewer visitors than Luxor and Giza due to its remote location and lack of modern marketing.",
-    solution: "We created an immersive digital campaign featuring 360-degree virtual tours, influencer partnerships, and a storytelling approach that connected ancient history with modern travel aspirations. We also developed convenient travel packages that solved the accessibility challenge.",
+    summary:
+      "Launched a digital-first tourism campaign that brought global attention to Abu Simbel's magnificent temples, resulting in record visitor numbers.",
+    challenge:
+      "Despite being one of Egypt's most impressive archaeological sites, Abu Simbel received significantly fewer visitors than Luxor and Giza due to its remote location and lack of modern marketing.",
+    solution:
+      "We created an immersive digital campaign featuring 360-degree virtual tours, influencer partnerships, and a storytelling approach that connected ancient history with modern travel aspirations. We also developed convenient travel packages that solved the accessibility challenge.",
     results: [
       "Visitor numbers increased by 150% year-over-year",
       "Campaign reached 50M+ impressions across digital platforms",
       "Generated $12M in direct tourism revenue",
       "Established 15 new tour operator partnerships",
-      "Won 'Best Digital Tourism Campaign' at World Travel Awards"
+      "Won 'Best Digital Tourism Campaign' at World Travel Awards",
     ],
     metrics: [
       { label: "Visitor Growth", value: "150%", icon: <Users size={20} /> },
@@ -150,9 +230,14 @@ const caseStudies: CaseStudy[] = [
     testimonial: {
       text: "VANIR GROUP's campaign single-handedly changed the perception of Abu Simbel from 'too far to visit' to 'a must-see destination.' Their creative approach was brilliant.",
       author: "Dr. Ahmed Fathy",
-      role: "Director, Egypt Tourism Authority"
+      role: "Director, Egypt Tourism Authority",
     },
-    tags: ["Digital Marketing", "Heritage Tourism", "Campaign Strategy", "Content Creation"],
+    tags: [
+      "Digital Marketing",
+      "Heritage Tourism",
+      "Campaign Strategy",
+      "Content Creation",
+    ],
     featured: false,
   },
   {
@@ -165,15 +250,18 @@ const caseStudies: CaseStudy[] = [
     year: "2024",
     duration: "3 months",
     location: "Cairo, Egypt",
-    summary: "Organized and managed a premier investment summit that attracted 500+ international investors and generated over $200M in investment commitments.",
-    challenge: "Egypt needed a world-class investment event that could compete with Dubai and Riyadh summits. The event had to showcase Egypt's investment potential while providing a premium networking experience.",
-    solution: "We designed a three-day summit with curated matchmaking sessions, keynote speakers from Fortune 500 companies, exclusive site visits to investment zones, and a gala dinner at the Pyramids. Every detail reflected Egyptian hospitality at its finest.",
+    summary:
+      "Organized and managed a premier investment summit that attracted 500+ international investors and generated over $200M in investment commitments.",
+    challenge:
+      "Egypt needed a world-class investment event that could compete with Dubai and Riyadh summits. The event had to showcase Egypt's investment potential while providing a premium networking experience.",
+    solution:
+      "We designed a three-day summit with curated matchmaking sessions, keynote speakers from Fortune 500 companies, exclusive site visits to investment zones, and a gala dinner at the Pyramids. Every detail reflected Egyptian hospitality at its finest.",
     results: [
       "500+ international investors attended from 35 countries",
       "$200M+ in investment commitments signed",
       "98% attendee satisfaction rate",
       "150+ media mentions in international press",
-      "Secured as annual recurring event"
+      "Secured as annual recurring event",
     ],
     metrics: [
       { label: "Investors", value: "500+", icon: <Users size={20} /> },
@@ -184,7 +272,7 @@ const caseStudies: CaseStudy[] = [
     testimonial: {
       text: "The summit organized by VANIR GROUP was the most professionally executed investment event I've attended in the MENA region. It opened doors we never thought possible.",
       author: "James Mitchell",
-      role: "VP Investments, Goldman Sachs MENA"
+      role: "VP Investments, Goldman Sachs MENA",
     },
     tags: ["Event Management", "Investment", "B2B Networking", "Conference"],
     featured: true,
@@ -199,15 +287,18 @@ const caseStudies: CaseStudy[] = [
     year: "2023-2024",
     duration: "Ongoing",
     location: "Multiple Locations, Egypt",
-    summary: "Developed a premium corporate retreat program that positions Egypt as the ultimate destination for executive team building and strategic planning sessions.",
-    challenge: "International corporations typically chose European or Asian destinations for retreats. Egypt was not on their radar despite offering unique venues, rich culture, and competitive pricing.",
-    solution: "We created bespoke retreat packages combining luxury accommodations, cultural immersion experiences, and professional facilitation services. Venues ranged from Nile-side palaces to desert camps under the stars, each tailored to the client's objectives.",
+    summary:
+      "Developed a premium corporate retreat program that positions Egypt as the ultimate destination for executive team building and strategic planning sessions.",
+    challenge:
+      "International corporations typically chose European or Asian destinations for retreats. Egypt was not on their radar despite offering unique venues, rich culture, and competitive pricing.",
+    solution:
+      "We created bespoke retreat packages combining luxury accommodations, cultural immersion experiences, and professional facilitation services. Venues ranged from Nile-side palaces to desert camps under the stars, each tailored to the client's objectives.",
     results: [
       "Served 25+ Fortune 500 companies",
       "95% rebooking rate for annual retreats",
       "Average program value of $150K per retreat",
       "Expanded to offer year-round programming",
-      "Created 200+ local jobs in hospitality sector"
+      "Created 200+ local jobs in hospitality sector",
     ],
     metrics: [
       { label: "F500 Clients", value: "25+", icon: <Building2 size={20} /> },
@@ -218,9 +309,14 @@ const caseStudies: CaseStudy[] = [
     testimonial: {
       text: "Our team retreat in Egypt organized by VANIR GROUP was transformative. The blend of ancient wisdom, luxury, and professional facilitation created an experience our executives still talk about.",
       author: "Lisa Chen",
-      role: "CHRO, Tech Fortune 500"
+      role: "CHRO, Tech Fortune 500",
     },
-    tags: ["Corporate Retreats", "Team Building", "Executive Programs", "Luxury Events"],
+    tags: [
+      "Corporate Retreats",
+      "Team Building",
+      "Executive Programs",
+      "Luxury Events",
+    ],
     featured: false,
   },
   {
@@ -233,15 +329,18 @@ const caseStudies: CaseStudy[] = [
     year: "2023",
     duration: "12 months",
     location: "Cairo - Aswan, Egypt",
-    summary: "Managed a $50M fleet modernization project that transformed aging vessels into world-class luxury cruise ships, attracting international investment.",
-    challenge: "The client's fleet of 8 cruise ships needed complete modernization to meet international luxury standards. Securing financing and managing the renovation while maintaining operations was a complex challenge.",
-    solution: "We developed a phased renovation plan, secured international investment partners, and managed the entire project from design to delivery. Each ship was reimagined with contemporary luxury interiors while preserving Egyptian design elements.",
+    summary:
+      "Managed a $50M fleet modernization project that transformed aging vessels into world-class luxury cruise ships, attracting international investment.",
+    challenge:
+      "The client's fleet of 8 cruise ships needed complete modernization to meet international luxury standards. Securing financing and managing the renovation while maintaining operations was a complex challenge.",
+    solution:
+      "We developed a phased renovation plan, secured international investment partners, and managed the entire project from design to delivery. Each ship was reimagined with contemporary luxury interiors while preserving Egyptian design elements.",
     results: [
       "Secured $50M in international investment",
       "Renovated 8 cruise ships in 12 months",
       "Occupancy rates jumped from 45% to 92%",
       "Revenue per available cabin doubled",
-      "Named 'Best Fleet Renovation' by Cruise Industry News"
+      "Named 'Best Fleet Renovation' by Cruise Industry News",
     ],
     metrics: [
       { label: "Investment", value: "$50M", icon: <TrendingUp size={20} /> },
@@ -252,18 +351,31 @@ const caseStudies: CaseStudy[] = [
     testimonial: {
       text: "VANIR GROUP didn't just renovate our ships—they reimagined the entire Nile cruise experience. The investment they secured and the vision they delivered exceeded our wildest dreams.",
       author: "Karim Abdel-Nour",
-      role: "Chairman, Pharaoh Cruise Lines"
+      role: "Chairman, Pharaoh Cruise Lines",
     },
-    tags: ["Investment Management", "Fleet Modernization", "Luxury Hospitality", "Project Management"],
+    tags: [
+      "Investment Management",
+      "Fleet Modernization",
+      "Luxury Hospitality",
+      "Project Management",
+    ],
     featured: false,
   },
 ];
 
 /* ─── Stats ─── */
 const overallStats = [
-  { label: "Projects Completed", value: "150+", icon: <CheckCircle size={24} /> },
+  {
+    label: "Projects Completed",
+    value: "150+",
+    icon: <CheckCircle size={24} />,
+  },
   { label: "Client Satisfaction", value: "98%", icon: <Star size={24} /> },
-  { label: "Revenue Generated", value: "$500M+", icon: <TrendingUp size={24} /> },
+  {
+    label: "Revenue Generated",
+    value: "$500M+",
+    icon: <TrendingUp size={24} />,
+  },
   { label: "Countries Reached", value: "45+", icon: <Globe size={24} /> },
 ];
 
@@ -315,7 +427,12 @@ export default function CaseStudies() {
             transition={{ duration: 0.5 }}
             className="flex items-center gap-2 text-sm text-[var(--theme-primary)]/60 mb-8"
           >
-            <a href="/" className="hover:text-[var(--theme-primary)] transition-colors">Home</a>
+            <a
+              href="/"
+              className="hover:text-[var(--theme-primary)] transition-colors"
+            >
+              Home
+            </a>
             <ChevronRight size={14} />
             <span className="text-[var(--theme-primary)]">Case Studies</span>
           </motion.div>
@@ -338,7 +455,9 @@ export default function CaseStudies() {
               className="font-[var(--font-display)] text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight"
             >
               Case Studies &{" "}
-              <span className="text-[var(--theme-primary)]">Success Stories</span>
+              <span className="text-[var(--theme-primary)]">
+                Success Stories
+              </span>
             </motion.h1>
 
             <motion.p
@@ -347,8 +466,9 @@ export default function CaseStudies() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-lg md:text-xl text-white/60 leading-relaxed max-w-3xl"
             >
-              Discover how we've helped businesses and organizations achieve extraordinary results
-              across tourism, branding, investment, and corporate sectors in Egypt and beyond.
+              Discover how we've helped businesses and organizations achieve
+              extraordinary results across tourism, branding, investment, and
+              corporate sectors in Egypt and beyond.
             </motion.p>
           </div>
 
@@ -362,12 +482,16 @@ export default function CaseStudies() {
             {overallStats.map((stat, i) => (
               <div key={i} className="text-center md:text-left">
                 <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
-                  <span className="text-[var(--theme-primary)]">{stat.icon}</span>
+                  <span className="text-[var(--theme-primary)]">
+                    {stat.icon}
+                  </span>
                   <span className="font-[var(--font-display)] text-2xl md:text-3xl font-bold text-white">
                     {stat.value}
                   </span>
                 </div>
-                <p className="text-sm text-white/50 tracking-wide">{stat.label}</p>
+                <p className="text-sm text-white/50 tracking-wide">
+                  {stat.label}
+                </p>
               </div>
             ))}
           </motion.div>
@@ -379,7 +503,10 @@ export default function CaseStudies() {
         <div className="container">
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
             {categories.map((cat) => {
-              const count = cat.id === "all" ? caseStudies.length : caseStudies.filter((s) => s.category === cat.id).length;
+              const count =
+                cat.id === "all"
+                  ? caseStudies.length
+                  : caseStudies.filter((s) => s.category === cat.id).length;
               return (
                 <button
                   key={cat.id}
@@ -392,9 +519,13 @@ export default function CaseStudies() {
                 >
                   {cat.icon}
                   {cat.label}
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                    activeCategory === cat.id ? "bg-[var(--theme-surface)]/20 text-[var(--theme-surface)]" : "bg-[var(--theme-primary)]/10 text-[var(--theme-primary)]"
-                  }`}>
+                  <span
+                    className={`text-xs px-1.5 py-0.5 rounded-full ${
+                      activeCategory === cat.id
+                        ? "bg-[var(--theme-surface)]/20 text-[var(--theme-surface)]"
+                        : "bg-[var(--theme-primary)]/10 text-[var(--theme-primary)]"
+                    }`}
+                  >
                     {count}
                   </span>
                 </button>
@@ -428,7 +559,9 @@ export default function CaseStudies() {
                 >
                   <div className={`${study.featured ? "md:flex" : ""}`}>
                     {/* Image */}
-                    <div className={`relative overflow-hidden ${study.featured ? "md:w-1/2" : "h-64"}`}>
+                    <div
+                      className={`relative overflow-hidden ${study.featured ? "md:w-1/2" : "h-64"}`}
+                    >
                       <img
                         src={study.image}
                         alt={study.title}
@@ -440,7 +573,10 @@ export default function CaseStudies() {
                       {/* Category badge */}
                       <div className="absolute top-4 left-4 flex items-center gap-2">
                         <span className="px-3 py-1.5 bg-[var(--theme-primary)] text-[var(--theme-surface)] text-xs font-bold tracking-wider uppercase">
-                          {categories.find((c) => c.id === study.category)?.label}
+                          {
+                            categories.find((c) => c.id === study.category)
+                              ?.label
+                          }
                         </span>
                         {study.featured && (
                           <span className="px-3 py-1.5 bg-white/10 backdrop-blur-sm text-[var(--theme-primary)] text-xs font-bold tracking-wider uppercase border border-[var(--theme-primary)]/30">
@@ -454,14 +590,18 @@ export default function CaseStudies() {
                       <div className="absolute bottom-4 left-4 flex items-center gap-2 text-white/70 text-sm">
                         <Calendar size={14} />
                         {study.year}
-                        <span className="mx-1 text-[var(--theme-primary)]/40">|</span>
+                        <span className="mx-1 text-[var(--theme-primary)]/40">
+                          |
+                        </span>
                         <MapPin size={14} />
                         {study.location}
                       </div>
                     </div>
 
                     {/* Content */}
-                    <div className={`p-6 md:p-8 ${study.featured ? "md:w-1/2 flex flex-col justify-center" : ""}`}>
+                    <div
+                      className={`p-6 md:p-8 ${study.featured ? "md:w-1/2 flex flex-col justify-center" : ""}`}
+                    >
                       <h2 className="font-[var(--font-display)] text-xl md:text-2xl font-bold text-white mb-2 group-hover:text-[var(--theme-primary)] transition-colors duration-300">
                         {study.title}
                       </h2>
@@ -475,11 +615,20 @@ export default function CaseStudies() {
                       {/* Quick metrics */}
                       <div className="grid grid-cols-2 gap-3 mb-6">
                         {study.metrics.slice(0, 2).map((metric, i) => (
-                          <div key={i} className="flex items-center gap-2 p-3 bg-[var(--theme-primary)]/5 border border-white/5">
-                            <span className="text-[var(--theme-primary)]">{metric.icon}</span>
+                          <div
+                            key={i}
+                            className="flex items-center gap-2 p-3 bg-[var(--theme-primary)]/5 border border-white/5"
+                          >
+                            <span className="text-[var(--theme-primary)]">
+                              {metric.icon}
+                            </span>
                             <div>
-                              <p className="text-white font-bold text-sm">{metric.value}</p>
-                              <p className="text-white/40 text-xs">{metric.label}</p>
+                              <p className="text-white font-bold text-sm">
+                                {metric.value}
+                              </p>
+                              <p className="text-white/40 text-xs">
+                                {metric.label}
+                              </p>
                             </div>
                           </div>
                         ))}
@@ -488,7 +637,10 @@ export default function CaseStudies() {
                       {/* Tags */}
                       <div className="flex flex-wrap gap-2 mb-6">
                         {study.tags.slice(0, 3).map((tag) => (
-                          <span key={tag} className="px-2.5 py-1 text-xs text-[var(--theme-primary)]/70 border border-white/8 bg-[var(--theme-primary)]/5">
+                          <span
+                            key={tag}
+                            className="px-2.5 py-1 text-xs text-[var(--theme-primary)]/70 border border-white/8 bg-[var(--theme-primary)]/5"
+                          >
                             {tag}
                           </span>
                         ))}
@@ -500,7 +652,10 @@ export default function CaseStudies() {
                         className="inline-flex items-center gap-2 text-[var(--theme-primary)] text-sm font-medium tracking-wide hover:gap-3 transition-all duration-300 group/btn"
                       >
                         View Full Case Study
-                        <ArrowRight size={16} className="transition-transform duration-300 group-hover/btn:translate-x-1" />
+                        <ArrowRight
+                          size={16}
+                          className="transition-transform duration-300 group-hover/btn:translate-x-1"
+                        />
                       </button>
                     </div>
                   </div>
@@ -511,8 +666,13 @@ export default function CaseStudies() {
 
           {filteredStudies.length === 0 && (
             <div className="text-center py-20">
-              <Briefcase size={48} className="mx-auto text-[var(--theme-primary)]/30 mb-4" />
-              <p className="text-white/50 text-lg">No case studies found in this category.</p>
+              <Briefcase
+                size={48}
+                className="mx-auto text-[var(--theme-primary)]/30 mb-4"
+              />
+              <p className="text-white/50 text-lg">
+                No case studies found in this category.
+              </p>
             </div>
           )}
         </div>
@@ -557,7 +717,10 @@ export default function CaseStudies() {
                 <div className="absolute bottom-6 left-6 md:left-10 right-6 md:right-10">
                   <div className="flex items-center gap-3 mb-3">
                     <span className="px-3 py-1.5 bg-[var(--theme-primary)] text-[var(--theme-surface)] text-xs font-bold tracking-wider uppercase">
-                      {categories.find((c) => c.id === selectedStudy.category)?.label}
+                      {
+                        categories.find((c) => c.id === selectedStudy.category)
+                          ?.label
+                      }
                     </span>
                     <span className="text-white/60 text-sm flex items-center gap-1">
                       <Calendar size={14} /> {selectedStudy.year}
@@ -584,9 +747,15 @@ export default function CaseStudies() {
                       key={i}
                       className="text-center p-5 bg-[var(--theme-primary)]/5 border border-white/8"
                     >
-                      <span className="text-[var(--theme-primary)] flex justify-center mb-2">{metric.icon}</span>
-                      <p className="font-[var(--font-display)] text-2xl font-bold text-white">{metric.value}</p>
-                      <p className="text-white/50 text-xs mt-1 tracking-wide">{metric.label}</p>
+                      <span className="text-[var(--theme-primary)] flex justify-center mb-2">
+                        {metric.icon}
+                      </span>
+                      <p className="font-[var(--font-display)] text-2xl font-bold text-white">
+                        {metric.value}
+                      </p>
+                      <p className="text-white/50 text-xs mt-1 tracking-wide">
+                        {metric.label}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -599,9 +768,13 @@ export default function CaseStudies() {
                       <div className="w-10 h-10 flex items-center justify-center bg-red-500/10 border border-red-500/20 text-red-400">
                         <Target size={20} />
                       </div>
-                      <h3 className="font-[var(--font-display)] text-xl font-bold text-white">The Challenge</h3>
+                      <h3 className="font-[var(--font-display)] text-xl font-bold text-white">
+                        The Challenge
+                      </h3>
                     </div>
-                    <p className="text-white/60 leading-relaxed pl-[52px]">{selectedStudy.challenge}</p>
+                    <p className="text-white/60 leading-relaxed pl-[52px]">
+                      {selectedStudy.challenge}
+                    </p>
                   </div>
 
                   {/* The Solution */}
@@ -610,9 +783,13 @@ export default function CaseStudies() {
                       <div className="w-10 h-10 flex items-center justify-center bg-[var(--theme-primary)]/10 border border-white/10 text-[var(--theme-primary)]">
                         <CheckCircle size={20} />
                       </div>
-                      <h3 className="font-[var(--font-display)] text-xl font-bold text-white">Our Solution</h3>
+                      <h3 className="font-[var(--font-display)] text-xl font-bold text-white">
+                        Our Solution
+                      </h3>
                     </div>
-                    <p className="text-white/60 leading-relaxed pl-[52px]">{selectedStudy.solution}</p>
+                    <p className="text-white/60 leading-relaxed pl-[52px]">
+                      {selectedStudy.solution}
+                    </p>
                   </div>
 
                   {/* The Results */}
@@ -621,12 +798,20 @@ export default function CaseStudies() {
                       <div className="w-10 h-10 flex items-center justify-center bg-green-500/10 border border-green-500/20 text-green-400">
                         <TrendingUp size={20} />
                       </div>
-                      <h3 className="font-[var(--font-display)] text-xl font-bold text-white">Key Results</h3>
+                      <h3 className="font-[var(--font-display)] text-xl font-bold text-white">
+                        Key Results
+                      </h3>
                     </div>
                     <ul className="space-y-3 pl-[52px]">
                       {selectedStudy.results.map((result, i) => (
-                        <li key={i} className="flex items-start gap-3 text-white/60">
-                          <CheckCircle size={16} className="text-[var(--theme-primary)] mt-0.5 shrink-0" />
+                        <li
+                          key={i}
+                          className="flex items-start gap-3 text-white/60"
+                        >
+                          <CheckCircle
+                            size={16}
+                            className="text-[var(--theme-primary)] mt-0.5 shrink-0"
+                          />
                           {result}
                         </li>
                       ))}
@@ -636,7 +821,10 @@ export default function CaseStudies() {
 
                 {/* Client Testimonial */}
                 <div className="mt-12 p-6 md:p-8 bg-[var(--theme-primary)]/5 border border-white/10 relative">
-                  <Quote size={40} className="absolute top-4 right-4 text-[var(--theme-primary)]/10" />
+                  <Quote
+                    size={40}
+                    className="absolute top-4 right-4 text-[var(--theme-primary)]/10"
+                  />
                   <p className="text-white/80 text-lg leading-relaxed italic mb-6">
                     "{selectedStudy.testimonial.text}"
                   </p>
@@ -645,8 +833,12 @@ export default function CaseStudies() {
                       {selectedStudy.testimonial.author.charAt(0)}
                     </div>
                     <div>
-                      <p className="text-white font-bold">{selectedStudy.testimonial.author}</p>
-                      <p className="text-[var(--theme-primary)]/70 text-sm">{selectedStudy.testimonial.role}</p>
+                      <p className="text-white font-bold">
+                        {selectedStudy.testimonial.author}
+                      </p>
+                      <p className="text-[var(--theme-primary)]/70 text-sm">
+                        {selectedStudy.testimonial.role}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -654,7 +846,10 @@ export default function CaseStudies() {
                 {/* Tags */}
                 <div className="flex flex-wrap gap-2 mt-8">
                   {selectedStudy.tags.map((tag) => (
-                    <span key={tag} className="px-3 py-1.5 text-xs text-[var(--theme-primary)]/70 border border-white/8 bg-[var(--theme-primary)]/5 tracking-wide">
+                    <span
+                      key={tag}
+                      className="px-3 py-1.5 text-xs text-[var(--theme-primary)]/70 border border-white/8 bg-[var(--theme-primary)]/5 tracking-wide"
+                    >
                       {tag}
                     </span>
                   ))}
@@ -693,11 +888,14 @@ export default function CaseStudies() {
           >
             <h2 className="font-[var(--font-display)] text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6">
               Ready to Write Your{" "}
-              <span className="text-[var(--theme-primary)]">Success Story?</span>
+              <span className="text-[var(--theme-primary)]">
+                Success Story?
+              </span>
             </h2>
             <p className="text-white/60 text-lg max-w-2xl mx-auto mb-10">
-              Let's discuss how VANIR GROUP can help your business achieve extraordinary results.
-              Every great project starts with a conversation.
+              Let's discuss how VANIR GROUP can help your business achieve
+              extraordinary results. Every great project starts with a
+              conversation.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <a

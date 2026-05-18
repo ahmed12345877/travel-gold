@@ -14,7 +14,8 @@ const testimonials = [
     name: "Benjamin Carter",
     role: "CEO, Carter Enterprises",
     location: "New York, USA",
-    avatar: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/avatar-benjamin-gpYWFYEDFEziuuNCsPo66v.webp",
+    avatar:
+      "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/avatar-benjamin-gpYWFYEDFEziuuNCsPo66v.webp",
     rating: 5,
     trip: "Pyramids & Nile Cruise",
   },
@@ -23,7 +24,8 @@ const testimonials = [
     name: "Lucas Thompson",
     role: "Travel Blogger & Photographer",
     location: "London, UK",
-    avatar: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/avatar-lucas-SB2YyXpuVDW6oUtM3i9jSs.webp",
+    avatar:
+      "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/avatar-lucas-SB2YyXpuVDW6oUtM3i9jSs.webp",
     rating: 5,
     trip: "Desert Safari Adventure",
   },
@@ -32,7 +34,8 @@ const testimonials = [
     name: "Ahmed Roshdi",
     role: "CEO & Founder, VANIR GROUP",
     location: "Cairo, Egypt",
-    avatar: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/avatar-ahmed-W3AJmXi7maBfaB8mVbScYN.webp",
+    avatar:
+      "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/avatar-ahmed-W3AJmXi7maBfaB8mVbScYN.webp",
     rating: 5,
     trip: "Luxury Egypt Tour",
   },
@@ -41,7 +44,8 @@ const testimonials = [
     name: "Sarah Mitchell",
     role: "Marketing Director",
     location: "Dubai, UAE",
-    avatar: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/avatar-sarah-LALDT5LcigZqneZ3gWF9Mj.webp",
+    avatar:
+      "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/avatar-sarah-LALDT5LcigZqneZ3gWF9Mj.webp",
     rating: 5,
     trip: "Family Heritage Tour",
   },
@@ -50,7 +54,8 @@ const testimonials = [
     name: "James Williams",
     role: "Senior VP, Global Finance",
     location: "Chicago, USA",
-    avatar: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/avatar-james-dFzv738pnLCwBifYqKxBht.webp",
+    avatar:
+      "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/avatar-james-dFzv738pnLCwBifYqKxBht.webp",
     rating: 5,
     trip: "Exclusive VIP Experience",
   },
@@ -94,7 +99,10 @@ export default function TestimonialsSection() {
   };
 
   return (
-    <section className="relative py-14 sm:py-20 md:py-28 overflow-hidden" ref={ref}>
+    <section
+      className="relative py-14 sm:py-20 md:py-28 overflow-hidden"
+      ref={ref}
+    >
       {/* Subtle background pattern */}
       <div className="absolute inset-0 bg-[var(--theme-background)]" />
       <div
@@ -137,7 +145,10 @@ export default function TestimonialsSection() {
             <div className="absolute bottom-0 right-0 w-12 sm:w-20 h-12 sm:h-20 border-b-2 border-r-2 border-[var(--theme-primary)]/20 rounded-br-2xl" />
 
             {/* Large quote icon */}
-            <Quote size={32} className="text-[var(--theme-primary)]/15 absolute top-4 right-4 sm:top-6 sm:right-8 sm:w-12 sm:h-12" />
+            <Quote
+              size={32}
+              className="text-[var(--theme-primary)]/15 absolute top-4 right-4 sm:top-6 sm:right-8 sm:w-12 sm:h-12"
+            />
 
             <AnimatePresence mode="wait" custom={direction}>
               <motion.div
@@ -152,7 +163,11 @@ export default function TestimonialsSection() {
                 {/* Stars */}
                 <div className="flex gap-1 mb-4 sm:mb-6">
                   {[...Array(t.rating)].map((_, i) => (
-                    <Star key={i} size={14} className="text-[var(--theme-primary)] fill-[var(--theme-primary)] sm:w-[18px] sm:h-[18px]" />
+                    <Star
+                      key={i}
+                      size={14}
+                      className="text-[var(--theme-primary)] fill-[var(--theme-primary)] sm:w-[18px] sm:h-[18px]"
+                    />
                   ))}
                 </div>
 
@@ -179,12 +194,18 @@ export default function TestimonialsSection() {
                     <h4 className="font-[var(--font-display)] text-white font-semibold text-sm sm:text-lg">
                       {t.name}
                     </h4>
-                    <p className="text-[var(--theme-primary)] text-xs sm:text-sm font-medium">{t.role}</p>
+                    <p className="text-[var(--theme-primary)] text-xs sm:text-sm font-medium">
+                      {t.role}
+                    </p>
                     <div className="flex items-center gap-1 sm:gap-1.5 mt-1 flex-wrap">
                       <MapPin size={12} className="text-white/30" />
-                      <span className="text-white/40 text-[10px] sm:text-xs">{t.location}</span>
+                      <span className="text-white/40 text-[10px] sm:text-xs">
+                        {t.location}
+                      </span>
                       <span className="text-white/20 mx-1">|</span>
-                      <span className="text-[var(--theme-primary)]/60 text-[10px] sm:text-xs">{t.trip}</span>
+                      <span className="text-[var(--theme-primary)]/60 text-[10px] sm:text-xs">
+                        {t.trip}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -262,7 +283,20 @@ export default function TestimonialsSection() {
             className="inline-flex items-center gap-2 px-8 py-3 border border-[var(--theme-primary)]/30 text-[var(--theme-primary)] font-[var(--font-body)] font-semibold text-sm uppercase tracking-wider hover:bg-[var(--theme-primary)] hover:text-[var(--theme-surface)] transition-all duration-300 rounded-sm"
           >
             View All Reviews
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
+            </svg>
           </a>
         </div>
       </div>

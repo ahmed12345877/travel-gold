@@ -19,14 +19,16 @@ export const GEMINI_IMAGE_MODELS = {
   "nano-banana-pro": {
     modelCode: "gemini-3-pro-image-preview",
     name: "Nano Banana Pro",
-    description: "Studio-quality 4K visuals, complex layouts, precise text rendering",
+    description:
+      "Studio-quality 4K visuals, complex layouts, precise text rendering",
     aspectRatios: ["1:1", "16:9", "9:16", "4:3", "3:4"] as const,
     creditCost: 3,
   },
   "nano-banana-2": {
     modelCode: "gemini-3.1-flash-image-preview",
     name: "Nano Banana 2",
-    description: "High-efficiency production-scale, supports 0.5K-4K and extra aspect ratios",
+    description:
+      "High-efficiency production-scale, supports 0.5K-4K and extra aspect ratios",
     aspectRatios: ["1:1", "16:9", "9:16", "4:3", "3:4", "1:4", "4:1"] as const,
     creditCost: 2,
   },
@@ -52,12 +54,12 @@ export type GeminiImageResult = {
  * Returns the S3 URL and key of the stored image
  */
 export async function generateImageWithGemini(
-  options: GeminiImageOptions
+  options: GeminiImageOptions,
 ): Promise<GeminiImageResult> {
   const apiKey = ENV.geminiApiKey;
   if (!apiKey) {
     throw new Error(
-      "GEMINI_API_KEY is not configured. Please add your Gemini API key."
+      "GEMINI_API_KEY is not configured. Please add your Gemini API key.",
     );
   }
 
@@ -117,12 +119,13 @@ export async function generateImageWithGemini(
 
   if (!imageBuffer) {
     throw new Error(
-      "No image data returned from Gemini API. The model may have declined to generate this image."
+      "No image data returned from Gemini API. The model may have declined to generate this image.",
     );
   }
 
   // Determine file extension from mime type
-  const ext = mimeType.includes("jpeg") || mimeType.includes("jpg") ? "jpg" : "png";
+  const ext =
+    mimeType.includes("jpeg") || mimeType.includes("jpg") ? "jpg" : "png";
 
   // Generate unique filename with model prefix
   const timestamp = Date.now();

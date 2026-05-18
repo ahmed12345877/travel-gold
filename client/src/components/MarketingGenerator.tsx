@@ -33,7 +33,12 @@ import {
 import { Link } from "wouter";
 
 /* ─── Types ─── */
-type ContentType = "social_media" | "email" | "trip_description" | "blog_seo" | "ad_copy";
+type ContentType =
+  | "social_media"
+  | "email"
+  | "trip_description"
+  | "blog_seo"
+  | "ad_copy";
 
 interface GeneratorConfig {
   type: ContentType;
@@ -47,12 +52,20 @@ interface GeneratorConfig {
 }
 
 /* ─── Section Title ─── */
-function SectionTitle({ subtitle, title }: { subtitle: string; title: string }) {
+function SectionTitle({
+  subtitle,
+  title,
+}: {
+  subtitle: string;
+  title: string;
+}) {
   return (
     <div className="text-center mb-8">
       <div className="flex items-center justify-center gap-3 mb-3">
         <div className="h-px w-12 bg-gradient-to-r from-transparent to-[var(--theme-primary)]" />
-        <span className="text-[var(--theme-primary)] text-sm tracking-[0.3em] uppercase font-light">{subtitle}</span>
+        <span className="text-[var(--theme-primary)] text-sm tracking-[0.3em] uppercase font-light">
+          {subtitle}
+        </span>
         <div className="h-px w-12 bg-gradient-to-l from-transparent to-[var(--theme-primary)]" />
       </div>
       <h1 className="text-3xl md:text-4xl font-bold text-white">{title}</h1>
@@ -101,7 +114,11 @@ const DESTINATIONS = [
 ];
 
 /* ─── Main Component ─── */
-export default function MarketingGenerator({ config }: { config: GeneratorConfig }) {
+export default function MarketingGenerator({
+  config,
+}: {
+  config: GeneratorConfig;
+}) {
   const { isAuthenticated, user } = useAuth();
   const [prompt, setPrompt] = useState("");
   const [platform, setPlatform] = useState(config.platforms?.[0]?.value || "");
@@ -123,7 +140,7 @@ export default function MarketingGenerator({ config }: { config: GeneratorConfig
 
   const historyQuery = trpc.marketing.listContent.useQuery(
     { type: config.type, limit: 10 },
-    { enabled: isAuthenticated }
+    { enabled: isAuthenticated },
   );
 
   const toggleFavoriteMutation = trpc.marketing.toggleFavorite.useMutation({
@@ -150,7 +167,15 @@ export default function MarketingGenerator({ config }: { config: GeneratorConfig
       tone,
       destination: destination || undefined,
     });
-  }, [prompt, platform, tone, language, destination, config.type, generateMutation]);
+  }, [
+    prompt,
+    platform,
+    tone,
+    language,
+    destination,
+    config.type,
+    generateMutation,
+  ]);
 
   const handleCopy = useCallback((text: string) => {
     navigator.clipboard.writeText(text);
@@ -168,7 +193,9 @@ export default function MarketingGenerator({ config }: { config: GeneratorConfig
         <Navbar />
         <div className="pt-32 pb-20 text-center">
           <h1 className="text-3xl font-bold text-white mb-4">Login Required</h1>
-          <p className="text-gray-400 mb-8">Please login to use the marketing tools.</p>
+          <p className="text-gray-400 mb-8">
+            Please login to use the marketing tools.
+          </p>
           <a
             href={getLoginUrl()}
             className="px-8 py-3 bg-gradient-to-r from-[var(--theme-primary)] to-[#B8922D] text-black font-bold rounded-lg"
@@ -209,7 +236,9 @@ export default function MarketingGenerator({ config }: { config: GeneratorConfig
                 {/* Platform selector */}
                 {config.platforms && config.platforms.length > 0 && (
                   <div className="mb-4">
-                    <label className="text-gray-400 text-sm mb-2 block">Platform</label>
+                    <label className="text-gray-400 text-sm mb-2 block">
+                      Platform
+                    </label>
                     <div className="grid grid-cols-2 gap-2">
                       {config.platforms.map((p) => (
                         <button
@@ -240,7 +269,9 @@ export default function MarketingGenerator({ config }: { config: GeneratorConfig
                       focus:border-[var(--theme-primary)] focus:outline-none"
                   >
                     {(config.tones || DEFAULT_TONES).map((t) => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -257,7 +288,9 @@ export default function MarketingGenerator({ config }: { config: GeneratorConfig
                       focus:border-[var(--theme-primary)] focus:outline-none"
                   >
                     {LANGUAGES.map((l) => (
-                      <option key={l.value} value={l.value}>{l.label}</option>
+                      <option key={l.value} value={l.value}>
+                        {l.label}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -275,7 +308,9 @@ export default function MarketingGenerator({ config }: { config: GeneratorConfig
                   >
                     <option value="">Any destination</option>
                     {DESTINATIONS.map((d) => (
-                      <option key={d} value={d}>{d}</option>
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -350,8 +385,12 @@ export default function MarketingGenerator({ config }: { config: GeneratorConfig
                         <div className="w-16 h-16 border-2 border-[var(--theme-primary)]/20 rounded-full animate-spin" />
                         <div className="absolute inset-0 w-16 h-16 border-2 border-transparent border-t-[var(--theme-primary)] rounded-full animate-spin" />
                       </div>
-                      <p className="text-gray-400 mt-6 text-sm">AI is crafting your content...</p>
-                      <p className="text-gray-600 mt-1 text-xs">This usually takes 5-15 seconds</p>
+                      <p className="text-gray-400 mt-6 text-sm">
+                        AI is crafting your content...
+                      </p>
+                      <p className="text-gray-600 mt-1 text-xs">
+                        This usually takes 5-15 seconds
+                      </p>
                     </div>
                   </motion.div>
                 )}
@@ -367,7 +406,9 @@ export default function MarketingGenerator({ config }: { config: GeneratorConfig
                     {/* Result Header */}
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <h3 className="text-white font-semibold text-lg">{result.title}</h3>
+                        <h3 className="text-white font-semibold text-lg">
+                          {result.title}
+                        </h3>
                         <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
                           {result.platform && (
                             <span className="px-2 py-0.5 rounded-full bg-[var(--theme-primary)]/10 text-[var(--theme-primary)]">
@@ -376,12 +417,14 @@ export default function MarketingGenerator({ config }: { config: GeneratorConfig
                           )}
                           {result.metadata?.wordCount && (
                             <span className="flex items-center gap-1">
-                              <FileText className="w-3 h-3" /> {result.metadata.wordCount} words
+                              <FileText className="w-3 h-3" />{" "}
+                              {result.metadata.wordCount} words
                             </span>
                           )}
                           {result.metadata?.readingTime && (
                             <span className="flex items-center gap-1">
-                              <Clock className="w-3 h-3" /> {result.metadata.readingTime} min read
+                              <Clock className="w-3 h-3" />{" "}
+                              {result.metadata.readingTime} min read
                             </span>
                           )}
                         </div>
@@ -393,7 +436,11 @@ export default function MarketingGenerator({ config }: { config: GeneratorConfig
                             hover:text-[var(--theme-primary)] hover:border-[var(--theme-primary)]/30 transition-colors"
                           title="Copy to clipboard"
                         >
-                          {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                          {copied ? (
+                            <Check className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
                         </button>
                         <button
                           onClick={() => {
@@ -421,9 +468,17 @@ export default function MarketingGenerator({ config }: { config: GeneratorConfig
                       <div className="mb-4">
                         <div className="flex items-center gap-2 mb-2">
                           <Hash className="w-4 h-4 text-[var(--theme-primary)]" />
-                          <span className="text-sm text-gray-400">Hashtags</span>
+                          <span className="text-sm text-gray-400">
+                            Hashtags
+                          </span>
                           <button
-                            onClick={() => handleCopy(result.hashtags.map((h: string) => `#${h}`).join(" "))}
+                            onClick={() =>
+                              handleCopy(
+                                result.hashtags
+                                  .map((h: string) => `#${h}`)
+                                  .join(" "),
+                              )
+                            }
                             className="text-xs text-[var(--theme-primary)] hover:underline ml-auto"
                           >
                             Copy all
@@ -448,17 +503,26 @@ export default function MarketingGenerator({ config }: { config: GeneratorConfig
                     {result.metadata?.seoScore > 0 && (
                       <div className="flex items-center gap-2 p-3 bg-[var(--theme-background)] rounded-lg border border-[#1a1a1a]">
                         <Star className="w-4 h-4 text-[var(--theme-primary)]" />
-                        <span className="text-sm text-gray-400">SEO Score:</span>
+                        <span className="text-sm text-gray-400">
+                          SEO Score:
+                        </span>
                         <div className="flex-1 h-2 bg-[#1a1a1a] rounded-full overflow-hidden">
                           <div
                             className="h-full rounded-full transition-all duration-500"
                             style={{
                               width: `${result.metadata.seoScore}%`,
-                              backgroundColor: result.metadata.seoScore > 70 ? "#4ade80" : result.metadata.seoScore > 40 ? "#D4A853" : "#ef4444",
+                              backgroundColor:
+                                result.metadata.seoScore > 70
+                                  ? "#4ade80"
+                                  : result.metadata.seoScore > 40
+                                    ? "#D4A853"
+                                    : "#ef4444",
                             }}
                           />
                         </div>
-                        <span className="text-sm font-bold text-white">{result.metadata.seoScore}/100</span>
+                        <span className="text-sm font-bold text-white">
+                          {result.metadata.seoScore}/100
+                        </span>
                       </div>
                     )}
                   </motion.div>
@@ -471,10 +535,12 @@ export default function MarketingGenerator({ config }: { config: GeneratorConfig
                   <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-[var(--theme-primary)]/10 border border-[var(--theme-primary)]/20 flex items-center justify-center">
                     <Sparkles className="w-8 h-8 text-[var(--theme-primary)]" />
                   </div>
-                  <h3 className="text-white font-semibold text-lg mb-2">Ready to Create</h3>
+                  <h3 className="text-white font-semibold text-lg mb-2">
+                    Ready to Create
+                  </h3>
                   <p className="text-gray-500 text-sm max-w-md mx-auto">
-                    Configure your settings on the left, enter a prompt, and click Generate to create
-                    AI-powered marketing content.
+                    Configure your settings on the left, enter a prompt, and
+                    click Generate to create AI-powered marketing content.
                   </p>
                 </div>
               )}
@@ -486,7 +552,9 @@ export default function MarketingGenerator({ config }: { config: GeneratorConfig
               >
                 <Clock className="w-4 h-4" />
                 Previous Generations ({historyQuery.data?.total || 0})
-                <ChevronDown className={`w-4 h-4 transition-transform ${showHistory ? "rotate-180" : ""}`} />
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${showHistory ? "rotate-180" : ""}`}
+                />
               </button>
 
               {/* History List */}
@@ -510,12 +578,20 @@ export default function MarketingGenerator({ config }: { config: GeneratorConfig
                         >
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex-1 min-w-0">
-                              <h4 className="text-white text-sm font-medium truncate">{item.title}</h4>
+                              <h4 className="text-white text-sm font-medium truncate">
+                                {item.title}
+                              </h4>
                               <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
                                 {item.platform && (
-                                  <span className="px-1.5 py-0.5 rounded bg-[#1a1a1a]">{item.platform}</span>
+                                  <span className="px-1.5 py-0.5 rounded bg-[#1a1a1a]">
+                                    {item.platform}
+                                  </span>
                                 )}
-                                <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                                <span>
+                                  {new Date(
+                                    item.createdAt,
+                                  ).toLocaleDateString()}
+                                </span>
                               </div>
                             </div>
                             <div className="flex items-center gap-1 ml-2">
@@ -526,12 +602,23 @@ export default function MarketingGenerator({ config }: { config: GeneratorConfig
                                 <Copy className="w-3.5 h-3.5" />
                               </button>
                               <button
-                                onClick={() => toggleFavoriteMutation.mutate({ id: item.id })}
+                                onClick={() =>
+                                  toggleFavoriteMutation.mutate({ id: item.id })
+                                }
                                 className={`p-1.5 rounded transition-colors ${
-                                  item.isFavorite === "yes" ? "text-red-500" : "text-gray-500 hover:text-red-400"
+                                  item.isFavorite === "yes"
+                                    ? "text-red-500"
+                                    : "text-gray-500 hover:text-red-400"
                                 }`}
                               >
-                                <Heart className="w-3.5 h-3.5" fill={item.isFavorite === "yes" ? "currentColor" : "none"} />
+                                <Heart
+                                  className="w-3.5 h-3.5"
+                                  fill={
+                                    item.isFavorite === "yes"
+                                      ? "currentColor"
+                                      : "none"
+                                  }
+                                />
                               </button>
                               <button
                                 onClick={() => {
@@ -545,7 +632,9 @@ export default function MarketingGenerator({ config }: { config: GeneratorConfig
                               </button>
                             </div>
                           </div>
-                          <p className="text-gray-400 text-xs line-clamp-3">{item.content}</p>
+                          <p className="text-gray-400 text-xs line-clamp-3">
+                            {item.content}
+                          </p>
                         </div>
                       ))
                     )}

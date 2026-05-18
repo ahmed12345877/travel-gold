@@ -58,29 +58,104 @@ import { Button } from "./ui/button";
 
 const adminMenuItems = [
   { icon: LayoutDashboard, label: "Overview", path: "/admin", group: "main" },
-  { icon: BarChart3, label: "Analytics", path: "/admin/analytics", group: "main" },
-  { icon: MapPin, label: "Destinations", path: "/admin/destinations", group: "content" },
+  {
+    icon: BarChart3,
+    label: "Analytics",
+    path: "/admin/analytics",
+    group: "main",
+  },
+  {
+    icon: MapPin,
+    label: "Destinations",
+    path: "/admin/destinations",
+    group: "content",
+  },
   { icon: Tag, label: "Offers", path: "/admin/offers", group: "content" },
   { icon: BookOpen, label: "Blog", path: "/admin/blog", group: "content" },
-  { icon: Compass, label: "Activities", path: "/admin/activities", group: "content" },
+  {
+    icon: Compass,
+    label: "Activities",
+    path: "/admin/activities",
+    group: "content",
+  },
   { icon: Image, label: "Gallery", path: "/admin/gallery", group: "content" },
   { icon: Star, label: "Reviews", path: "/admin/reviews", group: "content" },
-  { icon: CalendarCheck, label: "Bookings", path: "/admin/bookings", group: "operations" },
-  { icon: MessageSquare, label: "Messages", path: "/admin/messages", group: "operations" },
+  {
+    icon: CalendarCheck,
+    label: "Bookings",
+    path: "/admin/bookings",
+    group: "operations",
+  },
+  {
+    icon: MessageSquare,
+    label: "Messages",
+    path: "/admin/messages",
+    group: "operations",
+  },
   { icon: Users, label: "Users", path: "/admin/users", group: "operations" },
-  { icon: Coins, label: "Credits", path: "/admin/credits", group: "operations" },
-  { icon: PanelTop, label: "Hero Section", path: "/admin/hero", group: "design" },
+  {
+    icon: Coins,
+    label: "Credits",
+    path: "/admin/credits",
+    group: "operations",
+  },
+  {
+    icon: PanelTop,
+    label: "Hero Section",
+    path: "/admin/hero",
+    group: "design",
+  },
   { icon: Navigation, label: "Navbar", path: "/admin/navbar", group: "design" },
   { icon: FileStack, label: "Pages", path: "/admin/pages", group: "design" },
-  { icon: Palette, label: "Theme & Colors", path: "/admin/theme", group: "design" },
-  { icon: Brain, label: "AI Command Center", path: "/admin/ai-command", group: "tools" },
-  { icon: Sparkles, label: "AI Studio", path: "/admin/ai-studio", group: "tools" },
+  {
+    icon: Palette,
+    label: "Theme & Colors",
+    path: "/admin/theme",
+    group: "design",
+  },
+  {
+    icon: Brain,
+    label: "AI Command Center",
+    path: "/admin/ai-command",
+    group: "tools",
+  },
+  {
+    icon: Sparkles,
+    label: "AI Studio",
+    path: "/admin/ai-studio",
+    group: "tools",
+  },
   { icon: Globe, label: "SEO Management", path: "/admin/seo", group: "tools" },
-  { icon: FolderOpen, label: "Media Library", path: "/admin/media", group: "tools" },
-  { icon: Settings, label: "Settings", path: "/admin/settings", group: "system" },
-  { icon: ShieldCheck, label: "Permissions", path: "/admin/permissions", group: "system" },
-  { icon: FileText, label: "Audit Log", path: "/admin/audit-log", group: "system" },
-  { icon: HardDrive, label: "Backup & Export", path: "/admin/backup", group: "system" },
+  {
+    icon: FolderOpen,
+    label: "Media Library",
+    path: "/admin/media",
+    group: "tools",
+  },
+  {
+    icon: Settings,
+    label: "Settings",
+    path: "/admin/settings",
+    group: "system",
+  },
+  {
+    icon: ShieldCheck,
+    label: "Permissions",
+    path: "/admin/permissions",
+    group: "system",
+  },
+  {
+    icon: FileText,
+    label: "Audit Log",
+    path: "/admin/audit-log",
+    group: "system",
+  },
+  {
+    icon: HardDrive,
+    label: "Backup & Export",
+    path: "/admin/backup",
+    group: "system",
+  },
 ];
 
 const SIDEBAR_WIDTH_KEY = "admin-sidebar-width";
@@ -119,7 +194,8 @@ export default function AdminLayout({
               Admin Access Required
             </h1>
             <p className="text-sm text-white/50 font-[var(--font-body)] text-center max-w-sm">
-              Sign in with your admin account to access the management dashboard.
+              Sign in with your admin account to access the management
+              dashboard.
             </p>
           </div>
           <Button
@@ -208,8 +284,7 @@ function AdminLayoutContent({
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing) return;
-      const sidebarLeft =
-        sidebarRef.current?.getBoundingClientRect().left ?? 0;
+      const sidebarLeft = sidebarRef.current?.getBoundingClientRect().left ?? 0;
       const newWidth = e.clientX - sidebarLeft;
       if (newWidth >= MIN_WIDTH && newWidth <= MAX_WIDTH) {
         setSidebarWidth(newWidth);
@@ -254,7 +329,10 @@ function AdminLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <Crown size={16} className="text-[var(--theme-primary)] shrink-0" />
+                  <Crown
+                    size={16}
+                    className="text-[var(--theme-primary)] shrink-0"
+                  />
                   <span className="font-[var(--font-display)] font-semibold text-white tracking-tight truncate text-sm">
                     Admin Panel
                   </span>
@@ -274,16 +352,20 @@ function AdminLayoutContent({
                   { key: "tools", label: "Tools" },
                   { key: "system", label: "System" },
                 ];
-                return groups.map(group => {
-                  const items = adminMenuItems.filter(i => i.group === group.key);
+                return groups.map((group) => {
+                  const items = adminMenuItems.filter(
+                    (i) => i.group === group.key,
+                  );
                   if (items.length === 0) return null;
                   return (
                     <div key={group.key}>
                       {group.label && !isCollapsed && (
-                        <p className="text-[10px] uppercase tracking-wider text-white/20 font-semibold px-3 pt-4 pb-1">{group.label}</p>
+                        <p className="text-[10px] uppercase tracking-wider text-white/20 font-semibold px-3 pt-4 pb-1">
+                          {group.label}
+                        </p>
                       )}
                       {group.label && isCollapsed && <div className="h-2" />}
-                      {items.map(item => {
+                      {items.map((item) => {
                         const isActive = location === item.path;
                         return (
                           <SidebarMenuItem key={item.path}>
@@ -310,7 +392,6 @@ function AdminLayoutContent({
                 });
               })()}
             </SidebarMenu>
-
           </SidebarContent>
 
           <SidebarFooter className="p-3 border-t border-white/5 bg-[var(--theme-surface)]">
@@ -345,7 +426,10 @@ function AdminLayoutContent({
                   </div>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 bg-[var(--theme-surface)] border-white/10">
+              <DropdownMenuContent
+                align="end"
+                className="w-48 bg-[var(--theme-surface)] border-white/10"
+              >
                 <DropdownMenuItem
                   onClick={logout}
                   className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10"

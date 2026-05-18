@@ -2,8 +2,16 @@ import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
 import { getDb } from "../db";
 import {
-  destinations, offers, blogPosts, bookings, users, galleryItems,
-  reviews, siteSettings, contactMessages, marketingContent,
+  destinations,
+  offers,
+  blogPosts,
+  bookings,
+  users,
+  galleryItems,
+  reviews,
+  siteSettings,
+  contactMessages,
+  marketingContent,
 } from "../../drizzle/schema";
 import { sql } from "drizzle-orm";
 
@@ -33,10 +41,12 @@ export const backupRouter = router({
     const db = await getDb();
     if (!db) return [];
 
-    const sections = [];
+    const sections: { id: string; label: string; recordCount: number }[] = [];
     for (const [id, { table, label }] of Object.entries(TABLE_MAP)) {
       try {
-        const [result] = await db.select({ count: sql<number>`count(*)` }).from(table);
+        const [result] = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(table);
         sections.push({
           id,
           label,
@@ -53,15 +63,20 @@ export const backupRouter = router({
    * Export selected sections as JSON data
    */
   exportData: protectedProcedure
-    .input(z.object({
-      sections: z.array(z.string()),
-      format: z.enum(["json", "csv"]).default("json"),
-    }))
+    .input(
+      z.object({
+        sections: z.array(z.string()),
+        format: z.enum(["json", "csv"]).default("json"),
+      }),
+    )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      const exportResult: Record<string, { label: string; recordCount: number; data: any[] }> = {};
+      const exportResult: Record<
+        string,
+        { label: string; recordCount: number; data: any[] }
+      > = {};
 
       for (const sectionId of input.sections) {
         const mapping = TABLE_MAP[sectionId];
@@ -86,7 +101,10 @@ export const backupRouter = router({
       return {
         exportedAt: new Date().toISOString(),
         format: input.format,
-        totalRecords: Object.values(exportResult).reduce((sum, s) => sum + s.recordCount, 0),
+        totalRecords: Object.values(exportResult).reduce(
+          (sum, s) => sum + s.recordCount,
+          0,
+        ),
         sections: exportResult,
       };
     }),
@@ -97,9 +115,10 @@ export const backupRouter = router({
   getSettings: protectedProcedure.query(async () => {
     const db = await getDb();
     if (!db) return {};
-    const results = await db.select().from(siteSettings).where(
-      sql`${siteSettings.category} = 'backup'`
-    );
+    const results = await db
+      .select()
+      .from(siteSettings)
+      .where(sql`${siteSettings.category} = 'backup'`);
     const settings: Record<string, string> = {};
     for (const row of results) {
       settings[row.settingKey] = row.settingValue ?? "";
@@ -111,19 +130,27 @@ export const backupRouter = router({
    * Restore data from backup file
    */
   restoreData: protectedProcedure
-    .input(z.object({
-      sections: z.record(z.string(), z.object({
-        label: z.string(),
-        recordCount: z.number(),
-        data: z.array(z.any()),
-      })),
-      mode: z.enum(["merge", "replace"]).default("merge"),
-    }))
+    .input(
+      z.object({
+        sections: z.record(
+          z.string(),
+          z.object({
+            label: z.string(),
+            recordCount: z.number(),
+            data: z.array(z.any()),
+          }),
+        ),
+        mode: z.enum(["merge", "replace"]).default("merge"),
+      }),
+    )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      const results: Record<string, { restored: number; skipped: number; errors: number }> = {};
+      const results: Record<
+        string,
+        { restored: number; skipped: number; errors: number }
+      > = {};
 
       for (const [sectionId, section] of Object.entries(input.sections)) {
         const mapping = TABLE_MAP[sectionId];
@@ -148,12 +175,15 @@ export const backupRouter = router({
               // Remove auto-generated fields that might conflict
               const cleanRow = { ...row };
               delete cleanRow.id; // Let DB auto-generate IDs
-              
+
               await db.insert(mapping.table).values(cleanRow);
               restored++;
             } catch (e: any) {
               // Duplicate key or constraint violation - skip
-              if (e?.code === 'ER_DUP_ENTRY' || e?.message?.includes('Duplicate')) {
+              if (
+                e?.code === "ER_DUP_ENTRY" ||
+                e?.message?.includes("Duplicate")
+              ) {
                 skipped++;
               } else {
                 errors++;
@@ -167,9 +197,18 @@ export const backupRouter = router({
         results[sectionId] = { restored, skipped, errors };
       }
 
-      const totalRestored = Object.values(results).reduce((s, r) => s + r.restored, 0);
-      const totalSkipped = Object.values(results).reduce((s, r) => s + r.skipped, 0);
-      const totalErrors = Object.values(results).reduce((s, r) => s + r.errors, 0);
+      const totalRestored = Object.values(results).reduce(
+        (s, r) => s + r.restored,
+        0,
+      );
+      const totalSkipped = Object.values(results).reduce(
+        (s, r) => s + r.skipped,
+        0,
+      );
+      const totalErrors = Object.values(results).reduce(
+        (s, r) => s + r.errors,
+        0,
+      );
 
       return {
         success: true,
@@ -185,20 +224,27 @@ export const backupRouter = router({
    * Save backup settings
    */
   saveSettings: protectedProcedure
-    .input(z.object({
-      settings: z.record(z.string(), z.string()),
-    }))
+    .input(
+      z.object({
+        settings: z.record(z.string(), z.string()),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
       for (const [key, value] of Object.entries(input.settings)) {
-        const existing = await db.select().from(siteSettings).where(
-          sql`${siteSettings.category} = 'backup' AND ${siteSettings.settingKey} = ${key}`
-        ).limit(1);
+        const existing = await db
+          .select()
+          .from(siteSettings)
+          .where(
+            sql`${siteSettings.category} = 'backup' AND ${siteSettings.settingKey} = ${key}`,
+          )
+          .limit(1);
 
         if (existing.length > 0) {
-          await db.update(siteSettings)
+          await db
+            .update(siteSettings)
             .set({ settingValue: value, updatedBy: ctx.user.id })
             .where(sql`${siteSettings.id} = ${existing[0].id}`);
         } else {

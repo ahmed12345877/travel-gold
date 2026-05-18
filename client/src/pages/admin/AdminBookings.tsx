@@ -88,7 +88,10 @@ export default function AdminBookings() {
         <div className="h-12 bg-[var(--theme-surface)] rounded-lg border border-white/5" />
         <div className="space-y-2">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-16 bg-[var(--theme-surface)] rounded-lg border border-white/5" />
+            <div
+              key={i}
+              className="h-16 bg-[var(--theme-surface)] rounded-lg border border-white/5"
+            />
           ))}
         </div>
       </div>
@@ -110,7 +113,10 @@ export default function AdminBookings() {
       {/* Search & Filter Bar */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-primary)]/50" />
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-primary)]/50"
+          />
           <input
             type="text"
             placeholder="Search by code, name, email, or package..."
@@ -120,19 +126,23 @@ export default function AdminBookings() {
           />
         </div>
         <div className="flex gap-2">
-          {["all", "pending", "confirmed", "completed", "cancelled"].map((status) => (
-            <button
-              key={status}
-              onClick={() => setFilterStatus(status)}
-              className={`px-3 py-2 text-xs font-[var(--font-body)] font-medium rounded-lg border transition-all ${
-                filterStatus === status
-                  ? "bg-[var(--theme-primary)]/20 border-[var(--theme-primary)]/40 text-[var(--theme-primary)]"
-                  : "bg-[var(--theme-surface)] border-white/5 text-white/50 hover:border-[var(--theme-primary)]/30"
-              }`}
-            >
-              {status === "all" ? "All" : status.charAt(0).toUpperCase() + status.slice(1)}
-            </button>
-          ))}
+          {["all", "pending", "confirmed", "completed", "cancelled"].map(
+            (status) => (
+              <button
+                key={status}
+                onClick={() => setFilterStatus(status)}
+                className={`px-3 py-2 text-xs font-[var(--font-body)] font-medium rounded-lg border transition-all ${
+                  filterStatus === status
+                    ? "bg-[var(--theme-primary)]/20 border-[var(--theme-primary)]/40 text-[var(--theme-primary)]"
+                    : "bg-[var(--theme-surface)] border-white/5 text-white/50 hover:border-[var(--theme-primary)]/30"
+                }`}
+              >
+                {status === "all"
+                  ? "All"
+                  : status.charAt(0).toUpperCase() + status.slice(1)}
+              </button>
+            ),
+          )}
         </div>
       </div>
 
@@ -143,14 +153,30 @@ export default function AdminBookings() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/5 bg-[var(--theme-surface)]/50">
-                  <th className="text-left text-white/50 font-[var(--font-body)] font-medium py-3 px-4">Code</th>
-                  <th className="text-left text-white/50 font-[var(--font-body)] font-medium py-3 px-4">Package</th>
-                  <th className="text-left text-white/50 font-[var(--font-body)] font-medium py-3 px-4">Guest</th>
-                  <th className="text-left text-white/50 font-[var(--font-body)] font-medium py-3 px-4">Date</th>
-                  <th className="text-left text-white/50 font-[var(--font-body)] font-medium py-3 px-4">Status</th>
-                  <th className="text-left text-white/50 font-[var(--font-body)] font-medium py-3 px-4">Payment</th>
-                  <th className="text-right text-white/50 font-[var(--font-body)] font-medium py-3 px-4">Price</th>
-                  <th className="text-center text-white/50 font-[var(--font-body)] font-medium py-3 px-4">Actions</th>
+                  <th className="text-left text-white/50 font-[var(--font-body)] font-medium py-3 px-4">
+                    Code
+                  </th>
+                  <th className="text-left text-white/50 font-[var(--font-body)] font-medium py-3 px-4">
+                    Package
+                  </th>
+                  <th className="text-left text-white/50 font-[var(--font-body)] font-medium py-3 px-4">
+                    Guest
+                  </th>
+                  <th className="text-left text-white/50 font-[var(--font-body)] font-medium py-3 px-4">
+                    Date
+                  </th>
+                  <th className="text-left text-white/50 font-[var(--font-body)] font-medium py-3 px-4">
+                    Status
+                  </th>
+                  <th className="text-left text-white/50 font-[var(--font-body)] font-medium py-3 px-4">
+                    Payment
+                  </th>
+                  <th className="text-right text-white/50 font-[var(--font-body)] font-medium py-3 px-4">
+                    Price
+                  </th>
+                  <th className="text-center text-white/50 font-[var(--font-body)] font-medium py-3 px-4">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -164,7 +190,9 @@ export default function AdminBookings() {
                     </td>
                     <td className="py-3 px-4">
                       <div>
-                        <p className="text-white/80 font-[var(--font-body)] text-sm">{booking.packageName}</p>
+                        <p className="text-white/80 font-[var(--font-body)] text-sm">
+                          {booking.packageName}
+                        </p>
                         {booking.destination && (
                           <p className="text-white/40 text-xs flex items-center gap-1 mt-0.5">
                             <MapPin size={10} /> {booking.destination}
@@ -174,9 +202,13 @@ export default function AdminBookings() {
                     </td>
                     <td className="py-3 px-4">
                       <div>
-                        <p className="text-white/80 font-[var(--font-body)] text-sm">{booking.guestName || "N/A"}</p>
+                        <p className="text-white/80 font-[var(--font-body)] text-sm">
+                          {booking.guestName || "N/A"}
+                        </p>
                         {booking.guestEmail && (
-                          <p className="text-white/40 text-xs mt-0.5">{booking.guestEmail}</p>
+                          <p className="text-white/40 text-xs mt-0.5">
+                            {booking.guestEmail}
+                          </p>
                         )}
                       </div>
                     </td>
@@ -189,10 +221,14 @@ export default function AdminBookings() {
                       <StatusBadge status={booking.status} />
                     </td>
                     <td className="py-3 px-4">
-                      <StatusBadge status={booking.paymentStatus || "pending"} />
+                      <StatusBadge
+                        status={booking.paymentStatus || "pending"}
+                      />
                     </td>
                     <td className="py-3 px-4 text-right text-white font-[var(--font-body)] font-medium">
-                      {booking.totalPrice ? `$${parseFloat(booking.totalPrice).toLocaleString()}` : "—"}
+                      {booking.totalPrice
+                        ? `$${parseFloat(booking.totalPrice).toLocaleString()}`
+                        : "—"}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <button
@@ -210,9 +246,14 @@ export default function AdminBookings() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <CalendarCheck size={40} className="text-[var(--theme-primary)]/20 mx-auto mb-3" />
+            <CalendarCheck
+              size={40}
+              className="text-[var(--theme-primary)]/20 mx-auto mb-3"
+            />
             <p className="text-white/40 text-sm font-[var(--font-body)]">
-              {searchTerm || filterStatus !== "all" ? "No bookings match your filters" : "No bookings yet"}
+              {searchTerm || filterStatus !== "all"
+                ? "No bookings match your filters"
+                : "No bookings yet"}
             </p>
           </div>
         )}
@@ -255,13 +296,18 @@ export default function AdminBookings() {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-white/40 text-xs">Package</p>
-                    <p className="text-white font-[var(--font-body)]">{selectedBooking.packageName}</p>
+                    <p className="text-white font-[var(--font-body)]">
+                      {selectedBooking.packageName}
+                    </p>
                   </div>
                   {selectedBooking.destination && (
                     <div>
                       <p className="text-white/40 text-xs">Destination</p>
                       <p className="text-white font-[var(--font-body)] flex items-center gap-1">
-                        <MapPin size={12} className="text-[var(--theme-primary)]" />
+                        <MapPin
+                          size={12}
+                          className="text-[var(--theme-primary)]"
+                        />
                         {selectedBooking.destination}
                       </p>
                     </div>
@@ -269,15 +315,21 @@ export default function AdminBookings() {
                   <div>
                     <p className="text-white/40 text-xs">Guests</p>
                     <p className="text-white font-[var(--font-body)] flex items-center gap-1">
-                      <Users size={12} className="text-[var(--theme-primary)]" />
+                      <Users
+                        size={12}
+                        className="text-[var(--theme-primary)]"
+                      />
                       {selectedBooking.adults} Adults
-                      {selectedBooking.children > 0 && `, ${selectedBooking.children} Children`}
+                      {selectedBooking.children > 0 &&
+                        `, ${selectedBooking.children} Children`}
                     </p>
                   </div>
                   {selectedBooking.roomType && (
                     <div>
                       <p className="text-white/40 text-xs">Room Type</p>
-                      <p className="text-white font-[var(--font-body)] capitalize">{selectedBooking.roomType}</p>
+                      <p className="text-white font-[var(--font-body)] capitalize">
+                        {selectedBooking.roomType}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -307,7 +359,10 @@ export default function AdminBookings() {
                     <div>
                       <p className="text-white/40 text-xs">Phone</p>
                       <p className="text-white font-[var(--font-body)] flex items-center gap-1">
-                        <Phone size={12} className="text-[var(--theme-primary)]" />
+                        <Phone
+                          size={12}
+                          className="text-[var(--theme-primary)]"
+                        />
                         {selectedBooking.guestPhone}
                       </p>
                     </div>
@@ -324,7 +379,10 @@ export default function AdminBookings() {
                   <div>
                     <p className="text-white/40 text-xs">Total Price</p>
                     <p className="text-white font-[var(--font-body)] font-bold flex items-center gap-1">
-                      <DollarSign size={12} className="text-[var(--theme-primary)]" />
+                      <DollarSign
+                        size={12}
+                        className="text-[var(--theme-primary)]"
+                      />
                       {selectedBooking.totalPrice
                         ? `${parseFloat(selectedBooking.totalPrice).toLocaleString()} ${selectedBooking.currency || "USD"}`
                         : "N/A"}
@@ -333,8 +391,12 @@ export default function AdminBookings() {
                   <div>
                     <p className="text-white/40 text-xs">Payment Method</p>
                     <p className="text-white font-[var(--font-body)] flex items-center gap-1">
-                      <CreditCard size={12} className="text-[var(--theme-primary)]" />
-                      {selectedBooking.paymentMethod?.replace("_", " ") || "N/A"}
+                      <CreditCard
+                        size={12}
+                        className="text-[var(--theme-primary)]"
+                      />
+                      {selectedBooking.paymentMethod?.replace("_", " ") ||
+                        "N/A"}
                     </p>
                   </div>
                 </div>
@@ -355,54 +417,74 @@ export default function AdminBookings() {
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-3 pt-2">
                 <div>
-                  <p className="text-white/40 text-xs font-[var(--font-body)] mb-2">Update Booking Status</p>
+                  <p className="text-white/40 text-xs font-[var(--font-body)] mb-2">
+                    Update Booking Status
+                  </p>
                   <div className="flex gap-2">
-                    {(["pending", "confirmed", "completed", "cancelled"] as BookingStatus[]).map(
-                      (status) => (
-                        <button
-                          key={status}
-                          onClick={() => {
-                            updateStatusMutation.mutate({ id: selectedBooking.id, status });
-                            setSelectedBooking({ ...selectedBooking, status });
-                          }}
-                          disabled={selectedBooking.status === status}
-                          className={`px-3 py-1.5 text-xs font-[var(--font-body)] font-medium rounded-lg border transition-all disabled:opacity-30 disabled:cursor-not-allowed ${
-                            selectedBooking.status === status
-                              ? "bg-[var(--theme-primary)]/20 border-[var(--theme-primary)]/40 text-[var(--theme-primary)]"
-                              : "bg-[var(--theme-surface)] border-white/5 text-white/60 hover:border-[var(--theme-primary)]/30 hover:text-white"
-                          }`}
-                        >
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
-                        </button>
-                      )
-                    )}
+                    {(
+                      [
+                        "pending",
+                        "confirmed",
+                        "completed",
+                        "cancelled",
+                      ] as BookingStatus[]
+                    ).map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => {
+                          updateStatusMutation.mutate({
+                            id: selectedBooking.id,
+                            status,
+                          });
+                          setSelectedBooking({ ...selectedBooking, status });
+                        }}
+                        disabled={selectedBooking.status === status}
+                        className={`px-3 py-1.5 text-xs font-[var(--font-body)] font-medium rounded-lg border transition-all disabled:opacity-30 disabled:cursor-not-allowed ${
+                          selectedBooking.status === status
+                            ? "bg-[var(--theme-primary)]/20 border-[var(--theme-primary)]/40 text-[var(--theme-primary)]"
+                            : "bg-[var(--theme-surface)] border-white/5 text-white/60 hover:border-[var(--theme-primary)]/30 hover:text-white"
+                        }`}
+                      >
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                      </button>
+                    ))}
                   </div>
                 </div>
                 <div>
-                  <p className="text-white/40 text-xs font-[var(--font-body)] mb-2">Update Payment Status</p>
+                  <p className="text-white/40 text-xs font-[var(--font-body)] mb-2">
+                    Update Payment Status
+                  </p>
                   <div className="flex gap-2">
-                    {(["pending", "paid", "failed", "refunded"] as PaymentStatus[]).map(
-                      (status) => (
-                        <button
-                          key={status}
-                          onClick={() => {
-                            updatePaymentMutation.mutate({
-                              id: selectedBooking.id,
-                              paymentStatus: status,
-                            });
-                            setSelectedBooking({ ...selectedBooking, paymentStatus: status });
-                          }}
-                          disabled={selectedBooking.paymentStatus === status}
-                          className={`px-3 py-1.5 text-xs font-[var(--font-body)] font-medium rounded-lg border transition-all disabled:opacity-30 disabled:cursor-not-allowed ${
-                            selectedBooking.paymentStatus === status
-                              ? "bg-[var(--theme-primary)]/20 border-[var(--theme-primary)]/40 text-[var(--theme-primary)]"
-                              : "bg-[var(--theme-surface)] border-white/5 text-white/60 hover:border-[var(--theme-primary)]/30 hover:text-white"
-                          }`}
-                        >
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
-                        </button>
-                      )
-                    )}
+                    {(
+                      [
+                        "pending",
+                        "paid",
+                        "failed",
+                        "refunded",
+                      ] as PaymentStatus[]
+                    ).map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => {
+                          updatePaymentMutation.mutate({
+                            id: selectedBooking.id,
+                            paymentStatus: status,
+                          });
+                          setSelectedBooking({
+                            ...selectedBooking,
+                            paymentStatus: status,
+                          });
+                        }}
+                        disabled={selectedBooking.paymentStatus === status}
+                        className={`px-3 py-1.5 text-xs font-[var(--font-body)] font-medium rounded-lg border transition-all disabled:opacity-30 disabled:cursor-not-allowed ${
+                          selectedBooking.paymentStatus === status
+                            ? "bg-[var(--theme-primary)]/20 border-[var(--theme-primary)]/40 text-[var(--theme-primary)]"
+                            : "bg-[var(--theme-surface)] border-white/5 text-white/60 hover:border-[var(--theme-primary)]/30 hover:text-white"
+                        }`}
+                      >
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>

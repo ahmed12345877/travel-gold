@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { useThemeMode } from './ThemeModeProvider';
+import { useEffect } from "react";
+import { useThemeMode } from "./ThemeModeProvider";
 
 /**
  * Inject global styles that override hardcoded colors based on theme mode
@@ -10,16 +10,16 @@ export function GlobalThemeStyleInjector() {
 
   useEffect(() => {
     // Remove old style if exists
-    const oldStyle = document.getElementById('theme-override-styles');
+    const oldStyle = document.getElementById("theme-override-styles");
     if (oldStyle) {
       oldStyle.remove();
     }
 
     // Create new style element
-    const style = document.createElement('style');
-    style.id = 'theme-override-styles';
+    const style = document.createElement("style");
+    style.id = "theme-override-styles";
 
-    if (mode === 'light') {
+    if (mode === "light") {
       // Light mode: bright backgrounds, dark text
       style.textContent = `
         :root {

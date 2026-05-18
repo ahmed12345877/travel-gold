@@ -1,4 +1,10 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 
 type ThemeMode = "light" | "dark";
 
@@ -8,7 +14,9 @@ interface ThemeModeContextType {
   setMode: (mode: ThemeMode) => void;
 }
 
-const ThemeModeContext = createContext<ThemeModeContextType | undefined>(undefined);
+const ThemeModeContext = createContext<ThemeModeContextType | undefined>(
+  undefined,
+);
 
 export function useThemeMode() {
   const context = useContext(ThemeModeContext);
@@ -34,7 +42,10 @@ function getInitialThemeMode(): ThemeMode {
   }
 
   // Check system preference
-  if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+  if (
+    window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: light)").matches
+  ) {
     return "light";
   }
 
@@ -45,19 +56,19 @@ function getInitialThemeMode(): ThemeMode {
  * Apply theme mode to DOM
  */
 function applyThemeMode(mode: ThemeMode) {
-  if (typeof document === 'undefined') return;
-  
+  if (typeof document === "undefined") return;
+
   const root = document.documentElement;
-  
+
   // Remove both classes first
   root.classList.remove("light", "dark");
-  
+
   // Add the appropriate class
   root.classList.add(mode);
-  
+
   // Also set data attribute for CSS selectors
   root.setAttribute("data-theme-mode", mode);
-  
+
   // Force a style recalculation
   void root.offsetHeight;
 }
@@ -65,7 +76,7 @@ function applyThemeMode(mode: ThemeMode) {
 export function ThemeModeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<ThemeMode>(() => {
     // Initialize immediately from localStorage or system preference
-    if (typeof window === 'undefined') return 'dark';
+    if (typeof window === "undefined") return "dark";
     return getInitialThemeMode();
   });
   const [isHydrated, setIsHydrated] = useState(false);

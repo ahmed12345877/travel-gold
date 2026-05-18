@@ -8,35 +8,50 @@ export const adminDestinationsRouter = router({
   /** List all destinations with pagination and filtering */
   list: adminProcedure
     .input(
-      z.object({
-        limit: z.number().min(1).max(100).default(20),
-        offset: z.number().min(0).default(0),
-        search: z.string().optional(),
-        sortBy: z.enum(["name", "rating", "price", "createdAt"]).default("name"),
-        sortOrder: z.enum(["asc", "desc"]).default("asc"),
-      }).optional()
+      z
+        .object({
+          limit: z.number().min(1).max(100).default(20),
+          offset: z.number().min(0).default(0),
+          search: z.string().optional(),
+          sortBy: z
+            .enum(["name", "rating", "price", "createdAt"])
+            .default("name"),
+          sortOrder: z.enum(["asc", "desc"]).default("asc"),
+        })
+        .optional(),
     )
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
-      const { limit = 20, offset = 0, search = "", sortBy = "name", sortOrder = "asc" } = input ?? {};
-      
+
+      const {
+        limit = 20,
+        offset = 0,
+        search = "",
+        sortBy = "name",
+        sortOrder = "asc",
+      } = input ?? {};
+
       let query: any = db.select().from(destinations);
-      
+
       if (search) {
         query = query.where(like(destinations.name, `%${search}%`));
       }
-      
-      const orderColumn = 
-        sortBy === "name" ? destinations.name :
-        sortBy === "rating" ? destinations.rating :
-        sortBy === "price" ? destinations.pricePerPerson :
-        destinations.createdAt;
-      
-      query = query.orderBy(sortOrder === "desc" ? desc(orderColumn) : asc(orderColumn));
+
+      const orderColumn =
+        sortBy === "name"
+          ? destinations.name
+          : sortBy === "rating"
+            ? destinations.rating
+            : sortBy === "price"
+              ? destinations.pricePerPerson
+              : destinations.createdAt;
+
+      query = query.orderBy(
+        sortOrder === "desc" ? desc(orderColumn) : asc(orderColumn),
+      );
       query = query.limit(limit).offset(offset);
-      
+
       return await query;
     }),
 
@@ -46,7 +61,7 @@ export const adminDestinationsRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
+
       const result = await db
         .select()
         .from(destinations)
@@ -71,12 +86,12 @@ export const adminDestinationsRouter = router({
         groupSize: z.string().optional(),
         inclusions: z.string().optional(),
         exclusions: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
+
       const result = await db.insert(destinations).values({
         ...input,
         isActive: "active",
@@ -103,18 +118,15 @@ export const adminDestinationsRouter = router({
         inclusions: z.string().optional(),
         exclusions: z.string().optional(),
         isActive: z.enum(["active", "inactive"]).optional(),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
+
       const { id, ...data } = input;
-      
-      await db
-        .update(destinations)
-        .set(data)
-        .where(eq(destinations.id, id));
+
+      await db.update(destinations).set(data).where(eq(destinations.id, id));
       return { success: true };
     }),
 
@@ -124,10 +136,8 @@ export const adminDestinationsRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
-      await db
-        .delete(destinations)
-        .where(eq(destinations.id, input.id));
+
+      await db.delete(destinations).where(eq(destinations.id, input.id));
       return { success: true };
     }),
 
@@ -137,20 +147,20 @@ export const adminDestinationsRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
-      await db
-        .delete(destinations)
-        .where(inArray(destinations.id, input.ids));
+
+      await db.delete(destinations).where(inArray(destinations.id, input.ids));
       return { success: true, deleted: input.ids.length };
     }),
 
   /** Update destination status (active/inactive) */
   updateStatus: adminProcedure
-    .input(z.object({ id: z.number(), isActive: z.enum(["active", "inactive"]) }))
+    .input(
+      z.object({ id: z.number(), isActive: z.enum(["active", "inactive"]) }),
+    )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
+
       await db
         .update(destinations)
         .set({
@@ -164,15 +174,31 @@ export const adminDestinationsRouter = router({
   getStats: adminProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
-    
+
     const allDestinations = await db.select().from(destinations);
-    const activeCount = allDestinations.filter((d: any) => d.isActive === "active").length;
-    const avgRating = allDestinations.length > 0 
-      ? (allDestinations.reduce((sum: number, d: any) => sum + (parseFloat(d.rating as string) || 0), 0) / allDestinations.length).toFixed(2)
-      : 0;
-    const avgPrice = allDestinations.length > 0
-      ? (allDestinations.reduce((sum: number, d: any) => sum + (parseFloat(d.pricePerPerson as string) || 0), 0) / allDestinations.length).toFixed(2)
-      : 0;
+    const activeCount = allDestinations.filter(
+      (d: any) => d.isActive === "active",
+    ).length;
+    const avgRating =
+      allDestinations.length > 0
+        ? (
+            allDestinations.reduce(
+              (sum: number, d: any) =>
+                sum + (parseFloat(d.rating as string) || 0),
+              0,
+            ) / allDestinations.length
+          ).toFixed(2)
+        : 0;
+    const avgPrice =
+      allDestinations.length > 0
+        ? (
+            allDestinations.reduce(
+              (sum: number, d: any) =>
+                sum + (parseFloat(d.pricePerPerson as string) || 0),
+              0,
+            ) / allDestinations.length
+          ).toFixed(2)
+        : 0;
 
     return {
       total: allDestinations.length,

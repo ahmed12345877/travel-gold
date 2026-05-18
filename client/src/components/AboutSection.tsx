@@ -8,14 +8,20 @@ import { ArrowRight } from "lucide-react";
 import { useInView } from "@/hooks/useInView";
 import WatermarkImage from "@/components/WatermarkImage";
 
-const ABOUT_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/about-travel-4Y8tnAxaJ7BPzwzd9c8nz7.webp";
-const COMPASS_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/adventure-compass-JPN4nXqdUC8hH7JzrSRakn.webp";
+const ABOUT_IMG =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/about-travel-4Y8tnAxaJ7BPzwzd9c8nz7.webp";
+const COMPASS_IMG =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/adventure-compass-JPN4nXqdUC8hH7JzrSRakn.webp";
 
 export default function AboutSection() {
   const { ref, inView } = useInView({ threshold: 0.2 });
 
   return (
-    <section id="about" className="py-12 sm:py-16 md:py-24 bg-[var(--theme-surface)]" ref={ref}>
+    <section
+      id="about"
+      className="py-12 sm:py-16 md:py-24 bg-[var(--theme-surface)]"
+      ref={ref}
+    >
       <div className="container">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 lg:gap-16 items-center">
           {/* Images column */}
@@ -81,10 +87,10 @@ export default function AboutSection() {
               To Adventure
             </h2>
             <p className="text-white/60 leading-relaxed mb-6 sm:mb-8 text-sm sm:text-base">
-              At VANIR GROUP, we believe in the transformative power of
-              travel. As avid explorers ourselves, we understand the desire
-              to uncover new experiences, forge meaningful connections, and
-              create lasting memories across the globe.
+              At VANIR GROUP, we believe in the transformative power of travel.
+              As avid explorers ourselves, we understand the desire to uncover
+              new experiences, forge meaningful connections, and create lasting
+              memories across the globe.
             </p>
 
             <a
@@ -92,7 +98,10 @@ export default function AboutSection() {
               className="group inline-flex items-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 bg-[var(--theme-primary)] text-[var(--theme-surface)] font-semibold text-xs sm:text-sm tracking-wide hover:bg-[var(--theme-primary-light)] transition-all duration-300"
             >
               Read More
-              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              <ArrowRight
+                size={16}
+                className="group-hover:translate-x-1 transition-transform"
+              />
             </a>
           </motion.div>
         </div>

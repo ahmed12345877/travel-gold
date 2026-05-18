@@ -26,11 +26,13 @@ export const blogRouter = router({
   // Public: List published blog posts
   list: publicProcedure
     .input(
-      z.object({
-        limit: z.number().min(1).max(50).default(10),
-        offset: z.number().min(0).default(0),
-        category: z.string().optional(),
-      }).optional()
+      z
+        .object({
+          limit: z.number().min(1).max(50).default(10),
+          offset: z.number().min(0).default(0),
+          category: z.string().optional(),
+        })
+        .optional(),
     )
     .query(async ({ input }) => {
       const { limit = 10, offset = 0, category } = input ?? {};
@@ -59,10 +61,12 @@ export const blogRouter = router({
   // Admin: List all posts (including drafts)
   adminList: adminProcedure
     .input(
-      z.object({
-        limit: z.number().min(1).max(100).default(50),
-        offset: z.number().min(0).default(0),
-      }).optional()
+      z
+        .object({
+          limit: z.number().min(1).max(100).default(50),
+          offset: z.number().min(0).default(0),
+        })
+        .optional(),
     )
     .query(async ({ input }) => {
       const { limit = 50, offset = 0 } = input ?? {};
@@ -85,7 +89,7 @@ export const blogRouter = router({
         tags: z.array(z.string()).optional(),
         status: z.enum(["draft", "published"]).default("draft"),
         readingTime: z.number().min(1).max(60).optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       return createBlogPost({
@@ -113,7 +117,7 @@ export const blogRouter = router({
         tags: z.array(z.string()).optional(),
         status: z.enum(["draft", "published", "archived"]).optional(),
         readingTime: z.number().min(1).max(60).optional(),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       const { id, ...data } = input;

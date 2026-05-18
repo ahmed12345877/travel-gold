@@ -2,8 +2,21 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit2, Trash2, Search, Calendar } from "lucide-react";
 import { trpc } from "@/lib/trpc";
@@ -27,7 +40,11 @@ export default function OffersAdmin() {
     badgeColor: "#D4A853",
   });
 
-  const { data: offers, isLoading, refetch } = trpc.admin.offers.list.useQuery({
+  const {
+    data: offers,
+    isLoading,
+    refetch,
+  } = trpc.admin.offers.list.useQuery({
     search,
     limit: 20,
   });
@@ -85,8 +102,12 @@ export default function OffersAdmin() {
       return;
     }
 
-    const startDateTimestamp = formData.startDate ? new Date(formData.startDate).getTime() : Date.now();
-    const endDateTimestamp = formData.endDate ? new Date(formData.endDate).getTime() : Date.now();
+    const startDateTimestamp = formData.startDate
+      ? new Date(formData.startDate).getTime()
+      : Date.now();
+    const endDateTimestamp = formData.endDate
+      ? new Date(formData.endDate).getTime()
+      : Date.now();
 
     if (editingId) {
       await updateMutation.mutateAsync({
@@ -94,14 +115,18 @@ export default function OffersAdmin() {
         ...formData,
         startDate: startDateTimestamp,
         endDate: endDateTimestamp,
-        totalSpots: formData.totalSpots ? parseInt(formData.totalSpots) : undefined,
+        totalSpots: formData.totalSpots
+          ? parseInt(formData.totalSpots)
+          : undefined,
       });
     } else {
       await createMutation.mutateAsync({
         ...formData,
         startDate: startDateTimestamp,
         endDate: endDateTimestamp,
-        totalSpots: formData.totalSpots ? parseInt(formData.totalSpots) : undefined,
+        totalSpots: formData.totalSpots
+          ? parseInt(formData.totalSpots)
+          : undefined,
       });
     }
   };
@@ -124,30 +149,43 @@ export default function OffersAdmin() {
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingId ? "تعديل العرض" : "إضافة عرض جديد"}</DialogTitle>
+              <DialogTitle>
+                {editingId ? "تعديل العرض" : "إضافة عرض جديد"}
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <Input
                 placeholder="عنوان العرض"
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, title: e.target.value })
+                }
               />
               <Input
                 placeholder="الوجهة"
                 value={formData.destination}
-                onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, destination: e.target.value })
+                }
               />
               <Textarea
                 placeholder="الوصف"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
               />
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm text-gray-600">نوع الخصم</label>
                   <select
                     value={formData.discountType}
-                    onChange={(e) => setFormData({ ...formData, discountType: e.target.value as "percentage" | "fixed" })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        discountType: e.target.value as "percentage" | "fixed",
+                      })
+                    }
                     className="w-full px-3 py-2 border rounded-md"
                   >
                     <option value="percentage">نسبة مئوية %</option>
@@ -158,13 +196,17 @@ export default function OffersAdmin() {
                   placeholder="قيمة الخصم"
                   type="number"
                   value={formData.discountValue}
-                  onChange={(e) => setFormData({ ...formData, discountValue: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, discountValue: e.target.value })
+                  }
                 />
               </div>
               <Input
                 placeholder="كود الترويج"
                 value={formData.promoCode}
-                onChange={(e) => setFormData({ ...formData, promoCode: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, promoCode: e.target.value })
+                }
               />
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -172,7 +214,9 @@ export default function OffersAdmin() {
                   <Input
                     type="date"
                     value={formData.startDate}
-                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, startDate: e.target.value })
+                    }
                   />
                 </div>
                 <div>
@@ -180,7 +224,9 @@ export default function OffersAdmin() {
                   <Input
                     type="date"
                     value={formData.endDate}
-                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, endDate: e.target.value })
+                    }
                   />
                 </div>
               </div>
@@ -188,25 +234,33 @@ export default function OffersAdmin() {
                 placeholder="عدد الأماكن المتاحة"
                 type="number"
                 value={formData.totalSpots}
-                onChange={(e) => setFormData({ ...formData, totalSpots: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, totalSpots: e.target.value })
+                }
               />
               <Input
                 placeholder="رابط الصورة"
                 value={formData.imageUrl}
-                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, imageUrl: e.target.value })
+                }
               />
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   placeholder="نص الشارة"
                   value={formData.badgeText}
-                  onChange={(e) => setFormData({ ...formData, badgeText: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, badgeText: e.target.value })
+                  }
                 />
                 <div>
                   <label className="text-sm text-gray-600">لون الشارة</label>
                   <Input
                     type="color"
                     value={formData.badgeColor}
-                    onChange={(e) => setFormData({ ...formData, badgeColor: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, badgeColor: e.target.value })
+                    }
                   />
                 </div>
               </div>
@@ -254,17 +308,23 @@ export default function OffersAdmin() {
                   <TableCell>{offer.destination || "-"}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className="bg-green-50">
-                      {offer.discountValue}{offer.discountType === "percentage" ? "%" : "$"}
+                      {offer.discountValue}
+                      {offer.discountType === "percentage" ? "%" : "$"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {formatDate(offer.startDate)} - {formatDate(offer.endDate)}
+                      {formatDate(offer.startDate)} -{" "}
+                      {formatDate(offer.endDate)}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={offer.isActive === "active" ? "default" : "secondary"}>
+                    <Badge
+                      variant={
+                        offer.isActive === "active" ? "default" : "secondary"
+                      }
+                    >
                       {offer.isActive === "active" ? "نشط" : "غير نشط"}
                     </Badge>
                   </TableCell>
@@ -276,8 +336,12 @@ export default function OffersAdmin() {
                         setEditingId(offer.id);
                         setFormData({
                           ...offer,
-                          startDate: new Date(offer.startDate).toISOString().split("T")[0],
-                          endDate: new Date(offer.endDate).toISOString().split("T")[0],
+                          startDate: new Date(offer.startDate)
+                            .toISOString()
+                            .split("T")[0],
+                          endDate: new Date(offer.endDate)
+                            .toISOString()
+                            .split("T")[0],
                           totalSpots: offer.totalSpots?.toString() || "",
                         });
                         setIsOpen(true);

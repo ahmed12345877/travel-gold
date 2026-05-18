@@ -5,9 +5,26 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Eye, Target, Award, Users, Globe, Shield, Heart, Star,
-  Linkedin, Twitter, Mail, ChevronRight, Compass, MapPin,
-  TrendingUp, Calendar, Trophy, BadgeCheck, Medal, Crown
+  Eye,
+  Target,
+  Award,
+  Users,
+  Globe,
+  Shield,
+  Heart,
+  Star,
+  Linkedin,
+  Twitter,
+  Mail,
+  ChevronRight,
+  Compass,
+  MapPin,
+  TrendingUp,
+  Calendar,
+  Trophy,
+  BadgeCheck,
+  Medal,
+  Crown,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -18,11 +35,14 @@ import PageMeta from "@/components/PageMeta";
 
 /* ─── Image URLs ─── */
 const IMAGES = {
-  aboutHero: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/about-hero-2AaUoasqgiUnSNWvY9HdZm.webp",
+  aboutHero:
+    "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/about-hero-2AaUoasqgiUnSNWvY9HdZm.webp",
   ceo: "/manus-storage/1000148297_a30175e7.webp",
   coo: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/team-coo-5AGG89HCnmBhjQbcJ4ALq8.webp",
-  marketing: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/team-marketing-b3JHQd27mnnpLURydNtbgX.webp",
-  travel: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/team-travel-DWXCJxcJmzveyZdkVFafeg.webp",
+  marketing:
+    "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/team-marketing-b3JHQd27mnnpLURydNtbgX.webp",
+  travel:
+    "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/team-travel-DWXCJxcJmzveyZdkVFafeg.webp",
   logo: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/vanir-logo-white_74cd1f52.png",
 };
 
@@ -30,17 +50,28 @@ const IMAGES = {
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
   visible: (i: number) => ({
-    opacity: 1, y: 0,
-    transition: { delay: i * 0.15, duration: 0.6, ease: "easeOut" as const }
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.15, duration: 0.6, ease: "easeOut" as const },
   }),
 };
 
 /* ─── Section Title Component ─── */
-function SectionTitle({ subtitle, title, description, align = "center" }: {
-  subtitle: string; title: string; description?: string; align?: "center" | "left";
+function SectionTitle({
+  subtitle,
+  title,
+  description,
+  align = "center",
+}: {
+  subtitle: string;
+  title: string;
+  description?: string;
+  align?: "center" | "left";
 }) {
   return (
-    <div className={`mb-8 sm:mb-12 md:mb-16 ${align === "center" ? "text-center" : "text-left"}`}>
+    <div
+      className={`mb-8 sm:mb-12 md:mb-16 ${align === "center" ? "text-center" : "text-left"}`}
+    >
       <span className="font-[var(--font-display)] text-[var(--theme-primary)] text-xs sm:text-sm tracking-[0.15em] sm:tracking-[0.2em] uppercase italic">
         {subtitle}
       </span>
@@ -66,7 +97,12 @@ function AboutHero() {
   return (
     <section className="relative h-[40vh] sm:h-[50vh] md:h-[60vh] flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0">
-        <OptimizedImage src={IMAGES.aboutHero} alt="VANIR GROUP Office" className="w-full h-full object-cover" containerClassName="w-full h-full" />
+        <OptimizedImage
+          src={IMAGES.aboutHero}
+          alt="VANIR GROUP Office"
+          className="w-full h-full object-cover"
+          containerClassName="w-full h-full"
+        />
         <div className="absolute inset-0 bg-gradient-to-b from-[var(--theme-surface)]/80 via-[var(--theme-surface)]/60 to-[var(--theme-surface)]" />
       </div>
       <div className="relative z-10 text-center container">
@@ -98,7 +134,12 @@ function AboutHero() {
           transition={{ duration: 0.6, delay: 0.7 }}
           className="flex items-center justify-center gap-2 mt-6 text-white/50 text-sm"
         >
-          <a href="/" className="hover:text-[var(--theme-primary)] transition-colors">Home</a>
+          <a
+            href="/"
+            className="hover:text-[var(--theme-primary)] transition-colors"
+          >
+            Home
+          </a>
           <ChevronRight size={14} />
           <span className="text-[var(--theme-primary)]">About Us</span>
         </motion.div>
@@ -131,14 +172,24 @@ function OurStory() {
               <div className="absolute inset-0 border border-white/10" />
               {/* Watermark */}
               <div className="absolute bottom-4 right-4 opacity-30">
-                <OptimizedImage src={IMAGES.logo} alt="VANIR GROUP Logo" className="h-10 w-auto" containerClassName="h-10 w-auto" lazy={true} />
+                <OptimizedImage
+                  src={IMAGES.logo}
+                  alt="VANIR GROUP Logo"
+                  className="h-10 w-auto"
+                  containerClassName="h-10 w-auto"
+                  lazy={true}
+                />
               </div>
             </div>
             {/* Floating stats card */}
             <div className="absolute -bottom-6 sm:-bottom-8 -right-2 sm:-right-4 md:-right-8 bg-[var(--theme-surface)] border border-[var(--theme-primary)]/30 p-4 sm:p-6 shadow-xl">
               <div className="text-center">
-                <span className="font-[var(--font-display)] text-[var(--theme-primary)] text-2xl sm:text-3xl md:text-4xl font-bold">15+</span>
-                <p className="text-white/60 text-sm mt-1">Years of Excellence</p>
+                <span className="font-[var(--font-display)] text-[var(--theme-primary)] text-2xl sm:text-3xl md:text-4xl font-bold">
+                  15+
+                </span>
+                <p className="text-white/60 text-sm mt-1">
+                  Years of Excellence
+                </p>
               </div>
             </div>
             {/* Decorative corner */}
@@ -151,31 +202,63 @@ function OurStory() {
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
           >
-            <motion.span variants={fadeUp} custom={0} className="font-[var(--font-display)] text-[var(--theme-primary)] text-sm tracking-[0.2em] uppercase italic">
+            <motion.span
+              variants={fadeUp}
+              custom={0}
+              className="font-[var(--font-display)] text-[var(--theme-primary)] text-sm tracking-[0.2em] uppercase italic"
+            >
               Our Story
             </motion.span>
-            <motion.h2 variants={fadeUp} custom={1} className="font-[var(--font-display)] text-white text-2xl sm:text-3xl md:text-4xl font-bold mt-2 sm:mt-3 mb-4 sm:mb-6 leading-tight">
-              Crafting Unforgettable<br />Travel Experiences
+            <motion.h2
+              variants={fadeUp}
+              custom={1}
+              className="font-[var(--font-display)] text-white text-2xl sm:text-3xl md:text-4xl font-bold mt-2 sm:mt-3 mb-4 sm:mb-6 leading-tight"
+            >
+              Crafting Unforgettable
+              <br />
+              Travel Experiences
             </motion.h2>
-            <motion.p variants={fadeUp} custom={2} className="text-white/60 leading-relaxed mb-4 sm:mb-6 text-sm sm:text-base">
-              Founded in 2010 in the heart of Cairo, VANIR GROUP began with a simple yet powerful vision: to transform the way people experience travel. What started as a small team of passionate travel enthusiasts has grown into one of Egypt's most trusted travel agencies.
+            <motion.p
+              variants={fadeUp}
+              custom={2}
+              className="text-white/60 leading-relaxed mb-4 sm:mb-6 text-sm sm:text-base"
+            >
+              Founded in 2010 in the heart of Cairo, VANIR GROUP began with a
+              simple yet powerful vision: to transform the way people experience
+              travel. What started as a small team of passionate travel
+              enthusiasts has grown into one of Egypt's most trusted travel
+              agencies.
             </motion.p>
-            <motion.p variants={fadeUp} custom={3} className="text-white/60 leading-relaxed mb-6 sm:mb-8 text-sm sm:text-base">
-              Over the past 15 years, we have curated thousands of bespoke travel experiences, from the ancient wonders of Egypt to the pristine beaches of the Red Sea. Our commitment to excellence and personalized service has earned us the trust of over 50,000 satisfied travelers worldwide.
+            <motion.p
+              variants={fadeUp}
+              custom={3}
+              className="text-white/60 leading-relaxed mb-6 sm:mb-8 text-sm sm:text-base"
+            >
+              Over the past 15 years, we have curated thousands of bespoke
+              travel experiences, from the ancient wonders of Egypt to the
+              pristine beaches of the Red Sea. Our commitment to excellence and
+              personalized service has earned us the trust of over 50,000
+              satisfied travelers worldwide.
             </motion.p>
-            <motion.div variants={fadeUp} custom={4} className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6">
+            <motion.div
+              variants={fadeUp}
+              custom={4}
+              className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6"
+            >
               {[
                 { icon: Globe, label: "Countries Covered", value: "45+" },
                 { icon: Users, label: "Happy Travelers", value: "50K+" },
                 { icon: Award, label: "Awards Won", value: "28" },
                 { icon: Star, label: "5-Star Reviews", value: "12K+" },
               ].map(({ icon: Icon, label, value }) => (
-                        <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 border border-[var(--theme-primary)]/30 flex items-center justify-center shrink-0">
                     <Icon size={20} className="text-[var(--theme-primary)]" />
                   </div>
                   <div>
-                    <span className="font-[var(--font-display)] text-white text-base sm:text-lg md:text-xl font-bold">{value}</span>
+                    <span className="font-[var(--font-display)] text-white text-base sm:text-lg md:text-xl font-bold">
+                      {value}
+                    </span>
                     <p className="text-white/50 text-xs">{label}</p>
                   </div>
                 </div>
@@ -225,11 +308,18 @@ function VisionMission() {
               className="relative group"
             >
               <div className="bg-[#0F0F0F] border border-white/8 p-5 sm:p-7 md:p-10 h-full hover:border-[var(--theme-primary)]/40 transition-all duration-500">
-                <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${accent}`} />
+                <div
+                  className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${accent}`}
+                />
                 <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 border border-[var(--theme-primary)]/30 flex items-center justify-center mb-4 sm:mb-6 group-hover:bg-[var(--theme-primary)]/10 transition-colors duration-300">
-                  <Icon size={22} className="text-[var(--theme-primary)] sm:w-7 sm:h-7" />
+                  <Icon
+                    size={22}
+                    className="text-[var(--theme-primary)] sm:w-7 sm:h-7"
+                  />
                 </div>
-                <h3 className="font-[var(--font-display)] text-white text-xl sm:text-2xl font-bold mb-3 sm:mb-4">{title}</h3>
+                <h3 className="font-[var(--font-display)] text-white text-xl sm:text-2xl font-bold mb-3 sm:mb-4">
+                  {title}
+                </h3>
                 <p className="text-white/60 leading-relaxed">{text}</p>
               </div>
             </motion.div>
@@ -243,12 +333,36 @@ function VisionMission() {
 /* ─── Core Values ─── */
 function CoreValues() {
   const values = [
-    { icon: Shield, title: "Trust & Integrity", desc: "We build lasting relationships through transparency, honesty, and unwavering commitment to our promises." },
-    { icon: Heart, title: "Passion for Travel", desc: "Our love for exploration drives us to discover and share the world's most extraordinary experiences." },
-    { icon: Star, title: "Excellence", desc: "We pursue perfection in every detail, from itinerary planning to on-ground execution." },
-    { icon: Users, title: "Client First", desc: "Every journey is tailored to our clients' unique preferences, ensuring personalized luxury at every step." },
-    { icon: Globe, title: "Cultural Respect", desc: "We celebrate diversity and promote responsible tourism that honors local communities and traditions." },
-    { icon: Compass, title: "Innovation", desc: "We continuously evolve our services, embracing new technologies and trends to enhance the travel experience." },
+    {
+      icon: Shield,
+      title: "Trust & Integrity",
+      desc: "We build lasting relationships through transparency, honesty, and unwavering commitment to our promises.",
+    },
+    {
+      icon: Heart,
+      title: "Passion for Travel",
+      desc: "Our love for exploration drives us to discover and share the world's most extraordinary experiences.",
+    },
+    {
+      icon: Star,
+      title: "Excellence",
+      desc: "We pursue perfection in every detail, from itinerary planning to on-ground execution.",
+    },
+    {
+      icon: Users,
+      title: "Client First",
+      desc: "Every journey is tailored to our clients' unique preferences, ensuring personalized luxury at every step.",
+    },
+    {
+      icon: Globe,
+      title: "Cultural Respect",
+      desc: "We celebrate diversity and promote responsible tourism that honors local communities and traditions.",
+    },
+    {
+      icon: Compass,
+      title: "Innovation",
+      desc: "We continuously evolve our services, embracing new technologies and trends to enhance the travel experience.",
+    },
   ];
 
   return (
@@ -272,9 +386,14 @@ function CoreValues() {
             >
               <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-[var(--theme-primary)]/5 to-transparent" />
               <div className="w-14 h-14 border border-white/10 flex items-center justify-center mb-5 group-hover:bg-[var(--theme-primary)] group-hover:border-[var(--theme-primary)] transition-all duration-300">
-                <Icon size={24} className="text-[var(--theme-primary)] group-hover:text-[var(--theme-surface)] transition-colors duration-300" />
+                <Icon
+                  size={24}
+                  className="text-[var(--theme-primary)] group-hover:text-[var(--theme-surface)] transition-colors duration-300"
+                />
               </div>
-              <h3 className="font-[var(--font-display)] text-white text-lg font-semibold mb-3">{title}</h3>
+              <h3 className="font-[var(--font-display)] text-white text-lg font-semibold mb-3">
+                {title}
+              </h3>
               <p className="text-white/50 text-sm leading-relaxed">{desc}</p>
             </motion.div>
           ))}
@@ -287,12 +406,36 @@ function CoreValues() {
 /* ─── Timeline ─── */
 function Timeline() {
   const milestones = [
-    { year: "2010", title: "The Beginning", desc: "VANIR GROUP was founded in Cairo with a vision to revolutionize luxury travel in Egypt." },
-    { year: "2013", title: "Regional Expansion", desc: "Expanded services to cover the entire Middle East and North Africa region." },
-    { year: "2016", title: "10,000 Travelers", desc: "Reached the milestone of serving 10,000 happy travelers from around the world." },
-    { year: "2019", title: "International Recognition", desc: "Won the prestigious 'Best Luxury Travel Agency' award at the World Travel Awards." },
-    { year: "2022", title: "Digital Transformation", desc: "Launched our digital platform for seamless booking and personalized travel planning." },
-    { year: "2025", title: "50,000+ Travelers", desc: "Celebrated serving over 50,000 travelers with a 98% satisfaction rate." },
+    {
+      year: "2010",
+      title: "The Beginning",
+      desc: "VANIR GROUP was founded in Cairo with a vision to revolutionize luxury travel in Egypt.",
+    },
+    {
+      year: "2013",
+      title: "Regional Expansion",
+      desc: "Expanded services to cover the entire Middle East and North Africa region.",
+    },
+    {
+      year: "2016",
+      title: "10,000 Travelers",
+      desc: "Reached the milestone of serving 10,000 happy travelers from around the world.",
+    },
+    {
+      year: "2019",
+      title: "International Recognition",
+      desc: "Won the prestigious 'Best Luxury Travel Agency' award at the World Travel Awards.",
+    },
+    {
+      year: "2022",
+      title: "Digital Transformation",
+      desc: "Launched our digital platform for seamless booking and personalized travel planning.",
+    },
+    {
+      year: "2025",
+      title: "50,000+ Travelers",
+      desc: "Celebrated serving over 50,000 travelers with a 98% satisfaction rate.",
+    },
   ];
 
   return (
@@ -323,14 +466,27 @@ function Timeline() {
               <div className="absolute left-4 md:left-1/2 w-3 h-3 bg-[var(--theme-primary)] rotate-45 -translate-x-[5px] md:-translate-x-[6px] mt-6 z-10" />
 
               {/* Content */}
-              <div className={`ml-12 md:ml-0 md:w-[calc(50%-2rem)] ${i % 2 === 0 ? "md:pr-8 md:text-right" : "md:pl-8"}`}>
+              <div
+                className={`ml-12 md:ml-0 md:w-[calc(50%-2rem)] ${i % 2 === 0 ? "md:pr-8 md:text-right" : "md:pl-8"}`}
+              >
                 <div className="bg-[#0F0F0F] border border-white/8 p-6 hover:border-[var(--theme-primary)]/30 transition-all duration-300">
-                  <div className={`flex items-center gap-3 mb-3 ${i % 2 === 0 ? "md:justify-end" : ""}`}>
-                    <Calendar size={14} className="text-[var(--theme-primary)]" />
-                    <span className="font-[var(--font-display)] text-[var(--theme-primary)] text-xl font-bold">{m.year}</span>
+                  <div
+                    className={`flex items-center gap-3 mb-3 ${i % 2 === 0 ? "md:justify-end" : ""}`}
+                  >
+                    <Calendar
+                      size={14}
+                      className="text-[var(--theme-primary)]"
+                    />
+                    <span className="font-[var(--font-display)] text-[var(--theme-primary)] text-xl font-bold">
+                      {m.year}
+                    </span>
                   </div>
-                  <h3 className="font-[var(--font-display)] text-white text-lg font-semibold mb-2">{m.title}</h3>
-                  <p className="text-white/50 text-sm leading-relaxed">{m.desc}</p>
+                  <h3 className="font-[var(--font-display)] text-white text-lg font-semibold mb-2">
+                    {m.title}
+                  </h3>
+                  <p className="text-white/50 text-sm leading-relaxed">
+                    {m.desc}
+                  </p>
                 </div>
               </div>
             </motion.div>
@@ -405,11 +561,15 @@ function TeamSection() {
                 <div className="absolute inset-0 border border-white/10 group-hover:border-[var(--theme-primary)]/50 transition-all duration-500" />
 
                 {/* Hover overlay with bio */}
-                <div className={`absolute inset-0 bg-gradient-to-t from-[var(--theme-surface)]/95 via-[var(--theme-surface)]/60 to-transparent flex items-end p-6 transition-opacity duration-500 ${
-                  hoveredIndex === i ? "opacity-100" : "opacity-0"
-                }`}>
+                <div
+                  className={`absolute inset-0 bg-gradient-to-t from-[var(--theme-surface)]/95 via-[var(--theme-surface)]/60 to-transparent flex items-end p-6 transition-opacity duration-500 ${
+                    hoveredIndex === i ? "opacity-100" : "opacity-0"
+                  }`}
+                >
                   <div>
-                    <p className="text-white/80 text-sm leading-relaxed mb-4">{member.bio}</p>
+                    <p className="text-white/80 text-sm leading-relaxed mb-4">
+                      {member.bio}
+                    </p>
                     <div className="flex gap-3">
                       {[Linkedin, Twitter, Mail].map((Icon, j) => (
                         <button
@@ -429,8 +589,12 @@ function TeamSection() {
               </div>
 
               <div className="text-center">
-                <h3 className="font-[var(--font-display)] text-white text-lg font-semibold">{member.name}</h3>
-                <p className="text-[var(--theme-primary)] text-sm mt-1">{member.role}</p>
+                <h3 className="font-[var(--font-display)] text-white text-lg font-semibold">
+                  {member.name}
+                </h3>
+                <p className="text-[var(--theme-primary)] text-sm mt-1">
+                  {member.role}
+                </p>
               </div>
             </motion.div>
           ))}
@@ -487,8 +651,11 @@ function AwardsSection() {
     },
   ];
 
-  const [filter, setFilter] = useState<"all" | "award" | "certification">("all");
-  const filtered = filter === "all" ? awards : awards.filter(a => a.category === filter);
+  const [filter, setFilter] = useState<"all" | "award" | "certification">(
+    "all",
+  );
+  const filtered =
+    filter === "all" ? awards : awards.filter((a) => a.category === filter);
 
   return (
     <section className="py-12 sm:py-16 md:py-28 bg-[var(--theme-surface)]">
@@ -538,24 +705,34 @@ function AwardsSection() {
 
                 {/* Category badge */}
                 <div className="absolute top-4 right-4">
-                  <span className={`text-[10px] tracking-[0.15em] uppercase font-semibold px-3 py-1 ${
-                    category === "award"
-                      ? "bg-[var(--theme-primary)]/15 text-[var(--theme-primary)] border border-[var(--theme-primary)]/30"
-                      : "bg-white/5 text-white/50 border border-white/10"
-                  }`}>
+                  <span
+                    className={`text-[10px] tracking-[0.15em] uppercase font-semibold px-3 py-1 ${
+                      category === "award"
+                        ? "bg-[var(--theme-primary)]/15 text-[var(--theme-primary)] border border-[var(--theme-primary)]/30"
+                        : "bg-white/5 text-white/50 border border-white/10"
+                    }`}
+                  >
                     {category === "award" ? "Award" : "Certification"}
                   </span>
                 </div>
 
                 {/* Icon */}
                 <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 border border-[var(--theme-primary)]/30 flex items-center justify-center mb-4 sm:mb-6 group-hover:bg-[var(--theme-primary)]/10 group-hover:border-[var(--theme-primary)]/60 transition-all duration-500 rotate-45">
-                  <Icon size={26} className="text-[var(--theme-primary)] -rotate-45 group-hover:scale-110 transition-transform duration-300" />
+                  <Icon
+                    size={26}
+                    className="text-[var(--theme-primary)] -rotate-45 group-hover:scale-110 transition-transform duration-300"
+                  />
                 </div>
 
                 {/* Year */}
                 <div className="flex items-center gap-2 mb-3">
-                  <Calendar size={13} className="text-[var(--theme-primary)]/60" />
-                  <span className="font-[var(--font-display)] text-[var(--theme-primary)]/80 text-sm">{year}</span>
+                  <Calendar
+                    size={13}
+                    className="text-[var(--theme-primary)]/60"
+                  />
+                  <span className="font-[var(--font-display)] text-[var(--theme-primary)]/80 text-sm">
+                    {year}
+                  </span>
                 </div>
 
                 {/* Title */}
@@ -596,10 +773,26 @@ function AwardsSection() {
 /* ─── Why Choose Us ─── */
 function WhyChooseUs() {
   const reasons = [
-    { icon: MapPin, title: "Local Expertise", desc: "Deep knowledge of Egypt and the Middle East, with insider access to hidden gems." },
-    { icon: Shield, title: "Trusted & Licensed", desc: "Fully licensed and insured, with 15+ years of proven track record." },
-    { icon: TrendingUp, title: "Best Value", desc: "Premium experiences at competitive prices, with no hidden fees." },
-    { icon: Heart, title: "24/7 Support", desc: "Round-the-clock assistance throughout your journey, wherever you are." },
+    {
+      icon: MapPin,
+      title: "Local Expertise",
+      desc: "Deep knowledge of Egypt and the Middle East, with insider access to hidden gems.",
+    },
+    {
+      icon: Shield,
+      title: "Trusted & Licensed",
+      desc: "Fully licensed and insured, with 15+ years of proven track record.",
+    },
+    {
+      icon: TrendingUp,
+      title: "Best Value",
+      desc: "Premium experiences at competitive prices, with no hidden fees.",
+    },
+    {
+      icon: Heart,
+      title: "24/7 Support",
+      desc: "Round-the-clock assistance throughout your journey, wherever you are.",
+    },
   ];
 
   return (
@@ -622,9 +815,14 @@ function WhyChooseUs() {
               className="text-center group"
             >
               <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 border border-white/10 flex items-center justify-center mx-auto mb-3 sm:mb-4 md:mb-6 rotate-45 group-hover:bg-[var(--theme-primary)]/10 group-hover:border-[var(--theme-primary)]/50 transition-all duration-500">
-                <Icon size={22} className="text-[var(--theme-primary)] -rotate-45 sm:w-6 sm:h-6 md:w-7 md:h-7" />
+                <Icon
+                  size={22}
+                  className="text-[var(--theme-primary)] -rotate-45 sm:w-6 sm:h-6 md:w-7 md:h-7"
+                />
               </div>
-              <h3 className="font-[var(--font-display)] text-white text-sm sm:text-base md:text-lg font-semibold mb-2 sm:mb-3">{title}</h3>
+              <h3 className="font-[var(--font-display)] text-white text-sm sm:text-base md:text-lg font-semibold mb-2 sm:mb-3">
+                {title}
+              </h3>
               <p className="text-white/50 text-sm leading-relaxed">{desc}</p>
             </motion.div>
           ))}
@@ -650,7 +848,8 @@ function CTABanner() {
             Ready to Start Your Journey?
           </h2>
           <p className="text-white/60 max-w-xl mx-auto mb-6 sm:mb-8 text-sm sm:text-base">
-            Let our team of experts craft the perfect travel experience for you. Contact us today and let's plan for happiness together.
+            Let our team of experts craft the perfect travel experience for you.
+            Contact us today and let's plan for happiness together.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a

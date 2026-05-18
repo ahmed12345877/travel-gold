@@ -20,7 +20,7 @@ beforeAll(() => {
 
   // Count static gallery items by matching `id:` in staticGalleryItems array
   const galleryArrayMatch = gallerySource.match(
-    /const staticGalleryItems:\s*GalleryItemDisplay\[\]\s*=\s*\[([\s\S]*?)\];\s*\n/
+    /const staticGalleryItems:\s*GalleryItemDisplay\[\]\s*=\s*\[([\s\S]*?)\];\s*\n/,
   );
   expect(galleryArrayMatch).toBeTruthy();
   const galleryArrayContent = galleryArrayMatch![1];
@@ -41,7 +41,7 @@ beforeAll(() => {
 
   // Count static video items
   const videoArrayMatch = gallerySource.match(
-    /const staticVideoItems:\s*VideoItemDisplay\[\]\s*=\s*\[([\s\S]*?)\];\s*\n/
+    /const staticVideoItems:\s*VideoItemDisplay\[\]\s*=\s*\[([\s\S]*?)\];\s*\n/,
   );
   if (videoArrayMatch) {
     const videoIdMatches = videoArrayMatch[1].match(/id:\s*\d+/g);

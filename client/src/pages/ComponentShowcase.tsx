@@ -513,7 +513,7 @@ export default function ComponentsShowcase() {
                                   ? format(datePickerDate, "HH:mm")
                                   : "00:00"
                               }
-                              onChange={e => {
+                              onChange={(e) => {
                                 const [hours, minutes] =
                                   e.target.value.split(":");
                                 const newDate = datePickerDate
@@ -557,7 +557,8 @@ export default function ComponentsShowcase() {
                               { value: "nextjs", label: "Next.js" },
                               { value: "nuxt", label: "Nuxt" },
                               { value: "remix", label: "Remix" },
-                            ].find(fw => fw.value === selectedFramework)?.label
+                            ].find((fw) => fw.value === selectedFramework)
+                              ?.label
                           : "Select framework..."}
                         <CalendarIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
@@ -576,15 +577,15 @@ export default function ComponentsShowcase() {
                               { value: "nextjs", label: "Next.js" },
                               { value: "nuxt", label: "Nuxt" },
                               { value: "remix", label: "Remix" },
-                            ].map(framework => (
+                            ].map((framework) => (
                               <CommandItem
                                 key={framework.value}
                                 value={framework.value}
-                                onSelect={currentValue => {
+                                onSelect={(currentValue) => {
                                   setSelectedFramework(
                                     currentValue === selectedFramework
                                       ? ""
-                                      : currentValue
+                                      : currentValue,
                                   );
                                   setOpenCombobox(false);
                                 }}
@@ -616,7 +617,7 @@ export default function ComponentsShowcase() {
                           { value: "nextjs", label: "Next.js" },
                           { value: "nuxt", label: "Nuxt" },
                           { value: "remix", label: "Remix" },
-                        ].find(fw => fw.value === selectedFramework)?.label
+                        ].find((fw) => fw.value === selectedFramework)?.label
                       }
                     </p>
                   )}
@@ -636,14 +637,14 @@ export default function ComponentsShowcase() {
                         </SelectTrigger>
                         <SelectContent>
                           {Array.from({ length: 12 }, (_, i) => i + 1).map(
-                            month => (
+                            (month) => (
                               <SelectItem
                                 key={month}
                                 value={month.toString().padStart(2, "0")}
                               >
                                 {month.toString().padStart(2, "0")}
                               </SelectItem>
-                            )
+                            ),
                           )}
                         </SelectContent>
                       </Select>
@@ -662,8 +663,8 @@ export default function ComponentsShowcase() {
                         <SelectContent>
                           {Array.from(
                             { length: 10 },
-                            (_, i) => new Date().getFullYear() - 5 + i
-                          ).map(year => (
+                            (_, i) => new Date().getFullYear() - 5 + i,
+                          ).map((year) => (
                             <SelectItem key={year} value={year.toString()}>
                               {year}
                             </SelectItem>
@@ -745,18 +746,18 @@ export default function ComponentsShowcase() {
                       <PaginationItem>
                         <PaginationPrevious
                           href="#"
-                          onClick={e => {
+                          onClick={(e) => {
                             e.preventDefault();
                             setCurrentPage(Math.max(1, currentPage - 1));
                           }}
                         />
                       </PaginationItem>
-                      {[1, 2, 3, 4, 5].map(page => (
+                      {[1, 2, 3, 4, 5].map((page) => (
                         <PaginationItem key={page}>
                           <PaginationLink
                             href="#"
                             isActive={currentPage === page}
-                            onClick={e => {
+                            onClick={(e) => {
                               e.preventDefault();
                               setCurrentPage(page);
                             }}
@@ -768,7 +769,7 @@ export default function ComponentsShowcase() {
                       <PaginationItem>
                         <PaginationNext
                           href="#"
-                          onClick={e => {
+                          onClick={(e) => {
                             e.preventDefault();
                             setCurrentPage(Math.min(5, currentPage + 1));
                           }}
@@ -1033,7 +1034,8 @@ export default function ComponentsShowcase() {
                       <DialogHeader>
                         <DialogTitle>Test Input</DialogTitle>
                         <DialogDescription>
-                          Enter some text below. Press Enter to submit (IME composition supported).
+                          Enter some text below. Press Enter to submit (IME
+                          composition supported).
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4 py-4">
@@ -1378,8 +1380,8 @@ export default function ComponentsShowcase() {
                     <Button
                       variant="outline"
                       onClick={() => {
-                        const promise = new Promise(resolve =>
-                          setTimeout(resolve, 2000)
+                        const promise = new Promise((resolve) =>
+                          setTimeout(resolve, 2000),
                         );
                         sonnerToast.promise(promise, {
                           loading: "Processing...",
@@ -1404,11 +1406,13 @@ export default function ComponentsShowcase() {
                 <div className="space-y-4">
                   <div className="text-sm text-muted-foreground">
                     <p>
-                      A ready-to-use chat interface component that integrates with the LLM system.
-                      Features markdown rendering, auto-scrolling, and loading states.
+                      A ready-to-use chat interface component that integrates
+                      with the LLM system. Features markdown rendering,
+                      auto-scrolling, and loading states.
                     </p>
                     <p className="mt-2">
-                      This is a demo with simulated responses. In a real app, you'd connect it to a tRPC mutation.
+                      This is a demo with simulated responses. In a real app,
+                      you'd connect it to a tRPC mutation.
                     </p>
                   </div>
                   <AIChatBox

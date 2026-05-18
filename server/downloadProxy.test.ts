@@ -38,7 +38,7 @@ function createMockResponse(data: Buffer, contentType = "image/png") {
     },
     arrayBuffer: () =>
       Promise.resolve(
-        data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
+        data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength),
       ),
   };
 }
@@ -60,7 +60,7 @@ describe("Download Proxy", () => {
 
   it("should return 400 for invalid URL format", async () => {
     const res = await request(app).get(
-      "/api/download-image?url=not-a-valid-url"
+      "/api/download-image?url=not-a-valid-url",
     );
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("Invalid URL format");
@@ -68,7 +68,7 @@ describe("Download Proxy", () => {
 
   it("should return 400 for invalid format parameter", async () => {
     const res = await request(app).get(
-      "/api/download-image?url=https://test.s3.amazonaws.com/test.png&format=bmp"
+      "/api/download-image?url=https://test.s3.amazonaws.com/test.png&format=bmp",
     );
     expect(res.status).toBe(400);
     expect(res.body.error).toContain("Invalid format");
@@ -77,7 +77,7 @@ describe("Download Proxy", () => {
 
   it("should return 403 for disallowed domains", async () => {
     const res = await request(app).get(
-      "/api/download-image?url=https://evil-site.com/malware.exe"
+      "/api/download-image?url=https://evil-site.com/malware.exe",
     );
     expect(res.status).toBe(403);
     expect(res.body.error).toBe("URL domain not allowed for download");
@@ -88,15 +88,15 @@ describe("Download Proxy", () => {
     mockFetch.mockResolvedValue(createMockResponse(mockImageBuffer));
 
     const res = await request(app).get(
-      "/api/download-image?url=https://test-bucket.s3.amazonaws.com/ai-generated/test.png&filename=my-image.png"
+      "/api/download-image?url=https://test-bucket.s3.amazonaws.com/ai-generated/test.png&filename=my-image.png",
     );
 
     expect(res.status).toBe(200);
     expect(res.headers["content-disposition"]).toBe(
-      'attachment; filename="my-image.png"'
+      'attachment; filename="my-image.png"',
     );
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://test-bucket.s3.amazonaws.com/ai-generated/test.png"
+      "https://test-bucket.s3.amazonaws.com/ai-generated/test.png",
     );
   });
 
@@ -105,7 +105,7 @@ describe("Download Proxy", () => {
     mockFetch.mockResolvedValue(createMockResponse(mockImageBuffer));
 
     const res = await request(app).get(
-      "/api/download-image?url=https://some-cdn.example.com/ai-generated/image.png"
+      "/api/download-image?url=https://some-cdn.example.com/ai-generated/image.png",
     );
 
     expect(res.status).toBe(200);
@@ -116,12 +116,12 @@ describe("Download Proxy", () => {
     mockFetch.mockResolvedValue(createMockResponse(mockImageBuffer));
 
     const res = await request(app).get(
-      "/api/download-image?url=https://test.s3.amazonaws.com/ai-generated/test.png"
+      "/api/download-image?url=https://test.s3.amazonaws.com/ai-generated/test.png",
     );
 
     expect(res.status).toBe(200);
     expect(res.headers["content-disposition"]).toMatch(
-      /attachment; filename="vanir-ai-\d+\.png"/
+      /attachment; filename="vanir-ai-\d+\.png"/,
     );
   });
 
@@ -133,7 +133,7 @@ describe("Download Proxy", () => {
     });
 
     const res = await request(app).get(
-      "/api/download-image?url=https://test.s3.amazonaws.com/ai-generated/missing.png"
+      "/api/download-image?url=https://test.s3.amazonaws.com/ai-generated/missing.png",
     );
 
     expect(res.status).toBe(404);
@@ -144,7 +144,7 @@ describe("Download Proxy", () => {
     mockFetch.mockRejectedValue(new Error("Network error"));
 
     const res = await request(app).get(
-      "/api/download-image?url=https://test.s3.amazonaws.com/ai-generated/test.png"
+      "/api/download-image?url=https://test.s3.amazonaws.com/ai-generated/test.png",
     );
 
     expect(res.status).toBe(500);
@@ -158,13 +158,13 @@ describe("Download Proxy", () => {
     mockFetch.mockResolvedValue(createMockResponse(mockImageBuffer));
 
     const res = await request(app).get(
-      "/api/download-image?url=https://test.s3.amazonaws.com/ai-generated/test.png&format=jpg&filename=my-image"
+      "/api/download-image?url=https://test.s3.amazonaws.com/ai-generated/test.png&format=jpg&filename=my-image",
     );
 
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toBe("image/jpeg");
     expect(res.headers["content-disposition"]).toBe(
-      'attachment; filename="my-image.jpg"'
+      'attachment; filename="my-image.jpg"',
     );
   });
 
@@ -173,13 +173,13 @@ describe("Download Proxy", () => {
     mockFetch.mockResolvedValue(createMockResponse(mockImageBuffer));
 
     const res = await request(app).get(
-      "/api/download-image?url=https://test.s3.amazonaws.com/ai-generated/test.png&format=webp&filename=my-image"
+      "/api/download-image?url=https://test.s3.amazonaws.com/ai-generated/test.png&format=webp&filename=my-image",
     );
 
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toBe("image/webp");
     expect(res.headers["content-disposition"]).toBe(
-      'attachment; filename="my-image.webp"'
+      'attachment; filename="my-image.webp"',
     );
   });
 
@@ -188,13 +188,13 @@ describe("Download Proxy", () => {
     mockFetch.mockResolvedValue(createMockResponse(mockImageBuffer));
 
     const res = await request(app).get(
-      "/api/download-image?url=https://test.s3.amazonaws.com/ai-generated/test.png&format=png&filename=my-image"
+      "/api/download-image?url=https://test.s3.amazonaws.com/ai-generated/test.png&format=png&filename=my-image",
     );
 
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toBe("image/png");
     expect(res.headers["content-disposition"]).toBe(
-      'attachment; filename="my-image.png"'
+      'attachment; filename="my-image.png"',
     );
   });
 
@@ -203,12 +203,12 @@ describe("Download Proxy", () => {
     mockFetch.mockResolvedValue(createMockResponse(mockImageBuffer));
 
     const res = await request(app).get(
-      "/api/download-image?url=https://test.s3.amazonaws.com/ai-generated/test.png&format=webp&filename=my-image.png"
+      "/api/download-image?url=https://test.s3.amazonaws.com/ai-generated/test.png&format=webp&filename=my-image.png",
     );
 
     expect(res.status).toBe(200);
     expect(res.headers["content-disposition"]).toBe(
-      'attachment; filename="my-image.webp"'
+      'attachment; filename="my-image.webp"',
     );
   });
 
@@ -217,7 +217,7 @@ describe("Download Proxy", () => {
     mockFetch.mockResolvedValue(createMockResponse(mockImageBuffer));
 
     const res = await request(app).get(
-      "/api/download-image?url=https://test.s3.amazonaws.com/ai-generated/test.png"
+      "/api/download-image?url=https://test.s3.amazonaws.com/ai-generated/test.png",
     );
 
     expect(res.status).toBe(200);
