@@ -178,69 +178,6 @@ export default function AdminLayout({
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
   }, [sidebarWidth]);
 
-  if (loading) {
-    return <DashboardLayoutSkeleton />;
-  }
-
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-[var(--theme-surface)]">
-        <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
-          <div className="w-16 h-16 rounded-full bg-[var(--theme-primary)]/10 border border-[var(--theme-primary)]/30 flex items-center justify-center">
-            <Crown size={28} className="text-[var(--theme-primary)]" />
-          </div>
-          <div className="flex flex-col items-center gap-4">
-            <h1 className="text-2xl font-[var(--font-display)] font-bold text-white text-center">
-              Admin Access Required
-            </h1>
-            <p className="text-sm text-white/50 font-[var(--font-body)] text-center max-w-sm">
-              Sign in with your admin account to access the management
-              dashboard.
-            </p>
-          </div>
-          <Button
-            onClick={() => {
-              window.location.href = getLoginUrl();
-            }}
-            className="w-full bg-[var(--theme-primary)] text-[var(--theme-surface)] hover:bg-[var(--theme-primary-light)] font-[var(--font-body)] font-semibold shadow-lg hover:shadow-xl transition-all"
-            size="lg"
-          >
-            Sign in
-          </Button>
-          <Link
-            href="/"
-            className="text-[var(--theme-primary)]/60 hover:text-[var(--theme-primary)] text-sm font-[var(--font-body)] flex items-center gap-1 transition-colors"
-          >
-            <ArrowLeft size={14} /> Back to website
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  if (user.role !== "admin") {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-[var(--theme-surface)]">
-        <div className="flex flex-col items-center gap-6 p-8 max-w-md w-full">
-          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
-            <Crown size={28} className="text-red-400" />
-          </div>
-          <h1 className="text-2xl font-[var(--font-display)] font-bold text-white text-center">
-            Access Denied
-          </h1>
-          <p className="text-sm text-white/50 font-[var(--font-body)] text-center">
-            You don't have admin privileges. Contact the site owner for access.
-          </p>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--theme-primary)] text-[var(--theme-surface)] font-[var(--font-body)] font-semibold text-sm rounded-lg hover:bg-[var(--theme-primary-light)] transition-colors"
-          >
-            <ArrowLeft size={14} /> Back to website
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <SidebarProvider
@@ -373,11 +310,10 @@ function AdminLayoutContent({
                               isActive={isActive}
                               onClick={() => setLocation(item.path)}
                               tooltip={item.label}
-                              className={`h-9 transition-all font-[var(--font-body)] text-sm ${
-                                isActive
-                                  ? "bg-[var(--theme-primary)]/15 text-[var(--theme-primary)] border border-white/10"
-                                  : "text-white/60 hover:text-white hover:bg-[var(--theme-primary)]/5"
-                              }`}
+                              className={`h-9 transition-all font-[var(--font-body)] text-sm ${isActive
+                                ? "bg-[var(--theme-primary)]/15 text-[var(--theme-primary)] border border-white/10"
+                                : "text-white/60 hover:text-white hover:bg-[var(--theme-primary)]/5"
+                                }`}
                             >
                               <item.icon
                                 className={`h-4 w-4 ${isActive ? "text-[var(--theme-primary)]" : ""}`}

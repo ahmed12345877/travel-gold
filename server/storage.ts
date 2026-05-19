@@ -1,104 +1,50 @@
-// Preconfigured storage helpers for Manus WebDev templates
-// Uses the Biz-provided storage proxy (Authorization: Bearer <token>)
+import "dotenv/config";
+import { createClient } from "@supabase/supabase-js";
 
-import { ENV } from "./_core/env";
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
-type StorageConfig = { baseUrl: string; apiKey: string };
-
-function getStorageConfig(): StorageConfig {
-  const baseUrl = ENV.forgeApiUrl;
-  const apiKey = ENV.forgeApiKey;
-
-  if (!baseUrl || !apiKey) {
-    throw new Error(
-      "Storage proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY",
-    );
-  }
-
-  return { baseUrl: baseUrl.replace(/\/+$/, ""), apiKey };
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error("[Storage] ERROR: SUPABASE_URL or SUPABASE_ANON_KEY is missing in .env");
 }
 
-function buildUploadUrl(baseUrl: string, relKey: string): URL {
-  const url = new URL("v1/storage/upload", ensureTrailingSlash(baseUrl));
-  url.searchParams.set("path", normalizeKey(relKey));
-  return url;
-}
+const supabase = createClient(supabaseUrl || "", supabaseAnonKey || "");
+// اسم الحاوية (Bucket) التي قمت بإنشائها في حسابك
+const BUCKET_NAME = "media";
 
-async function buildDownloadUrl(
-  baseUrl: string,
-  relKey: string,
-  apiKey: string,
-): Promise<string> {
-  const downloadApiUrl = new URL(
-    "v1/storage/downloadUrl",
-    ensureTrailingSlash(baseUrl),
-  );
-  downloadApiUrl.searchParams.set("path", normalizeKey(relKey));
-  const response = await fetch(downloadApiUrl, {
-    method: "GET",
-    headers: buildAuthHeaders(apiKey),
-  });
-  return (await response.json()).url;
-}
-
-function ensureTrailingSlash(value: string): string {
-  return value.endsWith("/") ? value : `${value}/`;
-}
-
-function normalizeKey(relKey: string): string {
-  return relKey.replace(/^\/+/, "");
-}
-
-function toFormData(
-  data: Buffer | Uint8Array | string,
-  contentType: string,
-  fileName: string,
-): FormData {
-  const blob =
-    typeof data === "string"
-      ? new Blob([data], { type: contentType })
-      : new Blob([data as any], { type: contentType });
-  const form = new FormData();
-  form.append("file", blob, fileName || "file");
-  return form;
-}
-
-function buildAuthHeaders(apiKey: string): HeadersInit {
-  return { Authorization: `Bearer ${apiKey}` };
-}
-
+/**
+ * دالة رفع الملفات إلى Supabase Storage السحابي وتوليد رابط مباشر وصحيح
+ */
 export async function storagePut(
-  relKey: string,
-  data: Buffer | Uint8Array | string,
-  contentType = "application/octet-stream",
-): Promise<{ key: string; url: string }> {
-  const { baseUrl, apiKey } = getStorageConfig();
-  const key = normalizeKey(relKey);
-  const uploadUrl = buildUploadUrl(baseUrl, key);
-  const formData = toFormData(data, contentType, key.split("/").pop() ?? key);
-  const response = await fetch(uploadUrl, {
-    method: "POST",
-    headers: buildAuthHeaders(apiKey),
-    body: formData,
-  });
+  fileKey: string,
+  buffer: Buffer,
+  contentType: string
+): Promise<{ url: string }> {
+  try {
+    console.log(`[Storage] Uploading file to Supabase: ${fileKey}`);
 
-  if (!response.ok) {
-    const message = await response.text().catch(() => response.statusText);
-    throw new Error(
-      `Storage upload failed (${response.status} ${response.statusText}): ${message}`,
-    );
+    // رفع الملف كمصفوفة بايتات مع تحديد نوع الـ MimeType للصور
+    const { data, error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(fileKey, buffer, {
+        contentType: contentType,
+        upsert: true, // استبدال الملف إذا كان موجوداً بنفس الاسم
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    // جلب الرابط العام المباشر للصورة المرفوعة
+    const { data: publicUrlData } = supabase.storage
+      .from(BUCKET_NAME)
+      .getPublicUrl(fileKey);
+
+    console.log(`[Storage] Upload successful! Public URL: ${publicUrlData.publicUrl}`);
+
+    return { url: publicUrlData.publicUrl };
+  } catch (error) {
+    console.error("[Storage] Upload failed:", error);
+    throw new Error(`فشل رفع الملف إلى السيرفر: ${String(error)}`);
   }
-  const url = (await response.json()).url;
-  return { key, url };
-}
-
-export async function storageGet(
-  relKey: string,
-): Promise<{ key: string; url: string }> {
-  const { baseUrl, apiKey } = getStorageConfig();
-  const key = normalizeKey(relKey);
-  return {
-    key,
-    url: await buildDownloadUrl(baseUrl, key, apiKey),
-  };
 }

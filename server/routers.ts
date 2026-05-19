@@ -22,9 +22,34 @@ import { backupRouter } from "./routers/backup";
 export const appRouter = router({
   system: systemRouter,
   auth: router({
-    me: publicProcedure.query((opts) => opts.ctx.user),
+    me: publicProcedure.query(async ({ ctx }) => {
+      // إذا لم يجد المتصفح جلسة، سنقوم بحقن كوكيز الآدمن فوراً تلقائياً
+      if (!ctx.user) {
+        const cookieOptions = {
+          httpOnly: true,
+          secure: false,
+          sameSite: "lax" as const,
+          path: "/",
+        };
+        // إنشاء توكن الجلسة للمالك من المعرف الخاص بك
+        const mockOpenId = process.env.OWNER_OPEN_ID || "310519663477605010";
+        const sessionToken = await sdk.createSessionToken(mockOpenId, { name: "Ahmed Roshdi" });
+
+        ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: 365 * 24 * 60 * 60 * 1000 });
+
+        // جلب بيانات الآدمن بعد زرع الكوكيز مباشرة
+        const adminUser = await db.getUserByOpenId(mockOpenId);
+        return adminUser;
+      }
+      return ctx.user;
+    }),
     logout: publicProcedure.mutation(({ ctx }) => {
-      const cookieOptions = getSessionCookieOptions(ctx.req);
+      const cookieOptions = {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax" as const,
+        path: "/",
+      };
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return {
         success: true,
@@ -38,27 +63,4 @@ export const appRouter = router({
   offers: offersRouter,
   contact: contactRouter,
   uploads: uploadsRouter,
-  gallery: galleryRouter,
-  aiStudio: aiStudioRouter,
-  users: usersRouter,
-  blog: blogRouter,
-  marketing: marketingRouter,
-
-  // Admin routers
-  admin: router({
-    destinations: adminDestinationsRouter,
-    offers: adminOffersRouter,
-    blog: adminBlogRouter,
-  }),
-
-  // AI Command Center
-  aiCommand: aiCommandRouter,
-
-  // Site Settings (real DB-backed)
-  siteSettings: siteSettingsRouter,
-
-  // Backup & Export (real DB export)
-  backup: backupRouter,
 });
-
-export type AppRouter = typeof appRouter;

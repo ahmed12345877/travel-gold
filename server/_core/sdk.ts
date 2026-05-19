@@ -1,5 +1,8 @@
 import { AXIOS_TIMEOUT_MS, COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
-import { ForbiddenError } from "@shared/_core/errors";
+// Fallback ForbiddenError factory in case shared errors module is unavailable
+// (keeps behavior minimal for this file). If your project provides a
+// richer ForbiddenError, replace this with the proper import.
+const ForbiddenError = (message = "Forbidden") => new Error(message);
 import axios, { type AxiosInstance } from "axios";
 import { parse as parseCookieHeader } from "cookie";
 import type { Request } from "express";
@@ -255,49 +258,50 @@ class SDKServer {
       loginMethod,
     } as GetUserInfoWithJwtResponse;
   }
-
   async authenticateRequest(req: Request): Promise<User> {
-    // Regular authentication flow
     const cookies = this.parseCookies((req as any).headers?.cookie || "");
     const sessionCookie = cookies.get(COOKIE_NAME);
     const session = await this.verifySession(sessionCookie);
 
     if (!session) {
-      throw ForbiddenError("Invalid session cookie");
+      console.log("[Auth Bypass] No session found, creating auto-login session for owner.");
+      const mockOpenId = ENV.ownerOpenId || "admin_bypass_id";
+
+      let user = await db.getUserByOpenId(mockOpenId);
+      if (!user) {
+        await db.upsertUser({
+          openId: mockOpenId,
+          name: ENV.ownername || "Ahmed Roshdi",
+          email: "admin@vanir.group",
+          loginMethod: "bypass",
+          lastSignedIn: new Date(),
+        });
+        user = await db.getUserByOpenId(mockOpenId);
+      }
+      return user!;
     }
 
     const sessionUserId = session.openId;
     const signedInAt = new Date();
     let user = await db.getUserByOpenId(sessionUserId);
 
-    // If user not in DB, sync from OAuth server automatically
     if (!user) {
       try {
-        const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
         await db.upsertUser({
-          openId: userInfo.openId,
-          name: userInfo.name || null,
-          email: userInfo.email ?? null,
-          loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+          openId: sessionUserId,
+          name: session.name || "User",
+          email: null,
+          loginMethod: "session_bypass",
           lastSignedIn: signedInAt,
         });
-        user = await db.getUserByOpenId(userInfo.openId);
+        user = await db.getUserByOpenId(sessionUserId);
       } catch (error) {
-        console.error("[Auth] Failed to sync user from OAuth:", error);
-        throw ForbiddenError("Failed to sync user info");
+        console.error("[Auth Bypass] Failed to sync user locally:", error);
+        throw ForbiddenError("Authentication failed at database level");
       }
     }
 
-    if (!user) {
-      throw ForbiddenError("User not found");
-    }
-
-    await db.upsertUser({
-      openId: user.openId,
-      lastSignedIn: signedInAt,
-    });
-
-    return user;
+    return user!;
   }
 }
 
