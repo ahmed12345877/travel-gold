@@ -11,6 +11,12 @@ import {
   galleryItems,
   galleryVideos,
 } from "../drizzle/schema";
+export type InsertReview = typeof reviews.$inferInsert;
+export type InsertOffer = typeof offers.$inferInsert;
+export type InsertContactMessage = typeof contactMessages.$inferInsert;
+export type InsertFileUpload = typeof fileUploads.$inferInsert;
+export type InsertGalleryItem = typeof galleryItems.$inferInsert;
+export type InsertGalleryVideo = typeof galleryVideos.$inferInsert;
 
 const { Pool } = pg;
 let _db: any = null;

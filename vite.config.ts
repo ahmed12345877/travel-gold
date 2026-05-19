@@ -74,11 +74,11 @@ function writeToLogFile(source: LogSource, entries: unknown[]) {
  * - Files: browserConsole.log, networkRequests.log, sessionReplay.log
  * - Auto-trimmed when exceeding 1MB (keeps newest entries)
  */
-function vitePluginManusDebugCollector(): Plugin {
+
+function vitePluginManusDebugCollector() {
   return {
     name: "manus-debug-collector",
-
-    transformIndexHtml(html) {
+    transformIndexHtml(html: any) {
       if (process.env.NODE_ENV === "production") {
         return html;
       }
@@ -96,8 +96,7 @@ function vitePluginManusDebugCollector(): Plugin {
         ],
       };
     },
-
-    configureServer(server: ViteDevServer) {
+    configureServer(server: any) {
       // POST /__manus__/logs: Browser sends logs (written directly to files)
       server.middlewares.use("/__manus__/logs", (req, res, next) => {
         if (req.method !== "POST") {
