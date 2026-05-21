@@ -411,7 +411,7 @@ export default function Navbar() {
                             <span className="w-3.5 h-3.5 text-[var(--theme-primary)]/60">✨</span>
                             AI Dashboard
                           </a>
-                          {user?.role === "admin" && (
+                          {user && user.role === "admin" && (
                             <a
                               href="/admin"
                               onClick={() => setOpenDropdown(null)}
