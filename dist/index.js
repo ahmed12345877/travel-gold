@@ -1,9 +1,9 @@
 // server/_core/index.ts
-require("dotenv/config");
-const express2 = require("express");
-const { createServer  } = require("http");
-const net = require("net");
-const { createExpressMiddleware  } = require("@trpc/server/adapters/express");
+import "dotenv/config";
+import express2 from "express";
+import { createServer } from "http";
+import net from "net";
+import { createExpressMiddleware } from "@trpc/server/adapters/express";
 
 // shared/const.ts
 var COOKIE_NAME = "app_session_id";
@@ -13,11 +13,11 @@ var UNAUTHED_ERR_MSG = "Please login (10001)";
 var NOT_ADMIN_ERR_MSG = "You do not have required permission (10002)";
 
 // server/db.ts
-const { eq, desc, asc, and, gte, lte, sql  } = require("drizzle-orm");
-const { drizzle  } = require("drizzle-orm/mysql2");
+import { eq, desc, asc, and, gte, lte, sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/mysql2";
 
 // drizzle/schema.ts
-const { int, mysqlEnum, mysqlTable, text, timestamp, varchar, bigint, decimal, json  } = require("drizzle-orm/mysql-core");
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, bigint, decimal, json } from "drizzle-orm/mysql-core";
 var users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
@@ -960,9 +960,9 @@ var HttpError = class extends Error {
 var ForbiddenError = (msg) => new HttpError(403, msg);
 
 // server/_core/sdk.ts
-const axios = require("axios");
-const { parse: parseCookieHeader } = require("cookie");
-const { SignJWT, jwtVerify  } = require("jose");
+import axios from "axios";
+import { parse as parseCookieHeader } from "cookie";
+import { SignJWT, jwtVerify } from "jose";
 var isNonEmptyString = (value) => typeof value === "string" && value.length > 0;
 var EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
 var GET_USER_INFO_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfo`;
@@ -1259,7 +1259,7 @@ function registerStorageProxy(app) {
 }
 
 // server/downloadProxy.ts
-const sharp = require("sharp");
+import sharp from "sharp";
 var ALLOWED_FORMATS = ["png", "jpg", "jpeg", "webp"];
 var FORMAT_MIME = {
   png: "image/png",
@@ -1352,10 +1352,10 @@ function registerDownloadProxy(app) {
 }
 
 // server/_core/systemRouter.ts
-const { z  } = require("zod");
+import { z } from "zod";
 
 // server/_core/notification.ts
-const { TRPCError  } = require("@trpc/server");
+import { TRPCError } from "@trpc/server";
 var TITLE_MAX_LENGTH = 1200;
 var CONTENT_MAX_LENGTH = 2e4;
 var trimValue = (value) => value.trim();
@@ -1437,8 +1437,8 @@ async function notifyOwner(payload) {
 }
 
 // server/_core/trpc.ts
-const { initTRPC, TRPCError: TRPCError2 } = require("@trpc/server");
-const superjson = require("superjson");
+import { initTRPC, TRPCError as TRPCError2 } from "@trpc/server";
+import superjson from "superjson";
 var t = initTRPC.context().create({
   transformer: superjson
 });
@@ -1495,8 +1495,8 @@ var systemRouter = router({
 });
 
 // server/routers/bookings.ts
-const { z: z2 } = require("zod");
-const { nanoid  } = require("nanoid");
+import { z as z2 } from "zod";
+import { nanoid } from "nanoid";
 var bookingsRouter = router({
   /** Create a new booking (public - guests can book too) */
   create: publicProcedure.input(
@@ -1580,8 +1580,8 @@ var bookingsRouter = router({
 });
 
 // server/routers/reviews.ts
-const { z: z3 } = require("zod");
-const { eq: eq2, desc: desc2 } = require("drizzle-orm");
+import { z as z3 } from "zod";
+import { eq as eq2, desc as desc2 } from "drizzle-orm";
 var reviewsRouter = router({
   /** List approved reviews (public) */
   list: publicProcedure.input(
@@ -1663,7 +1663,7 @@ var reviewsRouter = router({
 });
 
 // server/routers/offers.ts
-const { z: z4 } = require("zod");
+import { z as z4 } from "zod";
 var offersRouter = router({
   /** List active offers (public) */
   listActive: publicProcedure.query(async () => {
@@ -1743,7 +1743,7 @@ var offersRouter = router({
 });
 
 // server/routers/contact.ts
-const { z: z5 } = require("zod");
+import { z as z5 } from "zod";
 var contactRouter = router({
   /** Submit a contact form message (public) */
   submit: publicProcedure.input(
@@ -1791,7 +1791,7 @@ ${input.message.substring(0, 200)}`
 });
 
 // server/routers/uploads.ts
-const { z: z6 } = require("zod");
+import { z as z6 } from "zod";
 
 // server/storage.ts
 function getStorageConfig() {
@@ -1845,7 +1845,7 @@ async function storagePut(relKey, data, contentType = "application/octet-stream"
 }
 
 // server/routers/uploads.ts
-const { nanoid: nanoid2 } = require("nanoid");
+import { nanoid as nanoid2 } from "nanoid";
 var uploadsRouter = router({
   /** Upload a file (authenticated users only) */
   upload: protectedProcedure.input(
@@ -1884,8 +1884,8 @@ var uploadsRouter = router({
 });
 
 // server/routers/gallery.ts
-const { z: z7 } = require("zod");
-const { nanoid: nanoid3 } = require("nanoid");
+import { z as z7 } from "zod";
+import { nanoid as nanoid3 } from "nanoid";
 var galleryRouter = router({
   // ─── Public Endpoints ───
   /** List visible gallery items (public) */
@@ -2027,10 +2027,10 @@ var galleryRouter = router({
 });
 
 // server/routers/aiStudio.ts
-const { z: z8 } = require("zod");
+import { z as z8 } from "zod";
 
 // server/openaiImageGen.ts
-const OpenAI = require("openai");
+import OpenAI from "openai";
 async function generateImageWithDALLE(options) {
   const apiKey = ENV.openaiApiKey;
   if (!apiKey) {
@@ -2072,7 +2072,7 @@ async function generateImageWithDALLE(options) {
 }
 
 // server/geminiImageGen.ts
-const { GoogleGenAI  } = require("@google/genai");
+import { GoogleGenAI } from "@google/genai";
 var GEMINI_IMAGE_MODELS = {
   "nano-banana": {
     modelCode: "gemini-2.5-flash-image",
@@ -2412,9 +2412,9 @@ var aiStudioRouter = router({
 });
 
 // server/routers/users.ts
-const { z: z9 } = require("zod");
-const { TRPCError: TRPCError3 } = require("@trpc/server");
-const { eq: eq3, sql: sql2 } = require("drizzle-orm");
+import { z as z9 } from "zod";
+import { TRPCError as TRPCError3 } from "@trpc/server";
+import { eq as eq3, sql as sql2 } from "drizzle-orm";
 var adminProcedure2 = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") {
     throw new TRPCError3({
@@ -2538,8 +2538,8 @@ var usersRouter = router({
 });
 
 // server/routers/blog.ts
-const { z: z10 } = require("zod");
-const { TRPCError: TRPCError4 } = require("@trpc/server");
+import { z as z10 } from "zod";
+import { TRPCError as TRPCError4 } from "@trpc/server";
 var adminProcedure3 = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") {
     throw new TRPCError4({
@@ -2645,8 +2645,8 @@ var blogRouter = router({
 });
 
 // server/routers/marketing.ts
-const { z: z11 } = require("zod");
-const { TRPCError: TRPCError5 } = require("@trpc/server");
+import { z as z11 } from "zod";
+import { TRPCError as TRPCError5 } from "@trpc/server";
 
 // server/_core/llm.ts
 var ensureArray = (value) => Array.isArray(value) ? value : [value];
@@ -2811,7 +2811,7 @@ async function invokeLLM(params) {
 }
 
 // server/routers/marketing.ts
-const { eq: eq4, desc: desc3, and: and2, sql: sql3 } = require("drizzle-orm");
+import { eq as eq4, desc as desc3, and as and2, sql as sql3 } from "drizzle-orm";
 var SYSTEM_PROMPTS = {
   social_media: `You are an expert tourism social media content creator for VANIR GROUP, a luxury Egyptian travel company. 
 Create engaging, platform-optimized social media posts that highlight Egypt's ancient wonders, luxury experiences, and cultural richness.
@@ -3163,8 +3163,8 @@ ${template.templateContent}`;
 });
 
 // server/routers/admin.destinations.ts
-const { z: z12 } = require("zod");
-const { eq: eq5, like, desc: desc4, asc: asc2, inArray } = require("drizzle-orm");
+import { z as z12 } from "zod";
+import { eq as eq5, like, desc as desc4, asc as asc2, inArray } from "drizzle-orm";
 var adminDestinationsRouter = router({
   /** List all destinations with pagination and filtering */
   list: adminProcedure.input(
@@ -3289,8 +3289,8 @@ var adminDestinationsRouter = router({
 });
 
 // server/routers/admin.offers.ts
-const { z: z13 } = require("zod");
-const { eq: eq6, like: like2, desc: desc5, asc: asc3, inArray: inArray2 } = require("drizzle-orm");
+import { z as z13 } from "zod";
+import { eq as eq6, like as like2, desc as desc5, asc as asc3, inArray as inArray2 } from "drizzle-orm";
 var adminOffersRouter = router({
   /** List all offers with pagination and filtering */
   list: adminProcedure.input(
@@ -3419,8 +3419,8 @@ var adminOffersRouter = router({
 });
 
 // server/routers/admin.blog.ts
-const { z: z14 } = require("zod");
-const { eq: eq7, like: like3, desc: desc6, asc: asc4, inArray: inArray3 } = require("drizzle-orm");
+import { z as z14 } from "zod";
+import { eq as eq7, like as like3, desc as desc6, asc as asc4, inArray as inArray3 } from "drizzle-orm";
 var adminBlogRouter = router({
   /** List all blog posts with pagination and filtering */
   list: adminProcedure.input(
@@ -3571,8 +3571,8 @@ var adminBlogRouter = router({
 });
 
 // server/routers/aiCommand.ts
-const { z: z15 } = require("zod");
-const { nanoid: nanoid4 } = require("nanoid");
+import { z as z15 } from "zod";
+import { nanoid as nanoid4 } from "nanoid";
 var VANIR_SYSTEM_PROMPT = `You are the AI Command Center assistant for Vanir Travel Group \u2014 a luxury travel company specializing in Egyptian heritage and premium travel experiences. You combine ancient Egyptian elegance with modern luxury.
 
 Brand voice: Sophisticated, knowledgeable, warm yet professional. Use rich descriptive language that evokes luxury and wonder.
@@ -4144,8 +4144,8 @@ Please respond in ${input.language === "ar" ? "Arabic" : "English"}.`;
 });
 
 // server/routers/siteSettings.ts
-const { z: z16 } = require("zod");
-const { eq: eq8, and: and3  } = require("drizzle-orm");
+import { z as z16 } from "zod";
+import { eq as eq8, and as and3 } from "drizzle-orm";
 var siteSettingsRouter = router({
   /**
    * Get theme settings (public - no auth required for visitors)
@@ -4285,8 +4285,8 @@ var siteSettingsRouter = router({
 });
 
 // server/routers/backup.ts
-const { z: z17 } = require("zod");
-const { sql: sql4 } = require("drizzle-orm");
+import { z as z17 } from "zod";
+import { sql as sql4 } from "drizzle-orm";
 var TABLE_MAP = {
   destinations: { table: destinations, label: "Destinations" },
   offers: { table: offers, label: "Offers & Packages" },
@@ -4510,21 +4510,21 @@ async function createContext(opts) {
 }
 
 // server/_core/vite.ts
-const express = require("express");
-const fs2 = require("fs");
-const { nanoid: nanoid5 } = require("nanoid");
-const path2 = require("path");
-const { createServer: createViteServer } = // require("vite");
+import express from "express";
+import fs2 from "fs";
+import { nanoid as nanoid5 } from "nanoid";
+import path2 from "path";
+import { createServer as createViteServer } from "vite";
 
 // vite.config.ts
-const { jsxLocPlugin  } = require("@builder.io/vite-plugin-jsx-loc");
-const tailwindcss = require("@tailwindcss/vite");
-const react = require("@vitejs/plugin-react");
-const fs = require("node:fs");
-const path = require("node:path");
-const { defineConfig  } = // require("vite");
-const { vitePluginManusRuntime  } = require("vite-plugin-manus-runtime");
-var PROJECT_ROOT = __dirname;
+import { jsxLocPlugin } from "@builder.io/vite-plugin-jsx-loc";
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import fs from "node:fs";
+import path from "node:path";
+import { defineConfig } from "vite";
+import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
+var PROJECT_ROOT = import.meta.dirname;
 var LOG_DIR = path.join(PROJECT_ROOT, ".manus-logs");
 var MAX_LOG_SIZE_BYTES = 1 * 1024 * 1024;
 var TRIM_TARGET_BYTES = Math.floor(MAX_LOG_SIZE_BYTES * 0.6);
@@ -4633,19 +4633,20 @@ function vitePluginManusDebugCollector() {
 }
 var plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
 var vite_config_default = defineConfig({
+  base: "/",
   plugins,
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "client", "src"),
-      "@shared": path.resolve(__dirname, "shared"),
-      "@assets": path.resolve(__dirname, "attached_assets")
+      "@": path.resolve(import.meta.dirname, "client", "src"),
+      "@shared": path.resolve(import.meta.dirname, "shared"),
+      "@assets": path.resolve(import.meta.dirname, "attached_assets")
     }
   },
-  envDir: path.resolve(__dirname),
-  root: path.resolve(__dirname, "client"),
-  publicDir: path.resolve(__dirname, "client", "public"),
+  envDir: path.resolve(import.meta.dirname),
+  root: path.resolve(import.meta.dirname, "client"),
+  publicDir: path.resolve(import.meta.dirname, "client", "public"),
   build: {
-    outDir: path.resolve(__dirname, "dist/public"),
+    outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true
   },
   server: {
@@ -4684,7 +4685,7 @@ async function setupVite(app, server) {
     const url = req.originalUrl;
     try {
       const clientTemplate = path2.resolve(
-        __dirname,
+        import.meta.dirname,
         "../..",
         "client",
         "index.html"
@@ -4703,7 +4704,7 @@ async function setupVite(app, server) {
   });
 }
 function serveStatic(app) {
-  const distPath = process.env.NODE_ENV === "development" ? path2.resolve(__dirname, "../..", "dist", "public") : path2.resolve(__dirname, "public");
+  const distPath = process.env.NODE_ENV === "development" ? path2.resolve(import.meta.dirname, "../..", "dist", "public") : path2.resolve(import.meta.dirname, "public");
   if (!fs2.existsSync(distPath)) {
     console.error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
@@ -4761,5 +4762,9 @@ async function startServer() {
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
   });
+  return app;
 }
 startServer().catch(console.error);
+export {
+  startServer
+};
