@@ -25,6 +25,7 @@ import ComponentShowcase from "./pages/ComponentShowcase";
 // import PromoNotifications from "./components/PromoNotifications"; // Removed: Disabled popup notifications
 import AdminLayout from "./components/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminDashboardEnhanced from "./pages/admin/AdminDashboardEnhanced";
 import AdminBookings from "./pages/admin/AdminBookings";
 import AdminReviews from "./pages/admin/AdminReviews";
 import AdminMessages from "./pages/admin/AdminMessages";
@@ -103,7 +104,7 @@ function Router() {
 
       {/* Admin Routes */}
       <Route path="/admin">
-        <AdminLayout><AdminDashboard /></AdminLayout>
+        <AdminLayout><AdminDashboardEnhanced /></AdminLayout>
       </Route>
       <Route path="/admin/analytics">
         <AdminLayout><AnalyticsAdmin /></AdminLayout>
