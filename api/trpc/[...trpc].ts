@@ -24,8 +24,9 @@ const handler = createHTTPHandler({
   createContext: async (opts) => {
     // Build a minimal Express-like response object that supports clearCookie
     const resShim = {
-      clearCookie(name: string, opts?: Partial<CookieOptions>) {
-        const header = serializeCookie(name, "", { ...(opts ?? {}), maxAge: -1 });
+      // Mirror Express's res.clearCookie signature while targeting the underlying node res
+      clearCookie(name: string, cookieOptions?: Partial<CookieOptions>) {
+        const header = serializeCookie(name, "", { ...(cookieOptions ?? {}), maxAge: -1 });
         // Vercel/node-http may have multiple Set-Cookie headers
         const current = opts.res.getHeader("Set-Cookie");
         const next = current
