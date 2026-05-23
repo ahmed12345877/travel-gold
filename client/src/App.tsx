@@ -34,6 +34,7 @@ import AdminOffers from "./pages/admin/AdminOffers";
 import AdminGallery from "./pages/admin/AdminGallery";
 import AdminAIStudio from "./pages/admin/AdminAIStudio";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminLogin from "./pages/admin/AdminLogin";
 import DestinationsAdmin from "./pages/admin/DestinationsAdmin";
 import OffersAdmin from "./pages/admin/OffersAdmin";
 import BlogAdmin from "./pages/admin/BlogAdmin";
@@ -104,6 +105,7 @@ function Router() {
       <Route path={"/components"} component={ComponentShowcase} />
 
       {/* Admin Routes */}
+      <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin">
         <AdminLayout><AdminDashboardEnhanced /></AdminLayout>
       </Route>

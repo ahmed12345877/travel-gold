@@ -4,7 +4,19 @@ import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import path from "node:path";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
-import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
+// Make Manus runtime optional so Vercel builds don't depend on it
+let maybeManusRuntime: Plugin | null = null;
+try {
+  // Only enable when explicitly requested
+  if (process.env.VITE_ENABLE_MANUS_RUNTIME === "true") {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { vitePluginManusRuntime } = await import("vite-plugin-manus-runtime");
+    maybeManusRuntime = vitePluginManusRuntime();
+  }
+} catch {
+  // Ignore if the plugin is unavailable in the environment
+  maybeManusRuntime = null;
+}
 
 // =============================================================================
 // Manus Debug Collector - Vite Plugin
@@ -150,7 +162,14 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+const plugins = [
+  react(),
+  tailwindcss(),
+  jsxLocPlugin(),
+  // Only include Manus runtime when explicitly enabled
+  ...(maybeManusRuntime ? [maybeManusRuntime] : []),
+  vitePluginManusDebugCollector(),
+];
 
 export default defineConfig({
   base: '/',

@@ -1,17 +1,5 @@
 {
-    "version": 2,
-    "rewrites": [
-        {
-            "source": "/api/trpc/(.*)",
-            "destination": "/api/index.ts"
-        },
-        {
-            "source": "/api/(.*)",
-            "destination": "/api/index.ts"
-        },
-        {
-            "source": "/((?!api/|assets/|favicon|[^/]*\\.[^/]+$).*)",
-            "destination": "/index.html"
-        }
-    ]
+  "rewrites": [
+    { "source": "/manus-storage/(.*)", "destination": "/api/manus-storage/$1" }
+  ]
 }
