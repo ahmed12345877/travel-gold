@@ -3,9 +3,9 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import path from "node:path";
-import { defineConfig, type Plugin, type ViteDevServer } from "vite";
+import { defineConfig, type PluginOption, type ViteDevServer } from "vite";
 // Make Manus runtime optional so Vercel builds don't depend on it
-let maybeManusRuntime: Plugin | null = null;
+let maybeManusRuntime: PluginOption | null = null;
 try {
   // Only enable when explicitly requested
   if (process.env.VITE_ENABLE_MANUS_RUNTIME === "true") {
@@ -86,7 +86,7 @@ function writeToLogFile(source: LogSource, entries: unknown[]) {
  * - Files: browserConsole.log, networkRequests.log, sessionReplay.log
  * - Auto-trimmed when exceeding 1MB (keeps newest entries)
  */
-function vitePluginManusDebugCollector(): Plugin {
+function vitePluginManusDebugCollector(): PluginOption {
   return {
     name: "manus-debug-collector",
 
