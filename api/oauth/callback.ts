@@ -78,3 +78,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(500).json({ error: "OAuth callback failed" });
   }
 }
+
+// Ensure Node.js runtime due to Express-like response usage and server SDK
+export const runtime = "nodejs";

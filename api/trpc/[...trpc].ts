@@ -51,6 +51,9 @@ export default async function trpcHandler(req: IncomingMessage, res: ServerRespo
   return handler(req, res);
 }
 
+// Ensure this function runs in the Node.js runtime on Vercel
+export const runtime = "nodejs";
+
 export const config = {
   api: {
     bodyParser: false,
