@@ -23,7 +23,8 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   if (!isUnauthorized) return;
 
-  window.location.href = getLoginUrl();
+  // Route unauthorized users to the internal admin login to avoid external NXDOMAINs
+  window.location.href = "/admin/login";
 };
 
 queryClient.getQueryCache().subscribe(event => {

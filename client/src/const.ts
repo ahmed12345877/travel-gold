@@ -5,6 +5,7 @@ export const getLoginUrl = () => {
   const env = import.meta.env as Record<string, string | undefined>;
   const oauthPortalUrl = env.VITE_OAUTH_PORTAL_URL;
   const appId = env.VITE_APP_ID;
+  const forcePortal = env.VITE_FORCE_MANUS_PORTAL === "true";
   // Detect client Supabase presence at build time; if present, drive users to the internal admin login page
   const hasSupabaseClient = Boolean(
     (env.VITE_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL) &&
@@ -23,7 +24,13 @@ export const getLoginUrl = () => {
     }
   };
 
-  // If Supabase is configured or the portal host is invalid/legacy, route to our internal admin login
+  // Default: always route to internal admin login to avoid dead external portals,
+  // unless explicitly forced to use Manus portal via VITE_FORCE_MANUS_PORTAL=true
+  if (!forcePortal) {
+    return "/admin/login";
+  }
+
+  // Safety: still fall back to internal login when Supabase is available or portal is legacy/invalid
   if (hasSupabaseClient || isLegacyManusHost(oauthPortalUrl)) {
     return "/admin/login";
   }
