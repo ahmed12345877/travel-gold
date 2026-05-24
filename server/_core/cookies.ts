@@ -8,7 +8,7 @@ function isIpAddress(host: string) {
   return host.includes(":");
 }
 
-function isSecureRequest(req: ExpressRequest) {
+function isSecureRequest(req: Pick<ExpressRequest, "protocol" | "headers">) {
   if (req.protocol === "https") return true;
 
   const forwardedProto = req.headers["x-forwarded-proto"];
@@ -22,7 +22,7 @@ function isSecureRequest(req: ExpressRequest) {
 }
 
 export function getSessionCookieOptions(
-  req: ExpressRequest
+  req: Pick<ExpressRequest, "protocol" | "headers">
 ): Pick<CookieOptions, "httpOnly" | "path" | "sameSite" | "secure"> {
   // const hostname = req.hostname;
   // const shouldSetDomain =

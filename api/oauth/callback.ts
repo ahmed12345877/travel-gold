@@ -57,11 +57,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       expiresInMs: ONE_YEAR_MS,
     });
 
-    // Emulate getSessionCookieOptions using request headers
+    // Build a minimal request-like object for cookie options
+    const forwardedProto = req.headers["x-forwarded-proto"];
+    const protoList = Array.isArray(forwardedProto)
+      ? forwardedProto
+      : typeof forwardedProto === "string"
+        ? forwardedProto.split(",")
+        : [];
+    const protocol = protoList.some(p => p && p.trim().toLowerCase() === "https") ? "https" : "http";
+
     const cookieOptions = getSessionCookieOptions({
-      headers: req.headers as any,
-      protocol: (req.headers["x-forwarded-proto"] as string) ?? "http",
-    } as any);
+      headers: req.headers,
+      protocol,
+    });
 
     res.setHeader("Set-Cookie", serializeCookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS }));
     res.status(302).setHeader("Location", "/").end();
