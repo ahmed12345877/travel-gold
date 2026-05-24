@@ -22,7 +22,7 @@ export default function AdminLogin() {
           <h1 className="text-white text-2xl font-semibold mb-2">Admin Access</h1>
           <p className="text-white/50 text-sm mb-6">Sign in with your admin account to continue.</p>
           <Button
-            onClick={() => (window.location.href = getLoginUrl())}
+            onClick={() => (window.location.href = getLoginUrl('/admin'))}
             className="w-full bg-[var(--theme-primary)] text-black font-semibold py-6 rounded-xl"
           >
             Sign in with VANIR Account
