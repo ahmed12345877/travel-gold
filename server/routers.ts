@@ -1,4 +1,4 @@
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
@@ -18,6 +18,12 @@ import { adminBlogRouter } from "./routers/admin.blog";
 import { aiCommandRouter } from "./routers/aiCommand";
 import { siteSettingsRouter } from "./routers/siteSettings";
 import { backupRouter } from "./routers/backup";
+import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+import { createHash, timingSafeEqual } from "crypto";
+import { ENV } from "./_core/env";
+import { sdk } from "./_core/sdk";
+import * as db from "./db";
 
 export const appRouter = router({
   system: systemRouter,
@@ -30,6 +36,65 @@ export const appRouter = router({
         success: true,
       } as const;
     }),
+    login: publicProcedure
+      .input(z.object({ email: z.string().email(), password: z.string().min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        const adminEmail = ENV.adminEmail;
+        const adminPasswordHash = ENV.adminPasswordHash;
+
+        if (!adminEmail || !adminPasswordHash) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "Admin login is not configured on this server.",
+          });
+        }
+
+        // Case-insensitive email comparison
+        if (input.email.toLowerCase() !== adminEmail.toLowerCase()) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password." });
+        }
+
+        // Compare SHA-256 hash of the submitted password with stored hash
+        const submittedHash = createHash("sha256").update(input.password).digest("hex");
+        const storedHash = adminPasswordHash.toLowerCase();
+
+        let match = false;
+        try {
+          match = timingSafeEqual(Buffer.from(submittedHash, "utf8"), Buffer.from(storedHash, "utf8"));
+        } catch {
+          match = false;
+        }
+
+        if (!match) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password." });
+        }
+
+        // Use a stable openId for the admin account
+        const openId = `admin:${adminEmail.toLowerCase()}`;
+
+        // Upsert admin user in DB
+        await db.upsertUser({
+          openId,
+          email: adminEmail,
+          name: "Admin",
+          loginMethod: "password",
+          role: "admin",
+          lastSignedIn: new Date(),
+        });
+
+        const sessionToken = await sdk.createSessionToken(openId, {
+          expiresInMs: ONE_YEAR_MS,
+          name: "Admin",
+        });
+
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, {
+          ...cookieOptions,
+          maxAge: ONE_YEAR_MS,
+        });
+
+        return { success: true } as const;
+      }),
   }),
 
   // Feature routers
