@@ -17,11 +17,19 @@ async function readRawBody(req: IncomingMessage): Promise<Buffer> {
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   if (req.method === "OPTIONS") {
-    // Relaxed CORS for token exchange if called from browsers (typically server-to-server)
+    // Restrict CORS for token exchange - only allow same origin requests
     res.statusCode = 204;
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    const origin = (req as any).headers?.origin || "";
+    const requestUrl = (req as any).headers?.host || "";
+    // Only allow if origin matches the current host (same-origin policy)
+    if (origin && requestUrl && origin.includes(requestUrl)) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+    } else {
+      res.setHeader("Access-Control-Allow-Origin", "null");
+    }
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
     res.end();
     return;
   }
@@ -57,8 +65,15 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     // Mirror content type from upstream
     const ct = r.headers.get("content-type") || "application/json; charset=utf-8";
     res.setHeader("Content-Type", ct);
-    // CORS passthrough (permissive)
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    // Restrict CORS for token exchange - only allow same origin requests
+    const origin = (req as any).headers?.origin || "";
+    const requestUrl = (req as any).headers?.host || "";
+    if (origin && requestUrl && origin.includes(requestUrl)) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+    } else {
+      res.setHeader("Access-Control-Allow-Origin", "null");
+    }
+    res.setHeader("Access-Control-Allow-Credentials", "true");
     res.end(text);
   } catch (err: any) {
     res.statusCode = 500;
