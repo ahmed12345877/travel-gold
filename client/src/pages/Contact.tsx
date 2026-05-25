@@ -3,8 +3,8 @@
  * Contact Page: Full contact page with form, map, and office info
  * Typography: Playfair Display for headings, Raleway for body, Dancing Script for accents
  */
-import { useState, useRef } from "react";
-import { trpc } from "@/lib/trpc";
+import { useEffect } from "react";
+import { useForm, ValidationError } from "@formspree/react";
 import { motion } from "framer-motion";
 import OptimizedImage from "@/components/OptimizedImage";
 import {
@@ -58,50 +58,13 @@ const contactInfo = [
 ];
 
 export default function Contact() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    subject: "",
-    message: "",
-  });
-  const [submitted, setSubmitted] = useState(false);
-  const [sending, setSending] = useState(false);
+  const [formspreeState, handleSubmit] = useForm("mnjrgqrq");
 
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const submitMutation = trpc.contact.submit.useMutation({
-    onSuccess: () => {
-      setSending(false);
-      setSubmitted(true);
+  useEffect(() => {
+    if (formspreeState.succeeded) {
       toast.success("Your message has been sent successfully!");
-    },
-    onError: (error) => {
-      setSending(false);
-      toast.error(error.message || "Failed to send message. Please try again.");
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || !formData.email || !formData.message) {
-      toast.error("Please fill in all required fields.");
-      return;
     }
-    setSending(true);
-    submitMutation.mutate({
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone || undefined,
-      subject: formData.subject || undefined,
-      message: formData.message,
-    });
-  };
+  }, [formspreeState.succeeded]);
 
 
 
@@ -220,7 +183,7 @@ export default function Contact() {
                 Hear From You
               </h2>
 
-              {submitted ? (
+              {formspreeState.succeeded ? (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -234,10 +197,7 @@ export default function Contact() {
                     Thank you for reaching out. Our team will get back to you within 24 hours.
                   </p>
                   <button
-                    onClick={() => {
-                      setSubmitted(false);
-                      setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
-                    }}
+                    onClick={() => window.location.reload()}
                     className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--theme-primary)] text-[var(--theme-surface)] font-semibold text-sm tracking-wide hover:bg-[var(--theme-primary-light)] transition-all duration-300"
                   >
                     Send Another Message
@@ -256,12 +216,11 @@ export default function Contact() {
                       <input
                         type="text"
                         name="name"
-                        value={formData.name}
-                        onChange={handleChange}
                         placeholder="Your Name *"
                         required
                         className="w-full bg-[var(--theme-surface)] border border-white/10 text-white placeholder-[var(--theme-primary-light)]/30 pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:border-[var(--theme-primary)]/60 transition-colors"
                       />
+                      <ValidationError field="name" errors={formspreeState.errors} className="text-red-400 text-xs mt-1" />
                     </div>
                     <div className="relative">
                       <Mail
@@ -271,12 +230,11 @@ export default function Contact() {
                       <input
                         type="email"
                         name="email"
-                        value={formData.email}
-                        onChange={handleChange}
                         placeholder="Your Email *"
                         required
                         className="w-full bg-[var(--theme-surface)] border border-white/10 text-white placeholder-[var(--theme-primary-light)]/30 pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:border-[var(--theme-primary)]/60 transition-colors"
                       />
+                      <ValidationError field="email" errors={formspreeState.errors} className="text-red-400 text-xs mt-1" />
                     </div>
                   </div>
 
@@ -290,8 +248,6 @@ export default function Contact() {
                       <input
                         type="tel"
                         name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
                         placeholder="Phone Number"
                         className="w-full bg-[var(--theme-surface)] border border-white/10 text-white placeholder-[var(--theme-primary-light)]/30 pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:border-[var(--theme-primary)]/60 transition-colors"
                       />
@@ -303,8 +259,6 @@ export default function Contact() {
                       />
                       <select
                         name="subject"
-                        value={formData.subject}
-                        onChange={handleChange}
                         className="w-full bg-[var(--theme-surface)] border border-white/10 text-white pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:border-[var(--theme-primary)]/60 transition-colors appearance-none"
                       >
                         <option value="" className="bg-[var(--theme-surface)]">Select Subject</option>
@@ -325,22 +279,21 @@ export default function Contact() {
                     />
                     <textarea
                       name="message"
-                      value={formData.message}
-                      onChange={handleChange}
                       placeholder="Your Message *"
                       required
                       rows={6}
                       className="w-full bg-[var(--theme-surface)] border border-white/10 text-white placeholder-[var(--theme-primary-light)]/30 pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:border-[var(--theme-primary)]/60 transition-colors resize-none"
                     />
+                    <ValidationError field="message" errors={formspreeState.errors} className="text-red-400 text-xs mt-1" />
                   </div>
 
                   {/* Submit button */}
                   <button
                     type="submit"
-                    disabled={sending}
+                    disabled={formspreeState.submitting}
                     className="group inline-flex items-center gap-3 px-10 py-4 bg-[var(--theme-primary)] text-[var(--theme-surface)] font-semibold text-sm tracking-wide hover:bg-[var(--theme-primary-light)] transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    {sending ? (
+                    {formspreeState.submitting ? (
                       <>
                         <div className="w-4 h-4 border-2 border-[var(--theme-surface)]/30 border-t-[var(--theme-surface)] rounded-full animate-spin" />
                         Sending...
