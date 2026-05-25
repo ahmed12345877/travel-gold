@@ -66,3 +66,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(502).send("Storage proxy error");
   }
 }
+
+// Requires Node.js runtime for @vercel/node types and Node fetch polyfills
+export const runtime = "nodejs";

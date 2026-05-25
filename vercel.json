@@ -1,5 +1,12 @@
 {
+  "buildCommand": "pnpm build",
+  "outputDirectory": "dist/public",
   "rewrites": [
-    { "source": "/manus-storage/(.*)", "destination": "/api/manus-storage/$1" }
+    { "source": "/.well-known/openid-configuration", "destination": "/api/oidc/openid-configuration" },
+    { "source": "/.well-known/jwks.json", "destination": "/api/oidc/jwks" },
+    { "source": "/oauth/authorize", "destination": "/api/oidc/oauth/authorize" },
+    { "source": "/oauth/token", "destination": "/api/oidc/oauth/token" },
+    { "source": "/manus-storage/(.*)", "destination": "/api/manus-storage/$1" },
+    { "source": "/((?!api/|.*\\..*).*)", "destination": "/" }
   ]
 }

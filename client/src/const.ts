@@ -1,24 +1,45 @@
 export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 
 // Generate login URL at runtime so redirect URI reflects the current origin.
-// Optionally include a nextPath (relative) so the server can redirect there after login.
-export const getLoginUrl = (nextPath?: string) => {
-  const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL;
-  const appId = import.meta.env.VITE_APP_ID;
+export const getLoginUrl = () => {
+  const env = import.meta.env as Record<string, string | undefined>;
+  const oauthPortalUrl = env.VITE_OAUTH_PORTAL_URL;
+  const appId = env.VITE_APP_ID;
+  const forcePortal = env.VITE_FORCE_MANUS_PORTAL === "true";
+  // Detect client Supabase presence at build time; if present, drive users to the internal admin login page
+  const hasSupabaseClient = Boolean(
+    (env.VITE_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL) &&
+      (env.VITE_SUPABASE_ANON_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  );
 
-  // Only allow simple relative paths to prevent open redirects
-  const safeNext = nextPath && /^\//.test(nextPath) ? nextPath : undefined;
+  // Treat legacy Manus portal hosts as invalid to avoid NXDOMAIN
+  const isLegacyManusHost = (u: string | undefined) => {
+    if (!u) return true;
+    try {
+      const parsed = new URL(u);
+      const host = parsed.hostname.toLowerCase();
+      return host === "portal.manus.im" || host.endsWith(".manus.im");
+    } catch {
+      return true;
+    }
+  };
 
-  const baseCallback = `${window.location.origin}/api/oauth/callback`;
-  const redirectUri = safeNext
-    ? `${baseCallback}?next=${encodeURIComponent(safeNext)}`
-    : baseCallback;
+  // Default: always route to internal admin login to avoid dead external portals,
+  // unless explicitly forced to use Manus portal via VITE_FORCE_MANUS_PORTAL=true
+  if (!forcePortal) {
+    return "/admin/login";
+  }
 
-  // The OAuth server echoes state back to us; keep it as the redirectUri only
+  // Safety: still fall back to internal login when Supabase is available or portal is legacy/invalid
+  if (hasSupabaseClient || isLegacyManusHost(oauthPortalUrl)) {
+    return "/admin/login";
+  }
+
+  const redirectUri = `${window.location.origin}/api/oauth/callback`;
   const state = btoa(redirectUri);
 
   const url = new URL(`${oauthPortalUrl}/app-auth`);
-  url.searchParams.set("appId", appId);
+  url.searchParams.set("appId", appId ?? "");
   url.searchParams.set("redirectUri", redirectUri);
   url.searchParams.set("state", state);
   url.searchParams.set("type", "signIn");

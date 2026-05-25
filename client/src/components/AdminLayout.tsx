@@ -124,7 +124,8 @@ export default function AdminLayout({
           </div>
           <Button
             onClick={() => {
-              window.location.href = "/login?next=/admin";
+              // Always route to internal login; getLoginUrl already defaults to this
+              window.location.href = "/admin/login";
             }}
             className="w-full bg-[var(--theme-primary)] text-[var(--theme-surface)] hover:bg-[var(--theme-primary-light)] font-[var(--font-body)] font-semibold shadow-lg hover:shadow-xl transition-all"
             size="lg"
