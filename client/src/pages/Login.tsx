@@ -3,6 +3,7 @@ import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { supabase } from "@/lib/supabase";
 import PageMeta from "@/components/PageMeta";
 import {
   LogIn,
@@ -40,8 +41,48 @@ export default function Login() {
     }
   }, [isAuthenticated, user, setLocation]);
 
-  const handleOAuthLogin = () => {
+  const searchParams = new URLSearchParams(globalThis.location?.search || "");
+  const nextPath = searchParams.get("next") || "/";
+
+  const handleOAuthLogin = async () => {
+    // Prefer Supabase OAuth if configured; fallback to existing Manus URL
+    try {
+      // Attempt Google OAuth via Supabase if env/providers are configured
+      const { data, error } = await supabase?.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}${nextPath}` },
+      })!;
+      if (!error && data?.url) {
+        window.location.href = data.url;
+        return;
+      }
+    } catch {}
     window.location.href = getLoginUrl();
+  };
+
+  const handleEmailAuth = async () => {
+    if (!supabase) return handleOAuthLogin();
+    if (!email || !password) return handleOAuthLogin();
+    if (activeTab === "signin") {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (!error) {
+        setLocation(nextPath);
+        return;
+      }
+    } else {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { name } },
+      });
+      if (!error) {
+        // If email confirmation is enabled, the user will need to confirm
+        setLocation(nextPath);
+        return;
+      }
+    }
+    // Fallback
+    handleOAuthLogin();
   };
 
   const features = [
@@ -268,8 +309,7 @@ export default function Login() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                // Redirect to OAuth for now
-                handleOAuthLogin();
+                void handleEmailAuth();
               }}
               className="space-y-4"
             >

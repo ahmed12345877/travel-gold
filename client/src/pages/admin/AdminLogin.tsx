@@ -2,7 +2,7 @@ import PageMeta from "@/components/PageMeta";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { getLoginUrl } from "@/const";
+import { Link } from "wouter";
 
 const LOGO_URL =
   "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/ss_c5f7e7e2.png";
@@ -21,12 +21,13 @@ export default function AdminLogin() {
           <img src={LOGO_URL} alt="VANIR GROUP" className="w-14 h-14 mx-auto mb-4 object-contain" />
           <h1 className="text-white text-2xl font-semibold mb-2">Admin Access</h1>
           <p className="text-white/50 text-sm mb-6">Sign in with your admin account to continue.</p>
-          <Button
-            onClick={() => (window.location.href = getLoginUrl())}
-            className="w-full bg-[var(--theme-primary)] text-black font-semibold py-6 rounded-xl"
-          >
-            Sign in with VANIR Account
-          </Button>
+          <Link href="/login?next=/admin">
+            <Button
+              className="w-full bg-[var(--theme-primary)] text-black font-semibold py-6 rounded-xl"
+            >
+              Sign in to Continue
+            </Button>
+          </Link>
         </div>
       </div>
       <Footer />

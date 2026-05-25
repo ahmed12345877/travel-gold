@@ -7,6 +7,7 @@ import { HelmetProvider } from "react-helmet-async";
 import superjson from "superjson";
 import App from "./App";
 import { getLoginUrl } from "./const";
+import { supabase } from "./lib/supabase";
 import { GlobalThemeStyleInjector } from "./contexts/GlobalThemeStyleInjector";
 import { ThemeColorsApplier } from "./contexts/ThemeColorsApplier";
 import { ThemeColorsProvider } from "./contexts/ThemeColorsProvider";
@@ -23,7 +24,7 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   if (!isUnauthorized) return;
 
-  window.location.href = getLoginUrl();
+  window.location.href = "/login";
 };
 
 queryClient.getQueryCache().subscribe(event => {
@@ -47,9 +48,21 @@ const trpcClient = trpc.createClient({
     httpBatchLink({
       url: "/api/trpc",
       transformer: superjson,
-      fetch(input, init) {
+      async fetch(input, init) {
+        let token: string | null = null;
+        try {
+          const session = await supabase?.auth.getSession();
+          token = session?.data.session?.access_token ?? null;
+        } catch {
+          token = null;
+        }
+
+        const headers = new Headers(init?.headers || {});
+        if (token) headers.set("Authorization", `Bearer ${token}`);
+
         return globalThis.fetch(input, {
           ...(init ?? {}),
+          headers,
           credentials: "include",
         });
       },
