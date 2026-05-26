@@ -67,6 +67,7 @@ import BlogSEOGenerator from "./pages/marketing/BlogSEOGenerator";
 import AdCopyGenerator from "./pages/marketing/AdCopyGenerator";
 import ContentCalendar from "./pages/marketing/ContentCalendar";
 import { HelmetProvider } from "react-helmet-async";
+import AuthCallback from "./pages/auth/Callback";
 
 function Router() {
   return (
@@ -92,6 +93,7 @@ function Router() {
       <Route path={"/sign-in"} component={Login} />
       <Route path={"/sign-up"} component={Login} />
       <Route path={"/register"} component={Login} />
+      <Route path={"/auth/callback"} component={AuthCallback} />
       <Route path={"/profile"} component={Profile} />
       <Route path={"/blog"} component={Blog} />
       <Route path={"/blog/:slug"} component={BlogPost} />

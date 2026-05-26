@@ -1,5 +1,5 @@
 import PageMeta from "@/components/PageMeta";
-import { supabase } from "@/lib/supabase";
+import { supabase, fetchSupabaseAuthSettings } from "@/lib/supabase";
 import { trpc } from "@/lib/trpc";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
@@ -65,6 +65,14 @@ export default function AdminLogin() {
 
   const hasSupabase = Boolean(supabase);
 
+  // Preflight: read Supabase auth settings so we can disable unsupported providers
+  const [providerState, setProviderState] = useState({
+    googleEnabled: false,
+    emailEnabled: false,
+    emailSignupsEnabled: false,
+    checked: false,
+  });
+
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: () => {
       navigate("/admin");
@@ -87,6 +95,7 @@ export default function AdminLogin() {
 
   useEffect(() => {
     if (!supabase) return;
+    // Attempt session bridge
     supabase.auth.getSession().then(({ data }) => {
       const token = data?.session?.access_token;
       if (token) {
@@ -94,6 +103,15 @@ export default function AdminLogin() {
         supabaseLoginMutation.mutate({ accessToken: token });
       }
     });
+
+    // Preflight provider configuration to avoid redirecting to GoTrue JSON errors
+    void (async () => {
+      const settings = await fetchSupabaseAuthSettings();
+      const googleEnabled = Boolean(settings?.external?.google?.enabled);
+      const emailEnabled = Boolean(settings?.email?.enabled);
+      const emailSignupsEnabled = Boolean(settings?.email?.enable_signup);
+      setProviderState({ googleEnabled, emailEnabled, emailSignupsEnabled, checked: true });
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -113,15 +131,22 @@ export default function AdminLogin() {
     setLoading(true);
     setStatus(null);
     try {
+      // Guard before redirecting
+      if (providerState.checked && !providerState.googleEnabled) {
+        throw new Error(
+          "Google login is not enabled. Enable it in Supabase Dashboard → Authentication → Providers → Google."
+        );
+      }
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
       if (token) {
         supabaseLoginMutation.mutate({ accessToken: token });
         return;
       }
+      const next = encodeURIComponent("/admin/login");
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/admin/login` },
+        options: { redirectTo: `${window.location.origin}/auth/callback?next=${next}` },
       });
       if (error) {
         if (error.message?.toLowerCase().includes("provider") || error.message?.toLowerCase().includes("not enabled")) {
@@ -144,9 +169,16 @@ export default function AdminLogin() {
     setLoading(true);
     setStatus(null);
     try {
+      // Guard if email-based auth is not enabled
+      if (providerState.checked && (!providerState.emailEnabled || !providerState.emailSignupsEnabled)) {
+        throw new Error(
+          "Email-based sign-in/up is disabled. Enable Email provider (and Signups) in Supabase Dashboard → Authentication → Providers."
+        );
+      }
+      const next = encodeURIComponent("/admin/login");
       const { error } = await supabase.auth.signInWithOtp({
         email: magicEmail,
-        options: { emailRedirectTo: `${window.location.origin}/admin/login` },
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${next}` },
       });
       if (error) throw error;
       setStatus({ type: "success", msg: "Magic link sent! Check your inbox." });
@@ -469,14 +501,14 @@ export default function AdminLogin() {
               <button
                 type="button"
                 onClick={signInWithGoogle}
-                disabled={loading}
+                disabled={loading || (providerState.checked && !providerState.googleEnabled)}
                 className="w-full py-3 text-sm font-semibold uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-3"
                 style={{
                   background: "rgba(255,255,255,0.05)",
                   border: "1px solid rgba(201,168,76,0.2)",
                   borderRadius: "2px",
                   color: "rgba(255,255,255,0.7)",
-                  cursor: loading ? "not-allowed" : "pointer",
+                  cursor: loading || (providerState.checked && !providerState.googleEnabled) ? "not-allowed" : "pointer",
                 }}
                 onMouseEnter={(e) => {
                   if (!loading) {
@@ -499,6 +531,11 @@ export default function AdminLogin() {
                 </svg>
                 Continue with Google
               </button>
+              {providerState.checked && !providerState.googleEnabled && (
+                <div className="mt-2 text-[11px] text-amber-300/80">
+                  Google provider is disabled in Supabase. Enable it in Dashboard → Authentication → Providers.
+                </div>
+              )}
             </div>
           )}
 
