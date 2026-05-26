@@ -59,6 +59,9 @@ export default function OptimizedImage({
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(!lazy);
   const [hasError, setHasError] = useState(false);
+  // Keep an internal source so we can swap to a fallback on failure
+  const [currentSrc, setCurrentSrc] = useState(src);
+  const triedApiFallbackRef = useRef(false);
   const [showImage, setShowImage] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -102,6 +105,25 @@ export default function OptimizedImage({
   };
 
   const handleError = () => {
+    // If the image is using the built-in storage proxy path and failed,
+    // try falling back to the API route variant which can leverage Supabase
+    // signed URLs when configured: /api/manus-storage/<key>
+    try {
+      const url = new URL(currentSrc, window.location.origin);
+      const localPath = url.pathname;
+      const isManusProxy = localPath.startsWith("/manus-storage/");
+      if (isManusProxy && !triedApiFallbackRef.current) {
+        const key = localPath.replace(/^\/manus-storage\//, "");
+        triedApiFallbackRef.current = true;
+        setHasError(false);
+        setIsLoaded(false);
+        setShowImage(false);
+        setCurrentSrc(`/api/manus-storage/${key}`);
+        return;
+      }
+    } catch {
+      // ignore URL parsing issues and show error fallback
+    }
     setHasError(true);
     onImageError?.();
   };
@@ -221,7 +243,7 @@ export default function OptimizedImage({
       {/* Actual image with progressive reveal */}
       {isInView && !hasError && (
         <img
-          src={src}
+          src={currentSrc}
           alt={alt}
           loading={lazy ? "lazy" : "eager"}
           decoding="async"
