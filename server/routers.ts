@@ -40,61 +40,89 @@ export const appRouter = router({
     login: publicProcedure
       .input(z.object({ email: z.string().email(), password: z.string().min(1) }))
       .mutation(async ({ ctx, input }) => {
-        const adminEmail = ENV.adminEmail;
-        const adminPasswordHash = ENV.adminPasswordHash;
+        try {
+          const adminEmail = ENV.adminEmail;
+          const adminPasswordHash = ENV.adminPasswordHash;
 
-        if (!adminEmail || !adminPasswordHash) {
+          if (!adminEmail || !adminPasswordHash) {
+            throw new TRPCError({
+              code: "PRECONDITION_FAILED",
+              message: "Admin login is not configured on this server. Set ADMIN_EMAIL and ADMIN_PASSWORD_HASH environment variables.",
+            });
+          }
+
+          // Case-insensitive email comparison
+          if (input.email.toLowerCase() !== adminEmail.toLowerCase()) {
+            throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password." });
+          }
+
+          // Support both plain-text password and SHA-256 hash comparison
+          // If stored hash looks like a 64-char hex string, compare as SHA-256
+          // Otherwise compare directly (plain text fallback)
+          const storedHash = adminPasswordHash.trim();
+          const isHashFormat = /^[a-f0-9]{64}$/.test(storedHash.toLowerCase());
+
+          let match = false;
+          if (isHashFormat) {
+            // Stored value is a SHA-256 hex hash
+            const submittedHash = createHash("sha256").update(input.password).digest("hex");
+            try {
+              match = timingSafeEqual(
+                Buffer.from(submittedHash, "utf8"),
+                Buffer.from(storedHash.toLowerCase(), "utf8")
+              );
+            } catch {
+              match = false;
+            }
+          } else {
+            // Stored value is a plain-text password (development fallback)
+            try {
+              match = timingSafeEqual(
+                Buffer.from(input.password, "utf8"),
+                Buffer.from(storedHash, "utf8")
+              );
+            } catch {
+              match = false;
+            }
+          }
+
+          if (!match) {
+            throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password." });
+          }
+
+          // Use a stable openId for the admin account
+          const openId = `admin:${adminEmail.toLowerCase()}`;
+
+          // Upsert admin user in DB
+          await db.upsertUser({
+            openId,
+            email: adminEmail,
+            name: "Admin",
+            loginMethod: "password",
+            role: "admin",
+            lastSignedIn: new Date(),
+          });
+
+          const sessionToken = await sdk.createSessionToken(openId, {
+            expiresInMs: ONE_YEAR_MS,
+            name: "Admin",
+          });
+
+          const cookieOptions = getSessionCookieOptions(ctx.req);
+          ctx.res.cookie(COOKIE_NAME, sessionToken, {
+            ...cookieOptions,
+            maxAge: ONE_YEAR_MS,
+          });
+
+          return { success: true } as const;
+        } catch (err) {
+          // Re-throw TRPCErrors as-is, wrap unexpected errors
+          if (err instanceof TRPCError) throw err;
           throw new TRPCError({
-            code: "PRECONDITION_FAILED",
-            message: "Admin login is not configured on this server.",
+            code: "INTERNAL_SERVER_ERROR",
+            message: "An unexpected error occurred during login. Please try again.",
           });
         }
-
-        // Case-insensitive email comparison
-        if (input.email.toLowerCase() !== adminEmail.toLowerCase()) {
-          throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password." });
-        }
-
-        // Compare SHA-256 hash of the submitted password with stored hash
-        const submittedHash = createHash("sha256").update(input.password).digest("hex");
-        const storedHash = adminPasswordHash.toLowerCase();
-
-        let match = false;
-        try {
-          match = timingSafeEqual(Buffer.from(submittedHash, "utf8"), Buffer.from(storedHash, "utf8"));
-        } catch {
-          match = false;
-        }
-
-        if (!match) {
-          throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password." });
-        }
-
-        // Use a stable openId for the admin account
-        const openId = `admin:${adminEmail.toLowerCase()}`;
-
-        // Upsert admin user in DB
-        await db.upsertUser({
-          openId,
-          email: adminEmail,
-          name: "Admin",
-          loginMethod: "password",
-          role: "admin",
-          lastSignedIn: new Date(),
-        });
-
-        const sessionToken = await sdk.createSessionToken(openId, {
-          expiresInMs: ONE_YEAR_MS,
-          name: "Admin",
-        });
-
-        const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(COOKIE_NAME, sessionToken, {
-          ...cookieOptions,
-          maxAge: ONE_YEAR_MS,
-        });
-
-        return { success: true } as const;
       }),
 
     /**
