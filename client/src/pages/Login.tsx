@@ -3,7 +3,7 @@ import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { supabase } from "@/lib/supabase";
+import { supabase, fetchSupabaseAuthSettings } from "@/lib/supabase";
 import PageMeta from "@/components/PageMeta";
 import {
   LogIn,
@@ -33,6 +33,12 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [providerState, setProviderState] = useState({
+    checked: false,
+    googleEnabled: false,
+    emailEnabled: false,
+    emailSignupsEnabled: false,
+  });
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -41,20 +47,33 @@ export default function Login() {
     }
   }, [isAuthenticated, user, setLocation]);
 
+  // Preflight Supabase provider configuration to avoid redirecting to JSON error pages
+  useEffect(() => {
+    if (!supabase) return;
+    void (async () => {
+      const settings = await fetchSupabaseAuthSettings();
+      const googleEnabled = Boolean(settings?.external?.google?.enabled);
+      const emailEnabled = Boolean(settings?.email?.enabled);
+      const emailSignupsEnabled = Boolean(settings?.email?.enable_signup);
+      setProviderState({ checked: true, googleEnabled, emailEnabled, emailSignupsEnabled });
+    })();
+  }, []);
+
   const searchParams = new URLSearchParams(globalThis.location?.search || "");
   const nextPath = searchParams.get("next") || "/";
 
   const handleOAuthLogin = async () => {
-    // Prefer Supabase OAuth if configured; fallback to existing Manus URL
+    // Prefer Supabase OAuth if configured and Google provider is enabled; fallback otherwise
     try {
-      // Attempt Google OAuth via Supabase if env/providers are configured
-      const { data, error } = await supabase?.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: `${window.location.origin}${nextPath}` },
-      })!;
-      if (!error && data?.url) {
-        window.location.href = data.url;
-        return;
+      if (supabase && (!providerState.checked || providerState.googleEnabled)) {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo: `${window.location.origin}${nextPath}` },
+        });
+        if (!error && data?.url) {
+          window.location.href = data.url;
+          return;
+        }
       }
     } catch {}
     window.location.href = getLoginUrl();
@@ -62,6 +81,10 @@ export default function Login() {
 
   const handleEmailAuth = async () => {
     if (!supabase) return handleOAuthLogin();
+    if (providerState.checked && (!providerState.emailEnabled || (activeTab === "signup" && !providerState.emailSignupsEnabled))) {
+      // If email is disabled, fallback to OAuth flow immediately
+      return handleOAuthLogin();
+    }
     if (!email || !password) return handleOAuthLogin();
     if (activeTab === "signin") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
