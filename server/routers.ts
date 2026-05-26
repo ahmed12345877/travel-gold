@@ -23,6 +23,7 @@ import { TRPCError } from "@trpc/server";
 import { createHash, timingSafeEqual } from "crypto";
 import { ENV } from "./_core/env";
 import { sdk } from "./_core/sdk";
+import { getServerSupabase } from "./_core/supabase";
 import * as db from "./db";
 
 export const appRouter = router({
@@ -94,6 +95,157 @@ export const appRouter = router({
         });
 
         return { success: true } as const;
+      }),
+
+    /**
+     * Bridge: accept a Supabase Auth JWT access token, verify it server-side,
+     * check app_metadata.role === 'admin', upsert the user in DB with role='admin',
+     * then issue a session cookie so the rest of the app treats them as authenticated admin.
+     */
+    supabaseLogin: publicProcedure
+      .input(z.object({ accessToken: z.string().min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        const supabase = getServerSupabase();
+        if (!supabase) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "Supabase is not configured on this server.",
+          });
+        }
+
+        // Verify the token and get the Supabase user
+        const { data, error } = await supabase.auth.getUser(input.accessToken);
+        if (error || !data.user) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "Invalid or expired Supabase session.",
+          });
+        }
+
+        const supabaseUser = data.user;
+        const appMeta = (supabaseUser.app_metadata ?? {}) as Record<string, unknown>;
+        const role = appMeta["role"] as string | undefined;
+
+        if (role !== "admin") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "This account does not have admin privileges.",
+          });
+        }
+
+        // Upsert the user in our DB with role=admin
+        const name =
+          (supabaseUser.user_metadata as any)?.full_name ||
+          (supabaseUser.user_metadata as any)?.name ||
+          supabaseUser.email?.split("@")[0] ||
+          "Admin";
+
+        await db.upsertUser({
+          openId: supabaseUser.id,
+          email: supabaseUser.email ?? null,
+          name,
+          loginMethod: "supabase",
+          role: "admin",
+          lastSignedIn: new Date(),
+        });
+
+        // Issue a session cookie
+        const sessionToken = await sdk.createSessionToken(supabaseUser.id, {
+          expiresInMs: ONE_YEAR_MS,
+          name,
+        });
+
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, {
+          ...cookieOptions,
+          maxAge: ONE_YEAR_MS,
+        });
+
+        return { success: true } as const;
+      }),
+
+    /**
+     * One-time server-side operation: create (or confirm) the admin user in Supabase Auth
+     * with app_metadata.role = 'admin'. Requires SUPABASE_SERVICE_ROLE_KEY to be set.
+     * Call this once during setup; subsequent calls are idempotent (returns existing user).
+     */
+    ensureAdmin: publicProcedure
+      .input(
+        z.object({
+          email: z.string().email(),
+          password: z.string().min(8, "Password must be at least 8 characters"),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const supabase = getServerSupabase();
+        if (!supabase) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "Supabase service role key is not configured.",
+          });
+        }
+
+        // Try to create the admin user
+        const { data, error } = await supabase.auth.admin.createUser({
+          email: input.email,
+          password: input.password,
+          email_confirm: true,
+          app_metadata: { role: "admin" },
+        });
+
+        if (error) {
+          // If user already exists, find them and update their app_metadata
+          if (
+            error.message?.toLowerCase().includes("already") ||
+            error.message?.toLowerCase().includes("exists") ||
+            (error as any).code === "email_exists"
+          ) {
+            // List users to find the existing one and update metadata
+            const { data: listData, error: listError } =
+              await supabase.auth.admin.listUsers();
+            if (listError) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: `Failed to list users: ${listError.message}`,
+              });
+            }
+            const existing = listData.users.find(
+              (u) => u.email?.toLowerCase() === input.email.toLowerCase()
+            );
+            if (existing) {
+              const { error: updateError } =
+                await supabase.auth.admin.updateUserById(existing.id, {
+                  app_metadata: { role: "admin" },
+                });
+              if (updateError) {
+                throw new TRPCError({
+                  code: "INTERNAL_SERVER_ERROR",
+                  message: `Failed to update admin metadata: ${updateError.message}`,
+                });
+              }
+              return {
+                success: true,
+                action: "updated" as const,
+                userId: existing.id,
+              };
+            }
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "User already exists but could not be located.",
+            });
+          }
+
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Supabase error: ${error.message}`,
+          });
+        }
+
+        return {
+          success: true,
+          action: "created" as const,
+          userId: data.user?.id ?? null,
+        };
       }),
   }),
 

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { getLoginUrl } from "@/const";
 import { supabase } from "@/lib/supabase";
 import { trpc } from "@/lib/trpc";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 
 const LOGO_URL =
@@ -33,6 +33,30 @@ export default function AdminLogin() {
     },
   });
 
+  const supabaseLoginMutation = trpc.auth.supabaseLogin.useMutation({
+    onSuccess: () => {
+      navigate("/admin");
+    },
+    onError: (err) => {
+      setStatus(err.message || "Admin access denied.");
+      setLoading(false);
+    },
+  });
+
+  // On mount: check if Supabase redirected back with a session (Google OAuth or Magic Link)
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.auth.getSession().then(({ data }) => {
+      const token = data?.session?.access_token;
+      if (token) {
+        setLoading(true);
+        supabaseLoginMutation.mutate({ accessToken: token });
+      }
+    });
+    // Only run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -44,19 +68,35 @@ export default function AdminLogin() {
     loginMutation.mutate({ email, password });
   };
 
+  /**
+   * After any Supabase sign-in (Google redirect or magic link), exchange the
+   * Supabase access token for a session cookie via the server bridge mutation.
+   */
+  const exchangeSupabaseSession = async () => {
+    if (!supabase) return false;
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+    if (!accessToken) return false;
+    await supabaseLoginMutation.mutateAsync({ accessToken });
+    return true;
+  };
+
   const signInWithGoogle = async () => {
     if (!supabase) return;
     setLoading(true);
     setStatus(null);
     try {
+      // Check if we're returning from a Google redirect with an existing session
+      const exchanged = await exchangeSupabaseSession();
+      if (exchanged) return;
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: window.location.origin },
+        options: { redirectTo: `${window.location.origin}/admin/login` },
       });
       if (error) throw error;
     } catch (e: any) {
       setStatus(e?.message || "Failed to start Google sign-in");
-    } finally {
       setLoading(false);
     }
   };
@@ -72,7 +112,7 @@ export default function AdminLogin() {
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email: magicEmail,
-        options: { emailRedirectTo: window.location.origin },
+        options: { emailRedirectTo: `${window.location.origin}/admin/login` },
       });
       if (error) throw error;
       setStatus("Check your email for a sign-in link.");
