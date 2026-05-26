@@ -28,7 +28,14 @@ export async function fetchSupabaseAuthSettings(): Promise<SupabaseAuthSettings 
     const res = await fetch(`${SUPABASE_URL.replace(/\/$/, "")}/auth/v1/settings`, {
       // Avoid caching to reflect dashboard changes quickly
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      // Pass anon key to satisfy CORS and auth checks on newer GoTrue deployments
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(anonKey
+          ? { apikey: anonKey, Authorization: `Bearer ${anonKey}` }
+          : {}),
+      },
       cache: "no-store",
     });
     if (!res.ok) return null;

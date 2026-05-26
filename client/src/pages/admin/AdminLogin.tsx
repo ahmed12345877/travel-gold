@@ -105,12 +105,15 @@ export default function AdminLogin() {
     });
 
     // Preflight provider configuration to avoid redirecting to GoTrue JSON errors
+    // Only mark as checked if we successfully fetched settings; otherwise keep unchecked to avoid blocking.
     void (async () => {
       const settings = await fetchSupabaseAuthSettings();
-      const googleEnabled = Boolean(settings?.external?.google?.enabled);
-      const emailEnabled = Boolean(settings?.email?.enabled);
-      const emailSignupsEnabled = Boolean(settings?.email?.enable_signup);
-      setProviderState({ googleEnabled, emailEnabled, emailSignupsEnabled, checked: true });
+      if (settings) {
+        const googleEnabled = Boolean(settings.external?.google?.enabled);
+        const emailEnabled = Boolean(settings.email?.enabled);
+        const emailSignupsEnabled = Boolean(settings.email?.enable_signup);
+        setProviderState({ googleEnabled, emailEnabled, emailSignupsEnabled, checked: true });
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -178,7 +181,11 @@ export default function AdminLogin() {
       const next = encodeURIComponent("/admin/login");
       const { error } = await supabase.auth.signInWithOtp({
         email: magicEmail,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${next}` },
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${next}`,
+          // Avoid accidental signups when signups are disabled; let existing admins sign in
+          shouldCreateUser: false,
+        },
       });
       if (error) throw error;
       setStatus({ type: "success", msg: "Magic link sent! Check your inbox." });

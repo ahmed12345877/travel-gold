@@ -52,10 +52,12 @@ export default function Login() {
     if (!supabase) return;
     void (async () => {
       const settings = await fetchSupabaseAuthSettings();
-      const googleEnabled = Boolean(settings?.external?.google?.enabled);
-      const emailEnabled = Boolean(settings?.email?.enabled);
-      const emailSignupsEnabled = Boolean(settings?.email?.enable_signup);
-      setProviderState({ checked: true, googleEnabled, emailEnabled, emailSignupsEnabled });
+      if (settings) {
+        const googleEnabled = Boolean(settings.external?.google?.enabled);
+        const emailEnabled = Boolean(settings.email?.enabled);
+        const emailSignupsEnabled = Boolean(settings.email?.enable_signup);
+        setProviderState({ checked: true, googleEnabled, emailEnabled, emailSignupsEnabled });
+      }
     })();
   }, []);
 
