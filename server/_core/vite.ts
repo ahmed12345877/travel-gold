@@ -3,10 +3,19 @@ import fs from "fs";
 import { type Server } from "http";
 import { nanoid } from "nanoid";
 import path from "path";
-import { createServer as createViteServer } from "vite";
-import viteConfig from "../../vite.config";
+// Vite and its config are only needed in development. To avoid bundling
+// them into the production server build (and breaking CJS), load them
+// dynamically inside `setupVite`.
+
+// Resolve current directory in both ESM (dev via tsx) and CJS (prod bundle)
+const DIRNAME = typeof __dirname !== "undefined"
+  ? __dirname
+  // eslint-disable-next-line no-undef
+  : new URL('.', import.meta.url).pathname;
 
 export async function setupVite(app: express.Express, server: Server) {
+  const { createServer: createViteServer } = await import("vite");
+  const viteConfig = (await import("../../vite.config")).default;
   const serverOptions = {
     middlewareMode: true,
     hmr: { server },
@@ -25,12 +34,7 @@ export async function setupVite(app: express.Express, server: Server) {
     const url = req.originalUrl as string;
 
     try {
-      const clientTemplate = path.resolve(
-        import.meta.dirname,
-        "../..",
-        "client",
-        "index.html"
-      );
+      const clientTemplate = path.resolve(DIRNAME, "../..", "client", "index.html");
 
       // always reload the index.html file from disk incase it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
@@ -50,8 +54,8 @@ export async function setupVite(app: express.Express, server: Server) {
 export function serveStatic(app: express.Express) {
   const distPath =
     process.env.NODE_ENV === "development"
-      ? path.resolve(import.meta.dirname, "../..", "dist", "public")
-      : path.resolve(import.meta.dirname, "public");
+      ? path.resolve(DIRNAME, "../..", "dist", "public")
+      : path.resolve(DIRNAME, "public");
   if (!fs.existsSync(distPath)) {
     console.error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
