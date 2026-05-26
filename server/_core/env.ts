@@ -9,4 +9,8 @@ export const ENV = {
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   openaiApiKey: process.env.OPENAI_API_KEY ?? "",
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
+  /** Admin email for direct password login (no OAuth required) */
+  adminEmail: process.env.ADMIN_EMAIL ?? "",
+  /** SHA-256 hex hash of the admin password */
+  adminPasswordHash: process.env.ADMIN_PASSWORD_HASH ?? "",
 };

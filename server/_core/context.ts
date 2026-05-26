@@ -39,12 +39,17 @@ export async function createContext(
           u.user_metadata?.full_name ||
           u.email?.split("@")[0] ||
           null;
+        // Check app_metadata.role to grant admin in our DB
+        const appMeta = (u.app_metadata ?? {}) as Record<string, unknown>;
+        const supabaseRole = appMeta["role"] === "admin" ? "admin" : undefined;
+
         await db.upsertUser({
           openId: u.id,
           name,
           email: u.email ?? null,
           loginMethod: "supabase",
           lastSignedIn: new Date(),
+          ...(supabaseRole ? { role: supabaseRole } : {}),
         });
         const found = await db.getUserByOpenId(u.id);
         if (found) {
