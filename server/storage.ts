@@ -4,9 +4,9 @@
 import { ENV } from './_core/env';
 import { getServerSupabase } from './_core/supabase';
 
-// Optional Supabase Storage integration
+// Optional Supabase Storage integration only (no Manus fallback allowed)
 // If SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set and SUPABASE_STORAGE_BUCKET is provided,
-// storagePut/storageGet will use Supabase Storage with signed URLs. Otherwise falls back to Manus storage proxy.
+// storagePut/storageGet will use Supabase Storage with signed URLs. Otherwise it will error.
 
 type StorageConfig = { baseUrl: string; apiKey: string };
 
@@ -112,24 +112,8 @@ export async function storagePut(
     return { key, url: signed.signedUrl };
   }
 
-  // Fallback to Manus storage proxy
-  const { baseUrl, apiKey } = getStorageConfig();
-  const uploadUrl = buildUploadUrl(baseUrl, key);
-  const formData = toFormData(data, contentType, key.split("/").pop() ?? key);
-  const response = await fetch(uploadUrl, {
-    method: "POST",
-    headers: buildAuthHeaders(apiKey),
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const message = await response.text().catch(() => response.statusText);
-    throw new Error(
-      `Storage upload failed (${response.status} ${response.statusText}): ${message}`
-    );
-  }
-  const url = (await response.json()).url;
-  return { key, url };
+  // No external fallback permitted
+  throw new Error("Supabase storage is not configured");
 }
 
 export async function storageGet(relKey: string): Promise<{ key: string; url: string; }> {
@@ -154,10 +138,6 @@ export async function storageGet(relKey: string): Promise<{ key: string; url: st
     return { key, url: data.signedUrl };
   }
 
-  // Fallback to Manus storage proxy
-  const { baseUrl, apiKey } = getStorageConfig();
-  return {
-    key,
-    url: await buildDownloadUrl(baseUrl, key, apiKey),
-  };
+  // No external fallback permitted
+  throw new Error("Supabase storage is not configured");
 }

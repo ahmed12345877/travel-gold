@@ -65,6 +65,17 @@ export default function OptimizedImage({
   const [showImage, setShowImage] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Normalize any legacy "/manus-storage/" paths to the API proxy which uses Supabase when configured.
+  useEffect(() => {
+    if (typeof src === "string" && src.startsWith("/manus-storage/")) {
+      setCurrentSrc(src.replace(/^\/manus-storage\//, "/api/manus-storage/"));
+      triedApiFallbackRef.current = true; // we've already switched to API form
+    } else {
+      setCurrentSrc(src);
+      triedApiFallbackRef.current = false;
+    }
+  }, [src]);
+
   // Intersection Observer for lazy loading
   useEffect(() => {
     if (!lazy || isInView) return;
@@ -105,7 +116,7 @@ export default function OptimizedImage({
   };
 
   const handleError = () => {
-    // If the image is using the built-in storage proxy path and failed,
+    // If the image is using the legacy built-in storage proxy path and failed,
     // try falling back to the API route variant which can leverage Supabase
     // signed URLs when configured: /api/manus-storage/<key>
     try {

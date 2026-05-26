@@ -668,7 +668,7 @@ export default function SettingsAdmin() {
                 <CheckCircle size={20} className="text-emerald-400 shrink-0" />
                 <div>
                   <p className="text-sm font-semibold text-emerald-300">OAuth Authentication</p>
-                  <p className="text-xs text-emerald-200/60">المصادقة تتم عبر Manus OAuth - لا حاجة لكلمات مرور</p>
+                  <p className="text-xs text-emerald-200/60">المصادقة تتم عبر Supabase OAuth - لا حاجة لكلمات مرور</p>
                 </div>
               </div>
               <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 flex gap-3">
