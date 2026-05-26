@@ -143,9 +143,10 @@ export default function AdminLogin() {
         supabaseLoginMutation.mutate({ accessToken: token });
         return;
       }
+      const next = encodeURIComponent("/admin/login");
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/admin/login` },
+        options: { redirectTo: `${window.location.origin}/auth/callback?next=${next}` },
       });
       if (error) {
         if (error.message?.toLowerCase().includes("provider") || error.message?.toLowerCase().includes("not enabled")) {
@@ -174,9 +175,10 @@ export default function AdminLogin() {
           "Email-based sign-in/up is disabled. Enable Email provider (and Signups) in Supabase Dashboard → Authentication → Providers."
         );
       }
+      const next = encodeURIComponent("/admin/login");
       const { error } = await supabase.auth.signInWithOtp({
         email: magicEmail,
-        options: { emailRedirectTo: `${window.location.origin}/admin/login` },
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${next}` },
       });
       if (error) throw error;
       setStatus({ type: "success", msg: "Magic link sent! Check your inbox." });

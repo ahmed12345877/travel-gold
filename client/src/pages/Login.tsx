@@ -66,9 +66,10 @@ export default function Login() {
     // Prefer Supabase OAuth if configured and Google provider is enabled; fallback otherwise
     try {
       if (supabase && (!providerState.checked || providerState.googleEnabled)) {
+        const next = encodeURIComponent(nextPath);
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: "google",
-          options: { redirectTo: `${window.location.origin}${nextPath}` },
+          options: { redirectTo: `${window.location.origin}/auth/callback?next=${next}` },
         });
         if (!error && data?.url) {
           window.location.href = data.url;
