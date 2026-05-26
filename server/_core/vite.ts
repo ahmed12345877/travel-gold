@@ -13,7 +13,7 @@ const DIRNAME = typeof __dirname !== "undefined"
   // eslint-disable-next-line no-undef
   : new URL('.', import.meta.url).pathname;
 
-export async function setupVite(app: express.Express, server: Server) {
+export async function setupVite(app: import("express").Application, server: Server) {
   const { createServer: createViteServer } = await import("vite");
   const viteConfig = (await import("../../vite.config")).default;
   const serverOptions = {
@@ -51,7 +51,7 @@ export async function setupVite(app: express.Express, server: Server) {
   });
 }
 
-export function serveStatic(app: express.Express) {
+export function serveStatic(app: import("express").Application) {
   const distPath =
     process.env.NODE_ENV === "development"
       ? path.resolve(DIRNAME, "../..", "dist", "public")

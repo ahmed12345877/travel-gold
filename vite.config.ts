@@ -4,13 +4,16 @@ import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import path from "node:path";
 import { defineConfig, type PluginOption, type ViteDevServer } from "vite";
+import { createRequire } from "node:module";
 // Make Manus runtime optional so Vercel builds don't depend on it
 let maybeManusRuntime: PluginOption | null = null;
 try {
   // Only enable when explicitly requested
   if (process.env.VITE_ENABLE_MANUS_RUNTIME === "true") {
+    const require = createRequire(import.meta.url);
+    // Use CommonJS require to avoid top-level await in TS typecheck
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { vitePluginManusRuntime } = await import("vite-plugin-manus-runtime");
+    const { vitePluginManusRuntime } = require("vite-plugin-manus-runtime");
     maybeManusRuntime = vitePluginManusRuntime();
   }
 } catch {
@@ -86,7 +89,7 @@ function writeToLogFile(source: LogSource, entries: unknown[]) {
  * - Files: browserConsole.log, networkRequests.log, sessionReplay.log
  * - Auto-trimmed when exceeding 1MB (keeps newest entries)
  */
-function vitePluginManusDebugCollector(): PluginOption {
+function vitePluginManusDebugCollector(): import("vite").Plugin {
   return {
     name: "manus-debug-collector",
 
