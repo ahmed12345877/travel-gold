@@ -21,14 +21,27 @@ The correct folder name is `travel-gold-black`.
 - Requirement 3
 
 ## Environment Variables
-- `ENV_VAR_1`: Description
-- `ENV_VAR_2`: Description
+
+Auth (password admin, no OAuth)
+
+- `ADMIN_EMAIL`: Admin login email
+- `ADMIN_PASSWORD_HASH`: SHA-256 hex hash of the admin password (or plain text in dev)
+
+Supabase (optional, if using Supabase Auth)
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` (server only)
+- `VITE_SUPABASE_URL` (client)
+- `VITE_SUPABASE_ANON_KEY` (client)
+
+See docs/ADMIN.md for setup options and details.
 
 ## Available Commands
 | Command | Description |
 | ------- | ----------- |
 | command1 | description1 |
 | command2 | description2 |
+| `pnpm run hash-admin-password "your-strong-password"` | Prints the SHA-256 hex for `ADMIN_PASSWORD_HASH` |
 
 ## Contribution Guidelines
 1. Fork the repository.
