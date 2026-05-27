@@ -1257,43 +1257,51 @@ function registerOAuthRoutes(app) {
   });
 }
 
+// server/_core/supabase.ts
+var import_supabase_js = require("@supabase/supabase-js");
+function loadServerConfig() {
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  if (!url || !serviceKey) return null;
+  return { url, serviceKey };
+}
+var serverClient = null;
+function getServerSupabase() {
+  if (serverClient) return serverClient;
+  const cfg = loadServerConfig();
+  if (!cfg) return null;
+  serverClient = (0, import_supabase_js.createClient)(cfg.url, cfg.serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+  return serverClient;
+}
+
 // server/_core/storageProxy.ts
 function registerStorageProxy(app) {
   app.get("/manus-storage/*", async (req, res) => {
     const key = req.params[0];
-    if (!key) {
-      res.status(400).send("Missing storage key");
-      return;
-    }
-    if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {
-      res.status(500).send("Storage proxy not configured");
-      return;
+    if (!key) return void res.status(400).send("Missing storage key");
+    const supabase = getServerSupabase();
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET;
+    if (!supabase || !bucket) {
+      return void res.status(404).send("Storage not configured");
     }
     try {
-      const forgeUrl = new URL(
-        "v1/storage/presign/get",
-        ENV.forgeApiUrl.replace(/\/+$/, "") + "/"
-      );
-      forgeUrl.searchParams.set("path", key);
-      const forgeResp = await fetch(forgeUrl, {
-        headers: { Authorization: `Bearer ${ENV.forgeApiKey}` }
-      });
-      if (!forgeResp.ok) {
-        const body = await forgeResp.text().catch(() => "");
-        console.error(`[StorageProxy] forge error: ${forgeResp.status} ${body}`);
-        res.status(502).send("Storage backend error");
-        return;
+      const ttl = Number(process.env.SUPABASE_STORAGE_SIGNED_URL_TTL || 60);
+      const { data, error } = await supabase.storage.from(bucket).createSignedUrl(key, ttl);
+      if (!error && data?.signedUrl) {
+        res.set("Cache-Control", "no-store");
+        return void res.redirect(307, data.signedUrl);
       }
-      const { url } = await forgeResp.json();
-      if (!url) {
-        res.status(502).send("Empty signed URL from backend");
-        return;
+      const { data: pub } = supabase.storage.from(bucket).getPublicUrl(key);
+      if (pub.publicUrl) {
+        res.set("Cache-Control", "no-store");
+        return void res.redirect(307, pub.publicUrl);
       }
-      res.set("Cache-Control", "no-store");
-      res.redirect(307, url);
+      return void res.status(404).send("Image not found");
     } catch (err) {
-      console.error("[StorageProxy] failed:", err);
-      res.status(502).send("Storage proxy error");
+      console.error("[StorageProxy] supabase error:", err);
+      return void res.status(502).send("Storage proxy error");
     }
   });
 }
@@ -1833,55 +1841,9 @@ ${input.message.substring(0, 200)}`
 // server/routers/uploads.ts
 var import_zod6 = require("zod");
 
-// server/_core/supabase.ts
-var import_supabase_js = require("@supabase/supabase-js");
-function loadServerConfig() {
-  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-  if (!url || !serviceKey) return null;
-  return { url, serviceKey };
-}
-var serverClient = null;
-function getServerSupabase() {
-  if (serverClient) return serverClient;
-  const cfg = loadServerConfig();
-  if (!cfg) return null;
-  serverClient = (0, import_supabase_js.createClient)(cfg.url, cfg.serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-  return serverClient;
-}
-
 // server/storage.ts
-function getStorageConfig() {
-  const baseUrl = ENV.forgeApiUrl;
-  const apiKey = ENV.forgeApiKey;
-  if (!baseUrl || !apiKey) {
-    throw new Error(
-      "Storage proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY"
-    );
-  }
-  return { baseUrl: baseUrl.replace(/\/+$/, ""), apiKey };
-}
-function buildUploadUrl(baseUrl, relKey) {
-  const url = new URL("v1/storage/upload", ensureTrailingSlash(baseUrl));
-  url.searchParams.set("path", normalizeKey(relKey));
-  return url;
-}
-function ensureTrailingSlash(value) {
-  return value.endsWith("/") ? value : `${value}/`;
-}
 function normalizeKey(relKey) {
   return relKey.replace(/^\/+/, "");
-}
-function toFormData(data, contentType, fileName) {
-  const blob = typeof data === "string" ? new Blob([data], { type: contentType }) : new Blob([data], { type: contentType });
-  const form = new FormData();
-  form.append("file", blob, fileName || "file");
-  return form;
-}
-function buildAuthHeaders(apiKey) {
-  return { Authorization: `Bearer ${apiKey}` };
 }
 async function storagePut(relKey, data, contentType = "application/octet-stream") {
   const key = normalizeKey(relKey);
@@ -1904,22 +1866,7 @@ async function storagePut(relKey, data, contentType = "application/octet-stream"
     }
     return { key, url: signed.signedUrl };
   }
-  const { baseUrl, apiKey } = getStorageConfig();
-  const uploadUrl = buildUploadUrl(baseUrl, key);
-  const formData = toFormData(data, contentType, key.split("/").pop() ?? key);
-  const response = await fetch(uploadUrl, {
-    method: "POST",
-    headers: buildAuthHeaders(apiKey),
-    body: formData
-  });
-  if (!response.ok) {
-    const message = await response.text().catch(() => response.statusText);
-    throw new Error(
-      `Storage upload failed (${response.status} ${response.statusText}): ${message}`
-    );
-  }
-  const url = (await response.json()).url;
-  return { key, url };
+  throw new Error("Supabase storage is not configured");
 }
 
 // server/routers/uploads.ts
