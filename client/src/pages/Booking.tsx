@@ -1649,7 +1649,7 @@ export default function Booking() {
       {/* Hero Banner */}
       <section className="relative h-[35vh] sm:h-[40vh] min-h-[250px] sm:min-h-[300px] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
-          <img src="/manus-storage/hero-booking_ea711a1f.jpg" alt="" className="w-full h-full object-cover" />
+          <img src="/api/manus-storage/hero-booking_ea711a1f.jpg" alt="" className="w-full h-full object-cover" />
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-[var(--theme-surface)]/70 via-[var(--theme-surface)]/50 to-[var(--theme-surface)]" />
         <div className="relative z-10 text-center">

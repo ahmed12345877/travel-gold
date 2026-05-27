@@ -8,6 +8,7 @@ import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
 import { ArrowRight, Facebook, Instagram } from "lucide-react";
 import { useRef, useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
+import OptimizedImage from "./OptimizedImage";
 
 const HERO_BG =
   "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/misty-hero-bg-L7rPLhy7UyP6hQeLmG4RHw.webp";
@@ -132,16 +133,20 @@ function CinematicCard({
     >
       {/* Image Container */}
       <div className="relative w-full h-full overflow-hidden rounded-xl">
-        <motion.img
-          src={img.src}
-          alt={img.alt}
-          className="w-full h-full object-cover"
-          loading="eager"
-          animate={{
-            scale: isHovered ? 1.08 : 1,
-          }}
+        <motion.div
+          className="absolute inset-0"
+          animate={{ scale: isHovered ? 1.08 : 1 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
-        />
+        >
+          <OptimizedImage
+            src={img.src}
+            alt={img.alt}
+            lazy={false}
+            goldShimmer
+            containerClassName="absolute inset-0"
+            className="w-full h-full object-cover"
+          />
+        </motion.div>
 
         {/* Permanent subtle gradient at bottom */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />

@@ -412,7 +412,11 @@ var ENV = {
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   openaiApiKey: process.env.OPENAI_API_KEY ?? "",
-  geminiApiKey: process.env.GEMINI_API_KEY ?? ""
+  geminiApiKey: process.env.GEMINI_API_KEY ?? "",
+  /** Admin email for direct password login (no OAuth required) */
+  adminEmail: process.env.ADMIN_EMAIL ?? "",
+  /** SHA-256 hex hash of the admin password */
+  adminPasswordHash: process.env.ADMIN_PASSWORD_HASH ?? ""
 };
 
 // server/db.ts
@@ -1185,6 +1189,7 @@ function registerOAuthRoutes(app) {
   app.get("/api/oauth/callback", async (req, res) => {
     const code = getQueryParam(req, "code");
     const state = getQueryParam(req, "state");
+    const next = getQueryParam(req, "next");
     if (!code || !state) {
       res.status(400).json({ error: "code and state are required" });
       return;
@@ -1209,7 +1214,8 @@ function registerOAuthRoutes(app) {
       });
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-      res.redirect(302, "/");
+      const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+      res.redirect(302, safeNext);
     } catch (error) {
       console.error("[OAuth] Callback failed", error);
       res.status(500).json({ error: "OAuth callback failed" });
@@ -1793,6 +1799,25 @@ ${input.message.substring(0, 200)}`
 // server/routers/uploads.ts
 import { z as z6 } from "zod";
 
+// server/_core/supabase.ts
+import { createClient as createServerClient } from "@supabase/supabase-js";
+function loadServerConfig() {
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  if (!url || !serviceKey) return null;
+  return { url, serviceKey };
+}
+var serverClient = null;
+function getServerSupabase() {
+  if (serverClient) return serverClient;
+  const cfg = loadServerConfig();
+  if (!cfg) return null;
+  serverClient = createServerClient(cfg.url, cfg.serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+  return serverClient;
+}
+
 // server/storage.ts
 function getStorageConfig() {
   const baseUrl = ENV.forgeApiUrl;
@@ -1825,8 +1850,27 @@ function buildAuthHeaders(apiKey) {
   return { Authorization: `Bearer ${apiKey}` };
 }
 async function storagePut(relKey, data, contentType = "application/octet-stream") {
-  const { baseUrl, apiKey } = getStorageConfig();
   const key = normalizeKey(relKey);
+  const supabase = getServerSupabase();
+  const bucket = process.env.SUPABASE_STORAGE_BUCKET;
+  if (supabase && bucket) {
+    const blob = typeof data === "string" ? new Blob([data], { type: contentType }) : new Blob([data], { type: contentType });
+    const { error } = await supabase.storage.from(bucket).upload(key, blob, { contentType, upsert: true });
+    if (error) {
+      throw new Error(`[Supabase Storage] upload failed: ${error.message}`);
+    }
+    const expiresInSec = Number(process.env.SUPABASE_STORAGE_SIGNED_URL_TTL || 3600);
+    const { data: signed, error: signErr } = await supabase.storage.from(bucket).createSignedUrl(key, expiresInSec);
+    if (signErr) {
+      const { data: pub } = supabase.storage.from(bucket).getPublicUrl(key);
+      if (!pub.publicUrl) {
+        throw new Error("[Supabase Storage] failed to obtain URL after upload");
+      }
+      return { key, url: pub.publicUrl };
+    }
+    return { key, url: signed.signedUrl };
+  }
+  const { baseUrl, apiKey } = getStorageConfig();
   const uploadUrl = buildUploadUrl(baseUrl, key);
   const formData = toFormData(data, contentType, key.split("/").pop() ?? key);
   const response = await fetch(uploadUrl, {
@@ -4457,6 +4501,9 @@ var backupRouter = router({
 });
 
 // server/routers.ts
+import { z as z18 } from "zod";
+import { TRPCError as TRPCError6 } from "@trpc/server";
+import { createHash, timingSafeEqual } from "crypto";
 var appRouter = router({
   system: systemRouter,
   auth: router({
@@ -4466,6 +4513,189 @@ var appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return {
         success: true
+      };
+    }),
+    login: publicProcedure.input(z18.object({ email: z18.string().email(), password: z18.string().min(1) })).mutation(async ({ ctx, input }) => {
+      try {
+        const adminEmail = ENV.adminEmail;
+        const adminPasswordHash = ENV.adminPasswordHash;
+        if (!adminEmail || !adminPasswordHash) {
+          throw new TRPCError6({
+            code: "PRECONDITION_FAILED",
+            message: "Admin login is not configured on this server. Set ADMIN_EMAIL and ADMIN_PASSWORD_HASH environment variables."
+          });
+        }
+        if (input.email.toLowerCase() !== adminEmail.toLowerCase()) {
+          throw new TRPCError6({ code: "UNAUTHORIZED", message: "Invalid email or password." });
+        }
+        const storedHash = adminPasswordHash.trim();
+        const isHashFormat = /^[a-f0-9]{64}$/.test(storedHash.toLowerCase());
+        let match = false;
+        if (isHashFormat) {
+          const submittedHash = createHash("sha256").update(input.password).digest("hex");
+          try {
+            match = timingSafeEqual(
+              Buffer.from(submittedHash, "utf8"),
+              Buffer.from(storedHash.toLowerCase(), "utf8")
+            );
+          } catch {
+            match = false;
+          }
+        } else {
+          try {
+            match = timingSafeEqual(
+              Buffer.from(input.password, "utf8"),
+              Buffer.from(storedHash, "utf8")
+            );
+          } catch {
+            match = false;
+          }
+        }
+        if (!match) {
+          throw new TRPCError6({ code: "UNAUTHORIZED", message: "Invalid email or password." });
+        }
+        const openId = `admin:${adminEmail.toLowerCase()}`;
+        await upsertUser({
+          openId,
+          email: adminEmail,
+          name: "Admin",
+          loginMethod: "password",
+          role: "admin",
+          lastSignedIn: /* @__PURE__ */ new Date()
+        });
+        const sessionToken = await sdk.createSessionToken(openId, {
+          expiresInMs: ONE_YEAR_MS,
+          name: "Admin"
+        });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, {
+          ...cookieOptions,
+          maxAge: ONE_YEAR_MS
+        });
+        return { success: true };
+      } catch (err) {
+        if (err instanceof TRPCError6) throw err;
+        throw new TRPCError6({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "An unexpected error occurred during login. Please try again."
+        });
+      }
+    }),
+    /**
+     * Bridge: accept a Supabase Auth JWT access token, verify it server-side,
+     * check app_metadata.role === 'admin', upsert the user in DB with role='admin',
+     * then issue a session cookie so the rest of the app treats them as authenticated admin.
+     */
+    supabaseLogin: publicProcedure.input(z18.object({ accessToken: z18.string().min(1) })).mutation(async ({ ctx, input }) => {
+      const supabase = getServerSupabase();
+      if (!supabase) {
+        throw new TRPCError6({
+          code: "PRECONDITION_FAILED",
+          message: "Supabase is not configured on this server."
+        });
+      }
+      const { data, error } = await supabase.auth.getUser(input.accessToken);
+      if (error || !data.user) {
+        throw new TRPCError6({
+          code: "UNAUTHORIZED",
+          message: "Invalid or expired Supabase session."
+        });
+      }
+      const supabaseUser = data.user;
+      const appMeta = supabaseUser.app_metadata ?? {};
+      const role = appMeta["role"];
+      if (role !== "admin") {
+        throw new TRPCError6({
+          code: "FORBIDDEN",
+          message: "This account does not have admin privileges."
+        });
+      }
+      const name = supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "Admin";
+      await upsertUser({
+        openId: supabaseUser.id,
+        email: supabaseUser.email ?? null,
+        name,
+        loginMethod: "supabase",
+        role: "admin",
+        lastSignedIn: /* @__PURE__ */ new Date()
+      });
+      const sessionToken = await sdk.createSessionToken(supabaseUser.id, {
+        expiresInMs: ONE_YEAR_MS,
+        name
+      });
+      const cookieOptions = getSessionCookieOptions(ctx.req);
+      ctx.res.cookie(COOKIE_NAME, sessionToken, {
+        ...cookieOptions,
+        maxAge: ONE_YEAR_MS
+      });
+      return { success: true };
+    }),
+    /**
+     * One-time server-side operation: create (or confirm) the admin user in Supabase Auth
+     * with app_metadata.role = 'admin'. Requires SUPABASE_SERVICE_ROLE_KEY to be set.
+     * Call this once during setup; subsequent calls are idempotent (returns existing user).
+     */
+    ensureAdmin: publicProcedure.input(
+      z18.object({
+        email: z18.string().email(),
+        password: z18.string().min(8, "Password must be at least 8 characters")
+      })
+    ).mutation(async ({ input }) => {
+      const supabase = getServerSupabase();
+      if (!supabase) {
+        throw new TRPCError6({
+          code: "PRECONDITION_FAILED",
+          message: "Supabase service role key is not configured."
+        });
+      }
+      const { data, error } = await supabase.auth.admin.createUser({
+        email: input.email,
+        password: input.password,
+        email_confirm: true,
+        app_metadata: { role: "admin" }
+      });
+      if (error) {
+        if (error.message?.toLowerCase().includes("already") || error.message?.toLowerCase().includes("exists") || error.code === "email_exists") {
+          const { data: listData, error: listError } = await supabase.auth.admin.listUsers();
+          if (listError) {
+            throw new TRPCError6({
+              code: "INTERNAL_SERVER_ERROR",
+              message: `Failed to list users: ${listError.message}`
+            });
+          }
+          const existing = listData.users.find(
+            (u) => u.email?.toLowerCase() === input.email.toLowerCase()
+          );
+          if (existing) {
+            const { error: updateError } = await supabase.auth.admin.updateUserById(existing.id, {
+              app_metadata: { role: "admin" }
+            });
+            if (updateError) {
+              throw new TRPCError6({
+                code: "INTERNAL_SERVER_ERROR",
+                message: `Failed to update admin metadata: ${updateError.message}`
+              });
+            }
+            return {
+              success: true,
+              action: "updated",
+              userId: existing.id
+            };
+          }
+          throw new TRPCError6({
+            code: "CONFLICT",
+            message: "User already exists but could not be located."
+          });
+        }
+        throw new TRPCError6({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Supabase error: ${error.message}`
+        });
+      }
+      return {
+        success: true,
+        action: "created",
+        userId: data.user?.id ?? null
       };
     })
   }),
@@ -4495,17 +4725,52 @@ var appRouter = router({
 });
 
 // server/_core/context.ts
+function getBearerToken(req) {
+  const auth = req.headers["authorization"];
+  if (!auth || Array.isArray(auth)) return null;
+  const match = auth.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1] : null;
+}
 async function createContext(opts) {
   let user = null;
-  try {
-    user = await sdk.authenticateRequest(opts.req);
-  } catch (error) {
-    user = null;
+  const supabase = getServerSupabase();
+  const bearer = getBearerToken(opts.req);
+  if (bearer && supabase) {
+    try {
+      const { data, error } = await supabase.auth.getUser(bearer);
+      if (!error && data.user) {
+        const u = data.user;
+        const name = u.user_metadata && u.user_metadata.name || u.user_metadata?.full_name || u.email?.split("@")[0] || null;
+        const appMeta = u.app_metadata ?? {};
+        const supabaseRole = appMeta["role"] === "admin" ? "admin" : void 0;
+        await upsertUser({
+          openId: u.id,
+          name,
+          email: u.email ?? null,
+          loginMethod: "supabase",
+          lastSignedIn: /* @__PURE__ */ new Date(),
+          ...supabaseRole ? { role: supabaseRole } : {}
+        });
+        const found = await getUserByOpenId(u.id);
+        if (found) {
+          user = found;
+        }
+      }
+    } catch {
+    }
+  }
+  if (!user) {
+    try {
+      user = await sdk.authenticateRequest(opts.req);
+    } catch {
+      user = null;
+    }
   }
   return {
     req: opts.req,
     res: opts.res,
-    user
+    user,
+    supabase
   };
 }
 
@@ -4523,7 +4788,15 @@ import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import path from "node:path";
 import { defineConfig } from "vite";
-import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
+var maybeManusRuntime = null;
+try {
+  if (process.env.VITE_ENABLE_MANUS_RUNTIME === "true") {
+    const { vitePluginManusRuntime } = await import("vite-plugin-manus-runtime");
+    maybeManusRuntime = vitePluginManusRuntime();
+  }
+} catch {
+  maybeManusRuntime = null;
+}
 var PROJECT_ROOT = import.meta.dirname;
 var LOG_DIR = path.join(PROJECT_ROOT, ".manus-logs");
 var MAX_LOG_SIZE_BYTES = 1 * 1024 * 1024;
@@ -4631,7 +4904,14 @@ function vitePluginManusDebugCollector() {
     }
   };
 }
-var plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+var plugins = [
+  react(),
+  tailwindcss(),
+  jsxLocPlugin(),
+  // Only include Manus runtime when explicitly enabled
+  ...maybeManusRuntime ? [maybeManusRuntime] : [],
+  vitePluginManusDebugCollector()
+];
 var vite_config_default = defineConfig({
   base: "/",
   plugins,

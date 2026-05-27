@@ -151,7 +151,7 @@ export default function AIPricing() {
         <section className="relative pt-28 pb-20 overflow-hidden">
           {/* Background effects */}
           <div className="absolute inset-0">
-            <img src="/manus-storage/hero-ai-pricing_ddfd6c02.webp" alt="" className="w-full h-full object-cover opacity-30" />
+            <img src="/api/manus-storage/hero-ai-pricing_ddfd6c02.webp" alt="" className="w-full h-full object-cover opacity-30" />
             <div className="absolute inset-0 bg-gradient-to-b from-[#050508]/60 via-[#050508]/80 to-[#050508]" />
           </div>
           <GridPattern />

@@ -1,41 +1,38 @@
 import type { Express, Request, Response } from "express";
-import { ENV } from "./env";
+import { getServerSupabase } from "./supabase";
+
+// Serve legacy /manus-storage/* by issuing Supabase signed redirects only.
+// No Manus/Forge backend is used.
 export function registerStorageProxy(app: Express) {
   app.get("/manus-storage/*", async (req: Request, res: Response) => {
     const key = (req.params as Record<string, string>)[0];
-    if (!key) {
-      res.status(400).send("Missing storage key");
-      return;
+    if (!key) return void res.status(400).send("Missing storage key");
+
+    const supabase = getServerSupabase();
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET;
+    if (!supabase || !bucket) {
+      return void res.status(404).send("Storage not configured");
     }
-    if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {
-      res.status(500).send("Storage proxy not configured");
-      return;
-    }
+
     try {
-      const forgeUrl = new URL(
-        "v1/storage/presign/get",
-        ENV.forgeApiUrl.replace(/\/+$/, "") + "/",
-      );
-      forgeUrl.searchParams.set("path", key);
-      const forgeResp = await fetch(forgeUrl, {
-        headers: { Authorization: `Bearer ${ENV.forgeApiKey}` },
-      });
-      if (!forgeResp.ok) {
-        const body = await forgeResp.text().catch(() => "");
-        console.error(`[StorageProxy] forge error: ${forgeResp.status} ${body}`);
-        res.status(502).send("Storage backend error");
-        return;
+      const ttl = Number(process.env.SUPABASE_STORAGE_SIGNED_URL_TTL || 60);
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(key, ttl);
+      if (!error && data?.signedUrl) {
+        res.set("Cache-Control", "no-store");
+        return void res.redirect(307, data.signedUrl);
       }
-      const { url } = (await forgeResp.json()) as { url: string };
-      if (!url) {
-        res.status(502).send("Empty signed URL from backend");
-        return;
+      // Fallback to public URL if bucket is public
+      const { data: pub } = supabase.storage.from(bucket).getPublicUrl(key);
+      if (pub.publicUrl) {
+        res.set("Cache-Control", "no-store");
+        return void res.redirect(307, pub.publicUrl);
       }
-      res.set("Cache-Control", "no-store");
-      res.redirect(307, url);
+      return void res.status(404).send("Image not found");
     } catch (err) {
-      console.error("[StorageProxy] failed:", err);
-      res.status(502).send("Storage proxy error");
+      console.error("[StorageProxy] supabase error:", err);
+      return void res.status(502).send("Storage proxy error");
     }
   });
 }

@@ -102,17 +102,18 @@ export default function AdminDashboardEnhanced() {
   }, []);
 
   const statusData = useMemo(() => {
-    if (!bookings) return [];
+    if (!bookings) return [] as { name: string; value: number }[];
     const stats = bookings.reduce(
-      (acc: any, b: any) => {
-        acc[b.status] = (acc[b.status] || 0) + 1;
+      (acc: Record<string, number>, b: any) => {
+        const k = String(b.status ?? "unknown");
+        acc[k] = (acc[k] || 0) + 1;
         return acc;
       },
-      {}
+      {} as Record<string, number>
     );
     return Object.entries(stats).map(([key, value]) => ({
       name: key,
-      value: value,
+      value,
     }));
   }, [bookings]);
 
