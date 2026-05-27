@@ -1,22 +1,21 @@
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
-import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
 
-function getQueryParam(req: Request, key: string): string | undefined {
+function getQueryParam(req: any, key: string): string | undefined {
   const value = req.query[key];
   return typeof value === "string" ? value : undefined;
 }
 
-export function registerOAuthRoutes(app: Express) {
-  app.get("/api/oauth/callback", async (req: Request, res: Response) => {
+export function registerOAuthRoutes(app: any) {
+  app.get("/api/oauth/callback", async (req: any, res: any) => {
     const code = getQueryParam(req, "code");
     const state = getQueryParam(req, "state");
     const next = getQueryParam(req, "next");
 
     if (!code || !state) {
-      res.status(400).json({ error: "code and state are required" });
+      res.status?.(400).json?.({ error: "code and state are required" });
       return;
     }
 
@@ -25,7 +24,7 @@ export function registerOAuthRoutes(app: Express) {
       const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
 
       if (!userInfo.openId) {
-        res.status(400).json({ error: "openId missing from user info" });
+        res.status?.(400).json?.({ error: "openId missing from user info" });
         return;
       }
 
@@ -43,14 +42,14 @@ export function registerOAuthRoutes(app: Express) {
       });
 
       const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+      res.cookie?.(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
       // Safe post-login redirect: allow only app-internal absolute paths
       const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
-      res.redirect(302, safeNext);
+      res.redirect?.(302, safeNext);
     } catch (error) {
       console.error("[OAuth] Callback failed", error);
-      res.status(500).json({ error: "OAuth callback failed" });
+      res.status?.(500).json?.({ error: "OAuth callback failed" });
     }
   });
 }
