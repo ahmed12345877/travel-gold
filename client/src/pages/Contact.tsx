@@ -3,7 +3,7 @@
  * Contact Page: Full contact page with form, map, and office info
  * Typography: Playfair Display for headings, Raleway for body, Dancing Script for accents
  */
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm, ValidationError } from "@formspree/react";
 import { motion } from "framer-motion";
 import OptimizedImage from "@/components/OptimizedImage";
@@ -58,13 +58,27 @@ const contactInfo = [
 ];
 
 export default function Contact() {
+  const formRef = useRef<HTMLFormElement>(null);
   const [formspreeState, handleSubmit] = useForm("mnjrgqrq");
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   useEffect(() => {
     if (formspreeState.succeeded) {
       toast.success("Your message has been sent successfully!");
+      setShowSuccessMessage(true);
     }
   }, [formspreeState.succeeded]);
+
+  const handleSendAnotherMessage = () => {
+    // Reset the form DOM element to clear all input values
+    if (formRef.current) {
+      formRef.current.reset();
+    }
+    // Hide the success message and show the form again
+    setShowSuccessMessage(false);
+    // Smooth scroll to the form
+    formRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
 
 
@@ -183,7 +197,7 @@ export default function Contact() {
                 Hear From You
               </h2>
 
-              {formspreeState.succeeded ? (
+              {formspreeState.succeeded && showSuccessMessage ? (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -197,7 +211,7 @@ export default function Contact() {
                     Thank you for reaching out. Our team will get back to you within 24 hours.
                   </p>
                   <button
-                    onClick={() => window.location.reload()}
+                    onClick={handleSendAnotherMessage}
                     className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--theme-primary)] text-[var(--theme-surface)] font-semibold text-sm tracking-wide hover:bg-[var(--theme-primary-light)] transition-all duration-300"
                   >
                     Send Another Message
@@ -205,7 +219,7 @@ export default function Contact() {
                   </button>
                 </motion.div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
                   {/* Name & Email row */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="relative">
