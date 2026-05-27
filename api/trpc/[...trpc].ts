@@ -21,13 +21,24 @@ function serializeCookie(name: string, value: string, options: Partial<CookieOpt
 const handler = createHTTPHandler({
   router: appRouter,
   endpoint: "/api/trpc",
-  createContext: async (opts) => {
+  createContext: async (opts: any) => {
     // Build a minimal Express-like response object that supports clearCookie
     const resShim = {
       // Mirror Express's res.clearCookie signature while targeting the underlying node res
       clearCookie(name: string, cookieOptions?: Partial<CookieOptions>) {
         const header = serializeCookie(name, "", { ...(cookieOptions ?? {}), maxAge: -1 });
         // Vercel/node-http may have multiple Set-Cookie headers
+        const current = opts.res.getHeader("Set-Cookie");
+        const next = current
+          ? Array.isArray(current)
+            ? [...current, header]
+            : [String(current), header]
+          : [header];
+        opts.res.setHeader("Set-Cookie", next);
+      },
+      // Provide res.cookie similar to Express
+      cookie(name: string, value: string, cookieOptions?: Partial<CookieOptions>) {
+        const header = serializeCookie(name, value, cookieOptions ?? {});
         const current = opts.res.getHeader("Set-Cookie");
         const next = current
           ? Array.isArray(current)
