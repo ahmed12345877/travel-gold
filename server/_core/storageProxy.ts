@@ -1,10 +1,11 @@
-import type { Express, Request, Response } from "express";
+// Use minimal typing to avoid TS friction across adapters
+import type { Express } from "express";
 import { getServerSupabase } from "./supabase";
 
 // Serve legacy /manus-storage/* by issuing Supabase signed redirects only.
 // No Manus/Forge backend is used.
 export function registerStorageProxy(app: Express) {
-  app.get("/manus-storage/*", async (req: Request, res: Response) => {
+  app.get("/manus-storage/*", async (req: any, res: any) => {
     const key = (req.params as Record<string, string>)[0];
     if (!key) return void res.status(400).send("Missing storage key");
 
@@ -20,19 +21,19 @@ export function registerStorageProxy(app: Express) {
         .from(bucket)
         .createSignedUrl(key, ttl);
       if (!error && data?.signedUrl) {
-        res.set("Cache-Control", "no-store");
-        return void res.redirect(307, data.signedUrl);
+        res.set?.("Cache-Control", "no-store");
+        return void res.redirect?.(307, data.signedUrl);
       }
       // Fallback to public URL if bucket is public
       const { data: pub } = supabase.storage.from(bucket).getPublicUrl(key);
       if (pub.publicUrl) {
-        res.set("Cache-Control", "no-store");
-        return void res.redirect(307, pub.publicUrl);
+        res.set?.("Cache-Control", "no-store");
+        return void res.redirect?.(307, pub.publicUrl);
       }
-      return void res.status(404).send("Image not found");
+      return void res.status?.(404).send?.("Image not found");
     } catch (err) {
       console.error("[StorageProxy] supabase error:", err);
-      return void res.status(502).send("Storage proxy error");
+      return void res.status?.(502).send?.("Storage proxy error");
     }
   });
 }

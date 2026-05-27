@@ -1,4 +1,15 @@
-import type { CookieOptions, Request as ExpressRequest } from "express";
+// Avoid relying on Express type generics here; use minimal shapes to prevent TS issues
+type MinimalReq = {
+  protocol?: string;
+  headers?: Record<string, string | string[] | undefined>;
+};
+
+type CookieOptionsLite = {
+  httpOnly: boolean;
+  path: string;
+  sameSite: "lax" | "strict" | "none" | boolean;
+  secure: boolean;
+};
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
@@ -8,10 +19,10 @@ function isIpAddress(host: string) {
   return host.includes(":");
 }
 
-function isSecureRequest(req: Pick<ExpressRequest, "protocol" | "headers">) {
+function isSecureRequest(req: MinimalReq) {
   if (req.protocol === "https") return true;
 
-  const forwardedProto = req.headers["x-forwarded-proto"];
+  const forwardedProto = req.headers?.["x-forwarded-proto"];
   if (!forwardedProto) return false;
 
   const protoList = Array.isArray(forwardedProto)
@@ -21,9 +32,7 @@ function isSecureRequest(req: Pick<ExpressRequest, "protocol" | "headers">) {
   return protoList.some((proto: string) => proto.trim().toLowerCase() === "https");
 }
 
-export function getSessionCookieOptions(
-  req: Pick<ExpressRequest, "protocol" | "headers">
-): Pick<CookieOptions, "httpOnly" | "path" | "sameSite" | "secure"> {
+export function getSessionCookieOptions(req: MinimalReq): CookieOptionsLite {
   // const hostname = req.hostname;
   // const shouldSetDomain =
   //   hostname &&

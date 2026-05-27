@@ -13,7 +13,8 @@ const DIRNAME = typeof __dirname !== "undefined"
   // eslint-disable-next-line no-undef
   : new URL('.', import.meta.url).pathname;
 
-export async function setupVite(app: import("express").Application, server: Server) {
+// Loosen type for `app` to avoid TS issues stemming from differing Express types
+export async function setupVite(app: any, server: Server) {
   const { createServer: createViteServer } = await import("vite");
   const viteConfig = (await import("../../vite.config")).default;
   const serverOptions = {
@@ -29,7 +30,7 @@ export async function setupVite(app: import("express").Application, server: Serv
     appType: "custom",
   });
 
-  app.use(vite.middlewares);
+  app.use(vite.middlewares as any);
   app.use("*", async (req: any, res: any, next: (err?: unknown) => void) => {
     const url = req.originalUrl as string;
 
@@ -43,7 +44,7 @@ export async function setupVite(app: import("express").Application, server: Serv
         `src="/src/main.tsx?v=${nanoid()}"`
       );
       const page = await vite.transformIndexHtml(url, template);
-      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+      (res.status?.(200).set?.({ "Content-Type": "text/html" }).end?.(page)) ?? res.end?.(page);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);
       next(e);
@@ -51,7 +52,7 @@ export async function setupVite(app: import("express").Application, server: Serv
   });
 }
 
-export function serveStatic(app: import("express").Application) {
+export function serveStatic(app: any) {
   const distPath =
     process.env.NODE_ENV === "development"
       ? path.resolve(DIRNAME, "../..", "dist", "public")
@@ -62,10 +63,10 @@ export function serveStatic(app: import("express").Application) {
     );
   }
 
-  app.use(express.static(distPath));
+  app.use((express as any).static(distPath));
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req: any, res: any) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+    res.sendFile?.(path.resolve(distPath, "index.html"));
   });
 }
