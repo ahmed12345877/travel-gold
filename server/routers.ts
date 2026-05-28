@@ -93,14 +93,18 @@ export const appRouter = router({
           // Use a stable openId for the admin account
           const openId = `admin:${adminEmail.toLowerCase()}`;
 
-          // Upsert admin user in DB
-          await db.upsertUser({
+          // Best-effort: record the admin in DB for audit logs.
+          // If DATABASE_URL is not set this is a no-op — the session
+          // cookie itself (signed JWT) is the source of truth for admin auth.
+          db.upsertUser({
             openId,
             email: adminEmail,
             name: "Admin",
             loginMethod: "password",
             role: "admin",
             lastSignedIn: new Date(),
+          }).catch((err) => {
+            console.warn("[Auth] Could not persist admin user to DB (non-fatal):", err);
           });
 
           const sessionToken = await sdk.createSessionToken(openId, {

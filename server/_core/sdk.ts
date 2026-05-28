@@ -257,7 +257,6 @@ class SDKServer {
   }
 
   async authenticateRequest(req: ExpressRequest): Promise<User> {
-    // Regular authentication flow
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
     const session = await this.verifySession(sessionCookie);
@@ -267,7 +266,29 @@ class SDKServer {
     }
 
     const sessionUserId = session.openId;
-    const signedInAt = new Date();
+    const now = new Date();
+
+    // Admin sessions are self-contained in the JWT — no DB required.
+    // openId = "admin:<email>" is only issued by the password-login mutation
+    // after verifying ADMIN_EMAIL + ADMIN_PASSWORD_HASH, so the JWT itself
+    // is the proof of identity. We never need to hit the database.
+    if (sessionUserId.startsWith("admin:")) {
+      const email = sessionUserId.slice("admin:".length) || null;
+      return {
+        id: 0,
+        openId: sessionUserId,
+        name: session.name || "Admin",
+        email,
+        phone: null,
+        loginMethod: "password",
+        avatarUrl: null,
+        role: "admin",
+        createdAt: now,
+        updatedAt: now,
+        lastSignedIn: now,
+      } satisfies User;
+    }
+
     let user = await db.getUserByOpenId(sessionUserId);
 
     // If user not in DB, sync from OAuth server automatically
@@ -279,7 +300,7 @@ class SDKServer {
           name: userInfo.name || null,
           email: userInfo.email ?? null,
           loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
-          lastSignedIn: signedInAt,
+          lastSignedIn: now,
         });
         user = await db.getUserByOpenId(userInfo.openId);
       } catch (error) {
@@ -294,7 +315,7 @@ class SDKServer {
 
     await db.upsertUser({
       openId: user.openId,
-      lastSignedIn: signedInAt,
+      lastSignedIn: now,
     });
 
     return user;
