@@ -1,4 +1,4 @@
-import { AXIOS_TIMEOUT_MS, COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { ForbiddenError } from "@shared/_core/errors";
 import axios, { type AxiosInstance } from "axios";
 import { parse as parseCookieHeader } from "cookie";
@@ -79,7 +79,10 @@ class OAuthService {
 const createOAuthHttpClient = (): AxiosInstance =>
   axios.create({
     baseURL: ENV.oAuthServerUrl,
-    timeout: AXIOS_TIMEOUT_MS,
+    // 5 s keeps us well inside Vercel's 10 s default timeout.
+    // The old 30 s value caused Vercel to kill the function with a plain-text
+    // "A server error occurred" before any try/catch could intercept.
+    timeout: 5_000,
   });
 
 class SDKServer {
@@ -291,8 +294,14 @@ class SDKServer {
 
     let user = await db.getUserByOpenId(sessionUserId);
 
-    // If user not in DB, sync from OAuth server automatically
+    // If user not in DB, sync from OAuth server automatically.
+    // If no OAuth server is configured, skip the network call and fail fast —
+    // otherwise the 5 s axios timeout would still fire for every request that
+    // carries an old non-admin session cookie.
     if (!user) {
+      if (!ENV.oAuthServerUrl) {
+        throw ForbiddenError("User not found");
+      }
       try {
         const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
         await db.upsertUser({
