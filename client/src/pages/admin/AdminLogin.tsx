@@ -143,7 +143,7 @@ export default function AdminLogin() {
         supabaseLoginMutation.mutate({ accessToken: token });
         return;
       }
-      const next = encodeURIComponent("/admin/login");
+      const next = encodeURIComponent("/admin");
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo: `${window.location.origin}/auth/callback?next=${next}` },
@@ -175,7 +175,7 @@ export default function AdminLogin() {
           "Email-based sign-in/up is disabled. Enable Email provider (and Signups) in Supabase Dashboard → Authentication → Providers."
         );
       }
-      const next = encodeURIComponent("/admin/login");
+      const next = encodeURIComponent("/admin");
       const { error } = await supabase.auth.signInWithOtp({
         email: magicEmail,
         options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${next}` },
