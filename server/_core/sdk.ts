@@ -270,21 +270,59 @@ class SDKServer {
     const signedInAt = new Date();
     let user = await db.getUserByOpenId(sessionUserId);
 
-    // If user not in DB, sync from OAuth server automatically
     if (!user) {
-      try {
-        const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
-        await db.upsertUser({
-          openId: userInfo.openId,
-          name: userInfo.name || null,
-          email: userInfo.email ?? null,
-          loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
-          lastSignedIn: signedInAt,
-        });
-        user = await db.getUserByOpenId(userInfo.openId);
-      } catch (error) {
-        console.error("[Auth] Failed to sync user from OAuth:", error);
-        throw ForbiddenError("Failed to sync user info");
+      // Admin sessions (password login) use an "admin:" prefix and have no
+      // corresponding OAuth account. Attempt a DB upsert from the JWT info;
+      // if the DB is unavailable, return a synthetic admin user so the session
+      // stays valid without requiring an external OAuth round-trip.
+      if (sessionUserId.startsWith("admin:")) {
+        try {
+          await db.upsertUser({
+            openId: sessionUserId,
+            name: session.name || "Admin",
+            role: "admin",
+            loginMethod: "password",
+            lastSignedIn: signedInAt,
+          });
+          user = await db.getUserByOpenId(sessionUserId);
+        } catch {
+          // DB error — fall through to synthetic user below
+        }
+
+        if (!user) {
+          // DB is unavailable; synthesise a minimal admin User so the request
+          // can continue. The id sentinel -1 is safe because MySQL auto-increment
+          // primary keys start at 1.
+          return {
+            id: -1,
+            openId: sessionUserId,
+            name: session.name || "Admin",
+            email: null,
+            phone: null,
+            loginMethod: "password",
+            avatarUrl: null,
+            role: "admin" as const,
+            createdAt: signedInAt,
+            updatedAt: signedInAt,
+            lastSignedIn: signedInAt,
+          };
+        }
+      } else {
+        // For OAuth users, sync from the OAuth server automatically.
+        try {
+          const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
+          await db.upsertUser({
+            openId: userInfo.openId,
+            name: userInfo.name || null,
+            email: userInfo.email ?? null,
+            loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+            lastSignedIn: signedInAt,
+          });
+          user = await db.getUserByOpenId(userInfo.openId);
+        } catch (error) {
+          console.error("[Auth] Failed to sync user from OAuth:", error);
+          throw ForbiddenError("Failed to sync user info");
+        }
       }
     }
 

@@ -93,7 +93,7 @@ export const appRouter = router({
           // Use a stable openId for the admin account
           const openId = `admin:${adminEmail.toLowerCase()}`;
 
-          // Upsert admin user in DB
+          // Upsert admin user in DB (best-effort; silently skipped when DB is unavailable).
           await db.upsertUser({
             openId,
             email: adminEmail,

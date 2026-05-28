@@ -78,7 +78,12 @@ export default function AdminLogin() {
       navigate("/admin");
     },
     onError: (err) => {
-      setStatus({ type: "error", msg: err.message || "Invalid credentials. Please try again." });
+      const raw = err.message || "";
+      const msg =
+        raw.startsWith("Unexpected token") || raw.includes("not valid JSON") || raw.includes("Failed to fetch")
+          ? "Cannot reach the server. Please check your connection and try again."
+          : raw || "Invalid credentials. Please try again.";
+      setStatus({ type: "error", msg });
       setLoading(false);
     },
   });
@@ -88,7 +93,12 @@ export default function AdminLogin() {
       navigate("/admin");
     },
     onError: (err) => {
-      setStatus({ type: "error", msg: err.message || "Admin access denied." });
+      const raw = err.message || "";
+      const msg =
+        raw.startsWith("Unexpected token") || raw.includes("not valid JSON") || raw.includes("Failed to fetch")
+          ? "Cannot reach the server. Please check your connection and try again."
+          : raw || "Admin access denied.";
+      setStatus({ type: "error", msg });
       setLoading(false);
     },
   });
