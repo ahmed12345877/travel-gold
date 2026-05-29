@@ -93,10 +93,8 @@ export const appRouter = router({
           // Use a stable openId for the admin account
           const openId = `admin:${adminEmail.toLowerCase()}`;
 
-          // Best-effort: record the admin in DB for audit logs.
-          // If DATABASE_URL is not set this is a no-op — the session
-          // cookie itself (signed JWT) is the source of truth for admin auth.
-          db.upsertUser({
+          // Upsert admin user in DB (best-effort; silently skipped when DB is unavailable).
+          await db.upsertUser({
             openId,
             email: adminEmail,
             name: "Admin",
