@@ -1,4 +1,4 @@
-import { AXIOS_TIMEOUT_MS, COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { ForbiddenError } from "@shared/_core/errors";
 import axios, { type AxiosInstance } from "axios";
 import { parse as parseCookieHeader } from "cookie";
@@ -79,7 +79,10 @@ class OAuthService {
 const createOAuthHttpClient = (): AxiosInstance =>
   axios.create({
     baseURL: ENV.oAuthServerUrl,
-    timeout: AXIOS_TIMEOUT_MS,
+    // 5 s keeps us well inside Vercel's 10 s default timeout.
+    // The old 30 s value caused Vercel to kill the function with a plain-text
+    // "A server error occurred" before any try/catch could intercept.
+    timeout: 5_000,
   });
 
 class SDKServer {
@@ -257,7 +260,6 @@ class SDKServer {
   }
 
   async authenticateRequest(req: ExpressRequest): Promise<User> {
-    // Regular authentication flow
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
     const session = await this.verifySession(sessionCookie);
@@ -267,11 +269,39 @@ class SDKServer {
     }
 
     const sessionUserId = session.openId;
-    const signedInAt = new Date();
+    const now = new Date();
+
+    // Admin sessions are self-contained in the JWT — no DB required.
+    // openId = "admin:<email>" is only issued by the password-login mutation
+    // after verifying ADMIN_EMAIL + ADMIN_PASSWORD_HASH, so the JWT itself
+    // is the proof of identity. We never need to hit the database.
+    if (sessionUserId.startsWith("admin:")) {
+      const email = sessionUserId.slice("admin:".length) || null;
+      return {
+        id: 0,
+        openId: sessionUserId,
+        name: session.name || "Admin",
+        email,
+        phone: null,
+        loginMethod: "password",
+        avatarUrl: null,
+        role: "admin",
+        createdAt: now,
+        updatedAt: now,
+        lastSignedIn: now,
+      } satisfies User;
+    }
+
     let user = await db.getUserByOpenId(sessionUserId);
 
-    // If user not in DB, sync from OAuth server automatically
+    // If user not in DB, sync from OAuth server automatically.
+    // If no OAuth server is configured, skip the network call and fail fast —
+    // otherwise the 5 s axios timeout would still fire for every request that
+    // carries an old non-admin session cookie.
     if (!user) {
+      if (!ENV.oAuthServerUrl) {
+        throw ForbiddenError("User not found");
+      }
       try {
         const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
         await db.upsertUser({
@@ -279,7 +309,7 @@ class SDKServer {
           name: userInfo.name || null,
           email: userInfo.email ?? null,
           loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
-          lastSignedIn: signedInAt,
+          lastSignedIn: now,
         });
         user = await db.getUserByOpenId(userInfo.openId);
       } catch (error) {
@@ -294,7 +324,7 @@ class SDKServer {
 
     await db.upsertUser({
       openId: user.openId,
-      lastSignedIn: signedInAt,
+      lastSignedIn: now,
     });
 
     return user;

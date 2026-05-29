@@ -59,7 +59,18 @@ const handler = createHTTPHandler({
 });
 
 export default async function trpcHandler(req: IncomingMessage, res: ServerResponse) {
-  return handler(req, res);
+  try {
+    return await handler(req, res);
+  } catch (err) {
+    // Ensure the response is always valid JSON, even on unexpected crashes.
+    // Without this, Vercel returns a plain-text "A server error occurred" which
+    // the tRPC client cannot parse, producing "Unexpected token 'A'" on the client.
+    if (!res.headersSent) {
+      res.setHeader("Content-Type", "application/json");
+      res.statusCode = 500;
+      res.end(JSON.stringify({ error: { message: "Internal server error", code: -32603 } }));
+    }
+  }
 }
 
 // Ensure this function runs in the Node.js runtime on Vercel

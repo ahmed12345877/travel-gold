@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { supabase, fetchSupabaseAuthSettings } from "@/lib/supabase";
+import { trpc } from "@/lib/trpc";
 import PageMeta from "@/components/PageMeta";
 import {
   LogIn,
@@ -40,12 +41,18 @@ export default function Login() {
     emailSignupsEnabled: false,
   });
 
+  const [authError, setAuthError] = useState<string | null>(null);
+  const supabaseLoginMutation = trpc.auth.supabaseLogin.useMutation();
+
+  const searchParams = new URLSearchParams(globalThis.location?.search || "");
+  const nextPath = searchParams.get("next") || "/";
+
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
-      setLocation("/");
+      setLocation(nextPath.startsWith("/admin") ? nextPath : "/");
     }
-  }, [isAuthenticated, user, setLocation]);
+  }, [isAuthenticated, user, setLocation, nextPath]);
 
   // Preflight Supabase provider configuration to avoid redirecting to JSON error pages
   useEffect(() => {
@@ -58,9 +65,6 @@ export default function Login() {
       setProviderState({ checked: true, googleEnabled, emailEnabled, emailSignupsEnabled });
     })();
   }, []);
-
-  const searchParams = new URLSearchParams(globalThis.location?.search || "");
-  const nextPath = searchParams.get("next") || "/";
 
   const handleOAuthLogin = async () => {
     // Prefer Supabase OAuth if configured and Google provider is enabled; fallback otherwise
@@ -83,16 +87,34 @@ export default function Login() {
   const handleEmailAuth = async () => {
     if (!supabase) return handleOAuthLogin();
     if (providerState.checked && (!providerState.emailEnabled || (activeTab === "signup" && !providerState.emailSignupsEnabled))) {
-      // If email is disabled, fallback to OAuth flow immediately
       return handleOAuthLogin();
     }
     if (!email || !password) return handleOAuthLogin();
+    setAuthError(null);
     if (activeTab === "signin") {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (!error) {
-        setLocation(nextPath);
+      const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setAuthError(error.message);
         return;
       }
+      // For admin paths, bridge the Supabase session into our server session cookie
+      if (nextPath.startsWith("/admin")) {
+        const accessToken = authData?.session?.access_token;
+        if (!accessToken) {
+          setAuthError("Could not retrieve session token.");
+          return;
+        }
+        try {
+          await supabaseLoginMutation.mutateAsync({ accessToken });
+          setLocation(nextPath);
+        } catch (err: any) {
+          await supabase.auth.signOut();
+          setAuthError(err?.message || "This account does not have admin privileges.");
+        }
+        return;
+      }
+      setLocation(nextPath);
+      return;
     } else {
       const { error } = await supabase.auth.signUp({
         email,
@@ -100,12 +122,10 @@ export default function Login() {
         options: { data: { name } },
       });
       if (!error) {
-        // If email confirmation is enabled, the user will need to confirm
         setLocation(nextPath);
         return;
       }
     }
-    // Fallback
     handleOAuthLogin();
   };
 
@@ -418,6 +438,12 @@ export default function Login() {
                 )}
               </Button>
             </form>
+
+            {authError && (
+              <div className="mt-4 px-4 py-3 rounded-xl border border-red-500/20 bg-red-500/10 text-red-300 text-sm text-center">
+                {authError}
+              </div>
+            )}
 
             {/* Footer text */}
             <p className="text-center text-gray-600 text-xs mt-6">

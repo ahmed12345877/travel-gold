@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { supabase } from "@/lib/supabase";
+import { trpc } from "@/lib/trpc";
 import PageMeta from "@/components/PageMeta";
 
 export default function AuthCallback() {
   const [, navigate] = useLocation();
   const [message, setMessage] = useState<string>("Completing sign-in…");
+  const supabaseLoginMutation = trpc.auth.supabaseLogin.useMutation();
 
   useEffect(() => {
     // Parse URL params once on mount
@@ -24,7 +26,7 @@ export default function AuthCallback() {
       setMessage(`Sign-in error: ${desc}`);
       // Keep the user on this page so they can retry from the normal login screen.
       // After a brief pause, send them back to the login page or the intended next path.
-      const backTo = next.startsWith("/admin") ? "/admin/login" : "/login";
+      const backTo = next.startsWith("/admin") ? "/login?next=/admin" : "/login";
       const timer = setTimeout(() => navigate(backTo), 2500);
       return () => clearTimeout(timer);
     }
@@ -37,21 +39,53 @@ export default function AuthCallback() {
         return () => clearTimeout(timer);
       }
 
+      const bridgeAdminSession = async (accessToken: string): Promise<boolean> => {
+        try {
+          await supabaseLoginMutation.mutateAsync({ accessToken });
+          return true;
+        } catch {
+          return false;
+        }
+      };
+
       try {
         await supabase.auth.exchangeCodeForSession(window.location.href);
-        // Session is now established in the client; continue to the intended destination
+        // For admin destinations, bridge the Supabase session to our server session cookie
+        if (next.startsWith("/admin")) {
+          const { data: sd } = await supabase.auth.getSession();
+          const token = sd?.session?.access_token;
+          if (token) {
+            const ok = await bridgeAdminSession(token);
+            if (!ok) {
+              await supabase.auth.signOut();
+              setMessage("This account does not have admin privileges.");
+              const timer = setTimeout(() => navigate("/login?next=/admin"), 2000);
+              return () => clearTimeout(timer);
+            }
+          }
+        }
         navigate(next);
       } catch (err: any) {
         // Fallback for magic-link style callbacks that deliver access_token in hash
         try {
           const { data } = await supabase.auth.getSession();
           if (data.session) {
+            if (next.startsWith("/admin")) {
+              const token = data.session.access_token;
+              const ok = await bridgeAdminSession(token);
+              if (!ok) {
+                await supabase.auth.signOut();
+                setMessage("This account does not have admin privileges.");
+                const timer = setTimeout(() => navigate("/login?next=/admin"), 2000);
+                return () => clearTimeout(timer);
+              }
+            }
             navigate(next);
             return;
           }
         } catch {}
         setMessage(err?.message || "Failed to complete sign-in.");
-        const backTo = next.startsWith("/admin") ? "/admin/login" : "/login";
+        const backTo = next.startsWith("/admin") ? "/login?next=/admin" : "/login";
         const timer = setTimeout(() => navigate(backTo), 2000);
         return () => clearTimeout(timer);
       }
