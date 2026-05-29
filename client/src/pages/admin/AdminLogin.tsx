@@ -95,12 +95,22 @@ export default function AdminLogin() {
 
   useEffect(() => {
     if (!supabase) return;
-    // Attempt session bridge
-    supabase.auth.getSession().then(({ data }) => {
+
+    // Attempt silent session bridge: if there is already a valid Supabase
+    // session whose account has admin privileges, skip the password form.
+    // If it fails for any reason (wrong account, missing role, network error)
+    // sign out of Supabase and let the user proceed with the password form
+    // instead of showing a blocking "Admin access denied" error on mount.
+    supabase.auth.getSession().then(async ({ data }) => {
       const token = data?.session?.access_token;
-      if (token) {
-        setLoading(true);
-        supabaseLoginMutation.mutate({ accessToken: token });
+      if (!token) return;
+      try {
+        await supabaseLoginMutation.mutateAsync({ accessToken: token });
+        // success handled by onSuccess → navigate("/admin")
+      } catch {
+        // Non-admin or invalid session — sign out silently so it doesn't
+        // keep blocking the password form on subsequent loads.
+        try { await supabase!.auth.signOut(); } catch {}
       }
     });
 

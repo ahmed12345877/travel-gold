@@ -30,16 +30,22 @@ export async function createContext(
   const bearer = getBearerToken(opts.req);
   if (bearer && supabase) {
     try {
-      const { data, error } = await supabase.auth.getUser(bearer);
-      if (!error && data.user) {
-        // Upsert user in our DB using Supabase user info
-        const u = data.user;
+      // Race against a 4 s cap: supabase.auth.getUser makes a network call to
+      // Supabase's server on every request. Without a timeout it can hang past
+      // Vercel's 10 s function limit, which returns plain-text
+      // "A server error occurred" — not JSON — causing the tRPC client to throw
+      // "Unexpected token 'A'" on the browser side.
+      const supabaseResult = await Promise.race([
+        supabase.auth.getUser(bearer),
+        new Promise<null>(resolve => setTimeout(() => resolve(null), 4_000)),
+      ]);
+      if (supabaseResult && !supabaseResult.error && supabaseResult.data?.user) {
+        const u = supabaseResult.data.user;
         const name =
           (u.user_metadata && (u.user_metadata as any).name) ||
           u.user_metadata?.full_name ||
           u.email?.split("@")[0] ||
           null;
-        // Check app_metadata.role to grant admin in our DB
         const appMeta = (u.app_metadata ?? {}) as Record<string, unknown>;
         const supabaseRole = appMeta["role"] === "admin" ? "admin" : undefined;
 
