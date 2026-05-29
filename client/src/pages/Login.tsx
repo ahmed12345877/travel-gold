@@ -43,6 +43,7 @@ export default function Login() {
 
   const [authError, setAuthError] = useState<string | null>(null);
   const supabaseLoginMutation = trpc.auth.supabaseLogin.useMutation();
+  const loginMutation = trpc.auth.login.useMutation();
 
   const searchParams = new URLSearchParams(globalThis.location?.search || "");
   const nextPath = searchParams.get("next") || "/";
@@ -85,37 +86,60 @@ export default function Login() {
   };
 
   const handleEmailAuth = async () => {
-    if (!supabase) return handleOAuthLogin();
-    if (providerState.checked && (!providerState.emailEnabled || (activeTab === "signup" && !providerState.emailSignupsEnabled))) {
+    if (!email || !password) {
+      if (!supabase) return handleOAuthLogin();
       return handleOAuthLogin();
     }
-    if (!email || !password) return handleOAuthLogin();
     setAuthError(null);
+
     if (activeTab === "signin") {
+      // Admin path: try Supabase first, then fall back to ADMIN_EMAIL+hash direct login.
+      // This means admin access works even if the account doesn't exist in Supabase.
+      if (nextPath.startsWith("/admin")) {
+        let loggedIn = false;
+
+        if (supabase) {
+          const { data: authData, error: supaErr } = await supabase.auth.signInWithPassword({ email, password });
+          if (!supaErr && authData?.session?.access_token) {
+            try {
+              await supabaseLoginMutation.mutateAsync({ accessToken: authData.session.access_token });
+              loggedIn = true;
+            } catch {
+              await supabase.auth.signOut();
+            }
+          }
+        }
+
+        if (!loggedIn) {
+          try {
+            await loginMutation.mutateAsync({ email, password });
+            loggedIn = true;
+          } catch (err: any) {
+            setAuthError(err?.message || "Invalid credentials. Check ADMIN_EMAIL and ADMIN_PASSWORD_HASH in Vercel.");
+            return;
+          }
+        }
+
+        if (loggedIn) setLocation(nextPath);
+        return;
+      }
+
+      // Non-admin path: require Supabase
+      if (!supabase) return handleOAuthLogin();
+      if (providerState.checked && !providerState.emailEnabled) return handleOAuthLogin();
+
       const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         setAuthError(error.message);
         return;
       }
-      // For admin paths, bridge the Supabase session into our server session cookie
-      if (nextPath.startsWith("/admin")) {
-        const accessToken = authData?.session?.access_token;
-        if (!accessToken) {
-          setAuthError("Could not retrieve session token.");
-          return;
-        }
-        try {
-          await supabaseLoginMutation.mutateAsync({ accessToken });
-          setLocation(nextPath);
-        } catch (err: any) {
-          await supabase.auth.signOut();
-          setAuthError(err?.message || "This account does not have admin privileges.");
-        }
-        return;
-      }
       setLocation(nextPath);
       return;
     } else {
+      if (!supabase) return handleOAuthLogin();
+      if (providerState.checked && (!providerState.emailEnabled || !providerState.emailSignupsEnabled)) {
+        return handleOAuthLogin();
+      }
       const { error } = await supabase.auth.signUp({
         email,
         password,

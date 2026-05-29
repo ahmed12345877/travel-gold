@@ -52,8 +52,15 @@ const trpcClient = trpc.createClient({
       async fetch(input, init) {
         let token: string | null = null;
         try {
-          const session = await supabase?.auth.getSession();
-          token = session?.data.session?.access_token ?? null;
+          if (supabase) {
+            // Race against a 3 s timeout so a stale Supabase token-refresh
+            // can never block every tRPC call and cause an infinite spinner.
+            const sessionResult = await Promise.race([
+              supabase.auth.getSession(),
+              new Promise<null>(resolve => setTimeout(() => resolve(null), 3000)),
+            ]);
+            token = (sessionResult as any)?.data?.session?.access_token ?? null;
+          }
         } catch {
           token = null;
         }
