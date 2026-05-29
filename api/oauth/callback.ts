@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { COOKIE_NAME, ONE_YEAR_MS } from "../../shared/const";
-import { getSessionCookieOptions } from "../../server/_core/cookies";
-import * as db from "../../server/db";
-import { sdk } from "../../server/_core/sdk";
+import { COOKIE_NAME, ONE_YEAR_MS } from "../../shared/const.js";
+import { getSessionCookieOptions } from "../../server/_core/cookies.js";
+import * as db from "../../server/db.js";
+import { sdk } from "../../server/_core/sdk.js";
 
 function getQueryParam(req: VercelRequest, key: string): string | undefined {
   const value = req.query[key];

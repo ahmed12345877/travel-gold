@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "http";
 import { createHTTPHandler } from "@trpc/server/adapters/node-http";
-import { appRouter } from "../../server/routers";
-import { createContext } from "../../server/_core/context";
+import { appRouter } from "../../server/routers.js";
+import { createContext } from "../../server/_core/context.js";
 import type { CookieOptions } from "express";
 
 // Minimal cookie serializer to support ctx.res.clearCookie in routers

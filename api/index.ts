@@ -1,4 +1,4 @@
-import { startServer } from '../server/_core/index';
+import { startServer } from '../server/_core/index.js';
 
 export default async function handler(req: any, res: any) {
     const app = await startServer();
