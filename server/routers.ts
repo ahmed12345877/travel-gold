@@ -101,6 +101,8 @@ export const appRouter = router({
             loginMethod: "password",
             role: "admin",
             lastSignedIn: new Date(),
+          }).catch((err) => {
+            console.warn("[Auth] Could not persist admin user to DB (non-fatal):", err);
           });
 
           const sessionToken = await sdk.createSessionToken(openId, {
@@ -152,7 +154,9 @@ export const appRouter = router({
 
         const supabaseUser = data.user;
         const appMeta = (supabaseUser.app_metadata ?? {}) as Record<string, unknown>;
-        const role = appMeta["role"] as string | undefined;
+        const userMeta = (supabaseUser.user_metadata ?? {}) as Record<string, unknown>;
+        // Accept role set via app_metadata (admin API) OR user_metadata (SQL UPDATE)
+        const role = (appMeta["role"] ?? userMeta["role"]) as string | undefined;
 
         if (role !== "admin") {
           throw new TRPCError({
@@ -161,24 +165,30 @@ export const appRouter = router({
           });
         }
 
-        // Upsert the user in our DB with role=admin
         const name =
           (supabaseUser.user_metadata as any)?.full_name ||
           (supabaseUser.user_metadata as any)?.name ||
           supabaseUser.email?.split("@")[0] ||
           "Admin";
 
-        await db.upsertUser({
-          openId: supabaseUser.id,
+        // Use "admin:" prefix so authenticateRequest bypasses DB lookup entirely.
+        // This makes the session self-contained (no DATABASE_URL required).
+        const openId = `admin:${(supabaseUser.email ?? supabaseUser.id).toLowerCase()}`;
+
+        // Best-effort DB write for audit trail; non-blocking so no MySQL = non-fatal
+        db.upsertUser({
+          openId,
           email: supabaseUser.email ?? null,
           name,
           loginMethod: "supabase",
           role: "admin",
           lastSignedIn: new Date(),
+        }).catch((err) => {
+          console.warn("[Auth] Could not persist Supabase admin user to DB (non-fatal):", err);
         });
 
         // Issue a session cookie
-        const sessionToken = await sdk.createSessionToken(supabaseUser.id, {
+        const sessionToken = await sdk.createSessionToken(openId, {
           expiresInMs: ONE_YEAR_MS,
           name,
         });
