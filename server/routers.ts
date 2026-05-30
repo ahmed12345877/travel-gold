@@ -18,6 +18,7 @@ import { adminBlogRouter } from "./routers/admin.blog";
 import { aiCommandRouter } from "./routers/aiCommand";
 import { siteSettingsRouter } from "./routers/siteSettings";
 import { backupRouter } from "./routers/backup";
+import { dataImportRouter } from "./routers/dataImport";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createHash, timingSafeEqual } from "crypto";
@@ -314,6 +315,9 @@ export const appRouter = router({
 
   // Backup & Export (real DB export)
   backup: backupRouter,
+
+  // Data Import (import records from external tools via CSV/JSON)
+  dataImport: dataImportRouter,
 });
 
 export type AppRouter = typeof appRouter;

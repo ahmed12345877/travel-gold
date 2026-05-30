@@ -50,6 +50,7 @@ import {
   FolderOpen,
   HardDrive,
   Brain,
+  Upload,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation, Link } from "wouter";
@@ -81,6 +82,7 @@ const adminMenuItems = [
   { icon: ShieldCheck, label: "Permissions", path: "/admin/permissions", group: "system" },
   { icon: FileText, label: "Audit Log", path: "/admin/audit-log", group: "system" },
   { icon: HardDrive, label: "Backup & Export", path: "/admin/backup", group: "system" },
+  { icon: Upload, label: "Import Data", path: "/admin/import", group: "system" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "admin-sidebar-width";

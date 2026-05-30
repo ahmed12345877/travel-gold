@@ -55,6 +55,7 @@ import ThemeAdmin from "./pages/admin/ThemeAdmin";
 import SEOAdmin from "./pages/admin/SEOAdmin";
 import MediaLibrary from "./pages/admin/MediaLibrary";
 import BackupExport from "./pages/admin/BackupExport";
+import ImportData from "./pages/admin/ImportData";
 import AICommandCenter from "./pages/admin/AICommandCenter";
 import Profile from "./pages/Profile";
 import Blog from "./pages/Blog";
@@ -179,6 +180,9 @@ function Router() {
       </Route>
       <Route path="/admin/backup">
         <AdminLayout><BackupExport /></AdminLayout>
+      </Route>
+      <Route path="/admin/import">
+        <AdminLayout><ImportData /></AdminLayout>
       </Route>
       <Route path="/admin/ai-command">
         <AdminLayout><AICommandCenter /></AdminLayout>
