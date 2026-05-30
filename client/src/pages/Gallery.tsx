@@ -648,7 +648,7 @@ export default function Gallery() {
       {/* Hero Section */}
       <section className="relative pt-20 sm:pt-24 md:pt-32 pb-12 sm:pb-16 px-3 sm:px-4 md:px-8 overflow-hidden">
         <div className="absolute inset-0">
-          <img src="/api/manus-storage/hero-gallery_41ca4d64.jpg" alt="" className="w-full h-full object-cover" />
+          <img src="https://images.unsplash.com/photo-1553913861-c0fddf2619ee?w=1200&q=80" alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-b from-[var(--theme-background)]/85 via-[var(--theme-background)]/75 to-[var(--theme-background)]" />
         </div>
         <div className="max-w-6xl mx-auto relative z-10">

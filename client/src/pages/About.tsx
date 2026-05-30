@@ -19,7 +19,7 @@ import PageMeta from "@/components/PageMeta";
 /* ─── Image URLs ─── */
 const IMAGES = {
   aboutHero: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/about-hero-2AaUoasqgiUnSNWvY9HdZm.webp",
-  ceo: "/manus-storage/1000148297_a30175e7.webp",
+  ceo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400/manus-storage/1000148297_a30175e7.webpq=80",
   coo: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/team-coo-5AGG89HCnmBhjQbcJ4ALq8.webp",
   marketing: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/team-marketing-b3JHQd27mnnpLURydNtbgX.webp",
   travel: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/team-travel-DWXCJxcJmzveyZdkVFafeg.webp",

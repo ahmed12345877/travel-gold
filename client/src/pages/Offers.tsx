@@ -815,7 +815,7 @@ export default function Offers() {
       {/* Hero Banner */}
       <section className="relative pt-32 pb-20 overflow-hidden">
         <div className="absolute inset-0">
-          <img src="/api/manus-storage/hero-offers_d7a75299.webp" alt="" className="w-full h-full object-cover" />
+          <img src="https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?w=1200&q=80" alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-b from-[var(--theme-surface)]/85 via-[var(--theme-surface)]/75 to-[var(--theme-surface)]" />
         </div>
         {/* Decorative gold lines */}
