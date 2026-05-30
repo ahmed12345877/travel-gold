@@ -60,7 +60,7 @@ export default function Blog() {
       {/* Hero Banner */}
       <section className="relative pt-32 pb-20 overflow-hidden">
         <div className="absolute inset-0">
-          <img src="/api/manus-storage/hero-blog_16ca6aef.jpg" alt="" className="w-full h-full object-cover" />
+          <img src="https://images.unsplash.com/photo-1568322445389-f64ac2515020?w=1200&q=80" alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-b from-[var(--theme-background)]/80 via-[var(--theme-background)]/70 to-[var(--theme-background)]" />
         </div>
         <div className="container relative z-10">
