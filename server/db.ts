@@ -35,15 +35,8 @@ export async function getDb() {
     const connectionString = getConnectionString();
     if (!connectionString) return null;
     try {
-      // postgres-js client. `prepare: false` is required for compatibility with
-      // Supabase's transaction pooler (pgbouncer).
-      _client = postgres(connectionString, {
-        prepare: false,
-        max: 5,
-        idle_timeout: 20,
-        connect_timeout: 15,
-      });
-      _db = drizzle(_client);
+      const client = postgres(process.env.DATABASE_URL);
+      _db = drizzle(client);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -131,8 +124,8 @@ export async function createBooking(booking: InsertBooking) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const rows = await db.insert(bookings).values(booking).returning();
-  return rows[0];
+  const result = await db.insert(bookings).values(booking).returning();
+  return result[0];
 }
 
 export async function getBookingById(id: number) {
@@ -187,8 +180,8 @@ export async function createReview(review: InsertReview) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const rows = await db.insert(reviews).values(review).returning();
-  return rows[0];
+  const result = await db.insert(reviews).values(review).returning();
+  return result[0];
 }
 
 export async function getApprovedReviews(limit = 50, offset = 0) {
@@ -267,8 +260,8 @@ export async function createOffer(offer: InsertOffer) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const rows = await db.insert(offers).values(offer).returning();
-  return rows[0];
+  const result = await db.insert(offers).values(offer).returning();
+  return result[0];
 }
 
 export async function getActiveOffers() {
@@ -315,8 +308,8 @@ export async function createContactMessage(message: InsertContactMessage) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const rows = await db.insert(contactMessages).values(message).returning();
-  return rows[0];
+  const result = await db.insert(contactMessages).values(message).returning();
+  return result[0];
 }
 
 export async function getAllContactMessages(limit = 50, offset = 0) {
@@ -339,8 +332,8 @@ export async function createFileUpload(file: InsertFileUpload) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const rows = await db.insert(fileUploads).values(file).returning();
-  return rows[0];
+  const result = await db.insert(fileUploads).values(file).returning();
+  return result[0];
 }
 
 export async function getUserFiles(userId: number) {
@@ -356,8 +349,8 @@ export async function createGalleryItem(item: InsertGalleryItem) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const rows = await db.insert(galleryItems).values(item).returning();
-  return rows[0];
+  const result = await db.insert(galleryItems).values(item).returning();
+  return result[0];
 }
 
 export async function getVisibleGalleryItems() {
@@ -407,8 +400,8 @@ export async function createGalleryVideo(video: InsertGalleryVideo) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const rows = await db.insert(galleryVideos).values(video).returning();
-  return rows[0];
+  const result = await db.insert(galleryVideos).values(video).returning();
+  return result[0];
 }
 
 export async function getVisibleGalleryVideos() {
@@ -468,15 +461,16 @@ export async function getOrCreateAISubscription(userId: number): Promise<AISubsc
   if (!db) throw new Error("Database not available");
 
   let subscription = await db.select().from(aiSubscriptions).where(eq(aiSubscriptions.userId, userId)).limit(1);
-  
+
   if (subscription.length === 0) {
-    // Create free subscription for new user
-    subscription = await db.insert(aiSubscriptions).values({
+    const result = await db.insert(aiSubscriptions).values({
       userId,
       plan: "free",
       status: "active",
       startDate: Date.now(),
     } as InsertAISubscription).returning();
+
+    subscription = result;
   }
 
   return subscription[0];
@@ -490,7 +484,7 @@ export async function updateAISubscription(userId: number, plan: "free" | "pro" 
     .set({
       plan,
       status: "active",
-      renewalDate: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
+      renewalDate: Date.now() + 30 * 24 * 60 * 60 * 1000,
       ...(stripeSubscriptionId && { stripeSubscriptionId }),
     })
     .where(eq(aiSubscriptions.userId, userId));
@@ -503,14 +497,15 @@ export async function getOrCreateAICredits(userId: number): Promise<AICredit> {
   if (!db) throw new Error("Database not available");
 
   let credits = await db.select().from(aiCredits).where(eq(aiCredits.userId, userId)).limit(1);
-  
+
   if (credits.length === 0) {
-    // Create initial credits for new user (free plan gets 5 credits)
-    credits = await db.insert(aiCredits).values({
+    const result = await db.insert(aiCredits).values({
       userId,
-      balance: "5", // Free tier gets 5 image generations
+      balance: "5",
       totalUsed: "0",
     } as InsertAICredit).returning();
+
+    credits = result;
   }
 
   return credits[0];
@@ -527,7 +522,6 @@ export async function addAICredits(userId: number, amount: number, reason: "purc
     .set({ balance: newBalance.toString() })
     .where(eq(aiCredits.userId, userId));
 
-  // Log transaction
   await db.insert(aiTransactions).values({
     userId,
     type: reason === "purchase" ? "purchase" : reason === "monthly_allowance" ? "monthly_allowance" : "bonus",
@@ -544,7 +538,7 @@ export async function deductAICredits(userId: number, amount: number) {
 
   const credits = await getOrCreateAICredits(userId);
   const currentBalance = parseFloat(credits.balance.toString());
-  
+
   if (currentBalance < amount) {
     throw new Error("Insufficient credits");
   }
@@ -553,7 +547,7 @@ export async function deductAICredits(userId: number, amount: number) {
   const newTotalUsed = parseFloat(credits.totalUsed.toString()) + amount;
 
   await db.update(aiCredits)
-    .set({ 
+    .set({
       balance: newBalance.toString(),
       totalUsed: newTotalUsed.toString(),
     })
@@ -566,8 +560,8 @@ export async function createAIUsage(usage: InsertAIUsage) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const rows = await db.insert(aiUsage).values(usage).returning();
-  return rows[0];
+  const result = await db.insert(aiUsage).values(usage).returning();
+  return result[0];
 }
 
 export async function getUserAIUsage(userId: number, limit = 50, offset = 0) {
@@ -602,7 +596,7 @@ export async function getAIUsageStats(userId: number) {
   if (!db) throw new Error("Database not available");
 
   const usage = await db.select().from(aiUsage).where(eq(aiUsage.userId, userId));
-  
+
   return {
     totalGenerations: usage.length,
     byType: {
@@ -771,8 +765,8 @@ export async function createBlogPost(post: InsertBlogPost) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const rows = await db.insert(blogPosts).values(post).returning();
-  return rows[0];
+  const result = await db.insert(blogPosts).values(post).returning();
+  return result[0];
 }
 
 export async function updateBlogPost(id: number, data: Partial<InsertBlogPost>) {

@@ -100,7 +100,7 @@ export default function Contact() {
       {/* Hero Banner */}
       <section className="relative py-14 sm:py-20 md:py-24 lg:py-32 overflow-hidden">
         <div className="absolute inset-0">
-          <img src="/api/manus-storage/hero-contact_3d764475.jpg" alt="" className="w-full h-full object-cover" />
+          <img src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1200&q=80" alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-b from-[var(--theme-surface)]/85 via-[var(--theme-surface)]/75 to-[var(--theme-surface)]" />
         </div>
         <div className="absolute inset-0 opacity-5">

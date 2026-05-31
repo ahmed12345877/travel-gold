@@ -283,7 +283,7 @@ export default function MarketingSuite() {
       <section className="relative pt-32 pb-20 overflow-hidden">
         {/* Background image + overlay */}
         <div className="absolute inset-0">
-          <img src="/api/manus-storage/hero-marketing_8b0cdcda.jpg" alt="" className="w-full h-full object-cover" />
+          <img src="https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=1200&q=80" alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-b from-[var(--theme-background)]/90 via-[var(--theme-background)]/80 to-[var(--theme-background)]" />
           <div
             className="absolute inset-0 opacity-[0.03]"
