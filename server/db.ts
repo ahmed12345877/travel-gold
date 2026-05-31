@@ -14,9 +14,26 @@ import {
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _client: ReturnType<typeof postgres> | null = null;
+
+/**
+ * Resolve the Postgres connection string.
+ * Prefer Supabase's pooled connection (POSTGRES_URL, IPv4, pgbouncer on :6543)
+ * because the direct connection (DATABASE_URL -> db.*.supabase.co:5432) is
+ * IPv6-only and unreachable from serverless / sandboxed runtimes.
+ */
+function getConnectionString(): string | undefined {
+  return (
+    process.env.POSTGRES_URL ||
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL_NON_POOLING
+  );
+}
 
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
+  if (!_db) {
+    const connectionString = getConnectionString();
+    if (!connectionString) return null;
     try {
       const client = postgres(process.env.DATABASE_URL);
       _db = drizzle(client);
