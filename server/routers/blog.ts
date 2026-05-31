@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
+import { publicProcedure, protectedProcedure, router } from "../_core/trpc.js";
 import { TRPCError } from "@trpc/server";
 import {
   getPublishedBlogPosts,
@@ -9,7 +9,7 @@ import {
   getAllBlogPosts,
   incrementBlogViewCount,
   getBlogPostsByCategory,
-} from "../db";
+} from "../db.js";
 
 // Admin-only middleware
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {

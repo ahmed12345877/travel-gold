@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../_core/trpc";
-import { adminProcedure } from "../_core/trpc";
-import { storagePut } from "../storage";
+import { router, publicProcedure } from "../_core/trpc.js";
+import { adminProcedure } from "../_core/trpc.js";
+import { storagePut } from "../storage.js";
 import { nanoid } from "nanoid";
 import {
   createGalleryItem,
@@ -16,7 +16,7 @@ import {
   getGalleryVideoById,
   updateGalleryVideo,
   deleteGalleryVideo,
-} from "../db";
+} from "../db.js";
 
 export const galleryRouter = router({
   // ─── Public Endpoints ───

@@ -4,8 +4,8 @@
  * Uses Google Gemini API to generate images and stores them in S3
  */
 import { GoogleGenAI } from "@google/genai";
-import { storagePut } from "./storage";
-import { ENV } from "./_core/env";
+import { storagePut } from "./storage.js";
+import { ENV } from "./_core/env.js";
 
 /** Supported Gemini image models */
 export const GEMINI_IMAGE_MODELS = {

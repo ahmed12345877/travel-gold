@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
-import { adminProcedure } from "../_core/trpc";
+import { router, publicProcedure, protectedProcedure } from "../_core/trpc.js";
+import { adminProcedure } from "../_core/trpc.js";
 import {
   createReview,
   getApprovedReviews,
@@ -11,9 +11,9 @@ import {
   incrementHelpfulCount,
   getReviewStats,
   getDb,
-} from "../db";
+} from "../db.js";
 import { eq, desc } from "drizzle-orm";
-import { reviews } from "../../drizzle/schema";
+import { reviews } from "../../drizzle/schema.js";
 
 export const reviewsRouter = router({
   /** List approved reviews (public) */
