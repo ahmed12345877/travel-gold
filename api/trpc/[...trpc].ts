@@ -2,8 +2,9 @@
 import type { IncomingMessage, ServerResponse } from "http";
 import { nodeHTTPRequestHandler } from "@trpc/server/adapters/node-http";
 // تحويل الامتداد إلى .js ليتوافق مع تشغيل Vercel
-import { appRouter } from "../../../server/routers.js";
-import { createContext } from "../../server/_core/context/index.js";
+import { appRouter } from "../../../server/routers";
+import { createContext } from "../../server/_core/context";
+
 
 
 
