@@ -1,9 +1,9 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
-import type { User } from "../../drizzle/schema.js";
+import type { User } from "../../drizzle/schema";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getServerSupabase } from "./supabase.js";
-import { sdk } from "./sdk.js";
-import * as db from "../db.js";
+import { getServerSupabase } from "./supabase";
+import { sdk } from "./sdk";
+import * as db from "../db";
 
 function getBearerToken(req: CreateExpressContextOptions["req"]): string | null {
   const auth = req.headers["authorization"];

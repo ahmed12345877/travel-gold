@@ -1,12 +1,12 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../_core/trpc.js";
-import { adminProcedure } from "../_core/trpc.js";
+import { router, publicProcedure } from "../_core/trpc";
+import { adminProcedure } from "../_core/trpc";
 import {
   createContactMessage,
   getAllContactMessages,
   updateContactMessageStatus,
-} from "../db.js";
-import { notifyOwner } from "../_core/notification.js";
+} from "../db";
+import { notifyOwner } from "../_core/notification";
 
 export const contactRouter = router({
   /** Submit a contact form message (public) */

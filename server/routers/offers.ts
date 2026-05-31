@@ -1,13 +1,13 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../_core/trpc.js";
-import { adminProcedure } from "../_core/trpc.js";
+import { router, publicProcedure } from "../_core/trpc";
+import { adminProcedure } from "../_core/trpc";
 import {
   createOffer,
   getActiveOffers,
   getAllOffers,
   getOfferByPromoCode,
   updateOffer,
-} from "../db.js";
+} from "../db";
 
 export const offersRouter = router({
   /** List active offers (public) */

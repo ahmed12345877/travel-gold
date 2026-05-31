@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { getServerSupabase } from "./supabase.js";
+import { getServerSupabase } from "./supabase";
 
 // Serve legacy /manus-storage/* by issuing Supabase signed redirects only.
 // No Manus/Forge backend is used.
