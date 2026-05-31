@@ -19,28 +19,28 @@ const LOGO_URL =
 
 const CARD_IMAGES = [
   {
-    src: "/manus-storage/5d0d46494043a2b038ba343324bc8f0d_0780bda8.jpg",
+    src: "/images/hero/destinations.png",
     alt: "Explore Egyptian Destinations - Luxury Travel Experiences",
     label: "Destinations",
     sub: "Ancient Wonders",
     link: "/destinations",
   },
   {
-    src: "/manus-storage/7c432e4f0cd306e2cdb1baa297b06080_95a7f0d0.jpg",
+    src: "/images/hero/offers.png",
     alt: "Special Travel Offers and Exclusive Deals",
     label: "Exclusive Offers",
     sub: "Premium Deals",
     link: "/offers",
   },
   {
-    src: "/manus-storage/b80f9986b2674d3e00234a665f8766de_1a5fab97.jpg",
+    src: "/images/hero/gallery.png",
     alt: "Gallery - Luxury Travel Moments",
     label: "Gallery",
     sub: "Captured Moments",
     link: "/gallery",
   },
   {
-    src: "/manus-storage/7ad96b54737ddbdf4212d40750e60a1c_814f4a6b.jpg",
+    src: "/images/hero/experiences.png",
     alt: "Gallery - Unforgettable Experiences",
     label: "Experiences",
     sub: "Unforgettable",
