@@ -3,10 +3,10 @@
  */
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
-import { invokeLLM } from "../_core/llm";
-import { getDb } from "../db";
-import { marketingContent, marketingCalendar, marketingTemplates } from "../../drizzle/schema";
+import { protectedProcedure, publicProcedure, router } from "../_core/trpc.js";
+import { invokeLLM } from "../_core/llm.js";
+import { getDb } from "../db.js";
+import { marketingContent, marketingCalendar, marketingTemplates } from "../../drizzle/schema.js";
 import { eq, desc, and, sql } from "drizzle-orm";
 
 // ─── System Prompts for Different Content Types ───
