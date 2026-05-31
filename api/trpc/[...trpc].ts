@@ -4,56 +4,62 @@ import { appRouter } from "../../server/routers";
 import { createContext } from "../../server/_core/context";
 import type { CookieOptions } from "express";
 
-// Minimal cookie serializer to support ctx.res.clearCookie in routers
+// Minimal cookie serializer (no external deps)
 function serializeCookie(name: string, value: string, options: Partial<CookieOptions> = {}) {
-  const enc = encodeURIComponent;
-  const segments: string[] = [`${name}=${value}`];
+  const segments: string[] = [`${name}=${encodeURIComponent(value)}`];
   if (options.path) segments.push(`Path=${options.path}`);
   if (options.httpOnly) segments.push("HttpOnly");
   if (options.secure) segments.push("Secure");
-  if (options.sameSite) segments.push(`SameSite=${options.sameSite}`);
-  if (options.maxAge != null) segments.push(`Max-Age=${Math.floor(Number(options.maxAge) / 1000)}`);
+  if (options.sameSite) {
+    const sm = typeof options.sameSite === "boolean" ? "Strict" : options.sameSite;
+    segments.push(`SameSite=${sm}`);
+  }
+  if (options.maxAge != null) {
+    // Express maxAge is ms; Set-Cookie Max-Age is seconds
+    const maxAgeMs = Number(options.maxAge);
+    segments.push(`Max-Age=${Math.floor(maxAgeMs > 1e9 ? maxAgeMs / 1000 : maxAgeMs)}`);
+  }
   if ((options as any).domain) segments.push(`Domain=${(options as any).domain}`);
-  if ((options as any).expires instanceof Date) segments.push(`Expires=${((options as any).expires as Date).toUTCString()}`);
+  if ((options as any).expires instanceof Date) {
+    segments.push(`Expires=${((options as any).expires as Date).toUTCString()}`);
+  }
   return segments.join("; ");
+}
+
+function appendSetCookie(res: ServerResponse, header: string) {
+  const current = res.getHeader("Set-Cookie");
+  const next = current
+    ? Array.isArray(current) ? [...current, header] : [String(current), header]
+    : [header];
+  res.setHeader("Set-Cookie", next);
 }
 
 const handler = createHTTPHandler({
   router: appRouter,
   endpoint: "/api/trpc",
   createContext: async (opts: any) => {
-    // Build a minimal Express-like response object that supports clearCookie
     const resShim = {
-      // Mirror Express's res.clearCookie signature while targeting the underlying node res
+      // Pass through the raw node req so getSessionCookieOptions can read
+      // x-forwarded-proto and correctly set Secure/SameSite on HTTPS.
+      _req: opts.req,
       clearCookie(name: string, cookieOptions?: Partial<CookieOptions>) {
-        const header = serializeCookie(name, "", { ...(cookieOptions ?? {}), maxAge: -1 });
-        // Vercel/node-http may have multiple Set-Cookie headers
-        const current = opts.res.getHeader("Set-Cookie");
-        const next = current
-          ? Array.isArray(current)
-            ? [...current, header]
-            : [String(current), header]
-          : [header];
-        opts.res.setHeader("Set-Cookie", next);
+        appendSetCookie(opts.res, serializeCookie(name, "", { ...(cookieOptions ?? {}), maxAge: 0 }));
       },
-      // Provide res.cookie similar to Express
       cookie(name: string, value: string, cookieOptions?: Partial<CookieOptions>) {
-        const header = serializeCookie(name, value, cookieOptions ?? {});
-        const current = opts.res.getHeader("Set-Cookie");
-        const next = current
-          ? Array.isArray(current)
-            ? [...current, header]
-            : [String(current), header]
-          : [header];
-        opts.res.setHeader("Set-Cookie", next);
+        appendSetCookie(opts.res, serializeCookie(name, value, cookieOptions ?? {}));
       },
-      // Expose setHeader to future uses if needed
       setHeader(key: string, value: string | string[]) {
         opts.res.setHeader(key, value);
       },
+      // Expose headers from the underlying node req so cookies.ts can read x-forwarded-proto
+      get headers() { return opts.req.headers; },
+      get protocol() {
+        const fwd = opts.req.headers["x-forwarded-proto"];
+        if (typeof fwd === "string") return fwd.split(",")[0].trim();
+        return "http";
+      },
     } as unknown as any;
 
-    // Wire into existing createContext; pass the shim so logout works
     return createContext({ req: opts.req as any, res: resShim } as any);
   },
 });
@@ -62,30 +68,18 @@ export default async function trpcHandler(req: IncomingMessage, res: ServerRespo
   try {
     return await handler(req, res);
   } catch (err: unknown) {
-    // If the tRPC handler itself crashes, return a JSON error so the client
-    // doesn't receive Vercel's plain-text "A server error occurred" fallback.
     if (!res.headersSent) {
-      const message =
-        err instanceof Error ? err.message : "Internal server error";
+      const message = err instanceof Error ? err.message : "Internal server error";
       res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(
-        JSON.stringify({
-          error: {
-            message,
-            code: -32603,
-            data: { code: "INTERNAL_SERVER_ERROR", httpStatus: 500 },
-          },
-        })
-      );
+      res.end(JSON.stringify({
+        error: { message, code: -32603, data: { code: "INTERNAL_SERVER_ERROR", httpStatus: 500 } },
+      }));
     }
   }
 }
 
-// Ensure this function runs in the Node.js runtime on Vercel
 export const runtime = "nodejs";
 
 export const config = {
-  api: {
-    bodyParser: false,
-  },
+  api: { bodyParser: false },
 };

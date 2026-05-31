@@ -1,9 +1,21 @@
-import { startServer } from '../server/_core/index';
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { createApp } from "../server/_core/index";
 
-export default async function handler(req: any, res: any) {
-    const app = await startServer();
-    return app(req, res);
+// Cache the Express app instance across warm invocations
+let cachedApp: ReturnType<typeof createApp> | null = null;
+
+function getApp() {
+  if (!cachedApp) {
+    cachedApp = createApp();
+  }
+  return cachedApp;
 }
 
-// Ensure Express server runs on Node.js runtime
-export const runtime = "nodejs";
+export default function handler(req: VercelRequest, res: VercelResponse) {
+  const app = getApp();
+  return (app as any)(req, res);
+}
+
+export const config = {
+  api: { bodyParser: false },
+};
