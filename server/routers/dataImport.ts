@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { protectedProcedure, router } from "../_core/trpc.js";
-import { getDb } from "../db.js";
+import { protectedProcedure, router } from "../_core/trpc";
+import { getDb } from "../db";
 import {
   destinations, offers, blogPosts, reviews, galleryItems, contactMessages,
-} from "../../drizzle/schema.js";
+} from "../../drizzle/schema";
 
 /**
  * Data Import Router - import records from EXTERNAL tools (spreadsheets, other

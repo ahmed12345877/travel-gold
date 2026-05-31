@@ -4703,9 +4703,13 @@ var appRouter = router({
     }),
     login: publicProcedure.input(import_zod19.z.object({ email: import_zod19.z.string().email(), password: import_zod19.z.string().min(1) })).mutation(async ({ ctx, input }) => {
       try {
+        console.log("[v0] Login attempt for:", input.email);
         const adminEmail = ENV.adminEmail;
         const adminPasswordHash = ENV.adminPasswordHash;
+        console.log("[v0] ADMIN_EMAIL configured:", !!adminEmail);
+        console.log("[v0] ADMIN_PASSWORD_HASH configured:", !!adminPasswordHash);
         if (!adminEmail || !adminPasswordHash) {
+          console.log("[v0] Admin credentials not configured");
           throw new import_server6.TRPCError({
             code: "PRECONDITION_FAILED",
             message: "Admin login is not configured on this server. Set ADMIN_EMAIL and ADMIN_PASSWORD_HASH environment variables."
@@ -4738,8 +4742,10 @@ var appRouter = router({
           }
         }
         if (!match) {
+          console.log("[v0] Password mismatch");
           throw new import_server6.TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password." });
         }
+        console.log("[v0] Password matched, creating session");
         const openId = `admin:${adminEmail.toLowerCase()}`;
         await upsertUser({
           openId,
@@ -4755,7 +4761,9 @@ var appRouter = router({
           expiresInMs: ONE_YEAR_MS,
           name: "Admin"
         });
+        console.log("[v0] Session token created, setting cookie");
         const cookieOptions = getSessionCookieOptions(ctx.req);
+        console.log("[v0] Cookie options:", JSON.stringify(cookieOptions));
         ctx.res.cookie(COOKIE_NAME, sessionToken, {
           ...cookieOptions,
           maxAge: ONE_YEAR_MS

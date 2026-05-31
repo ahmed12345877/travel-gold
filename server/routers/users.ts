@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { protectedProcedure, router } from "../_core/trpc.js";
+import { protectedProcedure, router } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import {
   getAllUsers,
@@ -12,9 +12,9 @@ import {
   getOrCreateAICredits,
   getDb,
   updateUserProfile,
-} from "../db.js";
+} from "../db";
 import { eq, sql } from "drizzle-orm";
-import { reviews } from "../../drizzle/schema.js";
+import { reviews } from "../../drizzle/schema";
 
 // Admin-only middleware
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {

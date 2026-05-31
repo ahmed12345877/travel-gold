@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, publicProcedure, protectedProcedure } from "../_core/trpc.js";
+import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
 import {
   getOrCreateAISubscription,
   updateAISubscription,
@@ -10,9 +10,9 @@ import {
   getUserAIUsage,
   getAIUsageStats,
   updateAIUsageStatus,
-} from "../db.js";
-import { generateImageWithDALLE } from "../openaiImageGen.js";
-import { generateImageWithGemini, GEMINI_IMAGE_MODELS, type GeminiModelId } from "../geminiImageGen.js";
+} from "../db";
+import { generateImageWithDALLE } from "../openaiImageGen";
+import { generateImageWithGemini, GEMINI_IMAGE_MODELS, type GeminiModelId } from "../geminiImageGen";
 
 export const aiStudioRouter = router({
   /** Get or create AI subscription for current user */

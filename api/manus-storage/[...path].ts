@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { getServerSupabase } from "../../server/_core/supabase.js";
+import { getServerSupabase } from "../../server/_core/supabase";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Expect path from dynamic segment

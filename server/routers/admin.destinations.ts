@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { router, adminProcedure } from "../_core/trpc.js";
-import { getDb } from "../db.js";
-import { destinations } from "../../drizzle/schema.js";
+import { router, adminProcedure } from "../_core/trpc";
+import { getDb } from "../db";
+import { destinations } from "../../drizzle/schema";
 import { eq, like, desc, asc, inArray } from "drizzle-orm";
 
 export const adminDestinationsRouter = router({

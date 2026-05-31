@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { router, publicProcedure, protectedProcedure } from "../_core/trpc.js";
-import { adminProcedure } from "../_core/trpc.js";
+import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
+import { adminProcedure } from "../_core/trpc";
 import {
   createBooking,
   getBookingById,
@@ -9,9 +9,9 @@ import {
   updateBookingStatus,
   updateBookingPaymentStatus,
   getAllBookings,
-} from "../db.js";
+} from "../db";
 import { nanoid } from "nanoid";
-import { notifyOwner } from "../_core/notification.js";
+import { notifyOwner } from "../_core/notification";
 
 export const bookingsRouter = router({
   /** Create a new booking (public - guests can book too) */

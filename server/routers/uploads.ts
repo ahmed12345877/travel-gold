@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { router, protectedProcedure } from "../_core/trpc.js";
-import { storagePut } from "../storage.js";
-import { createFileUpload, getUserFiles } from "../db.js";
+import { router, protectedProcedure } from "../_core/trpc";
+import { storagePut } from "../storage";
+import { createFileUpload, getUserFiles } from "../db";
 import { nanoid } from "nanoid";
 
 export const uploadsRouter = router({

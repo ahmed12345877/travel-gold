@@ -4,10 +4,10 @@
  * Supports multimodal input (text + images + files)
  */
 import { z } from "zod";
-import { router, adminProcedure } from "../_core/trpc.js";
-import { invokeLLM } from "../_core/llm.js";
-import type { Message } from "../_core/llm.js";
-import { storagePut } from "../storage.js";
+import { router, adminProcedure } from "../_core/trpc";
+import { invokeLLM } from "../_core/llm";
+import type { Message } from "../_core/llm";
+import { storagePut } from "../storage";
 import { nanoid } from "nanoid";
 
 /* ═══════════════════════════════════════════════════════════════

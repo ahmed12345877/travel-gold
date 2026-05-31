@@ -10,8 +10,8 @@ import {
   InsertFileUpload, fileUploads,
   InsertGalleryItem, galleryItems,
   InsertGalleryVideo, galleryVideos,
-} from "../drizzle/schema.js";
-import { ENV } from './_core/env';
+} from "../drizzle/schema";
+import { ENV } from './_core/env.js';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _client: ReturnType<typeof postgres> | null = null;
@@ -459,7 +459,7 @@ import {
   InsertAIUsage, aiUsage,
   InsertAITransaction, aiTransactions,
   AISubscription, AICredit, AIUsage, AITransaction,
-} from "../drizzle/schema.js";
+} from "../drizzle/schema";
 
 export async function getOrCreateAISubscription(userId: number): Promise<AISubscription> {
   const db = await getDb();
@@ -734,7 +734,7 @@ export async function updateUserProfile(
 
 // ============ BLOG POST HELPERS ============
 
-import { blogPosts, InsertBlogPost } from "../drizzle/schema.js";
+import { blogPosts, InsertBlogPost } from "../drizzle/schema";
 
 export async function getPublishedBlogPosts(limit = 10, offset = 0) {
   const db = await getDb();

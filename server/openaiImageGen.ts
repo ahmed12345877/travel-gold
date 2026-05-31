@@ -3,8 +3,8 @@
  * Uses OpenAI API to generate images and stores them in S3
  */
 import OpenAI from "openai";
-import { storagePut } from "./storage.js";
-import { ENV } from "./_core/env.js";
+import { storagePut } from "./storage";
+import { ENV } from "./_core/env";
 
 export type ImageGenerationOptions = {
   prompt: string;
