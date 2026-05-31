@@ -1,11 +1,21 @@
 import type { IncomingMessage, ServerResponse } from "http";
-import { createHTTPHandler } from "@trpc/server/adapters/node-http";
+import { nodeHTTPRequestHandler } from "@trpc/server/adapters/node-http";
 import { appRouter } from "../../server/routers";
 import { createContext } from "../../server/_core/context";
-import type { CookieOptions } from "express";
+
+// Cookie options type (inline to avoid express dependency issues)
+interface CookieOpts {
+  path?: string;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: boolean | "lax" | "strict" | "none";
+  maxAge?: number;
+  domain?: string;
+  expires?: Date;
+}
 
 // Minimal cookie serializer (no external deps)
-function serializeCookie(name: string, value: string, options: Partial<CookieOptions> = {}) {
+function serializeCookie(name: string, value: string, options: CookieOpts = {}) {
   const segments: string[] = [`${name}=${encodeURIComponent(value)}`];
   if (options.path) segments.push(`Path=${options.path}`);
   if (options.httpOnly) segments.push("HttpOnly");
@@ -19,9 +29,9 @@ function serializeCookie(name: string, value: string, options: Partial<CookieOpt
     const maxAgeMs = Number(options.maxAge);
     segments.push(`Max-Age=${Math.floor(maxAgeMs > 1e9 ? maxAgeMs / 1000 : maxAgeMs)}`);
   }
-  if ((options as any).domain) segments.push(`Domain=${(options as any).domain}`);
-  if ((options as any).expires instanceof Date) {
-    segments.push(`Expires=${((options as any).expires as Date).toUTCString()}`);
+  if (options.domain) segments.push(`Domain=${options.domain}`);
+  if (options.expires instanceof Date) {
+    segments.push(`Expires=${options.expires.toUTCString()}`);
   }
   return segments.join("; ");
 }
@@ -34,39 +44,33 @@ function appendSetCookie(res: ServerResponse, header: string) {
   res.setHeader("Set-Cookie", next);
 }
 
-const handler = createHTTPHandler({
-  router: appRouter,
-  endpoint: "/api/trpc",
-  createContext: async (opts: any) => {
+export default async function trpcHandler(req: IncomingMessage, res: ServerResponse) {
+  try {
     const resShim = {
-      // Pass through the raw node req so getSessionCookieOptions can read
-      // x-forwarded-proto and correctly set Secure/SameSite on HTTPS.
-      _req: opts.req,
-      clearCookie(name: string, cookieOptions?: Partial<CookieOptions>) {
-        appendSetCookie(opts.res, serializeCookie(name, "", { ...(cookieOptions ?? {}), maxAge: 0 }));
+      clearCookie(name: string, cookieOptions?: CookieOpts) {
+        appendSetCookie(res, serializeCookie(name, "", { ...(cookieOptions ?? {}), maxAge: 0 }));
       },
-      cookie(name: string, value: string, cookieOptions?: Partial<CookieOptions>) {
-        appendSetCookie(opts.res, serializeCookie(name, value, cookieOptions ?? {}));
+      cookie(name: string, value: string, cookieOptions?: CookieOpts) {
+        appendSetCookie(res, serializeCookie(name, value, cookieOptions ?? {}));
       },
       setHeader(key: string, value: string | string[]) {
-        opts.res.setHeader(key, value);
+        res.setHeader(key, value);
       },
-      // Expose headers from the underlying node req so cookies.ts can read x-forwarded-proto
-      get headers() { return opts.req.headers; },
+      get headers() { return req.headers; },
       get protocol() {
-        const fwd = opts.req.headers["x-forwarded-proto"];
+        const fwd = req.headers["x-forwarded-proto"];
         if (typeof fwd === "string") return fwd.split(",")[0].trim();
         return "http";
       },
-    } as unknown as any;
+    } as any;
 
-    return createContext({ req: opts.req as any, res: resShim } as any);
-  },
-});
-
-export default async function trpcHandler(req: IncomingMessage, res: ServerResponse) {
-  try {
-    return await handler(req, res);
+    return await nodeHTTPRequestHandler({
+      req,
+      res,
+      path: req.url?.replace("/api/trpc", "") || "",
+      router: appRouter,
+      createContext: async () => createContext({ req: req as any, res: resShim }),
+    });
   } catch (err: unknown) {
     if (!res.headersSent) {
       const message = err instanceof Error ? err.message : "Internal server error";

@@ -5,7 +5,21 @@ import { getServerSupabase } from "./supabase";
 import { sdk } from "./sdk";
 import * as db from "../db";
 
-function getBearerToken(req: CreateExpressContextOptions["req"]): string | null {
+// Extended response type that includes cookie helpers (from Express or our shim)
+interface CookieResponse {
+  cookie(name: string, value: string, options?: Record<string, unknown>): void;
+  clearCookie(name: string, options?: Record<string, unknown>): void;
+  setHeader?(key: string, value: string | string[]): void;
+}
+
+// Minimal request type that works with both Express and node-http
+interface MinimalRequest {
+  headers: Record<string, string | string[] | undefined>;
+  cookies?: Record<string, string>;
+  protocol?: string;
+}
+
+function getBearerToken(req: MinimalRequest): string | null {
   const auth = req.headers["authorization"];
   if (!auth || Array.isArray(auth)) return null;
   const match = auth.match(/^Bearer\s+(.+)$/i);
@@ -13,15 +27,15 @@ function getBearerToken(req: CreateExpressContextOptions["req"]): string | null 
 }
 
 export type TrpcContext = {
-  req: CreateExpressContextOptions["req"];
-  res: CreateExpressContextOptions["res"];
+  req: MinimalRequest;
+  res: CookieResponse;
   user: User | null;
   /** Optional server Supabase client (admin key). Null if env not configured */
   supabase: SupabaseClient | null;
 };
 
 export async function createContext(
-  opts: CreateExpressContextOptions
+  opts: { req: MinimalRequest; res: CookieResponse }
 ): Promise<TrpcContext> {
   let user: User | null = null;
   const supabase = getServerSupabase();
@@ -64,7 +78,7 @@ export async function createContext(
   // 2) Fallback to Manus session cookie auth
   if (!user) {
     try {
-      user = await sdk.authenticateRequest(opts.req);
+      user = await sdk.authenticateRequest(opts.req as any);
     } catch {
       user = null; // public procedures remain accessible
     }
