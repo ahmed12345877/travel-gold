@@ -10,7 +10,7 @@ if (!connectionString) {
 export default defineConfig({
   schema: "./drizzle/schema.ts",
   out: "./drizzle",
-  dialect: "mysql", // تأكد أنها mysql لأنك تستخدم TiDB
+  dialect: "postgresql", // Supabase PostgreSQL
   dbCredentials: {
     url: connectionString,
   },

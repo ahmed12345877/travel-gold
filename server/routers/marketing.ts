@@ -191,7 +191,7 @@ export const marketingRouter = router({
           hashtags: parsed.hashtags,
           creditsCost: "1",
         })
-        .$returningId();
+        .returning({ id: marketingContent.id });
 
       return {
         id: saved.id,
@@ -348,7 +348,7 @@ export const marketingRouter = router({
           status: input.status,
           colorTag: input.colorTag,
         })
-        .$returningId();
+        .returning({ id: marketingCalendar.id });
 
       return { id: entry.id };
     }),

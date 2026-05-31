@@ -1,5 +1,6 @@
 import { eq, desc, asc, and, gte, lte, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import {
   InsertUser, users,
   InsertBooking, bookings,
@@ -13,11 +14,20 @@ import {
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _client: ReturnType<typeof postgres> | null = null;
 
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      // postgres-js client. `prepare: false` keeps us compatible with
+      // Supabase's transaction pooler (pgbouncer) as well as direct connections.
+      _client = postgres(process.env.DATABASE_URL, {
+        prepare: false,
+        max: 5,
+        idle_timeout: 20,
+        connect_timeout: 15,
+      });
+      _db = drizzle(_client);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -78,7 +88,8 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       updateSet.lastSignedIn = new Date();
     }
 
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
+    await db.insert(users).values(values).onConflictDoUpdate({
+      target: users.openId,
       set: updateSet,
     });
   } catch (error) {
@@ -104,9 +115,7 @@ export async function createBooking(booking: InsertBooking) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(bookings).values(booking);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(bookings).where(eq(bookings.id, insertId)).limit(1);
+  const rows = await db.insert(bookings).values(booking).returning();
   return rows[0];
 }
 
@@ -162,9 +171,7 @@ export async function createReview(review: InsertReview) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(reviews).values(review);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(reviews).where(eq(reviews.id, insertId)).limit(1);
+  const rows = await db.insert(reviews).values(review).returning();
   return rows[0];
 }
 
@@ -244,9 +251,7 @@ export async function createOffer(offer: InsertOffer) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(offers).values(offer);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(offers).where(eq(offers.id, insertId)).limit(1);
+  const rows = await db.insert(offers).values(offer).returning();
   return rows[0];
 }
 
@@ -294,9 +299,7 @@ export async function createContactMessage(message: InsertContactMessage) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(contactMessages).values(message);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(contactMessages).where(eq(contactMessages.id, insertId)).limit(1);
+  const rows = await db.insert(contactMessages).values(message).returning();
   return rows[0];
 }
 
@@ -320,9 +323,7 @@ export async function createFileUpload(file: InsertFileUpload) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(fileUploads).values(file);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(fileUploads).where(eq(fileUploads.id, insertId)).limit(1);
+  const rows = await db.insert(fileUploads).values(file).returning();
   return rows[0];
 }
 
@@ -339,9 +340,7 @@ export async function createGalleryItem(item: InsertGalleryItem) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(galleryItems).values(item);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(galleryItems).where(eq(galleryItems.id, insertId)).limit(1);
+  const rows = await db.insert(galleryItems).values(item).returning();
   return rows[0];
 }
 
@@ -392,9 +391,7 @@ export async function createGalleryVideo(video: InsertGalleryVideo) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(galleryVideos).values(video);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(galleryVideos).where(eq(galleryVideos.id, insertId)).limit(1);
+  const rows = await db.insert(galleryVideos).values(video).returning();
   return rows[0];
 }
 
@@ -458,15 +455,12 @@ export async function getOrCreateAISubscription(userId: number): Promise<AISubsc
   
   if (subscription.length === 0) {
     // Create free subscription for new user
-    const result = await db.insert(aiSubscriptions).values({
+    subscription = await db.insert(aiSubscriptions).values({
       userId,
       plan: "free",
       status: "active",
       startDate: Date.now(),
-    } as InsertAISubscription);
-    
-    const insertId = result[0].insertId;
-    subscription = await db.select().from(aiSubscriptions).where(eq(aiSubscriptions.id, insertId)).limit(1);
+    } as InsertAISubscription).returning();
   }
 
   return subscription[0];
@@ -496,14 +490,11 @@ export async function getOrCreateAICredits(userId: number): Promise<AICredit> {
   
   if (credits.length === 0) {
     // Create initial credits for new user (free plan gets 5 credits)
-    const result = await db.insert(aiCredits).values({
+    credits = await db.insert(aiCredits).values({
       userId,
       balance: "5", // Free tier gets 5 image generations
       totalUsed: "0",
-    } as InsertAICredit);
-    
-    const insertId = result[0].insertId;
-    credits = await db.select().from(aiCredits).where(eq(aiCredits.id, insertId)).limit(1);
+    } as InsertAICredit).returning();
   }
 
   return credits[0];
@@ -559,9 +550,7 @@ export async function createAIUsage(usage: InsertAIUsage) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(aiUsage).values(usage);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(aiUsage).where(eq(aiUsage.id, insertId)).limit(1);
+  const rows = await db.insert(aiUsage).values(usage).returning();
   return rows[0];
 }
 
@@ -667,7 +656,7 @@ export async function searchUsers(query: string, limit = 20) {
     .select()
     .from(users)
     .where(
-      sql`${users.name} LIKE ${`%${query}%`} OR ${users.email} LIKE ${`%${query}%`} OR ${users.openId} LIKE ${`%${query}%`}`
+      sql`${users.name} ILIKE ${`%${query}%`} OR ${users.email} ILIKE ${`%${query}%`} OR ${users.openId} ILIKE ${`%${query}%`}`
     )
     .orderBy(desc(users.createdAt))
     .limit(limit);
@@ -690,12 +679,12 @@ export async function getUserStats() {
   const recentUsers = await db
     .select({ count: sql<number>`count(*)` })
     .from(users)
-    .where(gte(users.createdAt, sql`DATE_SUB(NOW(), INTERVAL 30 DAY)`));
+    .where(gte(users.createdAt, sql`NOW() - INTERVAL '30 days'`));
 
   const todayUsers = await db
     .select({ count: sql<number>`count(*)` })
     .from(users)
-    .where(gte(users.createdAt, sql`CURDATE()`));
+    .where(gte(users.createdAt, sql`CURRENT_DATE`));
 
   return {
     total: totalUsers[0]?.count ?? 0,
@@ -766,9 +755,7 @@ export async function createBlogPost(post: InsertBlogPost) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(blogPosts).values(post);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(blogPosts).where(eq(blogPosts.id, insertId)).limit(1);
+  const rows = await db.insert(blogPosts).values(post).returning();
   return rows[0];
 }
 
