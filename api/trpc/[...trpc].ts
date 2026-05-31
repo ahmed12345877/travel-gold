@@ -1,7 +1,9 @@
 import type { IncomingMessage, ServerResponse } from "http";
 import { nodeHTTPRequestHandler } from "@trpc/server/adapters/node-http";
-import { appRouter } from "../../server/routers";
-import { createContext } from "../../server/_core/context";
+// تحديث المسارات بإضافة /index بشكل صريح لمنع خطأ ERR_UNSUPPORTED_DIR_IMPORT
+import { appRouter } from "../../../server/routers/index";
+import { createContext } from "../../server/_core/context/index";
+
 
 // Cookie options type (inline to avoid express dependency issues)
 interface CookieOpts {
