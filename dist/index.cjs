@@ -30,6 +30,7 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // server/_core/index.ts
 var index_exports = {};
 __export(index_exports, {
+  createApp: () => createApp,
   startServer: () => startServer
 });
 module.exports = __toCommonJS(index_exports);
@@ -42,397 +43,288 @@ var import_express3 = require("@trpc/server/adapters/express");
 // shared/const.ts
 var COOKIE_NAME = "app_session_id";
 var ONE_YEAR_MS = 1e3 * 60 * 60 * 24 * 365;
-var AXIOS_TIMEOUT_MS = 3e4;
 var UNAUTHED_ERR_MSG = "Please login (10001)";
 var NOT_ADMIN_ERR_MSG = "You do not have required permission (10002)";
 
 // server/db.ts
 var import_drizzle_orm = require("drizzle-orm");
-var import_mysql2 = require("drizzle-orm/mysql2");
+var import_postgres_js = require("drizzle-orm/postgres-js");
+var import_postgres = __toESM(require("postgres"), 1);
 
 // drizzle/schema.ts
-var import_mysql_core = require("drizzle-orm/mysql-core");
-var users = (0, import_mysql_core.mysqlTable)("users", {
-  id: (0, import_mysql_core.int)("id").autoincrement().primaryKey(),
-  openId: (0, import_mysql_core.varchar)("openId", { length: 64 }).notNull().unique(),
-  name: (0, import_mysql_core.text)("name"),
-  email: (0, import_mysql_core.varchar)("email", { length: 320 }),
-  phone: (0, import_mysql_core.varchar)("phone", { length: 32 }),
-  loginMethod: (0, import_mysql_core.varchar)("loginMethod", { length: 64 }),
-  avatarUrl: (0, import_mysql_core.text)("avatarUrl"),
-  role: (0, import_mysql_core.mysqlEnum)("role", ["user", "admin"]).default("user").notNull(),
-  createdAt: (0, import_mysql_core.timestamp)("createdAt").defaultNow().notNull(),
-  updatedAt: (0, import_mysql_core.timestamp)("updatedAt").defaultNow().onUpdateNow().notNull(),
-  lastSignedIn: (0, import_mysql_core.timestamp)("lastSignedIn").defaultNow().notNull()
+var import_pg_core = require("drizzle-orm/pg-core");
+var users = (0, import_pg_core.pgTable)("users", {
+  id: (0, import_pg_core.serial)("id").primaryKey(),
+  openId: (0, import_pg_core.varchar)("openId", { length: 64 }).notNull().unique(),
+  name: (0, import_pg_core.text)("name"),
+  email: (0, import_pg_core.varchar)("email", { length: 320 }),
+  phone: (0, import_pg_core.varchar)("phone", { length: 32 }),
+  loginMethod: (0, import_pg_core.varchar)("loginMethod", { length: 64 }),
+  avatarUrl: (0, import_pg_core.text)("avatarUrl"),
+  role: (0, import_pg_core.text)("role").$type().default("user").notNull(),
+  createdAt: (0, import_pg_core.timestamp)("createdAt").defaultNow().notNull(),
+  updatedAt: (0, import_pg_core.timestamp)("updatedAt").defaultNow().notNull(),
+  lastSignedIn: (0, import_pg_core.timestamp)("lastSignedIn").defaultNow().notNull()
 });
-var bookings = (0, import_mysql_core.mysqlTable)("bookings", {
-  id: (0, import_mysql_core.int)("id").autoincrement().primaryKey(),
-  userId: (0, import_mysql_core.int)("userId").references(() => users.id),
-  /** Guest name for non-authenticated bookings */
-  guestName: (0, import_mysql_core.varchar)("guestName", { length: 255 }),
-  guestEmail: (0, import_mysql_core.varchar)("guestEmail", { length: 320 }),
-  guestPhone: (0, import_mysql_core.varchar)("guestPhone", { length: 32 }),
-  /** Package details */
-  packageName: (0, import_mysql_core.varchar)("packageName", { length: 255 }).notNull(),
-  packageCategory: (0, import_mysql_core.varchar)("packageCategory", { length: 100 }),
-  destination: (0, import_mysql_core.varchar)("destination", { length: 255 }),
-  /** Trip details */
-  checkInDate: (0, import_mysql_core.bigint)("checkInDate", { mode: "number" }),
-  checkOutDate: (0, import_mysql_core.bigint)("checkOutDate", { mode: "number" }),
-  adults: (0, import_mysql_core.int)("adults").default(1),
-  children: (0, import_mysql_core.int)("children").default(0),
-  roomType: (0, import_mysql_core.varchar)("roomType", { length: 100 }),
-  /** Pricing */
-  totalPrice: (0, import_mysql_core.decimal)("totalPrice", { precision: 10, scale: 2 }),
-  currency: (0, import_mysql_core.varchar)("currency", { length: 10 }).default("USD"),
-  /** Payment */
-  paymentMethod: (0, import_mysql_core.mysqlEnum)("paymentMethod", ["credit_card", "paypal", "bank_transfer"]),
-  paymentStatus: (0, import_mysql_core.mysqlEnum)("paymentStatus", ["pending", "paid", "failed", "refunded"]).default("pending").notNull(),
-  /** Promo code if applied */
-  promoCode: (0, import_mysql_core.varchar)("promoCode", { length: 50 }),
-  discountAmount: (0, import_mysql_core.decimal)("discountAmount", { precision: 10, scale: 2 }),
-  /** Special requests */
-  specialRequests: (0, import_mysql_core.text)("specialRequests"),
-  /** Billing address as JSON */
-  billingAddress: (0, import_mysql_core.json)("billingAddress"),
-  /** Booking status */
-  status: (0, import_mysql_core.mysqlEnum)("status", ["pending", "confirmed", "cancelled", "completed"]).default("pending").notNull(),
-  /** Confirmation code */
-  confirmationCode: (0, import_mysql_core.varchar)("confirmationCode", { length: 20 }).unique(),
-  createdAt: (0, import_mysql_core.timestamp)("createdAt").defaultNow().notNull(),
-  updatedAt: (0, import_mysql_core.timestamp)("updatedAt").defaultNow().onUpdateNow().notNull()
+var bookings = (0, import_pg_core.pgTable)("bookings", {
+  id: (0, import_pg_core.serial)("id").primaryKey(),
+  userId: (0, import_pg_core.integer)("userId").references(() => users.id),
+  guestName: (0, import_pg_core.varchar)("guestName", { length: 255 }),
+  guestEmail: (0, import_pg_core.varchar)("guestEmail", { length: 320 }),
+  guestPhone: (0, import_pg_core.varchar)("guestPhone", { length: 32 }),
+  packageName: (0, import_pg_core.varchar)("packageName", { length: 255 }).notNull(),
+  packageCategory: (0, import_pg_core.varchar)("packageCategory", { length: 100 }),
+  destination: (0, import_pg_core.varchar)("destination", { length: 255 }),
+  checkInDate: (0, import_pg_core.bigint)("checkInDate", { mode: "number" }),
+  checkOutDate: (0, import_pg_core.bigint)("checkOutDate", { mode: "number" }),
+  adults: (0, import_pg_core.integer)("adults").default(1),
+  children: (0, import_pg_core.integer)("children").default(0),
+  roomType: (0, import_pg_core.varchar)("roomType", { length: 100 }),
+  totalPrice: (0, import_pg_core.decimal)("totalPrice", { precision: 10, scale: 2 }),
+  currency: (0, import_pg_core.varchar)("currency", { length: 10 }).default("USD"),
+  paymentMethod: (0, import_pg_core.text)("paymentMethod").$type(),
+  paymentStatus: (0, import_pg_core.text)("paymentStatus").$type().default("pending").notNull(),
+  promoCode: (0, import_pg_core.varchar)("promoCode", { length: 50 }),
+  discountAmount: (0, import_pg_core.decimal)("discountAmount", { precision: 10, scale: 2 }),
+  specialRequests: (0, import_pg_core.text)("specialRequests"),
+  billingAddress: (0, import_pg_core.json)("billingAddress"),
+  status: (0, import_pg_core.text)("status").$type().default("pending").notNull(),
+  confirmationCode: (0, import_pg_core.varchar)("confirmationCode", { length: 20 }).unique(),
+  createdAt: (0, import_pg_core.timestamp)("createdAt").defaultNow().notNull(),
+  updatedAt: (0, import_pg_core.timestamp)("updatedAt").defaultNow().notNull()
 });
-var reviews = (0, import_mysql_core.mysqlTable)("reviews", {
-  id: (0, import_mysql_core.int)("id").autoincrement().primaryKey(),
-  userId: (0, import_mysql_core.int)("userId").references(() => users.id),
-  /** Guest info for non-authenticated reviews */
-  guestName: (0, import_mysql_core.varchar)("guestName", { length: 255 }),
-  guestAvatarUrl: (0, import_mysql_core.text)("guestAvatarUrl"),
-  /** Review content */
-  tripName: (0, import_mysql_core.varchar)("tripName", { length: 255 }).notNull(),
-  destination: (0, import_mysql_core.varchar)("destination", { length: 255 }),
-  rating: (0, import_mysql_core.int)("rating").notNull(),
-  title: (0, import_mysql_core.varchar)("title", { length: 500 }),
-  content: (0, import_mysql_core.text)("content").notNull(),
-  /** Optional photo URLs as JSON array */
-  photoUrls: (0, import_mysql_core.json)("photoUrls"),
-  /** Travel date */
-  travelDate: (0, import_mysql_core.bigint)("travelDate", { mode: "number" }),
-  /** Admin reply */
-  adminReply: (0, import_mysql_core.text)("adminReply"),
-  adminReplyAt: (0, import_mysql_core.timestamp)("adminReplyAt"),
-  /** Moderation */
-  isApproved: (0, import_mysql_core.mysqlEnum)("isApproved", ["pending", "approved", "rejected"]).default("pending").notNull(),
-  /** Helpful votes */
-  helpfulCount: (0, import_mysql_core.int)("helpfulCount").default(0),
-  createdAt: (0, import_mysql_core.timestamp)("createdAt").defaultNow().notNull(),
-  updatedAt: (0, import_mysql_core.timestamp)("updatedAt").defaultNow().onUpdateNow().notNull()
+var reviews = (0, import_pg_core.pgTable)("reviews", {
+  id: (0, import_pg_core.serial)("id").primaryKey(),
+  userId: (0, import_pg_core.integer)("userId").references(() => users.id),
+  guestName: (0, import_pg_core.varchar)("guestName", { length: 255 }),
+  guestAvatarUrl: (0, import_pg_core.text)("guestAvatarUrl"),
+  tripName: (0, import_pg_core.varchar)("tripName", { length: 255 }).notNull(),
+  destination: (0, import_pg_core.varchar)("destination", { length: 255 }),
+  rating: (0, import_pg_core.integer)("rating").notNull(),
+  title: (0, import_pg_core.varchar)("title", { length: 500 }),
+  content: (0, import_pg_core.text)("content").notNull(),
+  photoUrls: (0, import_pg_core.json)("photoUrls"),
+  travelDate: (0, import_pg_core.bigint)("travelDate", { mode: "number" }),
+  adminReply: (0, import_pg_core.text)("adminReply"),
+  adminReplyAt: (0, import_pg_core.timestamp)("adminReplyAt"),
+  isApproved: (0, import_pg_core.text)("isApproved").$type().default("pending").notNull(),
+  helpfulCount: (0, import_pg_core.integer)("helpfulCount").default(0),
+  createdAt: (0, import_pg_core.timestamp)("createdAt").defaultNow().notNull(),
+  updatedAt: (0, import_pg_core.timestamp)("updatedAt").defaultNow().notNull()
 });
-var offers = (0, import_mysql_core.mysqlTable)("offers", {
-  id: (0, import_mysql_core.int)("id").autoincrement().primaryKey(),
-  title: (0, import_mysql_core.varchar)("title", { length: 255 }).notNull(),
-  description: (0, import_mysql_core.text)("description"),
-  /** Discount details */
-  discountType: (0, import_mysql_core.mysqlEnum)("discountType", ["percentage", "fixed"]).notNull(),
-  discountValue: (0, import_mysql_core.decimal)("discountValue", { precision: 10, scale: 2 }).notNull(),
-  /** Promo code */
-  promoCode: (0, import_mysql_core.varchar)("promoCode", { length: 50 }).unique(),
-  /** Validity */
-  startDate: (0, import_mysql_core.bigint)("startDate", { mode: "number" }).notNull(),
-  endDate: (0, import_mysql_core.bigint)("endDate", { mode: "number" }).notNull(),
-  /** Offer metadata */
-  category: (0, import_mysql_core.varchar)("category", { length: 100 }),
-  destination: (0, import_mysql_core.varchar)("destination", { length: 255 }),
-  imageUrl: (0, import_mysql_core.text)("imageUrl"),
-  /** Availability */
-  totalSpots: (0, import_mysql_core.int)("totalSpots"),
-  bookedSpots: (0, import_mysql_core.int)("bookedSpots").default(0),
-  /** Status */
-  isActive: (0, import_mysql_core.mysqlEnum)("isActive", ["active", "inactive", "expired"]).default("active").notNull(),
-  /** Badge text like "FLASH SALE", "EXCLUSIVE" */
-  badgeText: (0, import_mysql_core.varchar)("badgeText", { length: 50 }),
-  badgeColor: (0, import_mysql_core.varchar)("badgeColor", { length: 20 }),
-  createdAt: (0, import_mysql_core.timestamp)("createdAt").defaultNow().notNull(),
-  updatedAt: (0, import_mysql_core.timestamp)("updatedAt").defaultNow().onUpdateNow().notNull()
+var offers = (0, import_pg_core.pgTable)("offers", {
+  id: (0, import_pg_core.serial)("id").primaryKey(),
+  title: (0, import_pg_core.varchar)("title", { length: 255 }).notNull(),
+  description: (0, import_pg_core.text)("description"),
+  discountType: (0, import_pg_core.text)("discountType").$type().notNull(),
+  discountValue: (0, import_pg_core.decimal)("discountValue", { precision: 10, scale: 2 }).notNull(),
+  promoCode: (0, import_pg_core.varchar)("promoCode", { length: 50 }).unique(),
+  startDate: (0, import_pg_core.bigint)("startDate", { mode: "number" }).notNull(),
+  endDate: (0, import_pg_core.bigint)("endDate", { mode: "number" }).notNull(),
+  category: (0, import_pg_core.varchar)("category", { length: 100 }),
+  destination: (0, import_pg_core.varchar)("destination", { length: 255 }),
+  imageUrl: (0, import_pg_core.text)("imageUrl"),
+  totalSpots: (0, import_pg_core.integer)("totalSpots"),
+  bookedSpots: (0, import_pg_core.integer)("bookedSpots").default(0),
+  isActive: (0, import_pg_core.text)("isActive").$type().default("active").notNull(),
+  badgeText: (0, import_pg_core.varchar)("badgeText", { length: 50 }),
+  badgeColor: (0, import_pg_core.varchar)("badgeColor", { length: 20 }),
+  createdAt: (0, import_pg_core.timestamp)("createdAt").defaultNow().notNull(),
+  updatedAt: (0, import_pg_core.timestamp)("updatedAt").defaultNow().notNull()
 });
-var contactMessages = (0, import_mysql_core.mysqlTable)("contact_messages", {
-  id: (0, import_mysql_core.int)("id").autoincrement().primaryKey(),
-  name: (0, import_mysql_core.varchar)("name", { length: 255 }).notNull(),
-  email: (0, import_mysql_core.varchar)("email", { length: 320 }).notNull(),
-  phone: (0, import_mysql_core.varchar)("phone", { length: 32 }),
-  subject: (0, import_mysql_core.varchar)("subject", { length: 500 }),
-  message: (0, import_mysql_core.text)("message").notNull(),
-  /** Status tracking */
-  status: (0, import_mysql_core.mysqlEnum)("status", ["new", "read", "replied", "archived"]).default("new").notNull(),
-  adminNotes: (0, import_mysql_core.text)("adminNotes"),
-  createdAt: (0, import_mysql_core.timestamp)("createdAt").defaultNow().notNull(),
-  updatedAt: (0, import_mysql_core.timestamp)("updatedAt").defaultNow().onUpdateNow().notNull()
+var contactMessages = (0, import_pg_core.pgTable)("contact_messages", {
+  id: (0, import_pg_core.serial)("id").primaryKey(),
+  name: (0, import_pg_core.varchar)("name", { length: 255 }).notNull(),
+  email: (0, import_pg_core.varchar)("email", { length: 320 }).notNull(),
+  phone: (0, import_pg_core.varchar)("phone", { length: 32 }),
+  subject: (0, import_pg_core.varchar)("subject", { length: 500 }),
+  message: (0, import_pg_core.text)("message").notNull(),
+  status: (0, import_pg_core.text)("status").$type().default("new").notNull(),
+  adminNotes: (0, import_pg_core.text)("adminNotes"),
+  createdAt: (0, import_pg_core.timestamp)("createdAt").defaultNow().notNull(),
+  updatedAt: (0, import_pg_core.timestamp)("updatedAt").defaultNow().notNull()
 });
-var fileUploads = (0, import_mysql_core.mysqlTable)("file_uploads", {
-  id: (0, import_mysql_core.int)("id").autoincrement().primaryKey(),
-  userId: (0, import_mysql_core.int)("userId").references(() => users.id),
-  /** S3 reference */
-  fileKey: (0, import_mysql_core.varchar)("fileKey", { length: 500 }).notNull(),
-  url: (0, import_mysql_core.text)("url").notNull(),
-  /** File metadata */
-  filename: (0, import_mysql_core.varchar)("filename", { length: 255 }).notNull(),
-  mimeType: (0, import_mysql_core.varchar)("mimeType", { length: 100 }),
-  fileSize: (0, import_mysql_core.int)("fileSize"),
-  /** Purpose: avatar, review_photo, document, etc. */
-  purpose: (0, import_mysql_core.varchar)("purpose", { length: 50 }),
-  createdAt: (0, import_mysql_core.timestamp)("createdAt").defaultNow().notNull()
+var fileUploads = (0, import_pg_core.pgTable)("file_uploads", {
+  id: (0, import_pg_core.serial)("id").primaryKey(),
+  userId: (0, import_pg_core.integer)("userId").references(() => users.id),
+  fileKey: (0, import_pg_core.varchar)("fileKey", { length: 500 }).notNull(),
+  url: (0, import_pg_core.text)("url").notNull(),
+  filename: (0, import_pg_core.varchar)("filename", { length: 255 }).notNull(),
+  mimeType: (0, import_pg_core.varchar)("mimeType", { length: 100 }),
+  fileSize: (0, import_pg_core.integer)("fileSize"),
+  purpose: (0, import_pg_core.varchar)("purpose", { length: 50 }),
+  createdAt: (0, import_pg_core.timestamp)("createdAt").defaultNow().notNull()
 });
-var galleryItems = (0, import_mysql_core.mysqlTable)("gallery_items", {
-  id: (0, import_mysql_core.int)("id").autoincrement().primaryKey(),
-  /** Image URL (CDN or S3) */
-  imageUrl: (0, import_mysql_core.text)("imageUrl").notNull(),
-  /** Titles */
-  title: (0, import_mysql_core.varchar)("title", { length: 255 }).notNull(),
-  titleAr: (0, import_mysql_core.varchar)("titleAr", { length: 255 }),
-  /** Descriptions */
-  description: (0, import_mysql_core.text)("description"),
-  descriptionAr: (0, import_mysql_core.text)("descriptionAr"),
-  /** Category */
-  category: (0, import_mysql_core.varchar)("category", { length: 100 }).notNull(),
-  categoryAr: (0, import_mysql_core.varchar)("categoryAr", { length: 100 }),
-  /** Location */
-  location: (0, import_mysql_core.varchar)("location", { length: 255 }),
-  locationAr: (0, import_mysql_core.varchar)("locationAr", { length: 255 }),
-  /** Display options */
-  featured: (0, import_mysql_core.mysqlEnum)("featured", ["yes", "no"]).default("no").notNull(),
-  aspect: (0, import_mysql_core.mysqlEnum)("aspect", ["landscape", "portrait", "square"]).default("landscape").notNull(),
-  /** Sort order (lower = first) */
-  sortOrder: (0, import_mysql_core.int)("sortOrder").default(0),
-  /** Visibility */
-  isVisible: (0, import_mysql_core.mysqlEnum)("isVisible", ["visible", "hidden"]).default("visible").notNull(),
-  createdAt: (0, import_mysql_core.timestamp)("createdAt").defaultNow().notNull(),
-  updatedAt: (0, import_mysql_core.timestamp)("updatedAt").defaultNow().onUpdateNow().notNull()
+var galleryItems = (0, import_pg_core.pgTable)("gallery_items", {
+  id: (0, import_pg_core.serial)("id").primaryKey(),
+  imageUrl: (0, import_pg_core.text)("imageUrl").notNull(),
+  title: (0, import_pg_core.varchar)("title", { length: 255 }).notNull(),
+  titleAr: (0, import_pg_core.varchar)("titleAr", { length: 255 }),
+  description: (0, import_pg_core.text)("description"),
+  descriptionAr: (0, import_pg_core.text)("descriptionAr"),
+  category: (0, import_pg_core.varchar)("category", { length: 100 }).notNull(),
+  categoryAr: (0, import_pg_core.varchar)("categoryAr", { length: 100 }),
+  location: (0, import_pg_core.varchar)("location", { length: 255 }),
+  locationAr: (0, import_pg_core.varchar)("locationAr", { length: 255 }),
+  featured: (0, import_pg_core.text)("featured").$type().default("no").notNull(),
+  aspect: (0, import_pg_core.text)("aspect").$type().default("landscape").notNull(),
+  sortOrder: (0, import_pg_core.integer)("sortOrder").default(0),
+  isVisible: (0, import_pg_core.text)("isVisible").$type().default("visible").notNull(),
+  createdAt: (0, import_pg_core.timestamp)("createdAt").defaultNow().notNull(),
+  updatedAt: (0, import_pg_core.timestamp)("updatedAt").defaultNow().notNull()
 });
-var galleryVideos = (0, import_mysql_core.mysqlTable)("gallery_videos", {
-  id: (0, import_mysql_core.int)("id").autoincrement().primaryKey(),
-  /** Thumbnail URL */
-  thumbnailUrl: (0, import_mysql_core.text)("thumbnailUrl").notNull(),
-  /** Titles */
-  title: (0, import_mysql_core.varchar)("title", { length: 255 }).notNull(),
-  titleAr: (0, import_mysql_core.varchar)("titleAr", { length: 255 }),
-  /** YouTube video ID */
-  youtubeId: (0, import_mysql_core.varchar)("youtubeId", { length: 20 }).notNull(),
-  /** Display info */
-  duration: (0, import_mysql_core.varchar)("duration", { length: 20 }),
-  views: (0, import_mysql_core.varchar)("views", { length: 20 }),
-  /** Sort order */
-  sortOrder: (0, import_mysql_core.int)("sortOrder").default(0),
-  /** Visibility */
-  isVisible: (0, import_mysql_core.mysqlEnum)("isVisible", ["visible", "hidden"]).default("visible").notNull(),
-  createdAt: (0, import_mysql_core.timestamp)("createdAt").defaultNow().notNull(),
-  updatedAt: (0, import_mysql_core.timestamp)("updatedAt").defaultNow().onUpdateNow().notNull()
+var galleryVideos = (0, import_pg_core.pgTable)("gallery_videos", {
+  id: (0, import_pg_core.serial)("id").primaryKey(),
+  thumbnailUrl: (0, import_pg_core.text)("thumbnailUrl").notNull(),
+  title: (0, import_pg_core.varchar)("title", { length: 255 }).notNull(),
+  titleAr: (0, import_pg_core.varchar)("titleAr", { length: 255 }),
+  youtubeId: (0, import_pg_core.varchar)("youtubeId", { length: 20 }).notNull(),
+  duration: (0, import_pg_core.varchar)("duration", { length: 20 }),
+  views: (0, import_pg_core.varchar)("views", { length: 20 }),
+  sortOrder: (0, import_pg_core.integer)("sortOrder").default(0),
+  isVisible: (0, import_pg_core.text)("isVisible").$type().default("visible").notNull(),
+  createdAt: (0, import_pg_core.timestamp)("createdAt").defaultNow().notNull(),
+  updatedAt: (0, import_pg_core.timestamp)("updatedAt").defaultNow().notNull()
 });
-var aiSubscriptions = (0, import_mysql_core.mysqlTable)("ai_subscriptions", {
-  id: (0, import_mysql_core.int)("id").autoincrement().primaryKey(),
-  userId: (0, import_mysql_core.int)("userId").references(() => users.id).notNull(),
-  /** Plan type */
-  plan: (0, import_mysql_core.mysqlEnum)("plan", ["free", "pro", "enterprise"]).default("free").notNull(),
-  /** Pricing */
-  monthlyPrice: (0, import_mysql_core.decimal)("monthlyPrice", { precision: 10, scale: 2 }).default("0"),
-  /** Subscription status */
-  status: (0, import_mysql_core.mysqlEnum)("status", ["active", "cancelled", "expired"]).default("active").notNull(),
-  /** Stripe subscription ID */
-  stripeSubscriptionId: (0, import_mysql_core.varchar)("stripeSubscriptionId", { length: 255 }),
-  /** Dates */
-  startDate: (0, import_mysql_core.bigint)("startDate", { mode: "number" }).notNull(),
-  renewalDate: (0, import_mysql_core.bigint)("renewalDate", { mode: "number" }),
-  cancelledAt: (0, import_mysql_core.timestamp)("cancelledAt"),
-  createdAt: (0, import_mysql_core.timestamp)("createdAt").defaultNow().notNull(),
-  updatedAt: (0, import_mysql_core.timestamp)("updatedAt").defaultNow().onUpdateNow().notNull()
+var aiSubscriptions = (0, import_pg_core.pgTable)("ai_subscriptions", {
+  id: (0, import_pg_core.serial)("id").primaryKey(),
+  userId: (0, import_pg_core.integer)("userId").references(() => users.id).notNull(),
+  plan: (0, import_pg_core.text)("plan").$type().default("free").notNull(),
+  monthlyPrice: (0, import_pg_core.decimal)("monthlyPrice", { precision: 10, scale: 2 }).default("0"),
+  status: (0, import_pg_core.text)("status").$type().default("active").notNull(),
+  stripeSubscriptionId: (0, import_pg_core.varchar)("stripeSubscriptionId", { length: 255 }),
+  startDate: (0, import_pg_core.bigint)("startDate", { mode: "number" }).notNull(),
+  renewalDate: (0, import_pg_core.bigint)("renewalDate", { mode: "number" }),
+  cancelledAt: (0, import_pg_core.timestamp)("cancelledAt"),
+  createdAt: (0, import_pg_core.timestamp)("createdAt").defaultNow().notNull(),
+  updatedAt: (0, import_pg_core.timestamp)("updatedAt").defaultNow().notNull()
 });
-var aiCredits = (0, import_mysql_core.mysqlTable)("ai_credits", {
-  id: (0, import_mysql_core.int)("id").autoincrement().primaryKey(),
-  userId: (0, import_mysql_core.int)("userId").references(() => users.id).notNull().unique(),
-  /** Credit balance */
-  balance: (0, import_mysql_core.decimal)("balance", { precision: 12, scale: 2 }).default("0").notNull(),
-  /** Lifetime credits used */
-  totalUsed: (0, import_mysql_core.decimal)("totalUsed", { precision: 12, scale: 2 }).default("0").notNull(),
-  /** Last reset date */
-  lastResetDate: (0, import_mysql_core.bigint)("lastResetDate", { mode: "number" }),
-  createdAt: (0, import_mysql_core.timestamp)("createdAt").defaultNow().notNull(),
-  updatedAt: (0, import_mysql_core.timestamp)("updatedAt").defaultNow().onUpdateNow().notNull()
+var aiCredits = (0, import_pg_core.pgTable)("ai_credits", {
+  id: (0, import_pg_core.serial)("id").primaryKey(),
+  userId: (0, import_pg_core.integer)("userId").references(() => users.id).notNull().unique(),
+  balance: (0, import_pg_core.decimal)("balance", { precision: 12, scale: 2 }).default("0").notNull(),
+  totalUsed: (0, import_pg_core.decimal)("totalUsed", { precision: 12, scale: 2 }).default("0").notNull(),
+  lastResetDate: (0, import_pg_core.bigint)("lastResetDate", { mode: "number" }),
+  createdAt: (0, import_pg_core.timestamp)("createdAt").defaultNow().notNull(),
+  updatedAt: (0, import_pg_core.timestamp)("updatedAt").defaultNow().notNull()
 });
-var aiUsage = (0, import_mysql_core.mysqlTable)("ai_usage", {
-  id: (0, import_mysql_core.int)("id").autoincrement().primaryKey(),
-  userId: (0, import_mysql_core.int)("userId").references(() => users.id).notNull(),
-  /** Generation type */
-  type: (0, import_mysql_core.mysqlEnum)("type", ["image", "video", "edit"]).notNull(),
-  /** Model used */
-  model: (0, import_mysql_core.varchar)("model", { length: 100 }).notNull(),
-  // "dall-e-3", "runway-ml", etc
-  /** Prompt/description */
-  prompt: (0, import_mysql_core.text)("prompt").notNull(),
-  /** Result */
-  resultUrl: (0, import_mysql_core.text)("resultUrl"),
-  resultKey: (0, import_mysql_core.varchar)("resultKey", { length: 500 }),
-  // S3 key
-  /** Cost in credits */
-  creditsCost: (0, import_mysql_core.decimal)("creditsCost", { precision: 10, scale: 2 }).notNull(),
-  /** Metadata */
-  imageSize: (0, import_mysql_core.varchar)("imageSize", { length: 50 }),
-  // "512x512", "1024x1024", etc
-  videoDuration: (0, import_mysql_core.int)("videoDuration"),
-  // in seconds
-  status: (0, import_mysql_core.mysqlEnum)("status", ["pending", "completed", "failed"]).default("pending").notNull(),
-  errorMessage: (0, import_mysql_core.text)("errorMessage"),
-  createdAt: (0, import_mysql_core.timestamp)("createdAt").defaultNow().notNull()
+var aiUsage = (0, import_pg_core.pgTable)("ai_usage", {
+  id: (0, import_pg_core.serial)("id").primaryKey(),
+  userId: (0, import_pg_core.integer)("userId").references(() => users.id).notNull(),
+  type: (0, import_pg_core.text)("type").$type().notNull(),
+  model: (0, import_pg_core.varchar)("model", { length: 100 }).notNull(),
+  prompt: (0, import_pg_core.text)("prompt").notNull(),
+  resultUrl: (0, import_pg_core.text)("resultUrl"),
+  resultKey: (0, import_pg_core.varchar)("resultKey", { length: 500 }),
+  creditsCost: (0, import_pg_core.decimal)("creditsCost", { precision: 10, scale: 2 }).notNull(),
+  imageSize: (0, import_pg_core.varchar)("imageSize", { length: 50 }),
+  videoDuration: (0, import_pg_core.integer)("videoDuration"),
+  status: (0, import_pg_core.text)("status").$type().default("pending").notNull(),
+  errorMessage: (0, import_pg_core.text)("errorMessage"),
+  createdAt: (0, import_pg_core.timestamp)("createdAt").defaultNow().notNull()
 });
-var aiTransactions = (0, import_mysql_core.mysqlTable)("ai_transactions", {
-  id: (0, import_mysql_core.int)("id").autoincrement().primaryKey(),
-  userId: (0, import_mysql_core.int)("userId").references(() => users.id).notNull(),
-  /** Transaction type */
-  type: (0, import_mysql_core.mysqlEnum)("type", ["purchase", "refund", "monthly_allowance", "bonus"]).notNull(),
-  /** Amount */
-  amount: (0, import_mysql_core.decimal)("amount", { precision: 12, scale: 2 }).notNull(),
-  /** Payment info */
-  stripePaymentId: (0, import_mysql_core.varchar)("stripePaymentId", { length: 255 }),
-  paymentMethod: (0, import_mysql_core.varchar)("paymentMethod", { length: 50 }),
-  /** Status */
-  status: (0, import_mysql_core.mysqlEnum)("status", ["pending", "completed", "failed"]).default("pending").notNull(),
-  /** Description */
-  description: (0, import_mysql_core.text)("description"),
-  createdAt: (0, import_mysql_core.timestamp)("createdAt").defaultNow().notNull()
+var aiTransactions = (0, import_pg_core.pgTable)("ai_transactions", {
+  id: (0, import_pg_core.serial)("id").primaryKey(),
+  userId: (0, import_pg_core.integer)("userId").references(() => users.id).notNull(),
+  type: (0, import_pg_core.text)("type").$type().notNull(),
+  amount: (0, import_pg_core.decimal)("amount", { precision: 12, scale: 2 }).notNull(),
+  stripePaymentId: (0, import_pg_core.varchar)("stripePaymentId", { length: 255 }),
+  paymentMethod: (0, import_pg_core.varchar)("paymentMethod", { length: 50 }),
+  status: (0, import_pg_core.text)("status").$type().default("pending").notNull(),
+  description: (0, import_pg_core.text)("description"),
+  createdAt: (0, import_pg_core.timestamp)("createdAt").defaultNow().notNull()
 });
-var blogPosts = (0, import_mysql_core.mysqlTable)("blog_posts", {
-  id: (0, import_mysql_core.int)("id").autoincrement().primaryKey(),
-  /** URL slug for SEO-friendly URLs */
-  slug: (0, import_mysql_core.varchar)("slug", { length: 255 }).notNull().unique(),
-  /** Content */
-  title: (0, import_mysql_core.varchar)("title", { length: 500 }).notNull(),
-  excerpt: (0, import_mysql_core.text)("excerpt").notNull(),
-  content: (0, import_mysql_core.text)("content").notNull(),
-  /** SEO fields */
-  metaTitle: (0, import_mysql_core.varchar)("metaTitle", { length: 70 }),
-  metaDescription: (0, import_mysql_core.varchar)("metaDescription", { length: 160 }),
-  metaKeywords: (0, import_mysql_core.varchar)("metaKeywords", { length: 500 }),
-  /** Media */
-  coverImageUrl: (0, import_mysql_core.text)("coverImageUrl"),
-  /** Categorization */
-  category: (0, import_mysql_core.varchar)("category", { length: 100 }),
-  tags: (0, import_mysql_core.json)("tags"),
-  /** Author */
-  authorId: (0, import_mysql_core.int)("authorId").references(() => users.id),
-  authorName: (0, import_mysql_core.varchar)("authorName", { length: 255 }).default("VANIR GROUP"),
-  /** Publishing */
-  status: (0, import_mysql_core.mysqlEnum)("status", ["draft", "published", "archived"]).default("draft").notNull(),
-  publishedAt: (0, import_mysql_core.timestamp)("publishedAt"),
-  /** Engagement */
-  viewCount: (0, import_mysql_core.int)("viewCount").default(0),
-  readingTime: (0, import_mysql_core.int)("readingTime").default(5),
-  /** Timestamps */
-  createdAt: (0, import_mysql_core.timestamp)("createdAt").defaultNow().notNull(),
-  updatedAt: (0, import_mysql_core.timestamp)("updatedAt").defaultNow().onUpdateNow().notNull()
+var blogPosts = (0, import_pg_core.pgTable)("blog_posts", {
+  id: (0, import_pg_core.serial)("id").primaryKey(),
+  slug: (0, import_pg_core.varchar)("slug", { length: 255 }).notNull().unique(),
+  title: (0, import_pg_core.varchar)("title", { length: 500 }).notNull(),
+  excerpt: (0, import_pg_core.text)("excerpt").notNull(),
+  content: (0, import_pg_core.text)("content").notNull(),
+  metaTitle: (0, import_pg_core.varchar)("metaTitle", { length: 70 }),
+  metaDescription: (0, import_pg_core.varchar)("metaDescription", { length: 160 }),
+  metaKeywords: (0, import_pg_core.varchar)("metaKeywords", { length: 500 }),
+  coverImageUrl: (0, import_pg_core.text)("coverImageUrl"),
+  category: (0, import_pg_core.varchar)("category", { length: 100 }),
+  tags: (0, import_pg_core.json)("tags"),
+  authorId: (0, import_pg_core.integer)("authorId").references(() => users.id),
+  authorName: (0, import_pg_core.varchar)("authorName", { length: 255 }).default("VANIR GROUP"),
+  status: (0, import_pg_core.text)("status").$type().default("draft").notNull(),
+  publishedAt: (0, import_pg_core.timestamp)("publishedAt"),
+  viewCount: (0, import_pg_core.integer)("viewCount").default(0),
+  readingTime: (0, import_pg_core.integer)("readingTime").default(5),
+  createdAt: (0, import_pg_core.timestamp)("createdAt").defaultNow().notNull(),
+  updatedAt: (0, import_pg_core.timestamp)("updatedAt").defaultNow().notNull()
 });
-var marketingContent = (0, import_mysql_core.mysqlTable)("marketing_content", {
-  id: (0, import_mysql_core.int)("id").autoincrement().primaryKey(),
-  userId: (0, import_mysql_core.int)("userId").references(() => users.id).notNull(),
-  /** Content type */
-  type: (0, import_mysql_core.mysqlEnum)("type", ["social_media", "email", "trip_description", "blog_seo", "ad_copy"]).notNull(),
-  /** Platform (for social media) */
-  platform: (0, import_mysql_core.varchar)("platform", { length: 50 }),
-  // instagram, facebook, twitter, linkedin, tiktok
-  /** Content */
-  title: (0, import_mysql_core.varchar)("title", { length: 500 }),
-  content: (0, import_mysql_core.text)("content").notNull(),
-  /** Generation metadata */
-  prompt: (0, import_mysql_core.text)("prompt").notNull(),
-  language: (0, import_mysql_core.varchar)("language", { length: 10 }).default("en"),
-  tone: (0, import_mysql_core.varchar)("tone", { length: 50 }),
-  // professional, casual, luxurious, adventurous
-  destination: (0, import_mysql_core.varchar)("destination", { length: 255 }),
-  /** Hashtags (JSON array) */
-  hashtags: (0, import_mysql_core.json)("hashtags"),
-  /** Credits used */
-  creditsCost: (0, import_mysql_core.decimal)("creditsCost", { precision: 10, scale: 2 }).default("1"),
-  /** Status */
-  isFavorite: (0, import_mysql_core.mysqlEnum)("isFavorite", ["yes", "no"]).default("no").notNull(),
-  createdAt: (0, import_mysql_core.timestamp)("createdAt").defaultNow().notNull()
+var marketingContent = (0, import_pg_core.pgTable)("marketing_content", {
+  id: (0, import_pg_core.serial)("id").primaryKey(),
+  userId: (0, import_pg_core.integer)("userId").references(() => users.id).notNull(),
+  type: (0, import_pg_core.text)("type").$type().notNull(),
+  platform: (0, import_pg_core.varchar)("platform", { length: 50 }),
+  title: (0, import_pg_core.varchar)("title", { length: 500 }),
+  content: (0, import_pg_core.text)("content").notNull(),
+  prompt: (0, import_pg_core.text)("prompt").notNull(),
+  language: (0, import_pg_core.varchar)("language", { length: 10 }).default("en"),
+  tone: (0, import_pg_core.varchar)("tone", { length: 50 }),
+  destination: (0, import_pg_core.varchar)("destination", { length: 255 }),
+  hashtags: (0, import_pg_core.json)("hashtags"),
+  creditsCost: (0, import_pg_core.decimal)("creditsCost", { precision: 10, scale: 2 }).default("1"),
+  isFavorite: (0, import_pg_core.text)("isFavorite").$type().default("no").notNull(),
+  createdAt: (0, import_pg_core.timestamp)("createdAt").defaultNow().notNull()
 });
-var marketingCalendar = (0, import_mysql_core.mysqlTable)("marketing_calendar", {
-  id: (0, import_mysql_core.int)("id").autoincrement().primaryKey(),
-  userId: (0, import_mysql_core.int)("userId").references(() => users.id).notNull(),
-  /** Content reference */
-  contentId: (0, import_mysql_core.int)("contentId").references(() => marketingContent.id),
-  /** Calendar entry */
-  title: (0, import_mysql_core.varchar)("title", { length: 500 }).notNull(),
-  description: (0, import_mysql_core.text)("description"),
-  /** Platform */
-  platform: (0, import_mysql_core.varchar)("platform", { length: 50 }),
-  /** Scheduling */
-  scheduledDate: (0, import_mysql_core.bigint)("scheduledDate", { mode: "number" }).notNull(),
-  /** Status */
-  status: (0, import_mysql_core.mysqlEnum)("status", ["draft", "scheduled", "published", "cancelled"]).default("draft").notNull(),
-  /** Color tag for calendar display */
-  colorTag: (0, import_mysql_core.varchar)("colorTag", { length: 20 }).default("#D4A853"),
-  createdAt: (0, import_mysql_core.timestamp)("createdAt").defaultNow().notNull(),
-  updatedAt: (0, import_mysql_core.timestamp)("updatedAt").defaultNow().onUpdateNow().notNull()
+var marketingCalendar = (0, import_pg_core.pgTable)("marketing_calendar", {
+  id: (0, import_pg_core.serial)("id").primaryKey(),
+  userId: (0, import_pg_core.integer)("userId").references(() => users.id).notNull(),
+  contentId: (0, import_pg_core.integer)("contentId").references(() => marketingContent.id),
+  title: (0, import_pg_core.varchar)("title", { length: 500 }).notNull(),
+  description: (0, import_pg_core.text)("description"),
+  platform: (0, import_pg_core.varchar)("platform", { length: 50 }),
+  scheduledDate: (0, import_pg_core.bigint)("scheduledDate", { mode: "number" }).notNull(),
+  status: (0, import_pg_core.text)("status").$type().default("draft").notNull(),
+  colorTag: (0, import_pg_core.varchar)("colorTag", { length: 20 }).default("#D4A853"),
+  createdAt: (0, import_pg_core.timestamp)("createdAt").defaultNow().notNull(),
+  updatedAt: (0, import_pg_core.timestamp)("updatedAt").defaultNow().notNull()
 });
-var marketingTemplates = (0, import_mysql_core.mysqlTable)("marketing_templates", {
-  id: (0, import_mysql_core.int)("id").autoincrement().primaryKey(),
-  /** Template info */
-  name: (0, import_mysql_core.varchar)("name", { length: 255 }).notNull(),
-  description: (0, import_mysql_core.text)("description"),
-  /** Template type */
-  type: (0, import_mysql_core.mysqlEnum)("type", ["social_media", "email", "trip_description", "blog_seo", "ad_copy"]).notNull(),
-  /** Platform */
-  platform: (0, import_mysql_core.varchar)("platform", { length: 50 }),
-  /** Template content (with placeholders like {{destination}}, {{price}}) */
-  templateContent: (0, import_mysql_core.text)("templateContent").notNull(),
-  /** System prompt for AI generation */
-  systemPrompt: (0, import_mysql_core.text)("systemPrompt"),
-  /** Category */
-  category: (0, import_mysql_core.varchar)("category", { length: 100 }),
-  // seasonal, promotional, informational, engagement
-  /** Icon name from lucide */
-  icon: (0, import_mysql_core.varchar)("icon", { length: 50 }),
-  /** Is built-in (not deletable) */
-  isBuiltIn: (0, import_mysql_core.mysqlEnum)("isBuiltIn", ["yes", "no"]).default("no").notNull(),
-  /** Sort order */
-  sortOrder: (0, import_mysql_core.int)("sortOrder").default(0),
-  createdAt: (0, import_mysql_core.timestamp)("createdAt").defaultNow().notNull()
+var marketingTemplates = (0, import_pg_core.pgTable)("marketing_templates", {
+  id: (0, import_pg_core.serial)("id").primaryKey(),
+  name: (0, import_pg_core.varchar)("name", { length: 255 }).notNull(),
+  description: (0, import_pg_core.text)("description"),
+  type: (0, import_pg_core.text)("type").$type().notNull(),
+  platform: (0, import_pg_core.varchar)("platform", { length: 50 }),
+  templateContent: (0, import_pg_core.text)("templateContent").notNull(),
+  systemPrompt: (0, import_pg_core.text)("systemPrompt"),
+  category: (0, import_pg_core.varchar)("category", { length: 100 }),
+  icon: (0, import_pg_core.varchar)("icon", { length: 50 }),
+  isBuiltIn: (0, import_pg_core.text)("isBuiltIn").$type().default("no").notNull(),
+  sortOrder: (0, import_pg_core.integer)("sortOrder").default(0),
+  createdAt: (0, import_pg_core.timestamp)("createdAt").defaultNow().notNull()
 });
-var destinations = (0, import_mysql_core.mysqlTable)("destinations", {
-  id: (0, import_mysql_core.int)("id").autoincrement().primaryKey(),
-  /** Basic info */
-  name: (0, import_mysql_core.varchar)("name", { length: 255 }).notNull(),
-  description: (0, import_mysql_core.text)("description"),
-  location: (0, import_mysql_core.varchar)("location", { length: 255 }).notNull(),
-  /** Pricing and rating */
-  pricePerPerson: (0, import_mysql_core.decimal)("pricePerPerson", { precision: 10, scale: 2 }).default("0"),
-  rating: (0, import_mysql_core.decimal)("rating", { precision: 3, scale: 2 }).default("5"),
-  /** Media */
-  imageUrl: (0, import_mysql_core.text)("imageUrl"),
-  /** Details */
-  highlights: (0, import_mysql_core.text)("highlights"),
-  bestTimeToVisit: (0, import_mysql_core.varchar)("bestTimeToVisit", { length: 255 }),
-  duration: (0, import_mysql_core.varchar)("duration", { length: 100 }),
-  difficulty: (0, import_mysql_core.mysqlEnum)("difficulty", ["easy", "moderate", "hard"]),
-  groupSize: (0, import_mysql_core.varchar)("groupSize", { length: 100 }),
-  inclusions: (0, import_mysql_core.text)("inclusions"),
-  exclusions: (0, import_mysql_core.text)("exclusions"),
-  /** Status */
-  isActive: (0, import_mysql_core.mysqlEnum)("isActive", ["active", "inactive"]).default("active").notNull(),
-  /** Timestamps */
-  createdAt: (0, import_mysql_core.timestamp)("createdAt").defaultNow().notNull(),
-  updatedAt: (0, import_mysql_core.timestamp)("updatedAt").defaultNow().onUpdateNow().notNull()
+var destinations = (0, import_pg_core.pgTable)("destinations", {
+  id: (0, import_pg_core.serial)("id").primaryKey(),
+  name: (0, import_pg_core.varchar)("name", { length: 255 }).notNull(),
+  description: (0, import_pg_core.text)("description"),
+  location: (0, import_pg_core.varchar)("location", { length: 255 }).notNull(),
+  pricePerPerson: (0, import_pg_core.decimal)("pricePerPerson", { precision: 10, scale: 2 }).default("0"),
+  rating: (0, import_pg_core.decimal)("rating", { precision: 3, scale: 2 }).default("5"),
+  imageUrl: (0, import_pg_core.text)("imageUrl"),
+  highlights: (0, import_pg_core.text)("highlights"),
+  bestTimeToVisit: (0, import_pg_core.varchar)("bestTimeToVisit", { length: 255 }),
+  duration: (0, import_pg_core.varchar)("duration", { length: 100 }),
+  difficulty: (0, import_pg_core.text)("difficulty").$type(),
+  groupSize: (0, import_pg_core.varchar)("groupSize", { length: 100 }),
+  inclusions: (0, import_pg_core.text)("inclusions"),
+  exclusions: (0, import_pg_core.text)("exclusions"),
+  isActive: (0, import_pg_core.text)("isActive").$type().default("active").notNull(),
+  createdAt: (0, import_pg_core.timestamp)("createdAt").defaultNow().notNull(),
+  updatedAt: (0, import_pg_core.timestamp)("updatedAt").defaultNow().notNull()
 });
-var siteSettings = (0, import_mysql_core.mysqlTable)("site_settings", {
-  id: (0, import_mysql_core.int)("id").autoincrement().primaryKey(),
-  /** Setting category for grouping */
-  category: (0, import_mysql_core.varchar)("category", { length: 50 }).notNull(),
-  /** Setting key (unique within category) */
-  settingKey: (0, import_mysql_core.varchar)("setting_key", { length: 100 }).notNull(),
-  /** Setting value (stored as text, parsed by app) */
-  settingValue: (0, import_mysql_core.text)("setting_value"),
-  /** Last updated by */
-  updatedBy: (0, import_mysql_core.int)("updated_by").references(() => users.id),
-  createdAt: (0, import_mysql_core.timestamp)("createdAt").defaultNow().notNull(),
-  updatedAt: (0, import_mysql_core.timestamp)("updatedAt").defaultNow().onUpdateNow().notNull()
+var siteSettings = (0, import_pg_core.pgTable)("site_settings", {
+  id: (0, import_pg_core.serial)("id").primaryKey(),
+  category: (0, import_pg_core.varchar)("category", { length: 50 }).notNull(),
+  settingKey: (0, import_pg_core.varchar)("setting_key", { length: 100 }).notNull(),
+  settingValue: (0, import_pg_core.text)("setting_value"),
+  updatedBy: (0, import_pg_core.integer)("updated_by").references(() => users.id),
+  createdAt: (0, import_pg_core.timestamp)("createdAt").defaultNow().notNull(),
+  updatedAt: (0, import_pg_core.timestamp)("updatedAt").defaultNow().notNull()
 });
 
 // server/_core/env.ts
@@ -455,10 +347,22 @@ var ENV = {
 
 // server/db.ts
 var _db = null;
+var _client = null;
+function getConnectionString() {
+  return process.env.POSTGRES_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL_NON_POOLING;
+}
 async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
+  if (!_db) {
+    const connectionString = getConnectionString();
+    if (!connectionString) return null;
     try {
-      _db = (0, import_mysql2.drizzle)(process.env.DATABASE_URL);
+      _client = (0, import_postgres.default)(connectionString, {
+        prepare: false,
+        max: 5,
+        idle_timeout: 20,
+        connect_timeout: 15
+      });
+      _db = (0, import_postgres_js.drizzle)(_client);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -506,7 +410,8 @@ async function upsertUser(user) {
     if (Object.keys(updateSet).length === 0) {
       updateSet.lastSignedIn = /* @__PURE__ */ new Date();
     }
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
+    await db.insert(users).values(values).onConflictDoUpdate({
+      target: users.openId,
       set: updateSet
     });
   } catch (error) {
@@ -526,10 +431,8 @@ async function getUserByOpenId(openId) {
 async function createBooking(booking) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(bookings).values(booking);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(bookings).where((0, import_drizzle_orm.eq)(bookings.id, insertId)).limit(1);
-  return rows[0];
+  const result = await db.insert(bookings).values(booking).returning();
+  return result[0];
 }
 async function getBookingById(id) {
   const db = await getDb();
@@ -568,10 +471,8 @@ async function getAllBookings(limit = 50, offset = 0) {
 async function createReview(review) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(reviews).values(review);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(reviews).where((0, import_drizzle_orm.eq)(reviews.id, insertId)).limit(1);
-  return rows[0];
+  const result = await db.insert(reviews).values(review).returning();
+  return result[0];
 }
 async function getApprovedReviews(limit = 50, offset = 0) {
   const db = await getDb();
@@ -623,10 +524,8 @@ async function getReviewStats() {
 async function createOffer(offer) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(offers).values(offer);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(offers).where((0, import_drizzle_orm.eq)(offers.id, insertId)).limit(1);
-  return rows[0];
+  const result = await db.insert(offers).values(offer).returning();
+  return result[0];
 }
 async function getActiveOffers() {
   const db = await getDb();
@@ -659,10 +558,8 @@ async function updateOffer(id, data) {
 async function createContactMessage(message) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(contactMessages).values(message);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(contactMessages).where((0, import_drizzle_orm.eq)(contactMessages.id, insertId)).limit(1);
-  return rows[0];
+  const result = await db.insert(contactMessages).values(message).returning();
+  return result[0];
 }
 async function getAllContactMessages(limit = 50, offset = 0) {
   const db = await getDb();
@@ -677,10 +574,8 @@ async function updateContactMessageStatus(id, status) {
 async function createFileUpload(file) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(fileUploads).values(file);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(fileUploads).where((0, import_drizzle_orm.eq)(fileUploads.id, insertId)).limit(1);
-  return rows[0];
+  const result = await db.insert(fileUploads).values(file).returning();
+  return result[0];
 }
 async function getUserFiles(userId) {
   const db = await getDb();
@@ -690,10 +585,8 @@ async function getUserFiles(userId) {
 async function createGalleryItem(item) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(galleryItems).values(item);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(galleryItems).where((0, import_drizzle_orm.eq)(galleryItems.id, insertId)).limit(1);
-  return rows[0];
+  const result = await db.insert(galleryItems).values(item).returning();
+  return result[0];
 }
 async function getVisibleGalleryItems() {
   const db = await getDb();
@@ -725,10 +618,8 @@ async function deleteGalleryItem(id) {
 async function createGalleryVideo(video) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(galleryVideos).values(video);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(galleryVideos).where((0, import_drizzle_orm.eq)(galleryVideos.id, insertId)).limit(1);
-  return rows[0];
+  const result = await db.insert(galleryVideos).values(video).returning();
+  return result[0];
 }
 async function getVisibleGalleryVideos() {
   const db = await getDb();
@@ -767,9 +658,8 @@ async function getOrCreateAISubscription(userId) {
       plan: "free",
       status: "active",
       startDate: Date.now()
-    });
-    const insertId = result[0].insertId;
-    subscription = await db.select().from(aiSubscriptions).where((0, import_drizzle_orm.eq)(aiSubscriptions.id, insertId)).limit(1);
+    }).returning();
+    subscription = result;
   }
   return subscription[0];
 }
@@ -780,7 +670,6 @@ async function updateAISubscription(userId, plan, stripeSubscriptionId) {
     plan,
     status: "active",
     renewalDate: Date.now() + 30 * 24 * 60 * 60 * 1e3,
-    // 30 days
     ...stripeSubscriptionId && { stripeSubscriptionId }
   }).where((0, import_drizzle_orm.eq)(aiSubscriptions.userId, userId));
   return getOrCreateAISubscription(userId);
@@ -793,11 +682,9 @@ async function getOrCreateAICredits(userId) {
     const result = await db.insert(aiCredits).values({
       userId,
       balance: "5",
-      // Free tier gets 5 image generations
       totalUsed: "0"
-    });
-    const insertId = result[0].insertId;
-    credits = await db.select().from(aiCredits).where((0, import_drizzle_orm.eq)(aiCredits.id, insertId)).limit(1);
+    }).returning();
+    credits = result;
   }
   return credits[0];
 }
@@ -834,10 +721,8 @@ async function deductAICredits(userId, amount) {
 async function createAIUsage(usage) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(aiUsage).values(usage);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(aiUsage).where((0, import_drizzle_orm.eq)(aiUsage.id, insertId)).limit(1);
-  return rows[0];
+  const result = await db.insert(aiUsage).values(usage).returning();
+  return result[0];
 }
 async function getUserAIUsage(userId, limit = 50, offset = 0) {
   const db = await getDb();
@@ -897,7 +782,7 @@ async function searchUsers(query, limit = 20) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   const result = await db.select().from(users).where(
-    import_drizzle_orm.sql`${users.name} LIKE ${`%${query}%`} OR ${users.email} LIKE ${`%${query}%`} OR ${users.openId} LIKE ${`%${query}%`}`
+    import_drizzle_orm.sql`${users.name} ILIKE ${`%${query}%`} OR ${users.email} ILIKE ${`%${query}%`} OR ${users.openId} ILIKE ${`%${query}%`}`
   ).orderBy((0, import_drizzle_orm.desc)(users.createdAt)).limit(limit);
   return result;
 }
@@ -906,8 +791,8 @@ async function getUserStats() {
   if (!db) throw new Error("Database not available");
   const totalUsers = await db.select({ count: import_drizzle_orm.sql`count(*)` }).from(users);
   const adminUsers = await db.select({ count: import_drizzle_orm.sql`count(*)` }).from(users).where((0, import_drizzle_orm.eq)(users.role, "admin"));
-  const recentUsers = await db.select({ count: import_drizzle_orm.sql`count(*)` }).from(users).where((0, import_drizzle_orm.gte)(users.createdAt, import_drizzle_orm.sql`DATE_SUB(NOW(), INTERVAL 30 DAY)`));
-  const todayUsers = await db.select({ count: import_drizzle_orm.sql`count(*)` }).from(users).where((0, import_drizzle_orm.gte)(users.createdAt, import_drizzle_orm.sql`CURDATE()`));
+  const recentUsers = await db.select({ count: import_drizzle_orm.sql`count(*)` }).from(users).where((0, import_drizzle_orm.gte)(users.createdAt, import_drizzle_orm.sql`NOW() - INTERVAL '30 days'`));
+  const todayUsers = await db.select({ count: import_drizzle_orm.sql`count(*)` }).from(users).where((0, import_drizzle_orm.gte)(users.createdAt, import_drizzle_orm.sql`CURRENT_DATE`));
   return {
     total: totalUsers[0]?.count ?? 0,
     admins: adminUsers[0]?.count ?? 0,
@@ -947,10 +832,8 @@ async function getBlogPostsByCategory(category, limit = 10, offset = 0) {
 async function createBlogPost(post) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(blogPosts).values(post);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(blogPosts).where((0, import_drizzle_orm.eq)(blogPosts.id, insertId)).limit(1);
-  return rows[0];
+  const result = await db.insert(blogPosts).values(post).returning();
+  return result[0];
 }
 async function updateBlogPost(id, data) {
   const db = await getDb();
@@ -972,18 +855,20 @@ async function incrementBlogViewCount(id) {
 
 // server/_core/cookies.ts
 function isSecureRequest(req) {
-  if (req.protocol === "https") return true;
+  if ("protocol" in req && req.protocol === "https") return true;
   const forwardedProto = req.headers["x-forwarded-proto"];
   if (!forwardedProto) return false;
   const protoList = Array.isArray(forwardedProto) ? forwardedProto : forwardedProto.split(",");
   return protoList.some((proto) => proto.trim().toLowerCase() === "https");
 }
 function getSessionCookieOptions(req) {
+  const secure = isSecureRequest(req);
   return {
     httpOnly: true,
     path: "/",
-    sameSite: "none",
-    secure: isSecureRequest(req)
+    // SameSite=None requires Secure=true; fall back to Lax on plain HTTP (local dev)
+    sameSite: secure ? "none" : "lax",
+    secure
   };
 }
 
@@ -1044,7 +929,10 @@ var OAuthService = class {
 };
 var createOAuthHttpClient = () => import_axios.default.create({
   baseURL: ENV.oAuthServerUrl,
-  timeout: AXIOS_TIMEOUT_MS
+  // 5 s keeps us well inside Vercel's 10 s default timeout.
+  // The old 30 s value caused Vercel to kill the function with a plain-text
+  // "A server error occurred" before any try/catch could intercept.
+  timeout: 5e3
 });
 var SDKServer = class {
   client;
@@ -1184,22 +1072,67 @@ var SDKServer = class {
       throw ForbiddenError("Invalid session cookie");
     }
     const sessionUserId = session.openId;
-    const signedInAt = /* @__PURE__ */ new Date();
+    const now = /* @__PURE__ */ new Date();
+    if (sessionUserId.startsWith("admin:")) {
+      const email = sessionUserId.slice("admin:".length) || null;
+      return {
+        id: 0,
+        openId: sessionUserId,
+        name: session.name || "Admin",
+        email,
+        phone: null,
+        loginMethod: "password",
+        avatarUrl: null,
+        role: "admin",
+        createdAt: now,
+        updatedAt: now,
+        lastSignedIn: now
+      };
+    }
     let user = await getUserByOpenId(sessionUserId);
     if (!user) {
-      try {
-        const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
-        await upsertUser({
-          openId: userInfo.openId,
-          name: userInfo.name || null,
-          email: userInfo.email ?? null,
-          loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
-          lastSignedIn: signedInAt
-        });
-        user = await getUserByOpenId(userInfo.openId);
-      } catch (error) {
-        console.error("[Auth] Failed to sync user from OAuth:", error);
-        throw ForbiddenError("Failed to sync user info");
+      if (sessionUserId.startsWith("admin:")) {
+        try {
+          await upsertUser({
+            openId: sessionUserId,
+            name: session.name || "Admin",
+            role: "admin",
+            loginMethod: "password",
+            lastSignedIn: now
+          });
+          user = await getUserByOpenId(sessionUserId);
+        } catch {
+        }
+        if (!user) {
+          return {
+            id: -1,
+            openId: sessionUserId,
+            name: session.name || "Admin",
+            email: null,
+            phone: null,
+            loginMethod: "password",
+            avatarUrl: null,
+            role: "admin",
+            createdAt: now,
+            updatedAt: now,
+            lastSignedIn: now
+          };
+        }
+      } else {
+        try {
+          const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
+          await upsertUser({
+            openId: userInfo.openId,
+            name: userInfo.name || null,
+            email: userInfo.email ?? null,
+            loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+            lastSignedIn: now
+          });
+          user = await getUserByOpenId(userInfo.openId);
+        } catch (error) {
+          console.error("[Auth] Failed to sync user from OAuth:", error);
+          throw ForbiddenError("Failed to sync user info");
+        }
       }
     }
     if (!user) {
@@ -1207,7 +1140,7 @@ var SDKServer = class {
     }
     await upsertUser({
       openId: user.openId,
-      lastSignedIn: signedInAt
+      lastSignedIn: now
     });
     return user;
   }
@@ -1257,43 +1190,51 @@ function registerOAuthRoutes(app) {
   });
 }
 
+// server/_core/supabase.ts
+var import_supabase_js = require("@supabase/supabase-js");
+function loadServerConfig() {
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  if (!url || !serviceKey) return null;
+  return { url, serviceKey };
+}
+var serverClient = null;
+function getServerSupabase() {
+  if (serverClient) return serverClient;
+  const cfg = loadServerConfig();
+  if (!cfg) return null;
+  serverClient = (0, import_supabase_js.createClient)(cfg.url, cfg.serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+  return serverClient;
+}
+
 // server/_core/storageProxy.ts
 function registerStorageProxy(app) {
   app.get("/manus-storage/*", async (req, res) => {
     const key = req.params[0];
-    if (!key) {
-      res.status(400).send("Missing storage key");
-      return;
-    }
-    if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {
-      res.status(500).send("Storage proxy not configured");
-      return;
+    if (!key) return void res.status(400).send("Missing storage key");
+    const supabase = getServerSupabase();
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET;
+    if (!supabase || !bucket) {
+      return void res.status(404).send("Storage not configured");
     }
     try {
-      const forgeUrl = new URL(
-        "v1/storage/presign/get",
-        ENV.forgeApiUrl.replace(/\/+$/, "") + "/"
-      );
-      forgeUrl.searchParams.set("path", key);
-      const forgeResp = await fetch(forgeUrl, {
-        headers: { Authorization: `Bearer ${ENV.forgeApiKey}` }
-      });
-      if (!forgeResp.ok) {
-        const body = await forgeResp.text().catch(() => "");
-        console.error(`[StorageProxy] forge error: ${forgeResp.status} ${body}`);
-        res.status(502).send("Storage backend error");
-        return;
+      const ttl = Number(process.env.SUPABASE_STORAGE_SIGNED_URL_TTL || 60);
+      const { data, error } = await supabase.storage.from(bucket).createSignedUrl(key, ttl);
+      if (!error && data?.signedUrl) {
+        res.set("Cache-Control", "no-store");
+        return void res.redirect(307, data.signedUrl);
       }
-      const { url } = await forgeResp.json();
-      if (!url) {
-        res.status(502).send("Empty signed URL from backend");
-        return;
+      const { data: pub } = supabase.storage.from(bucket).getPublicUrl(key);
+      if (pub.publicUrl) {
+        res.set("Cache-Control", "no-store");
+        return void res.redirect(307, pub.publicUrl);
       }
-      res.set("Cache-Control", "no-store");
-      res.redirect(307, url);
+      return void res.status(404).send("Image not found");
     } catch (err) {
-      console.error("[StorageProxy] failed:", err);
-      res.status(502).send("Storage proxy error");
+      console.error("[StorageProxy] supabase error:", err);
+      return void res.status(502).send("Storage proxy error");
     }
   });
 }
@@ -1833,55 +1774,9 @@ ${input.message.substring(0, 200)}`
 // server/routers/uploads.ts
 var import_zod6 = require("zod");
 
-// server/_core/supabase.ts
-var import_supabase_js = require("@supabase/supabase-js");
-function loadServerConfig() {
-  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-  if (!url || !serviceKey) return null;
-  return { url, serviceKey };
-}
-var serverClient = null;
-function getServerSupabase() {
-  if (serverClient) return serverClient;
-  const cfg = loadServerConfig();
-  if (!cfg) return null;
-  serverClient = (0, import_supabase_js.createClient)(cfg.url, cfg.serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-  return serverClient;
-}
-
 // server/storage.ts
-function getStorageConfig() {
-  const baseUrl = ENV.forgeApiUrl;
-  const apiKey = ENV.forgeApiKey;
-  if (!baseUrl || !apiKey) {
-    throw new Error(
-      "Storage proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY"
-    );
-  }
-  return { baseUrl: baseUrl.replace(/\/+$/, ""), apiKey };
-}
-function buildUploadUrl(baseUrl, relKey) {
-  const url = new URL("v1/storage/upload", ensureTrailingSlash(baseUrl));
-  url.searchParams.set("path", normalizeKey(relKey));
-  return url;
-}
-function ensureTrailingSlash(value) {
-  return value.endsWith("/") ? value : `${value}/`;
-}
 function normalizeKey(relKey) {
   return relKey.replace(/^\/+/, "");
-}
-function toFormData(data, contentType, fileName) {
-  const blob = typeof data === "string" ? new Blob([data], { type: contentType }) : new Blob([data], { type: contentType });
-  const form = new FormData();
-  form.append("file", blob, fileName || "file");
-  return form;
-}
-function buildAuthHeaders(apiKey) {
-  return { Authorization: `Bearer ${apiKey}` };
 }
 async function storagePut(relKey, data, contentType = "application/octet-stream") {
   const key = normalizeKey(relKey);
@@ -1904,22 +1799,7 @@ async function storagePut(relKey, data, contentType = "application/octet-stream"
     }
     return { key, url: signed.signedUrl };
   }
-  const { baseUrl, apiKey } = getStorageConfig();
-  const uploadUrl = buildUploadUrl(baseUrl, key);
-  const formData = toFormData(data, contentType, key.split("/").pop() ?? key);
-  const response = await fetch(uploadUrl, {
-    method: "POST",
-    headers: buildAuthHeaders(apiKey),
-    body: formData
-  });
-  if (!response.ok) {
-    const message = await response.text().catch(() => response.statusText);
-    throw new Error(
-      `Storage upload failed (${response.status} ${response.statusText}): ${message}`
-    );
-  }
-  const url = (await response.json()).url;
-  return { key, url };
+  throw new Error("Supabase storage is not configured");
 }
 
 // server/routers/uploads.ts
@@ -3055,7 +2935,7 @@ ${template.templateContent}`;
       destination: input.destination || null,
       hashtags: parsed.hashtags,
       creditsCost: "1"
-    }).$returningId();
+    }).returning({ id: marketingContent.id });
     return {
       id: saved.id,
       title: parsed.title,
@@ -3158,7 +3038,7 @@ ${template.templateContent}`;
       scheduledDate: input.scheduledDate,
       status: input.status,
       colorTag: input.colorTag
-    }).$returningId();
+    }).returning({ id: marketingCalendar.id });
     return { id: entry.id };
   }),
   /**
@@ -4534,8 +4414,280 @@ var backupRouter = router({
   })
 });
 
-// server/routers.ts
+// server/routers/dataImport.ts
 var import_zod18 = require("zod");
+var IMPORT_TABLES = [
+  {
+    id: "destinations",
+    label: "Destinations",
+    description: "Travel destinations and tour packages",
+    table: destinations,
+    fields: [
+      { key: "name", label: "Name", type: "string", required: true },
+      { key: "location", label: "Location", type: "string", required: true },
+      { key: "description", label: "Description", type: "string" },
+      { key: "pricePerPerson", label: "Price Per Person", type: "decimal" },
+      { key: "rating", label: "Rating", type: "decimal", hint: "0\u20135" },
+      { key: "imageUrl", label: "Image URL", type: "string" },
+      { key: "highlights", label: "Highlights", type: "string" },
+      { key: "bestTimeToVisit", label: "Best Time To Visit", type: "string" },
+      { key: "duration", label: "Duration", type: "string" },
+      { key: "difficulty", label: "Difficulty", type: "enum", options: ["easy", "moderate", "hard"] },
+      { key: "groupSize", label: "Group Size", type: "string" },
+      { key: "inclusions", label: "Inclusions", type: "string" },
+      { key: "exclusions", label: "Exclusions", type: "string" },
+      { key: "isActive", label: "Status", type: "enum", options: ["active", "inactive"] }
+    ]
+  },
+  {
+    id: "offers",
+    label: "Offers & Packages",
+    description: "Promotional offers and discounts",
+    table: offers,
+    fields: [
+      { key: "title", label: "Title", type: "string", required: true },
+      { key: "description", label: "Description", type: "string" },
+      { key: "discountType", label: "Discount Type", type: "enum", required: true, options: ["percentage", "fixed"] },
+      { key: "discountValue", label: "Discount Value", type: "decimal", required: true },
+      { key: "promoCode", label: "Promo Code", type: "string" },
+      { key: "startDate", label: "Start Date", type: "date", required: true },
+      { key: "endDate", label: "End Date", type: "date", required: true },
+      { key: "category", label: "Category", type: "string" },
+      { key: "destination", label: "Destination", type: "string" },
+      { key: "imageUrl", label: "Image URL", type: "string" },
+      { key: "totalSpots", label: "Total Spots", type: "number" },
+      { key: "isActive", label: "Status", type: "enum", options: ["active", "inactive", "expired"] },
+      { key: "badgeText", label: "Badge Text", type: "string" }
+    ]
+  },
+  {
+    id: "blog",
+    label: "Blog Articles",
+    description: "Blog posts and articles",
+    table: blogPosts,
+    fields: [
+      { key: "slug", label: "Slug", type: "string", required: true, hint: "Unique URL slug" },
+      { key: "title", label: "Title", type: "string", required: true },
+      { key: "excerpt", label: "Excerpt", type: "string", required: true },
+      { key: "content", label: "Content", type: "string", required: true },
+      { key: "metaTitle", label: "Meta Title", type: "string" },
+      { key: "metaDescription", label: "Meta Description", type: "string" },
+      { key: "metaKeywords", label: "Meta Keywords", type: "string" },
+      { key: "coverImageUrl", label: "Cover Image URL", type: "string" },
+      { key: "category", label: "Category", type: "string" },
+      { key: "authorName", label: "Author Name", type: "string" },
+      { key: "status", label: "Status", type: "enum", options: ["draft", "published", "archived"] }
+    ]
+  },
+  {
+    id: "reviews",
+    label: "Reviews",
+    description: "Customer reviews and ratings",
+    table: reviews,
+    fields: [
+      { key: "guestName", label: "Guest Name", type: "string" },
+      { key: "tripName", label: "Trip Name", type: "string", required: true },
+      { key: "destination", label: "Destination", type: "string" },
+      { key: "rating", label: "Rating", type: "number", required: true, hint: "1\u20135" },
+      { key: "title", label: "Title", type: "string" },
+      { key: "content", label: "Content", type: "string", required: true },
+      { key: "isApproved", label: "Moderation", type: "enum", options: ["pending", "approved", "rejected"] }
+    ]
+  },
+  {
+    id: "gallery",
+    label: "Gallery",
+    description: "Gallery images",
+    table: galleryItems,
+    fields: [
+      { key: "imageUrl", label: "Image URL", type: "string", required: true },
+      { key: "title", label: "Title", type: "string", required: true },
+      { key: "description", label: "Description", type: "string" },
+      { key: "category", label: "Category", type: "string", required: true },
+      { key: "location", label: "Location", type: "string" },
+      { key: "featured", label: "Featured", type: "enum", options: ["no", "yes"] },
+      { key: "aspect", label: "Aspect", type: "enum", options: ["landscape", "portrait", "square"] },
+      { key: "isVisible", label: "Visibility", type: "enum", options: ["visible", "hidden"] }
+    ]
+  },
+  {
+    id: "contacts",
+    label: "Contact Messages",
+    description: "Contact form submissions / leads",
+    table: contactMessages,
+    fields: [
+      { key: "name", label: "Name", type: "string", required: true },
+      { key: "email", label: "Email", type: "string", required: true },
+      { key: "phone", label: "Phone", type: "string" },
+      { key: "subject", label: "Subject", type: "string" },
+      { key: "message", label: "Message", type: "string", required: true },
+      { key: "status", label: "Status", type: "enum", options: ["new", "read", "replied", "archived"] }
+    ]
+  }
+];
+function getTable(id) {
+  return IMPORT_TABLES.find((t2) => t2.id === id);
+}
+function coerceValue(field, raw) {
+  if (raw === null || raw === void 0 || typeof raw === "string" && raw.trim() === "") {
+    if (field.required) return { ok: false, error: `${field.label} is required` };
+    return { ok: true, value: void 0 };
+  }
+  const str = String(raw).trim();
+  switch (field.type) {
+    case "string":
+      return { ok: true, value: str };
+    case "number": {
+      const n = Number(str.replace(/,/g, ""));
+      if (!Number.isFinite(n)) return { ok: false, error: `${field.label} "${str}" is not a number` };
+      return { ok: true, value: Math.trunc(n) };
+    }
+    case "decimal": {
+      const n = Number(str.replace(/[$,]/g, ""));
+      if (!Number.isFinite(n)) return { ok: false, error: `${field.label} "${str}" is not a number` };
+      return { ok: true, value: String(n) };
+    }
+    case "date": {
+      let ms;
+      if (/^\d{10}$/.test(str)) ms = Number(str) * 1e3;
+      else if (/^\d{13}$/.test(str)) ms = Number(str);
+      else {
+        const parsed = Date.parse(str);
+        if (Number.isNaN(parsed)) return { ok: false, error: `${field.label} "${str}" is not a valid date` };
+        ms = parsed;
+      }
+      return { ok: true, value: ms };
+    }
+    case "boolean": {
+      const truthy = ["true", "1", "yes", "y", "active", "on"];
+      return { ok: true, value: truthy.includes(str.toLowerCase()) };
+    }
+    case "enum": {
+      const opts = field.options ?? [];
+      const match = opts.find((o) => o.toLowerCase() === str.toLowerCase());
+      if (!match) {
+        return { ok: false, error: `${field.label} "${str}" must be one of: ${opts.join(", ")}` };
+      }
+      return { ok: true, value: match };
+    }
+    default:
+      return { ok: true, value: str };
+  }
+}
+var dataImportRouter = router({
+  /**
+   * Return the list of importable tables with their field definitions so the
+   * client can render a column-mapping UI.
+   */
+  getImportableTables: protectedProcedure.query(() => {
+    return IMPORT_TABLES.map((t2) => ({
+      id: t2.id,
+      label: t2.label,
+      description: t2.description,
+      fields: t2.fields.map((f) => ({
+        key: f.key,
+        label: f.label,
+        type: f.type,
+        required: !!f.required,
+        options: f.options ?? null,
+        hint: f.hint ?? null
+      }))
+    }));
+  }),
+  /**
+   * Validate (dry run) a batch of mapped rows without writing to the DB.
+   * Returns per-row errors so the admin can fix the source file first.
+   */
+  validateImport: protectedProcedure.input(import_zod18.z.object({
+    tableId: import_zod18.z.string(),
+    rows: import_zod18.z.array(import_zod18.z.record(import_zod18.z.string(), import_zod18.z.any()))
+  })).mutation(({ input }) => {
+    const target = getTable(input.tableId);
+    if (!target) throw new Error(`Unknown import table: ${input.tableId}`);
+    const rowErrors = [];
+    input.rows.forEach((row, idx) => {
+      const errors = [];
+      for (const field of target.fields) {
+        const result = coerceValue(field, row[field.key]);
+        if (!result.ok) errors.push(result.error);
+      }
+      if (errors.length) rowErrors.push({ row: idx + 1, errors });
+    });
+    return {
+      totalRows: input.rows.length,
+      validRows: input.rows.length - rowErrors.length,
+      invalidRows: rowErrors.length,
+      rowErrors: rowErrors.slice(0, 100)
+    };
+  }),
+  /**
+   * Import mapped rows into the target table. Each row is coerced/validated;
+   * invalid rows are skipped (with reasons) and valid rows inserted.
+   */
+  importRecords: protectedProcedure.input(import_zod18.z.object({
+    tableId: import_zod18.z.string(),
+    rows: import_zod18.z.array(import_zod18.z.record(import_zod18.z.string(), import_zod18.z.any())),
+    skipInvalid: import_zod18.z.boolean().default(true)
+  })).mutation(async ({ input }) => {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+    const target = getTable(input.tableId);
+    if (!target) throw new Error(`Unknown import table: ${input.tableId}`);
+    let imported = 0;
+    let skipped = 0;
+    let failed = 0;
+    const errors = [];
+    for (let i = 0; i < input.rows.length; i++) {
+      const row = input.rows[i];
+      const record = {};
+      const rowIssues = [];
+      for (const field of target.fields) {
+        const result = coerceValue(field, row[field.key]);
+        if (!result.ok) {
+          rowIssues.push(result.error);
+        } else if (result.value !== void 0) {
+          record[field.key] = result.value;
+        }
+      }
+      if (rowIssues.length) {
+        if (input.skipInvalid) {
+          skipped++;
+          errors.push({ row: i + 1, message: rowIssues.join("; ") });
+          continue;
+        } else {
+          failed++;
+          errors.push({ row: i + 1, message: rowIssues.join("; ") });
+          continue;
+        }
+      }
+      try {
+        await db.insert(target.table).values(record);
+        imported++;
+      } catch (e) {
+        if (e?.code === "ER_DUP_ENTRY" || e?.message?.toLowerCase().includes("duplicate")) {
+          skipped++;
+          errors.push({ row: i + 1, message: "Duplicate record skipped" });
+        } else {
+          failed++;
+          errors.push({ row: i + 1, message: e?.message || "Insert failed" });
+        }
+      }
+    }
+    return {
+      success: failed === 0,
+      importedAt: (/* @__PURE__ */ new Date()).toISOString(),
+      tableId: input.tableId,
+      totalRows: input.rows.length,
+      imported,
+      skipped,
+      failed,
+      errors: errors.slice(0, 100)
+    };
+  })
+});
+
+// server/routers.ts
+var import_zod19 = require("zod");
 var import_server6 = require("@trpc/server");
 var import_crypto = require("crypto");
 var appRouter = router({
@@ -4549,7 +4701,7 @@ var appRouter = router({
         success: true
       };
     }),
-    login: publicProcedure.input(import_zod18.z.object({ email: import_zod18.z.string().email(), password: import_zod18.z.string().min(1) })).mutation(async ({ ctx, input }) => {
+    login: publicProcedure.input(import_zod19.z.object({ email: import_zod19.z.string().email(), password: import_zod19.z.string().min(1) })).mutation(async ({ ctx, input }) => {
       try {
         const adminEmail = ENV.adminEmail;
         const adminPasswordHash = ENV.adminPasswordHash;
@@ -4596,6 +4748,8 @@ var appRouter = router({
           loginMethod: "password",
           role: "admin",
           lastSignedIn: /* @__PURE__ */ new Date()
+        }).catch((err) => {
+          console.warn("[Auth] Could not persist admin user to DB (non-fatal):", err);
         });
         const sessionToken = await sdk.createSessionToken(openId, {
           expiresInMs: ONE_YEAR_MS,
@@ -4620,7 +4774,7 @@ var appRouter = router({
      * check app_metadata.role === 'admin', upsert the user in DB with role='admin',
      * then issue a session cookie so the rest of the app treats them as authenticated admin.
      */
-    supabaseLogin: publicProcedure.input(import_zod18.z.object({ accessToken: import_zod18.z.string().min(1) })).mutation(async ({ ctx, input }) => {
+    supabaseLogin: publicProcedure.input(import_zod19.z.object({ accessToken: import_zod19.z.string().min(1) })).mutation(async ({ ctx, input }) => {
       const supabase = getServerSupabase();
       if (!supabase) {
         throw new import_server6.TRPCError({
@@ -4637,7 +4791,8 @@ var appRouter = router({
       }
       const supabaseUser = data.user;
       const appMeta = supabaseUser.app_metadata ?? {};
-      const role = appMeta["role"];
+      const userMeta = supabaseUser.user_metadata ?? {};
+      const role = appMeta["role"] ?? userMeta["role"];
       if (role !== "admin") {
         throw new import_server6.TRPCError({
           code: "FORBIDDEN",
@@ -4645,15 +4800,18 @@ var appRouter = router({
         });
       }
       const name = supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "Admin";
-      await upsertUser({
-        openId: supabaseUser.id,
+      const openId = `admin:${(supabaseUser.email ?? supabaseUser.id).toLowerCase()}`;
+      upsertUser({
+        openId,
         email: supabaseUser.email ?? null,
         name,
         loginMethod: "supabase",
         role: "admin",
         lastSignedIn: /* @__PURE__ */ new Date()
+      }).catch((err) => {
+        console.warn("[Auth] Could not persist Supabase admin user to DB (non-fatal):", err);
       });
-      const sessionToken = await sdk.createSessionToken(supabaseUser.id, {
+      const sessionToken = await sdk.createSessionToken(openId, {
         expiresInMs: ONE_YEAR_MS,
         name
       });
@@ -4670,9 +4828,9 @@ var appRouter = router({
      * Call this once during setup; subsequent calls are idempotent (returns existing user).
      */
     ensureAdmin: publicProcedure.input(
-      import_zod18.z.object({
-        email: import_zod18.z.string().email(),
-        password: import_zod18.z.string().min(8, "Password must be at least 8 characters")
+      import_zod19.z.object({
+        email: import_zod19.z.string().email(),
+        password: import_zod19.z.string().min(8, "Password must be at least 8 characters")
       })
     ).mutation(async ({ input }) => {
       const supabase = getServerSupabase();
@@ -4755,7 +4913,9 @@ var appRouter = router({
   // Site Settings (real DB-backed)
   siteSettings: siteSettingsRouter,
   // Backup & Export (real DB export)
-  backup: backupRouter
+  backup: backupRouter,
+  // Data Import (import records from external tools via CSV/JSON)
+  dataImport: dataImportRouter
 });
 
 // server/_core/context.ts
@@ -4878,6 +5038,19 @@ async function findAvailablePort(startPort = 3e3) {
   }
   throw new Error(`No available port found starting from ${startPort}`);
 }
+function createApp() {
+  const app = (0, import_express2.default)();
+  app.use(import_express2.default.json({ limit: "50mb" }));
+  app.use(import_express2.default.urlencoded({ limit: "50mb", extended: true }));
+  registerStorageProxy(app);
+  registerDownloadProxy(app);
+  registerOAuthRoutes(app);
+  app.use(
+    "/api/trpc",
+    (0, import_express3.createExpressMiddleware)({ router: appRouter, createContext })
+  );
+  return app;
+}
 async function startServer() {
   const app = (0, import_express2.default)();
   const server = (0, import_http.createServer)(app);
@@ -4888,28 +5061,28 @@ async function startServer() {
   registerOAuthRoutes(app);
   app.use(
     "/api/trpc",
-    (0, import_express3.createExpressMiddleware)({
-      router: appRouter,
-      createContext
-    })
+    (0, import_express3.createExpressMiddleware)({ router: appRouter, createContext })
   );
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
-  const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
-  if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+  if (process.env.VERCEL !== "1") {
+    const preferredPort = parseInt(process.env.PORT || "3000");
+    const port = await findAvailablePort(preferredPort);
+    if (port !== preferredPort) {
+      console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+    }
+    server.listen(port, () => {
+      console.log(`Server running on http://localhost:${port}/`);
+    });
   }
-  server.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}/`);
-  });
   return app;
 }
 startServer().catch(console.error);
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  createApp,
   startServer
 });
