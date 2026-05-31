@@ -6,9 +6,9 @@
   "engines": {
     "node": ">=22.0.0"
   },
-  "scripts": {
+    "scripts": {
     "dev": "NODE_ENV=development tsx watch server/_core/index.ts",
-    "build": "vite build && esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=cjs --external:vite --external:../../vite.config --outfile=dist/index.cjs",
+    "build": "vite build && esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=cjs --outfile=dist/index.cjs",
     "start": "NODE_ENV=production node --experimental-specifier-resolution=node dist/index.cjs",
     "check": "tsc --noEmit",
     "format": "prettier --write .",
