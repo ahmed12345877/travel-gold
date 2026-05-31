@@ -1,12 +1,39 @@
 {
   "buildCommand": "pnpm build",
   "outputDirectory": "dist/public",
+  "functions": {
+    "api/index.ts": {
+      "runtime": "nodejs20.x",
+      "includeFiles": "server/**,shared/**,drizzle/**",
+      "maxDuration": 30
+    },
+    "api/trpc/[...trpc].ts": {
+      "runtime": "nodejs20.x",
+      "includeFiles": "server/**,shared/**,drizzle/**",
+      "maxDuration": 30
+    },
+    "api/manus-storage/[...path].ts": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 10
+    },
+    "api/oauth/callback.ts": {
+      "runtime": "nodejs20.x",
+      "includeFiles": "server/**,shared/**",
+      "maxDuration": 10
+    },
+    "api/oidc/**/*.ts": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 10
+    }
+  },
   "rewrites": [
     { "source": "/.well-known/openid-configuration", "destination": "/api/oidc/openid-configuration" },
     { "source": "/.well-known/jwks.json", "destination": "/api/oidc/jwks" },
     { "source": "/oauth/authorize", "destination": "/api/oidc/oauth/authorize" },
     { "source": "/oauth/token", "destination": "/api/oidc/oauth/token" },
-    { "source": "/manus-storage/(.*)", "destination": "/api/manus-storage/$1" },
-    { "source": "/((?!api/|.*\\..*).*)", "destination": "/" }
+    { "source": "/manus-storage/:path*", "destination": "/api/manus-storage/:path*" },
+    { "source": "/api/trpc/:path*", "destination": "/api/trpc/:path*" },
+    { "source": "/api/:path*", "destination": "/api/index" },
+    { "source": "/((?!api/|.*\\..*).*)", "destination": "/index.html" }
   ]
 }
