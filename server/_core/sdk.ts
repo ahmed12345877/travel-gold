@@ -306,7 +306,7 @@ class SDKServer {
             name: session.name || "Admin",
             role: "admin",
             loginMethod: "password",
-            lastSignedIn: signedInAt,
+            lastSignedIn: now,
           });
           user = await db.getUserByOpenId(sessionUserId);
         } catch {
@@ -326,9 +326,9 @@ class SDKServer {
             loginMethod: "password",
             avatarUrl: null,
             role: "admin" as const,
-            createdAt: signedInAt,
-            updatedAt: signedInAt,
-            lastSignedIn: signedInAt,
+            createdAt: now,
+            updatedAt: now,
+            lastSignedIn: now,
           };
         }
       } else {
@@ -340,7 +340,7 @@ class SDKServer {
             name: userInfo.name || null,
             email: userInfo.email ?? null,
             loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
-            lastSignedIn: signedInAt,
+            lastSignedIn: now,
           });
           user = await db.getUserByOpenId(userInfo.openId);
         } catch (error) {
