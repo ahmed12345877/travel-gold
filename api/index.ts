@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { createApp } from "../server/_core/index";
+import { createApp } from "../server/_core/index.js";
 
 // Cache the Express app instance across warm invocations
 let cachedApp: ReturnType<typeof createApp> | null = null;
