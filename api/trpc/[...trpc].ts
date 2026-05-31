@@ -1,8 +1,10 @@
+
 import type { IncomingMessage, ServerResponse } from "http";
 import { nodeHTTPRequestHandler } from "@trpc/server/adapters/node-http";
-// تحديث المسارات بإضافة /index بشكل صريح لمنع خطأ ERR_UNSUPPORTED_DIR_IMPORT
-import { appRouter } from "../../../server/routers.ts";
-import { createContext } from "../../server/_core/context.ts";
+// تحويل الامتداد إلى .js ليتوافق مع تشغيل Vercel
+import { appRouter } from "../../../server/routers.js";
+import { createContext } from "../../server/_core/context/index.js";
+
 
 
 
