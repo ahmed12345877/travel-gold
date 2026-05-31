@@ -855,7 +855,7 @@ async function incrementBlogViewCount(id) {
 
 // server/_core/cookies.ts
 function isSecureRequest(req) {
-  if ("protocol" in req && req.protocol === "https") return true;
+  if (req.protocol === "https") return true;
   const forwardedProto = req.headers["x-forwarded-proto"];
   if (!forwardedProto) return false;
   const protoList = Array.isArray(forwardedProto) ? forwardedProto : forwardedProto.split(",");

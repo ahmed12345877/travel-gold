@@ -58,7 +58,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     const r = await fetch(`${base}/auth/v1/oauth/token`, {
       method: "POST",
       headers,
-      body,
+      body: body as unknown as BodyInit,
     });
     const text = await r.text();
     res.statusCode = r.status;
