@@ -56,14 +56,7 @@ app.use(express.json({ limit: "50mb" }));
 export async function startServer() {
   const app = createApp();
   const server = createServer(app);
- 
-  registerStorageProxy(app);
-  registerDownloadProxy(app);
-  registerOAuthRoutes(app);
-  app.use(
-    "/api/trpc",
-    createExpressMiddleware({ router: appRouter, createContext })
-  );
+ }
 
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
