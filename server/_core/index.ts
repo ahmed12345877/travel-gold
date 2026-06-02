@@ -56,10 +56,9 @@ app.use(express.json({ limit: "50mb" }));
 }
 
 export async function startServer() {
-  const app = express();
+  const app = createApp();
   const server = createServer(app);
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+ 
   registerStorageProxy(app);
   registerDownloadProxy(app);
   registerOAuthRoutes(app);
