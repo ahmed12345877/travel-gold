@@ -85,6 +85,18 @@ export default function Login() {
         setAuthError(error.message);
         return;
       }
+      // أضف هذا الكود بعد السطر 87 مباشرة:
+if (authData?.session) {
+  // قراءة الـ role من الـ user_metadata الخاصة بالحساب المسجل
+  const userRole = authData.session.user.user_metadata?.role;
+
+  if (userRole === "admin") {
+    setLocation("/admin"); // توجيه المسؤول لصفحة الإدارة
+  } else {
+    setLocation("/home"); // توجيه العميل العادي للصفحة الرئيسية (أو /dashboard حسب رغبتك)
+  }
+}
+
       if (nextPath.startsWith("/admin")) {
         const accessToken = authData?.session?.access_token;
         if (!accessToken) {
