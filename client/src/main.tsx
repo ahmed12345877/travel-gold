@@ -47,7 +47,7 @@ queryClient.getMutationCache().subscribe(event => {
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
-      url: "/api/trpc",
+      url: "https://vanirgroup.com",
       transformer: superjson,
       async fetch(input, init) {
         let token: string | null = null;
