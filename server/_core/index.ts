@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import cors from 'cors';
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
@@ -35,6 +36,13 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
  */
 export function createApp() {
   const app = express();
+app.use(cors({
+  origin: ['https://vanirgroup.com', 'http://localhost:5173'],
+  credentials: true
+}));
+
+app.use(express.json({ limit: "50mb" }));
+
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
