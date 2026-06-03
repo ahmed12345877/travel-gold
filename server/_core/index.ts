@@ -36,10 +36,16 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
  */
 export function createApp() {
   const app = express();
-app.use(cors({
-  origin: ['https://vanirgroup.com', 'http://localhost:5173'],
-  credentials: true
-}));
+  
+  // Enable CORS for all origins in development, restrict in production
+  const allowedOrigins = process.env.NODE_ENV === 'production'
+    ? ['https://vanirgroup.com', 'https://www.vanirgroup.com']
+    : true; // Allow all origins in development
+    
+  app.use(cors({
+    origin: allowedOrigins,
+    credentials: true
+  }));
 
 app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));

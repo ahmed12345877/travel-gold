@@ -44,10 +44,20 @@ queryClient.getMutationCache().subscribe(event => {
   }
 });
 
+// Dynamically resolve API URL based on current environment
+function getApiUrl(): string {
+  // In production, use relative path (same origin)
+  // In development, use the dev server's origin
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}/api/trpc`;
+  }
+  return "/api/trpc";
+}
+
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
-      url: "https://vanirgroup.com",
+      url: getApiUrl(),
       transformer: superjson,
       async fetch(input, init) {
         let token: string | null = null;
