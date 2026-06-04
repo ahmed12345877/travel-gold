@@ -13,7 +13,7 @@
     "check": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "vitest run",
-    "db:push": "drizzle-kit generate && drizzle-kit migrate",
+    "db:push": "pnpm install --no-frozen-lockfile --ignore-scripts && drizzle-kit push",
     "db:migrate": "pnpm install --no-frozen-lockfile && pnpm run build"
   },
   "dependencies": {
