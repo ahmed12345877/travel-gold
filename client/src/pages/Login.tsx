@@ -40,7 +40,8 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      setLocation(nextPath.startsWith("/admin") ? nextPath : "/");
+      const dest = nextPath.startsWith("/admin") ? nextPath : (user as any)?.role === "admin" ? "/admin" : "/";
+      setLocation(dest);
     }
   }, [isAuthenticated, user, setLocation, nextPath]);
 
@@ -85,19 +86,16 @@ export default function Login() {
         setAuthError(error.message);
         return;
       }
-      // أضف هذا الكود بعد السطر 87 مباشرة:
-if (authData?.session) {
-  // قراءة الـ role من الـ user_metadata الخاصة بالحساب المسجل
-  const userRole = authData.session.user.user_metadata?.role;
 
-  if (userRole === "admin") {
-    setLocation("/admin"); // توجيه المسؤول لصفحة الإدارة
-  } else {
-    setLocation("/home"); // توجيه العميل العادي للصفحة الرئيسية (أو /dashboard حسب رغبتك)
-  }
-}
+      // Check admin role from app_metadata (set by admin API) or user_metadata fallback
+      const appRole = (authData?.session?.user?.app_metadata as any)?.role;
+      const metaRole = (authData?.session?.user?.user_metadata as any)?.role;
+      const isAdmin = appRole === "admin" || metaRole === "admin";
 
-      if (nextPath.startsWith("/admin")) {
+      // If user is admin and not already heading to /admin, send them there
+      const targetPath = isAdmin && !nextPath.startsWith("/admin") ? "/admin" : nextPath;
+
+      if (targetPath.startsWith("/admin")) {
         const accessToken = authData?.session?.access_token;
         if (!accessToken) {
           setAuthError("Could not retrieve session token.");
@@ -105,14 +103,14 @@ if (authData?.session) {
         }
         try {
           await supabaseLoginMutation.mutateAsync({ accessToken });
-          setLocation(nextPath);
+          setLocation(targetPath);
         } catch (err: any) {
           await supabase.auth.signOut();
           setAuthError(err?.message || "This account does not have admin privileges.");
         }
         return;
       }
-      setLocation(nextPath);
+      setLocation(targetPath);
       return;
     } else {
       const { error } = await supabase.auth.signUp({
