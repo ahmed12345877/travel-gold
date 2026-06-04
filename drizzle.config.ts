@@ -1,5 +1,14 @@
 import "dotenv/config";
+import { execSync } from "child_process";
 import { defineConfig } from "drizzle-kit";
+
+// drizzle-kit push introspects ALL DB tables including Supabase internals,
+// crashing on NULL check constraints. Intercept 'push' and run our SQL-file
+// migrator instead — it applies ./drizzle/migrations/*.sql without any introspection.
+if (process.argv.some((a) => a === "push")) {
+  execSync("tsx scripts/db-migrate.ts", { stdio: "inherit", env: process.env });
+  process.exit(0);
+}
 
 const rawUrl =
   process.env.POSTGRES_URL ||
