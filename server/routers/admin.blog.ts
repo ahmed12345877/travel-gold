@@ -136,7 +136,7 @@ export const adminBlogRouter = router({
       
       await db
         .update(blogPosts)
-        .set(data)
+        .set({ ...data, updatedAt: new Date() })
         .where(eq(blogPosts.id, id));
       return { success: true };
     }),
@@ -179,6 +179,7 @@ export const adminBlogRouter = router({
         .set({
           status: "published",
           publishedAt: new Date(),
+          updatedAt: new Date(),
         })
         .where(eq(blogPosts.id, input.id));
       return { success: true };
@@ -195,6 +196,7 @@ export const adminBlogRouter = router({
         .update(blogPosts)
         .set({
           status: "archived",
+          updatedAt: new Date(),
         })
         .where(eq(blogPosts.id, input.id));
       return { success: true };

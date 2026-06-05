@@ -113,7 +113,7 @@ export const adminDestinationsRouter = router({
       
       await db
         .update(destinations)
-        .set(data)
+        .set({ ...data, updatedAt: new Date() })
         .where(eq(destinations.id, id));
       return { success: true };
     }),
@@ -155,6 +155,7 @@ export const adminDestinationsRouter = router({
         .update(destinations)
         .set({
           isActive: input.isActive,
+          updatedAt: new Date(),
         })
         .where(eq(destinations.id, input.id));
       return { success: true };

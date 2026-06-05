@@ -22,17 +22,6 @@ interface MediaItem {
   tags: string[];
 }
 
-/* ─── Sample Data ─── */
-const SAMPLE_MEDIA: MediaItem[] = [
-  { id: "1", name: "hero-pyramids.jpg", url: "https://images.unsplash.com/photo-1539650116574-8efeb43e2750?w=400", type: "image", size: "2.4 MB", dimensions: "1920x1080", uploadedAt: "2026-04-20", folder: "Hero", tags: ["hero", "pyramids", "egypt"] },
-  { id: "2", name: "nile-cruise.jpg", url: "https://images.unsplash.com/photo-1568322503122-d524cae5d4cf?w=400", type: "image", size: "1.8 MB", dimensions: "1920x1080", uploadedAt: "2026-04-19", folder: "Destinations", tags: ["nile", "cruise", "luxury"] },
-  { id: "3", name: "luxor-temple.jpg", url: "https://images.unsplash.com/photo-1590059390098-f484a2a1e1d4?w=400", type: "image", size: "3.1 MB", dimensions: "2560x1440", uploadedAt: "2026-04-18", folder: "Gallery", tags: ["luxor", "temple", "ancient"] },
-  { id: "4", name: "desert-safari.jpg", url: "https://images.unsplash.com/photo-1547234935-80c7145ec969?w=400", type: "image", size: "2.7 MB", dimensions: "1920x1280", uploadedAt: "2026-04-17", folder: "Activities", tags: ["desert", "safari", "adventure"] },
-  { id: "5", name: "avatar-benjamin.jpg", url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400", type: "image", size: "0.5 MB", dimensions: "400x400", uploadedAt: "2026-04-16", folder: "Avatars", tags: ["avatar", "testimonial"] },
-  { id: "6", name: "avatar-sarah.jpg", url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400", type: "image", size: "0.4 MB", dimensions: "400x400", uploadedAt: "2026-04-16", folder: "Avatars", tags: ["avatar", "testimonial"] },
-  { id: "7", name: "cairo-skyline.jpg", url: "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=400", type: "image", size: "2.2 MB", dimensions: "1920x1080", uploadedAt: "2026-04-15", folder: "Destinations", tags: ["cairo", "skyline", "city"] },
-  { id: "8", name: "red-sea-diving.jpg", url: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400", type: "image", size: "1.9 MB", dimensions: "1920x1280", uploadedAt: "2026-04-14", folder: "Activities", tags: ["red sea", "diving", "underwater"] },
-];
 
 const FOLDERS = ["All", "Hero", "Destinations", "Gallery", "Activities", "Avatars", "Blog", "Offers"];
 
@@ -43,33 +32,37 @@ const TYPE_ICONS = {
   audio: <Music className="w-4 h-4" />,
 };
 
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
 /* ─── Main Component ─── */
 export default function MediaLibrary() {
-  const [media, setMedia] = useState<MediaItem[]>(SAMPLE_MEDIA);
+  const [media, setMedia] = useState<MediaItem[]>([]);
 
-  // Load gallery items from DB
   const galleryQuery = trpc.gallery.listAll.useQuery({ limit: 200, offset: 0 });
-  const uploadMutation = trpc.uploads.upload.useMutation();
-  // gallery doesn't have a delete mutation, we handle locally
+  const uploadImageMut = trpc.gallery.uploadImage.useMutation();
+  const createMut = trpc.gallery.create.useMutation();
+  const deleteMut = trpc.gallery.delete.useMutation();
 
   useEffect(() => {
-    if (galleryQuery.data && galleryQuery.data.length > 0) {
+    if (galleryQuery.data) {
       const dbMedia: MediaItem[] = galleryQuery.data.map((item: any) => ({
         id: String(item.id),
         name: item.title || item.imageUrl?.split('/').pop() || 'untitled',
         url: item.imageUrl || '',
         type: 'image' as const,
-        size: item.size || 'Unknown',
-        dimensions: item.dimensions || '',
+        size: 'Unknown',
+        dimensions: '',
         uploadedAt: item.createdAt ? new Date(item.createdAt).toISOString().split('T')[0] : '',
         folder: item.category || 'General',
-        tags: item.tags ? (typeof item.tags === 'string' ? item.tags.split(',') : item.tags) : [],
+        tags: [],
       }));
-      setMedia(prev => {
-        // Merge DB items with sample, prioritize DB
-        const dbIds = new Set(dbMedia.map(m => m.id));
-        return [...dbMedia, ...prev.filter(m => !dbIds.has(m.id))];
-      });
+      setMedia(dbMedia);
     }
   }, [galleryQuery.data]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -110,53 +103,55 @@ export default function MediaLibrary() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const deleteSelected = () => {
+  const deleteSelected = async () => {
     const toDelete = Array.from(selectedItems);
-    setMedia((prev) => prev.filter((m) => !selectedItems.has(m.id)));
-    setSelectedItems(new Set());
-    toast.success(`${toDelete.length} item(s) removed from library`);
+    try {
+      await Promise.all(
+        toDelete.map((id) => deleteMut.mutateAsync({ id: Number(id) }))
+      );
+      setMedia((prev) => prev.filter((m) => !selectedItems.has(m.id)));
+      setSelectedItems(new Set());
+      toast.success(`${toDelete.length} item(s) deleted`);
+    } catch (err: any) {
+      toast.error(`Delete failed: ${err.message}`);
+    }
   };
 
-  const handleUpload = async () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*,video/*,audio/*,.pdf,.doc,.docx';
-    input.multiple = true;
-    input.onchange = async (e) => {
-      const files = (e.target as HTMLInputElement).files;
-      if (!files || files.length === 0) return;
-      setUploading(true);
-      try {
-        for (const file of Array.from(files)) {
-          const formData = new FormData();
-          formData.append('file', file);
-          const response = await fetch('/api/trpc/uploads.upload', {
-            method: 'POST',
-            body: formData,
-          });
-          // Add to local state
-          const newItem: MediaItem = {
-            id: String(Date.now() + Math.random()),
-            name: file.name,
-            url: URL.createObjectURL(file),
-            type: file.type.startsWith('image') ? 'image' : file.type.startsWith('video') ? 'video' : file.type.startsWith('audio') ? 'audio' : 'document',
-            size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-            uploadedAt: new Date().toISOString().split('T')[0],
-            folder: 'Uploads',
-            tags: ['new'],
-          };
-          setMedia(prev => [newItem, ...prev]);
+  const handleUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith('image/')) {
+          toast.error(`${file.name}: only image uploads are supported`);
+          continue;
         }
-        toast.success(`${files.length} file(s) uploaded successfully`);
-        galleryQuery.refetch();
-      } catch (err: any) {
-        toast.error(`Upload failed: ${err.message}`);
-      } finally {
-        setUploading(false);
-        setShowUpload(false);
+        const dataUrl = await fileToBase64(file);
+        const base64 = dataUrl.split(',')[1];
+
+        const { url } = await uploadImageMut.mutateAsync({
+          fileData: base64,
+          filename: file.name,
+          mimeType: file.type,
+        });
+
+        await createMut.mutateAsync({
+          imageUrl: url,
+          title: file.name.replace(/\.[^.]+$/, ''),
+          category: 'Uploads',
+          featured: 'no',
+          aspect: 'landscape',
+          sortOrder: 0,
+        });
       }
-    };
-    input.click();
+      toast.success(`${files.length} file(s) uploaded successfully`);
+      galleryQuery.refetch();
+    } catch (err: any) {
+      toast.error(`Upload failed: ${err.message}`);
+    } finally {
+      setUploading(false);
+      setShowUpload(false);
+    }
   };
 
   return (
@@ -176,7 +171,7 @@ export default function MediaLibrary() {
               <Trash2 className="w-4 h-4 mr-1" /> Delete ({selectedItems.size})
             </Button>
           )}
-          <Button onClick={() => setShowUpload(true)} className="bg-[var(--theme-primary)] text-black hover:bg-[var(--theme-accent)]">
+          <Button onClick={() => { setShowUpload(true); }} className="bg-[var(--theme-primary)] text-black hover:bg-[var(--theme-accent)]">
             <Upload className="w-4 h-4 mr-1" /> Upload Files
           </Button>
         </div>
@@ -438,15 +433,19 @@ export default function MediaLibrary() {
             onClick={() => fileInputRef.current?.click()}
           >
             <Upload className="w-10 h-10 text-white/20 mx-auto mb-3" />
-            <p className="text-white/50 text-sm">Drag & drop files here or click to browse</p>
-            <p className="text-white/30 text-xs mt-1">Supports: JPG, PNG, WebP, GIF, MP4, PDF, MP3</p>
-            <input ref={fileInputRef} type="file" multiple className="hidden" accept="image/*,video/*,audio/*,.pdf" />
+            <p className="text-white/50 text-sm">Click to browse images</p>
+            <p className="text-white/30 text-xs mt-1">Supports: JPG, PNG, WebP, GIF</p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              accept="image/*"
+              onChange={(e) => handleUpload(e.target.files)}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowUpload(false)} className="border-white/10 text-white/70">Cancel</Button>
-            <Button onClick={handleUpload} disabled={uploading} className="bg-[var(--theme-primary)] text-black hover:bg-[var(--theme-accent)]">
-              {uploading ? "Uploading..." : "Upload"}
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
