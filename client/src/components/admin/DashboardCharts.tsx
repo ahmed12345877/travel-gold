@@ -21,7 +21,7 @@ export function BookingsTrendChart({ data }: { data: ChartData[] }) {
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-          <XAxis stroke="rgba(255,255,255,0.3)" />
+          <XAxis dataKey="name" stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 10 }} />
           <YAxis stroke="rgba(255,255,255,0.3)" />
           <Tooltip contentStyle={{ backgroundColor: "rgba(0,0,0,0.8)", border: "1px solid rgba(212,168,83,0.3)" }} />
           <Legend />
@@ -39,7 +39,7 @@ export function RevenueChart({ data }: { data: ChartData[] }) {
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-          <XAxis stroke="rgba(255,255,255,0.3)" />
+          <XAxis dataKey="name" stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 10 }} />
           <YAxis stroke="rgba(255,255,255,0.3)" />
           <Tooltip contentStyle={{ backgroundColor: "rgba(0,0,0,0.8)", border: "1px solid rgba(212,168,83,0.3)" }} />
           <Legend />

@@ -42,15 +42,10 @@ export const appRouter = router({
       .input(z.object({ email: z.string().email(), password: z.string().min(1) }))
       .mutation(async ({ ctx, input }) => {
         try {
-          console.log("[v0] Login attempt for:", input.email);
           const adminEmail = ENV.adminEmail;
           const adminPasswordHash = ENV.adminPasswordHash;
 
-          console.log("[v0] ADMIN_EMAIL configured:", !!adminEmail);
-          console.log("[v0] ADMIN_PASSWORD_HASH configured:", !!adminPasswordHash);
-
           if (!adminEmail || !adminPasswordHash) {
-            console.log("[v0] Admin credentials not configured");
             throw new TRPCError({
               code: "PRECONDITION_FAILED",
               message: "Admin login is not configured on this server. Set ADMIN_EMAIL and ADMIN_PASSWORD_HASH environment variables.",
@@ -93,11 +88,8 @@ export const appRouter = router({
           }
 
           if (!match) {
-            console.log("[v0] Password mismatch");
             throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password." });
           }
-
-          console.log("[v0] Password matched, creating session");
           // Use a stable openId for the admin account
           const openId = `admin:${adminEmail.toLowerCase()}`;
 
@@ -118,9 +110,7 @@ export const appRouter = router({
             name: "Admin",
           });
 
-          console.log("[v0] Session token created, setting cookie");
           const cookieOptions = getSessionCookieOptions(ctx.req);
-          console.log("[v0] Cookie options:", JSON.stringify(cookieOptions));
           ctx.res.cookie(COOKIE_NAME, sessionToken, {
             ...cookieOptions,
             maxAge: ONE_YEAR_MS,
