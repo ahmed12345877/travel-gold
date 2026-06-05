@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: vanirgroup
+    runtime: node
+    region: oregon
+    buildCommand: pnpm install --no-frozen-lockfile && pnpm run build
+    startCommand: pnpm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000

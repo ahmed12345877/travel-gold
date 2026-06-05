@@ -40,7 +40,8 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      setLocation(nextPath.startsWith("/admin") ? nextPath : "/");
+      const dest = nextPath.startsWith("/admin") ? nextPath : (user as any)?.role === "admin" ? "/admin" : "/";
+      setLocation(dest);
     }
   }, [isAuthenticated, user, setLocation, nextPath]);
 
@@ -86,7 +87,15 @@ export default function Login() {
         return;
       }
 
-      if (nextPath.startsWith("/admin")) {
+      // Check admin role from app_metadata (set by admin API) or user_metadata fallback
+      const appRole = (authData?.session?.user?.app_metadata as any)?.role;
+      const metaRole = (authData?.session?.user?.user_metadata as any)?.role;
+      const isAdmin = appRole === "admin" || metaRole === "admin";
+
+      // If user is admin and not already heading to /admin, send them there
+      const targetPath = isAdmin && !nextPath.startsWith("/admin") ? "/admin" : nextPath;
+
+      if (targetPath.startsWith("/admin")) {
         const accessToken = authData?.session?.access_token;
         if (!accessToken) {
           setAuthError("Could not retrieve session token.");
@@ -94,14 +103,14 @@ export default function Login() {
         }
         try {
           await supabaseLoginMutation.mutateAsync({ accessToken });
-          setLocation(nextPath);
+          setLocation(targetPath);
         } catch (err: any) {
           await supabase.auth.signOut();
           setAuthError(err?.message || "This account does not have admin privileges.");
         }
         return;
       }
-      setLocation(nextPath);
+      setLocation(targetPath);
       return;
     } else {
       const { error } = await supabase.auth.signUp({
