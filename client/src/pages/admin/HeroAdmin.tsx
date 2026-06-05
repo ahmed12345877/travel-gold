@@ -45,10 +45,12 @@ export default function HeroAdmin() {
   const [activeTab, setActiveTab] = useState("text");
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [uploadingImageId, setUploadingImageId] = useState<number | null>(null);
 
   const { data: savedData, isLoading: isLoadingData } = trpc.siteSettings.get.useQuery({ category: "hero", key: "hero_data" }, { staleTime: 30000 });
   const { data: savedImages, isLoading: isLoadingImages } = trpc.siteSettings.get.useQuery({ category: "hero", key: "hero_images" }, { staleTime: 30000 });
   const setMut = trpc.siteSettings.set.useMutation();
+  const uploadImageMut = trpc.gallery.uploadImage.useMutation();
 
   useEffect(() => { if (savedData) { try { const p = JSON.parse(savedData); setHeroData(p); } catch {} } }, [savedData]);
   useEffect(() => { if (savedImages) { try { const p = JSON.parse(savedImages); if (Array.isArray(p) && p.length > 0) setHeroImages(p); } catch {} } }, [savedImages]);
@@ -69,15 +71,29 @@ export default function HeroAdmin() {
   const markData = (data: HeroData) => { setHeroData(data); setHasChanges(true); };
   const markImages = (images: HeroImage[]) => { setHeroImages(images); setHasChanges(true); };
 
-  const handleImageUpload = (id: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (id: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        markImages(heroImages.map(img => img.id === id ? { ...img, url: result } : img));
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    setUploadingImageId(id);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const base64 = dataUrl.split(',')[1];
+      const { url } = await uploadImageMut.mutateAsync({
+        fileData: base64,
+        filename: file.name,
+        mimeType: file.type,
+      });
+      markImages(heroImages.map(img => img.id === id ? { ...img, url } : img));
+      toast.success("تم رفع الصورة بنجاح");
+    } catch (err: any) {
+      toast.error(`فشل رفع الصورة: ${err.message}`);
+    } finally {
+      setUploadingImageId(null);
     }
   };
 
@@ -227,13 +243,14 @@ export default function HeroAdmin() {
                       onChange={(e) => handleImageUpload(img.id, e)}
                       className="hidden"
                       id={`hero-img-${img.id}`}
+                      disabled={uploadingImageId === img.id}
                     />
                     <label
                       htmlFor={`hero-img-${img.id}`}
-                      className="flex items-center gap-2 px-3 py-2 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] border border-[var(--theme-primary)]/20 rounded-lg cursor-pointer hover:bg-[var(--theme-primary)]/20 transition-colors text-sm w-fit"
+                      className={`flex items-center gap-2 px-3 py-2 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] border border-[var(--theme-primary)]/20 rounded-lg cursor-pointer hover:bg-[var(--theme-primary)]/20 transition-colors text-sm w-fit ${uploadingImageId === img.id ? 'opacity-60 cursor-not-allowed' : ''}`}
                     >
-                      <Upload size={14} />
-                      {img.url ? "تغيير الصورة" : "اختر صورة"}
+                      {uploadingImageId === img.id ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                      {uploadingImageId === img.id ? "جاري الرفع..." : img.url ? "تغيير الصورة" : "اختر صورة"}
                     </label>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
