@@ -15,6 +15,7 @@ import { ENV } from './_core/env.js';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _client: ReturnType<typeof postgres> | null = null;
+let _tablesEnsured = false;
 
 /**
  * Resolve the Postgres connection string.
@@ -30,6 +31,55 @@ function getConnectionString(): string | undefined {
   );
 }
 
+async function ensureGalleryTables(client: ReturnType<typeof postgres>) {
+  if (_tablesEnsured) return;
+  _tablesEnsured = true;
+  const stmts = [
+    `CREATE TABLE IF NOT EXISTS "gallery_items" (
+      "id" serial PRIMARY KEY NOT NULL,
+      "imageUrl" text NOT NULL,
+      "title" varchar(255) NOT NULL,
+      "titleAr" varchar(255),
+      "description" text,
+      "descriptionAr" text,
+      "category" varchar(100) NOT NULL,
+      "categoryAr" varchar(100),
+      "location" varchar(255),
+      "locationAr" varchar(255),
+      "featured" text DEFAULT 'no' NOT NULL,
+      "aspect" text DEFAULT 'landscape' NOT NULL,
+      "sortOrder" integer DEFAULT 0,
+      "isVisible" text DEFAULT 'visible' NOT NULL,
+      "createdAt" timestamp DEFAULT now() NOT NULL,
+      "updatedAt" timestamp DEFAULT now() NOT NULL
+    )`,
+    `CREATE TABLE IF NOT EXISTS "gallery_videos" (
+      "id" serial PRIMARY KEY NOT NULL,
+      "thumbnailUrl" text NOT NULL,
+      "title" varchar(255) NOT NULL,
+      "titleAr" varchar(255),
+      "youtubeId" varchar(20) NOT NULL,
+      "duration" varchar(20),
+      "views" varchar(20),
+      "sortOrder" integer DEFAULT 0,
+      "isVisible" text DEFAULT 'visible' NOT NULL,
+      "createdAt" timestamp DEFAULT now() NOT NULL,
+      "updatedAt" timestamp DEFAULT now() NOT NULL
+    )`,
+    `ALTER TABLE IF EXISTS "gallery_items" ADD COLUMN IF NOT EXISTS "updatedAt" timestamp DEFAULT now() NOT NULL`,
+    `ALTER TABLE IF EXISTS "gallery_videos" ADD COLUMN IF NOT EXISTS "updatedAt" timestamp DEFAULT now() NOT NULL`,
+  ];
+  for (const stmt of stmts) {
+    try {
+      await client.unsafe(stmt);
+    } catch (e: any) {
+      if (!["42701", "42P01", "42P07"].includes(e.code)) {
+        console.warn("[db-repair]", e.message?.split("\n")[0]);
+      }
+    }
+  }
+}
+
 export async function getDb() {
   if (!_db) {
     const connectionString = getConnectionString();
@@ -42,6 +92,7 @@ export async function getDb() {
         connect_timeout: 15,
       });
       _db = drizzle(_client);
+      await ensureGalleryTables(_client);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -354,8 +405,14 @@ export async function createGalleryItem(item: InsertGalleryItem) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(galleryItems).values(item).returning();
-  return result[0];
+  try {
+    const result = await db.insert(galleryItems).values(item).returning();
+    return result[0];
+  } catch (err: any) {
+    const cause = err.cause ?? err;
+    const msg = cause?.message ?? err?.message ?? String(err);
+    throw new Error(`gallery_items insert failed: ${msg.split("\n")[0]}`);
+  }
 }
 
 export async function getVisibleGalleryItems() {

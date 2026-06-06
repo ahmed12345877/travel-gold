@@ -45,6 +45,13 @@ const repairStatements = [
   `ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "loginMethod" varchar(64)`,
   `ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "avatarUrl" text`,
   `ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "lastSignedIn" timestamp DEFAULT now()`,
+  `ALTER TABLE IF EXISTS "gallery_items" ADD COLUMN IF NOT EXISTS "updatedAt" timestamp DEFAULT now() NOT NULL`,
+  `ALTER TABLE IF EXISTS "gallery_items" ADD COLUMN IF NOT EXISTS "titleAr" varchar(255)`,
+  `ALTER TABLE IF EXISTS "gallery_items" ADD COLUMN IF NOT EXISTS "descriptionAr" text`,
+  `ALTER TABLE IF EXISTS "gallery_items" ADD COLUMN IF NOT EXISTS "categoryAr" varchar(100)`,
+  `ALTER TABLE IF EXISTS "gallery_items" ADD COLUMN IF NOT EXISTS "locationAr" varchar(255)`,
+  `ALTER TABLE IF EXISTS "gallery_videos" ADD COLUMN IF NOT EXISTS "updatedAt" timestamp DEFAULT now() NOT NULL`,
+  `ALTER TABLE IF EXISTS "gallery_videos" ADD COLUMN IF NOT EXISTS "titleAr" varchar(255)`,
 ];
 
 console.log("[migrate] running schema repair ...");
