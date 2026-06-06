@@ -73,8 +73,15 @@ async function ensureGalleryTables(client: ReturnType<typeof postgres>) {
     try {
       await client.unsafe(stmt);
     } catch (e: any) {
-      if (!["42701", "42P01", "42P07"].includes(e.code)) {
-        console.warn("[db-repair]", e.message?.split("\n")[0]);
+      // 42701=duplicate_column, 42P07=duplicate_table — safe to ignore
+      if (!["42701", "42P07"].includes(e.code)) {
+        console.error("[db-repair] statement failed", {
+          code: e.code,
+          message: e.message?.split("\n")[0],
+          detail: e.detail,
+          hint: e.hint,
+          stmt: stmt.trim().slice(0, 80),
+        });
       }
     }
   }
@@ -405,13 +412,39 @@ export async function createGalleryItem(item: InsertGalleryItem) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
+  const doInsert = () => db.insert(galleryItems).values(item).returning();
+
   try {
-    const result = await db.insert(galleryItems).values(item).returning();
+    const result = await doInsert();
     return result[0];
   } catch (err: any) {
     const cause = err.cause ?? err;
-    const msg = cause?.message ?? err?.message ?? String(err);
-    throw new Error(`gallery_items insert failed: ${msg.split("\n")[0]}`);
+    const code: string = cause?.code ?? err?.code ?? "";
+    const detail: string = cause?.detail ?? err?.detail ?? "";
+    const hint: string = cause?.hint ?? err?.hint ?? "";
+    const pgMsg: string = cause?.message ?? err?.message ?? String(err);
+
+    // Log full details server-side for debugging
+    console.error("[createGalleryItem] DB error", { code, message: pgMsg, detail, hint });
+
+    // 42P01 = relation does not exist, 42703 = column does not exist
+    // Either means our schema repair needs to run again — recreate and retry once
+    if ((code === "42P01" || code === "42703") && _client) {
+      console.warn(`[createGalleryItem] schema issue (${code}) — repairing tables and retrying`);
+      _tablesEnsured = false;
+      await ensureGalleryTables(_client);
+      try {
+        const result2 = await doInsert();
+        return result2[0];
+      } catch (err2: any) {
+        const c2 = err2.cause ?? err2;
+        const p2 = [c2?.message, c2?.detail, c2?.hint].filter(Boolean).join(" | ");
+        throw new Error(`gallery_items insert failed after table repair: ${p2 || String(err2)}`);
+      }
+    }
+
+    const parts = [pgMsg, detail, hint].filter(Boolean).join(" | ");
+    throw new Error(`gallery_items insert failed (code=${code || "?"}): ${parts}`);
   }
 }
 
