@@ -1,12 +1,29 @@
 // Preconfigured storage helpers for Manus WebDev templates
 // Uses the Biz-provided storage proxy (Authorization: Bearer <token>)
 
+import fs from 'fs';
+import path from 'path';
 import { ENV } from './_core/env';
 import { getServerSupabase } from './_core/supabase';
 
 // Optional Supabase Storage integration only (no Manus fallback allowed)
 // If SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set and SUPABASE_STORAGE_BUCKET is provided,
-// storagePut/storageGet will use Supabase Storage with signed URLs. Otherwise it will error.
+// storagePut/storageGet will use Supabase Storage with signed URLs.
+// Otherwise falls back to local filesystem storage under public/uploads/.
+
+const DIRNAME = typeof __dirname !== 'undefined'
+  ? __dirname
+  : new URL('.', import.meta.url).pathname;
+
+// Resolve the project-root public/uploads directory regardless of CWD
+const LOCAL_UPLOADS_DIR = path.resolve(DIRNAME, '..', 'public', 'uploads');
+
+function ensureLocalDir(filePath: string) {
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
 
 type StorageConfig = { baseUrl: string; apiKey: string };
 
@@ -112,8 +129,15 @@ export async function storagePut(
     return { key, url: signed.signedUrl };
   }
 
-  // No external fallback permitted
-  throw new Error("Supabase storage is not configured");
+  // Local filesystem fallback
+  const localPath = path.join(LOCAL_UPLOADS_DIR, key);
+  ensureLocalDir(localPath);
+  const buffer =
+    typeof data === 'string'
+      ? Buffer.from(data, 'utf-8')
+      : Buffer.from(data as any);
+  fs.writeFileSync(localPath, buffer);
+  return { key, url: `/uploads/${key}` };
 }
 
 export async function storageGet(relKey: string): Promise<{ key: string; url: string; }> {
@@ -138,6 +162,6 @@ export async function storageGet(relKey: string): Promise<{ key: string; url: st
     return { key, url: data.signedUrl };
   }
 
-  // No external fallback permitted
-  throw new Error("Supabase storage is not configured");
+  // Local filesystem fallback — return static URL
+  return { key, url: `/uploads/${key}` };
 }

@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import path from "path";
 import cors from 'cors';
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
@@ -10,6 +11,10 @@ import { registerDownloadProxy } from "../downloadProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+
+const DIRNAME = typeof __dirname !== "undefined"
+  ? __dirname
+  : new URL('.', import.meta.url).pathname;
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -49,6 +54,8 @@ export function createApp() {
 
 app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // Serve locally-uploaded files (fallback when Supabase is not configured)
+  app.use("/uploads", express.static(path.resolve(DIRNAME, "..", "public", "uploads")));
   registerStorageProxy(app);
   registerDownloadProxy(app);
   registerOAuthRoutes(app);
