@@ -140,7 +140,7 @@ export const galleryItems = pgTable("gallery_items", {
   featured: text("featured").$type<"yes" | "no">().default("no").notNull(),
   aspect: text("aspect").$type<"landscape" | "portrait" | "square">().default("landscape").notNull(),
   sortOrder: integer("sortOrder").default(0),
-  isVisible: text("isVisible").$type<"visible" | "hidden">().default("visible").notNull(),
+  isvisible: text("isvisible").$type<"visible" | "hidden">().default("visible").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
