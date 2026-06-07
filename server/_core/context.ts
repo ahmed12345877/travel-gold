@@ -30,8 +30,12 @@ export type TrpcContext = {
   req: MinimalRequest;
   res: CookieResponse;
   user: User | null;
-  /** Optional server Supabase client (admin key). Null if env not configured */
   supabase: SupabaseClient | null;
+  contextData: {
+    role: string | null;
+    userId: string | null;
+    email: string | null;
+  };
 };
 
 export async function createContext(
@@ -46,17 +50,18 @@ export async function createContext(
     try {
       const { data, error } = await supabase.auth.getUser(bearer);
       if (!error && data.user) {
-        // Upsert user in our DB using Supabase user info
         const u = data.user;
+
         const name =
           (u.user_metadata && (u.user_metadata as any).name) ||
           u.user_metadata?.full_name ||
           u.email?.split("@")[0] ||
           null;
-        // Check app_metadata.role to grant admin in our DB
+
         const appMeta = (u.app_metadata ?? {}) as Record<string, unknown>;
         const supabaseRole = appMeta["role"] === "admin" ? "admin" : undefined;
 
+        // Upsert user in your DB
         await db.upsertUser({
           openId: u.id,
           name,
@@ -65,10 +70,10 @@ export async function createContext(
           lastSignedIn: new Date(),
           ...(supabaseRole ? { role: supabaseRole } : {}),
         });
+
+        // Refetch from DB to ensure role is correct
         const found = await db.getUserByOpenId(u.id);
-        if (found) {
-          user = found;
-        }
+        if (found) user = found;
       }
     } catch {
       // ignore and fall back to Manus
@@ -80,8 +85,14 @@ export async function createContext(
     try {
       user = await sdk.authenticateRequest(opts.req as any);
     } catch {
-      user = null; // public procedures remain accessible
+      user = null;
     }
+  }
+
+  // Final DB refresh (in case Manus returned a user without latest role)
+  if (user?.openId) {
+    const fresh = await db.getUserByOpenId(user.openId);
+    if (fresh) user = fresh;
   }
 
   return {
@@ -89,5 +100,10 @@ export async function createContext(
     res: opts.res,
     user,
     supabase,
+    contextData: {
+      role: user?.role ?? null,
+      userId: user?.openId ?? null,
+      email: user?.email ?? null,
+    },
   };
 }
