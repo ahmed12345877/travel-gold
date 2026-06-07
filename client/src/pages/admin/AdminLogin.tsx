@@ -19,6 +19,7 @@ export default function AdminLogin() {
   const [status, setStatus] = useState<{ type: "error" | "success"; msg: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"password" | "magic">("password");
+  const [logoLoaded, setLogoLoaded] = useState(false);
   const [, navigate] = useLocation();
 
   const hasSupabase = Boolean(supabase);
@@ -169,11 +170,26 @@ export default function AdminLogin() {
 
               {/* Logo + Brand */}
               <div className="flex items-center gap-3 mb-1">
-                <img
-                  src={LOGO_URL}
-                  alt="VANIR GROUP"
-                  className="w-10 h-10 object-contain"
-                  style={{ filter: "drop-shadow(0 0 8px rgba(201,168,76,0.3))" }}
+                {logoLoaded ? (
+                  <img
+                    src={LOGO_URL}
+                    alt="VANIR GROUP"
+                    className="w-10 h-10 object-contain"
+                    onError={() => setLogoLoaded(false)}
+                    style={{ filter: "drop-shadow(0 0 8px rgba(201,168,76,0.3))" }}
+                  />
+                ) : (
+                  <div className="w-10 h-10 bg-gradient-to-br from-[#c9a84c] to-[#a0842d] rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                    V
+                  </div>
+                )}
+                {/* Preload image */}
+                <img 
+                  src={LOGO_URL} 
+                  alt="" 
+                  className="hidden" 
+                  onLoad={() => setLogoLoaded(true)}
+                  onError={() => setLogoLoaded(false)}
                 />
                 <div>
                   <span className="text-white font-bold text-xl">

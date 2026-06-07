@@ -1,404 +1,351 @@
+var __defProp = Object.defineProperty;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+
+// vite.config.ts
+var vite_config_exports = {};
+__export(vite_config_exports, {
+  default: () => vite_config_default
+});
+import { jsxLocPlugin } from "@builder.io/vite-plugin-jsx-loc";
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import path from "node:path";
+import { defineConfig } from "vite";
+var PROJECT_ROOT, plugins, vite_config_default;
+var init_vite_config = __esm({
+  "vite.config.ts"() {
+    "use strict";
+    PROJECT_ROOT = import.meta.dirname;
+    plugins = [react(), tailwindcss(), jsxLocPlugin()];
+    vite_config_default = defineConfig({
+      base: "/",
+      plugins,
+      resolve: {
+        alias: {
+          "@": path.resolve(import.meta.dirname, "client", "src"),
+          "@shared": path.resolve(import.meta.dirname, "shared"),
+          "@assets": path.resolve(import.meta.dirname, "attached_assets")
+        }
+      },
+      envDir: path.resolve(import.meta.dirname),
+      root: path.resolve(import.meta.dirname, "client"),
+      publicDir: path.resolve(import.meta.dirname, "client", "public"),
+      build: {
+        outDir: path.resolve(import.meta.dirname, "dist/public"),
+        emptyOutDir: true
+      },
+      server: {
+        host: true,
+        allowedHosts: ["localhost", "127.0.0.1"],
+        fs: {
+          strict: true,
+          deny: ["**/.*"]
+        }
+      }
+    });
+  }
+});
+
 // server/_core/index.ts
 import "dotenv/config";
 import express2 from "express";
 import { createServer } from "http";
 import net from "net";
+import cors from "cors";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 
 // shared/const.ts
 var COOKIE_NAME = "app_session_id";
 var ONE_YEAR_MS = 1e3 * 60 * 60 * 24 * 365;
-var AXIOS_TIMEOUT_MS = 3e4;
 var UNAUTHED_ERR_MSG = "Please login (10001)";
 var NOT_ADMIN_ERR_MSG = "You do not have required permission (10002)";
 
 // server/db.ts
 import { eq, desc, asc, and, gte, lte, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 
 // drizzle/schema.ts
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, bigint, decimal, json } from "drizzle-orm/mysql-core";
-var users = mysqlTable("users", {
-  id: int("id").autoincrement().primaryKey(),
+import { serial, pgTable, text, timestamp, varchar, bigint, decimal, json, integer } from "drizzle-orm/pg-core";
+var users = pgTable("users", {
+  id: serial("id").primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   phone: varchar("phone", { length: 32 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   avatarUrl: text("avatarUrl"),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: text("role").$type().default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull()
 });
-var bookings = mysqlTable("bookings", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").references(() => users.id),
-  /** Guest name for non-authenticated bookings */
+var bookings = pgTable("bookings", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").references(() => users.id),
   guestName: varchar("guestName", { length: 255 }),
   guestEmail: varchar("guestEmail", { length: 320 }),
   guestPhone: varchar("guestPhone", { length: 32 }),
-  /** Package details */
   packageName: varchar("packageName", { length: 255 }).notNull(),
   packageCategory: varchar("packageCategory", { length: 100 }),
   destination: varchar("destination", { length: 255 }),
-  /** Trip details */
   checkInDate: bigint("checkInDate", { mode: "number" }),
   checkOutDate: bigint("checkOutDate", { mode: "number" }),
-  adults: int("adults").default(1),
-  children: int("children").default(0),
+  adults: integer("adults").default(1),
+  children: integer("children").default(0),
   roomType: varchar("roomType", { length: 100 }),
-  /** Pricing */
   totalPrice: decimal("totalPrice", { precision: 10, scale: 2 }),
   currency: varchar("currency", { length: 10 }).default("USD"),
-  /** Payment */
-  paymentMethod: mysqlEnum("paymentMethod", ["credit_card", "paypal", "bank_transfer"]),
-  paymentStatus: mysqlEnum("paymentStatus", ["pending", "paid", "failed", "refunded"]).default("pending").notNull(),
-  /** Promo code if applied */
+  paymentMethod: text("paymentMethod").$type(),
+  paymentStatus: text("paymentStatus").$type().default("pending").notNull(),
   promoCode: varchar("promoCode", { length: 50 }),
   discountAmount: decimal("discountAmount", { precision: 10, scale: 2 }),
-  /** Special requests */
   specialRequests: text("specialRequests"),
-  /** Billing address as JSON */
   billingAddress: json("billingAddress"),
-  /** Booking status */
-  status: mysqlEnum("status", ["pending", "confirmed", "cancelled", "completed"]).default("pending").notNull(),
-  /** Confirmation code */
+  status: text("status").$type().default("pending").notNull(),
   confirmationCode: varchar("confirmationCode", { length: 20 }).unique(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+  updatedAt: timestamp("updatedAt").defaultNow().notNull()
 });
-var reviews = mysqlTable("reviews", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").references(() => users.id),
-  /** Guest info for non-authenticated reviews */
+var reviews = pgTable("reviews", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").references(() => users.id),
   guestName: varchar("guestName", { length: 255 }),
   guestAvatarUrl: text("guestAvatarUrl"),
-  /** Review content */
   tripName: varchar("tripName", { length: 255 }).notNull(),
   destination: varchar("destination", { length: 255 }),
-  rating: int("rating").notNull(),
+  rating: integer("rating").notNull(),
   title: varchar("title", { length: 500 }),
   content: text("content").notNull(),
-  /** Optional photo URLs as JSON array */
   photoUrls: json("photoUrls"),
-  /** Travel date */
   travelDate: bigint("travelDate", { mode: "number" }),
-  /** Admin reply */
   adminReply: text("adminReply"),
   adminReplyAt: timestamp("adminReplyAt"),
-  /** Moderation */
-  isApproved: mysqlEnum("isApproved", ["pending", "approved", "rejected"]).default("pending").notNull(),
-  /** Helpful votes */
-  helpfulCount: int("helpfulCount").default(0),
+  isApproved: text("isApproved").$type().default("pending").notNull(),
+  helpfulCount: integer("helpfulCount").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+  updatedAt: timestamp("updatedAt").defaultNow().notNull()
 });
-var offers = mysqlTable("offers", {
-  id: int("id").autoincrement().primaryKey(),
+var offers = pgTable("offers", {
+  id: serial("id").primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
-  /** Discount details */
-  discountType: mysqlEnum("discountType", ["percentage", "fixed"]).notNull(),
+  discountType: text("discountType").$type().notNull(),
   discountValue: decimal("discountValue", { precision: 10, scale: 2 }).notNull(),
-  /** Promo code */
   promoCode: varchar("promoCode", { length: 50 }).unique(),
-  /** Validity */
   startDate: bigint("startDate", { mode: "number" }).notNull(),
   endDate: bigint("endDate", { mode: "number" }).notNull(),
-  /** Offer metadata */
   category: varchar("category", { length: 100 }),
   destination: varchar("destination", { length: 255 }),
   imageUrl: text("imageUrl"),
-  /** Availability */
-  totalSpots: int("totalSpots"),
-  bookedSpots: int("bookedSpots").default(0),
-  /** Status */
-  isActive: mysqlEnum("isActive", ["active", "inactive", "expired"]).default("active").notNull(),
-  /** Badge text like "FLASH SALE", "EXCLUSIVE" */
+  totalSpots: integer("totalSpots"),
+  bookedSpots: integer("bookedSpots").default(0),
+  isActive: text("isActive").$type().default("active").notNull(),
   badgeText: varchar("badgeText", { length: 50 }),
   badgeColor: varchar("badgeColor", { length: 20 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+  updatedAt: timestamp("updatedAt").defaultNow().notNull()
 });
-var contactMessages = mysqlTable("contact_messages", {
-  id: int("id").autoincrement().primaryKey(),
+var contactMessages = pgTable("contact_messages", {
+  id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 320 }).notNull(),
   phone: varchar("phone", { length: 32 }),
   subject: varchar("subject", { length: 500 }),
   message: text("message").notNull(),
-  /** Status tracking */
-  status: mysqlEnum("status", ["new", "read", "replied", "archived"]).default("new").notNull(),
+  status: text("status").$type().default("new").notNull(),
   adminNotes: text("adminNotes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+  updatedAt: timestamp("updatedAt").defaultNow().notNull()
 });
-var fileUploads = mysqlTable("file_uploads", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").references(() => users.id),
-  /** S3 reference */
+var fileUploads = pgTable("file_uploads", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").references(() => users.id),
   fileKey: varchar("fileKey", { length: 500 }).notNull(),
   url: text("url").notNull(),
-  /** File metadata */
   filename: varchar("filename", { length: 255 }).notNull(),
   mimeType: varchar("mimeType", { length: 100 }),
-  fileSize: int("fileSize"),
-  /** Purpose: avatar, review_photo, document, etc. */
+  fileSize: integer("fileSize"),
   purpose: varchar("purpose", { length: 50 }),
   createdAt: timestamp("createdAt").defaultNow().notNull()
 });
-var galleryItems = mysqlTable("gallery_items", {
-  id: int("id").autoincrement().primaryKey(),
-  /** Image URL (CDN or S3) */
+var galleryItems = pgTable("gallery_items", {
+  id: serial("id").primaryKey(),
   imageUrl: text("imageUrl").notNull(),
-  /** Titles */
   title: varchar("title", { length: 255 }).notNull(),
   titleAr: varchar("titleAr", { length: 255 }),
-  /** Descriptions */
   description: text("description"),
   descriptionAr: text("descriptionAr"),
-  /** Category */
   category: varchar("category", { length: 100 }).notNull(),
   categoryAr: varchar("categoryAr", { length: 100 }),
-  /** Location */
   location: varchar("location", { length: 255 }),
   locationAr: varchar("locationAr", { length: 255 }),
-  /** Display options */
-  featured: mysqlEnum("featured", ["yes", "no"]).default("no").notNull(),
-  aspect: mysqlEnum("aspect", ["landscape", "portrait", "square"]).default("landscape").notNull(),
-  /** Sort order (lower = first) */
-  sortOrder: int("sortOrder").default(0),
-  /** Visibility */
-  isVisible: mysqlEnum("isVisible", ["visible", "hidden"]).default("visible").notNull(),
+  featured: text("featured").$type().default("no").notNull(),
+  aspect: text("aspect").$type().default("landscape").notNull(),
+  sortOrder: integer("sortOrder").default(0),
+  isVisible: text("isVisible").$type().default("visible").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+  updatedAt: timestamp("updatedAt").defaultNow().notNull()
 });
-var galleryVideos = mysqlTable("gallery_videos", {
-  id: int("id").autoincrement().primaryKey(),
-  /** Thumbnail URL */
+var galleryVideos = pgTable("gallery_videos", {
+  id: serial("id").primaryKey(),
   thumbnailUrl: text("thumbnailUrl").notNull(),
-  /** Titles */
   title: varchar("title", { length: 255 }).notNull(),
   titleAr: varchar("titleAr", { length: 255 }),
-  /** YouTube video ID */
   youtubeId: varchar("youtubeId", { length: 20 }).notNull(),
-  /** Display info */
   duration: varchar("duration", { length: 20 }),
   views: varchar("views", { length: 20 }),
-  /** Sort order */
-  sortOrder: int("sortOrder").default(0),
-  /** Visibility */
-  isVisible: mysqlEnum("isVisible", ["visible", "hidden"]).default("visible").notNull(),
+  sortOrder: integer("sortOrder").default(0),
+  isVisible: text("isVisible").$type().default("visible").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+  updatedAt: timestamp("updatedAt").defaultNow().notNull()
 });
-var aiSubscriptions = mysqlTable("ai_subscriptions", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").references(() => users.id).notNull(),
-  /** Plan type */
-  plan: mysqlEnum("plan", ["free", "pro", "enterprise"]).default("free").notNull(),
-  /** Pricing */
+var aiSubscriptions = pgTable("ai_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").references(() => users.id).notNull(),
+  plan: text("plan").$type().default("free").notNull(),
   monthlyPrice: decimal("monthlyPrice", { precision: 10, scale: 2 }).default("0"),
-  /** Subscription status */
-  status: mysqlEnum("status", ["active", "cancelled", "expired"]).default("active").notNull(),
-  /** Stripe subscription ID */
+  status: text("status").$type().default("active").notNull(),
   stripeSubscriptionId: varchar("stripeSubscriptionId", { length: 255 }),
-  /** Dates */
   startDate: bigint("startDate", { mode: "number" }).notNull(),
   renewalDate: bigint("renewalDate", { mode: "number" }),
   cancelledAt: timestamp("cancelledAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+  updatedAt: timestamp("updatedAt").defaultNow().notNull()
 });
-var aiCredits = mysqlTable("ai_credits", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").references(() => users.id).notNull().unique(),
-  /** Credit balance */
+var aiCredits = pgTable("ai_credits", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").references(() => users.id).notNull().unique(),
   balance: decimal("balance", { precision: 12, scale: 2 }).default("0").notNull(),
-  /** Lifetime credits used */
   totalUsed: decimal("totalUsed", { precision: 12, scale: 2 }).default("0").notNull(),
-  /** Last reset date */
   lastResetDate: bigint("lastResetDate", { mode: "number" }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+  updatedAt: timestamp("updatedAt").defaultNow().notNull()
 });
-var aiUsage = mysqlTable("ai_usage", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").references(() => users.id).notNull(),
-  /** Generation type */
-  type: mysqlEnum("type", ["image", "video", "edit"]).notNull(),
-  /** Model used */
+var aiUsage = pgTable("ai_usage", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").references(() => users.id).notNull(),
+  type: text("type").$type().notNull(),
   model: varchar("model", { length: 100 }).notNull(),
-  // "dall-e-3", "runway-ml", etc
-  /** Prompt/description */
   prompt: text("prompt").notNull(),
-  /** Result */
   resultUrl: text("resultUrl"),
   resultKey: varchar("resultKey", { length: 500 }),
-  // S3 key
-  /** Cost in credits */
   creditsCost: decimal("creditsCost", { precision: 10, scale: 2 }).notNull(),
-  /** Metadata */
   imageSize: varchar("imageSize", { length: 50 }),
-  // "512x512", "1024x1024", etc
-  videoDuration: int("videoDuration"),
-  // in seconds
-  status: mysqlEnum("status", ["pending", "completed", "failed"]).default("pending").notNull(),
+  videoDuration: integer("videoDuration"),
+  status: text("status").$type().default("pending").notNull(),
   errorMessage: text("errorMessage"),
   createdAt: timestamp("createdAt").defaultNow().notNull()
 });
-var aiTransactions = mysqlTable("ai_transactions", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").references(() => users.id).notNull(),
-  /** Transaction type */
-  type: mysqlEnum("type", ["purchase", "refund", "monthly_allowance", "bonus"]).notNull(),
-  /** Amount */
+var aiTransactions = pgTable("ai_transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").references(() => users.id).notNull(),
+  type: text("type").$type().notNull(),
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
-  /** Payment info */
   stripePaymentId: varchar("stripePaymentId", { length: 255 }),
   paymentMethod: varchar("paymentMethod", { length: 50 }),
-  /** Status */
-  status: mysqlEnum("status", ["pending", "completed", "failed"]).default("pending").notNull(),
-  /** Description */
+  status: text("status").$type().default("pending").notNull(),
   description: text("description"),
   createdAt: timestamp("createdAt").defaultNow().notNull()
 });
-var blogPosts = mysqlTable("blog_posts", {
-  id: int("id").autoincrement().primaryKey(),
-  /** URL slug for SEO-friendly URLs */
+var blogPosts = pgTable("blog_posts", {
+  id: serial("id").primaryKey(),
   slug: varchar("slug", { length: 255 }).notNull().unique(),
-  /** Content */
   title: varchar("title", { length: 500 }).notNull(),
   excerpt: text("excerpt").notNull(),
   content: text("content").notNull(),
-  /** SEO fields */
   metaTitle: varchar("metaTitle", { length: 70 }),
   metaDescription: varchar("metaDescription", { length: 160 }),
   metaKeywords: varchar("metaKeywords", { length: 500 }),
-  /** Media */
   coverImageUrl: text("coverImageUrl"),
-  /** Categorization */
   category: varchar("category", { length: 100 }),
   tags: json("tags"),
-  /** Author */
-  authorId: int("authorId").references(() => users.id),
+  authorId: integer("authorId").references(() => users.id),
   authorName: varchar("authorName", { length: 255 }).default("VANIR GROUP"),
-  /** Publishing */
-  status: mysqlEnum("status", ["draft", "published", "archived"]).default("draft").notNull(),
+  status: text("status").$type().default("draft").notNull(),
   publishedAt: timestamp("publishedAt"),
-  /** Engagement */
-  viewCount: int("viewCount").default(0),
-  readingTime: int("readingTime").default(5),
-  /** Timestamps */
+  viewCount: integer("viewCount").default(0),
+  readingTime: integer("readingTime").default(5),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+  updatedAt: timestamp("updatedAt").defaultNow().notNull()
 });
-var marketingContent = mysqlTable("marketing_content", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").references(() => users.id).notNull(),
-  /** Content type */
-  type: mysqlEnum("type", ["social_media", "email", "trip_description", "blog_seo", "ad_copy"]).notNull(),
-  /** Platform (for social media) */
+var marketingContent = pgTable("marketing_content", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").references(() => users.id).notNull(),
+  type: text("type").$type().notNull(),
   platform: varchar("platform", { length: 50 }),
-  // instagram, facebook, twitter, linkedin, tiktok
-  /** Content */
   title: varchar("title", { length: 500 }),
   content: text("content").notNull(),
-  /** Generation metadata */
   prompt: text("prompt").notNull(),
   language: varchar("language", { length: 10 }).default("en"),
   tone: varchar("tone", { length: 50 }),
-  // professional, casual, luxurious, adventurous
   destination: varchar("destination", { length: 255 }),
-  /** Hashtags (JSON array) */
   hashtags: json("hashtags"),
-  /** Credits used */
   creditsCost: decimal("creditsCost", { precision: 10, scale: 2 }).default("1"),
-  /** Status */
-  isFavorite: mysqlEnum("isFavorite", ["yes", "no"]).default("no").notNull(),
+  isFavorite: text("isFavorite").$type().default("no").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull()
 });
-var marketingCalendar = mysqlTable("marketing_calendar", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").references(() => users.id).notNull(),
-  /** Content reference */
-  contentId: int("contentId").references(() => marketingContent.id),
-  /** Calendar entry */
+var marketingCalendar = pgTable("marketing_calendar", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").references(() => users.id).notNull(),
+  contentId: integer("contentId").references(() => marketingContent.id),
   title: varchar("title", { length: 500 }).notNull(),
   description: text("description"),
-  /** Platform */
   platform: varchar("platform", { length: 50 }),
-  /** Scheduling */
   scheduledDate: bigint("scheduledDate", { mode: "number" }).notNull(),
-  /** Status */
-  status: mysqlEnum("status", ["draft", "scheduled", "published", "cancelled"]).default("draft").notNull(),
-  /** Color tag for calendar display */
+  status: text("status").$type().default("draft").notNull(),
   colorTag: varchar("colorTag", { length: 20 }).default("#D4A853"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+  updatedAt: timestamp("updatedAt").defaultNow().notNull()
 });
-var marketingTemplates = mysqlTable("marketing_templates", {
-  id: int("id").autoincrement().primaryKey(),
-  /** Template info */
+var marketingTemplates = pgTable("marketing_templates", {
+  id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
-  /** Template type */
-  type: mysqlEnum("type", ["social_media", "email", "trip_description", "blog_seo", "ad_copy"]).notNull(),
-  /** Platform */
+  type: text("type").$type().notNull(),
   platform: varchar("platform", { length: 50 }),
-  /** Template content (with placeholders like {{destination}}, {{price}}) */
   templateContent: text("templateContent").notNull(),
-  /** System prompt for AI generation */
   systemPrompt: text("systemPrompt"),
-  /** Category */
   category: varchar("category", { length: 100 }),
-  // seasonal, promotional, informational, engagement
-  /** Icon name from lucide */
   icon: varchar("icon", { length: 50 }),
-  /** Is built-in (not deletable) */
-  isBuiltIn: mysqlEnum("isBuiltIn", ["yes", "no"]).default("no").notNull(),
-  /** Sort order */
-  sortOrder: int("sortOrder").default(0),
+  isBuiltIn: text("isBuiltIn").$type().default("no").notNull(),
+  sortOrder: integer("sortOrder").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull()
 });
-var destinations = mysqlTable("destinations", {
-  id: int("id").autoincrement().primaryKey(),
-  /** Basic info */
+var destinations = pgTable("destinations", {
+  id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   location: varchar("location", { length: 255 }).notNull(),
-  /** Pricing and rating */
   pricePerPerson: decimal("pricePerPerson", { precision: 10, scale: 2 }).default("0"),
   rating: decimal("rating", { precision: 3, scale: 2 }).default("5"),
-  /** Media */
   imageUrl: text("imageUrl"),
-  /** Details */
   highlights: text("highlights"),
   bestTimeToVisit: varchar("bestTimeToVisit", { length: 255 }),
   duration: varchar("duration", { length: 100 }),
-  difficulty: mysqlEnum("difficulty", ["easy", "moderate", "hard"]),
+  difficulty: text("difficulty").$type(),
   groupSize: varchar("groupSize", { length: 100 }),
   inclusions: text("inclusions"),
   exclusions: text("exclusions"),
-  /** Status */
-  isActive: mysqlEnum("isActive", ["active", "inactive"]).default("active").notNull(),
-  /** Timestamps */
+  isActive: text("isActive").$type().default("active").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+  updatedAt: timestamp("updatedAt").defaultNow().notNull()
 });
-var siteSettings = mysqlTable("site_settings", {
-  id: int("id").autoincrement().primaryKey(),
-  /** Setting category for grouping */
+var siteSettings = pgTable("site_settings", {
+  id: serial("id").primaryKey(),
   category: varchar("category", { length: 50 }).notNull(),
-  /** Setting key (unique within category) */
   settingKey: varchar("setting_key", { length: 100 }).notNull(),
-  /** Setting value (stored as text, parsed by app) */
   settingValue: text("setting_value"),
-  /** Last updated by */
-  updatedBy: int("updated_by").references(() => users.id),
+  updatedBy: integer("updated_by").references(() => users.id),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+  updatedAt: timestamp("updatedAt").defaultNow().notNull()
 });
 
 // server/_core/env.ts
@@ -421,10 +368,22 @@ var ENV = {
 
 // server/db.ts
 var _db = null;
+var _client = null;
+function getConnectionString() {
+  return process.env.POSTGRES_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL_NON_POOLING;
+}
 async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
+  if (!_db) {
+    const connectionString = getConnectionString();
+    if (!connectionString) return null;
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      _client = postgres(connectionString, {
+        prepare: false,
+        max: 5,
+        idle_timeout: 20,
+        connect_timeout: 15
+      });
+      _db = drizzle(_client);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -472,7 +431,8 @@ async function upsertUser(user) {
     if (Object.keys(updateSet).length === 0) {
       updateSet.lastSignedIn = /* @__PURE__ */ new Date();
     }
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
+    await db.insert(users).values(values).onConflictDoUpdate({
+      target: users.openId,
       set: updateSet
     });
   } catch (error) {
@@ -492,10 +452,8 @@ async function getUserByOpenId(openId) {
 async function createBooking(booking) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(bookings).values(booking);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(bookings).where(eq(bookings.id, insertId)).limit(1);
-  return rows[0];
+  const result = await db.insert(bookings).values(booking).returning();
+  return result[0];
 }
 async function getBookingById(id) {
   const db = await getDb();
@@ -534,10 +492,8 @@ async function getAllBookings(limit = 50, offset = 0) {
 async function createReview(review) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(reviews).values(review);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(reviews).where(eq(reviews.id, insertId)).limit(1);
-  return rows[0];
+  const result = await db.insert(reviews).values(review).returning();
+  return result[0];
 }
 async function getApprovedReviews(limit = 50, offset = 0) {
   const db = await getDb();
@@ -589,10 +545,8 @@ async function getReviewStats() {
 async function createOffer(offer) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(offers).values(offer);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(offers).where(eq(offers.id, insertId)).limit(1);
-  return rows[0];
+  const result = await db.insert(offers).values(offer).returning();
+  return result[0];
 }
 async function getActiveOffers() {
   const db = await getDb();
@@ -625,10 +579,8 @@ async function updateOffer(id, data) {
 async function createContactMessage(message) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(contactMessages).values(message);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(contactMessages).where(eq(contactMessages.id, insertId)).limit(1);
-  return rows[0];
+  const result = await db.insert(contactMessages).values(message).returning();
+  return result[0];
 }
 async function getAllContactMessages(limit = 50, offset = 0) {
   const db = await getDb();
@@ -643,10 +595,8 @@ async function updateContactMessageStatus(id, status) {
 async function createFileUpload(file) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(fileUploads).values(file);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(fileUploads).where(eq(fileUploads.id, insertId)).limit(1);
-  return rows[0];
+  const result = await db.insert(fileUploads).values(file).returning();
+  return result[0];
 }
 async function getUserFiles(userId) {
   const db = await getDb();
@@ -656,10 +606,8 @@ async function getUserFiles(userId) {
 async function createGalleryItem(item) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(galleryItems).values(item);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(galleryItems).where(eq(galleryItems.id, insertId)).limit(1);
-  return rows[0];
+  const result = await db.insert(galleryItems).values(item).returning();
+  return result[0];
 }
 async function getVisibleGalleryItems() {
   const db = await getDb();
@@ -691,10 +639,8 @@ async function deleteGalleryItem(id) {
 async function createGalleryVideo(video) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(galleryVideos).values(video);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(galleryVideos).where(eq(galleryVideos.id, insertId)).limit(1);
-  return rows[0];
+  const result = await db.insert(galleryVideos).values(video).returning();
+  return result[0];
 }
 async function getVisibleGalleryVideos() {
   const db = await getDb();
@@ -733,9 +679,8 @@ async function getOrCreateAISubscription(userId) {
       plan: "free",
       status: "active",
       startDate: Date.now()
-    });
-    const insertId = result[0].insertId;
-    subscription = await db.select().from(aiSubscriptions).where(eq(aiSubscriptions.id, insertId)).limit(1);
+    }).returning();
+    subscription = result;
   }
   return subscription[0];
 }
@@ -746,7 +691,6 @@ async function updateAISubscription(userId, plan, stripeSubscriptionId) {
     plan,
     status: "active",
     renewalDate: Date.now() + 30 * 24 * 60 * 60 * 1e3,
-    // 30 days
     ...stripeSubscriptionId && { stripeSubscriptionId }
   }).where(eq(aiSubscriptions.userId, userId));
   return getOrCreateAISubscription(userId);
@@ -759,11 +703,9 @@ async function getOrCreateAICredits(userId) {
     const result = await db.insert(aiCredits).values({
       userId,
       balance: "5",
-      // Free tier gets 5 image generations
       totalUsed: "0"
-    });
-    const insertId = result[0].insertId;
-    credits = await db.select().from(aiCredits).where(eq(aiCredits.id, insertId)).limit(1);
+    }).returning();
+    credits = result;
   }
   return credits[0];
 }
@@ -800,10 +742,8 @@ async function deductAICredits(userId, amount) {
 async function createAIUsage(usage) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(aiUsage).values(usage);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(aiUsage).where(eq(aiUsage.id, insertId)).limit(1);
-  return rows[0];
+  const result = await db.insert(aiUsage).values(usage).returning();
+  return result[0];
 }
 async function getUserAIUsage(userId, limit = 50, offset = 0) {
   const db = await getDb();
@@ -863,7 +803,7 @@ async function searchUsers(query, limit = 20) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   const result = await db.select().from(users).where(
-    sql`${users.name} LIKE ${`%${query}%`} OR ${users.email} LIKE ${`%${query}%`} OR ${users.openId} LIKE ${`%${query}%`}`
+    sql`${users.name} ILIKE ${`%${query}%`} OR ${users.email} ILIKE ${`%${query}%`} OR ${users.openId} ILIKE ${`%${query}%`}`
   ).orderBy(desc(users.createdAt)).limit(limit);
   return result;
 }
@@ -872,8 +812,8 @@ async function getUserStats() {
   if (!db) throw new Error("Database not available");
   const totalUsers = await db.select({ count: sql`count(*)` }).from(users);
   const adminUsers = await db.select({ count: sql`count(*)` }).from(users).where(eq(users.role, "admin"));
-  const recentUsers = await db.select({ count: sql`count(*)` }).from(users).where(gte(users.createdAt, sql`DATE_SUB(NOW(), INTERVAL 30 DAY)`));
-  const todayUsers = await db.select({ count: sql`count(*)` }).from(users).where(gte(users.createdAt, sql`CURDATE()`));
+  const recentUsers = await db.select({ count: sql`count(*)` }).from(users).where(gte(users.createdAt, sql`NOW() - INTERVAL '30 days'`));
+  const todayUsers = await db.select({ count: sql`count(*)` }).from(users).where(gte(users.createdAt, sql`CURRENT_DATE`));
   return {
     total: totalUsers[0]?.count ?? 0,
     admins: adminUsers[0]?.count ?? 0,
@@ -913,10 +853,8 @@ async function getBlogPostsByCategory(category, limit = 10, offset = 0) {
 async function createBlogPost(post) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(blogPosts).values(post);
-  const insertId = result[0].insertId;
-  const rows = await db.select().from(blogPosts).where(eq(blogPosts.id, insertId)).limit(1);
-  return rows[0];
+  const result = await db.insert(blogPosts).values(post).returning();
+  return result[0];
 }
 async function updateBlogPost(id, data) {
   const db = await getDb();
@@ -945,11 +883,13 @@ function isSecureRequest(req) {
   return protoList.some((proto) => proto.trim().toLowerCase() === "https");
 }
 function getSessionCookieOptions(req) {
+  const secure = isSecureRequest(req);
   return {
     httpOnly: true,
     path: "/",
-    sameSite: "none",
-    secure: isSecureRequest(req)
+    // SameSite=None requires Secure=true; fall back to Lax on plain HTTP (local dev)
+    sameSite: secure ? "none" : "lax",
+    secure
   };
 }
 
@@ -1010,7 +950,10 @@ var OAuthService = class {
 };
 var createOAuthHttpClient = () => axios.create({
   baseURL: ENV.oAuthServerUrl,
-  timeout: AXIOS_TIMEOUT_MS
+  // 5 s keeps us well inside Vercel's 10 s default timeout.
+  // The old 30 s value caused Vercel to kill the function with a plain-text
+  // "A server error occurred" before any try/catch could intercept.
+  timeout: 5e3
 });
 var SDKServer = class {
   client;
@@ -1150,22 +1093,67 @@ var SDKServer = class {
       throw ForbiddenError("Invalid session cookie");
     }
     const sessionUserId = session.openId;
-    const signedInAt = /* @__PURE__ */ new Date();
+    const now = /* @__PURE__ */ new Date();
+    if (sessionUserId.startsWith("admin:")) {
+      const email = sessionUserId.slice("admin:".length) || null;
+      return {
+        id: 0,
+        openId: sessionUserId,
+        name: session.name || "Admin",
+        email,
+        phone: null,
+        loginMethod: "password",
+        avatarUrl: null,
+        role: "admin",
+        createdAt: now,
+        updatedAt: now,
+        lastSignedIn: now
+      };
+    }
     let user = await getUserByOpenId(sessionUserId);
     if (!user) {
-      try {
-        const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
-        await upsertUser({
-          openId: userInfo.openId,
-          name: userInfo.name || null,
-          email: userInfo.email ?? null,
-          loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
-          lastSignedIn: signedInAt
-        });
-        user = await getUserByOpenId(userInfo.openId);
-      } catch (error) {
-        console.error("[Auth] Failed to sync user from OAuth:", error);
-        throw ForbiddenError("Failed to sync user info");
+      if (sessionUserId.startsWith("admin:")) {
+        try {
+          await upsertUser({
+            openId: sessionUserId,
+            name: session.name || "Admin",
+            role: "admin",
+            loginMethod: "password",
+            lastSignedIn: now
+          });
+          user = await getUserByOpenId(sessionUserId);
+        } catch {
+        }
+        if (!user) {
+          return {
+            id: -1,
+            openId: sessionUserId,
+            name: session.name || "Admin",
+            email: null,
+            phone: null,
+            loginMethod: "password",
+            avatarUrl: null,
+            role: "admin",
+            createdAt: now,
+            updatedAt: now,
+            lastSignedIn: now
+          };
+        }
+      } else {
+        try {
+          const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
+          await upsertUser({
+            openId: userInfo.openId,
+            name: userInfo.name || null,
+            email: userInfo.email ?? null,
+            loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+            lastSignedIn: now
+          });
+          user = await getUserByOpenId(userInfo.openId);
+        } catch (error) {
+          console.error("[Auth] Failed to sync user from OAuth:", error);
+          throw ForbiddenError("Failed to sync user info");
+        }
       }
     }
     if (!user) {
@@ -1173,7 +1161,7 @@ var SDKServer = class {
     }
     await upsertUser({
       openId: user.openId,
-      lastSignedIn: signedInAt
+      lastSignedIn: now
     });
     return user;
   }
@@ -1223,43 +1211,51 @@ function registerOAuthRoutes(app) {
   });
 }
 
+// server/_core/supabase.ts
+import { createClient as createServerClient } from "@supabase/supabase-js";
+function loadServerConfig() {
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  if (!url || !serviceKey) return null;
+  return { url, serviceKey };
+}
+var serverClient = null;
+function getServerSupabase() {
+  if (serverClient) return serverClient;
+  const cfg = loadServerConfig();
+  if (!cfg) return null;
+  serverClient = createServerClient(cfg.url, cfg.serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+  return serverClient;
+}
+
 // server/_core/storageProxy.ts
 function registerStorageProxy(app) {
   app.get("/manus-storage/*", async (req, res) => {
     const key = req.params[0];
-    if (!key) {
-      res.status(400).send("Missing storage key");
-      return;
-    }
-    if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {
-      res.status(500).send("Storage proxy not configured");
-      return;
+    if (!key) return void res.status(400).send("Missing storage key");
+    const supabase = getServerSupabase();
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET;
+    if (!supabase || !bucket) {
+      return void res.status(404).send("Storage not configured");
     }
     try {
-      const forgeUrl = new URL(
-        "v1/storage/presign/get",
-        ENV.forgeApiUrl.replace(/\/+$/, "") + "/"
-      );
-      forgeUrl.searchParams.set("path", key);
-      const forgeResp = await fetch(forgeUrl, {
-        headers: { Authorization: `Bearer ${ENV.forgeApiKey}` }
-      });
-      if (!forgeResp.ok) {
-        const body = await forgeResp.text().catch(() => "");
-        console.error(`[StorageProxy] forge error: ${forgeResp.status} ${body}`);
-        res.status(502).send("Storage backend error");
-        return;
+      const ttl = Number(process.env.SUPABASE_STORAGE_SIGNED_URL_TTL || 60);
+      const { data, error } = await supabase.storage.from(bucket).createSignedUrl(key, ttl);
+      if (!error && data?.signedUrl) {
+        res.set("Cache-Control", "no-store");
+        return void res.redirect(307, data.signedUrl);
       }
-      const { url } = await forgeResp.json();
-      if (!url) {
-        res.status(502).send("Empty signed URL from backend");
-        return;
+      const { data: pub } = supabase.storage.from(bucket).getPublicUrl(key);
+      if (pub.publicUrl) {
+        res.set("Cache-Control", "no-store");
+        return void res.redirect(307, pub.publicUrl);
       }
-      res.set("Cache-Control", "no-store");
-      res.redirect(307, url);
+      return void res.status(404).send("Image not found");
     } catch (err) {
-      console.error("[StorageProxy] failed:", err);
-      res.status(502).send("Storage proxy error");
+      console.error("[StorageProxy] supabase error:", err);
+      return void res.status(502).send("Storage proxy error");
     }
   });
 }
@@ -1799,55 +1795,9 @@ ${input.message.substring(0, 200)}`
 // server/routers/uploads.ts
 import { z as z6 } from "zod";
 
-// server/_core/supabase.ts
-import { createClient as createServerClient } from "@supabase/supabase-js";
-function loadServerConfig() {
-  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-  if (!url || !serviceKey) return null;
-  return { url, serviceKey };
-}
-var serverClient = null;
-function getServerSupabase() {
-  if (serverClient) return serverClient;
-  const cfg = loadServerConfig();
-  if (!cfg) return null;
-  serverClient = createServerClient(cfg.url, cfg.serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-  return serverClient;
-}
-
 // server/storage.ts
-function getStorageConfig() {
-  const baseUrl = ENV.forgeApiUrl;
-  const apiKey = ENV.forgeApiKey;
-  if (!baseUrl || !apiKey) {
-    throw new Error(
-      "Storage proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY"
-    );
-  }
-  return { baseUrl: baseUrl.replace(/\/+$/, ""), apiKey };
-}
-function buildUploadUrl(baseUrl, relKey) {
-  const url = new URL("v1/storage/upload", ensureTrailingSlash(baseUrl));
-  url.searchParams.set("path", normalizeKey(relKey));
-  return url;
-}
-function ensureTrailingSlash(value) {
-  return value.endsWith("/") ? value : `${value}/`;
-}
 function normalizeKey(relKey) {
   return relKey.replace(/^\/+/, "");
-}
-function toFormData(data, contentType, fileName) {
-  const blob = typeof data === "string" ? new Blob([data], { type: contentType }) : new Blob([data], { type: contentType });
-  const form = new FormData();
-  form.append("file", blob, fileName || "file");
-  return form;
-}
-function buildAuthHeaders(apiKey) {
-  return { Authorization: `Bearer ${apiKey}` };
 }
 async function storagePut(relKey, data, contentType = "application/octet-stream") {
   const key = normalizeKey(relKey);
@@ -1870,22 +1820,7 @@ async function storagePut(relKey, data, contentType = "application/octet-stream"
     }
     return { key, url: signed.signedUrl };
   }
-  const { baseUrl, apiKey } = getStorageConfig();
-  const uploadUrl = buildUploadUrl(baseUrl, key);
-  const formData = toFormData(data, contentType, key.split("/").pop() ?? key);
-  const response = await fetch(uploadUrl, {
-    method: "POST",
-    headers: buildAuthHeaders(apiKey),
-    body: formData
-  });
-  if (!response.ok) {
-    const message = await response.text().catch(() => response.statusText);
-    throw new Error(
-      `Storage upload failed (${response.status} ${response.statusText}): ${message}`
-    );
-  }
-  const url = (await response.json()).url;
-  return { key, url };
+  throw new Error("Supabase storage is not configured");
 }
 
 // server/routers/uploads.ts
@@ -3021,7 +2956,7 @@ ${template.templateContent}`;
       destination: input.destination || null,
       hashtags: parsed.hashtags,
       creditsCost: "1"
-    }).$returningId();
+    }).returning({ id: marketingContent.id });
     return {
       id: saved.id,
       title: parsed.title,
@@ -3124,7 +3059,7 @@ ${template.templateContent}`;
       scheduledDate: input.scheduledDate,
       status: input.status,
       colorTag: input.colorTag
-    }).$returningId();
+    }).returning({ id: marketingCalendar.id });
     return { id: entry.id };
   }),
   /**
@@ -4500,8 +4435,280 @@ var backupRouter = router({
   })
 });
 
-// server/routers.ts
+// server/routers/dataImport.ts
 import { z as z18 } from "zod";
+var IMPORT_TABLES = [
+  {
+    id: "destinations",
+    label: "Destinations",
+    description: "Travel destinations and tour packages",
+    table: destinations,
+    fields: [
+      { key: "name", label: "Name", type: "string", required: true },
+      { key: "location", label: "Location", type: "string", required: true },
+      { key: "description", label: "Description", type: "string" },
+      { key: "pricePerPerson", label: "Price Per Person", type: "decimal" },
+      { key: "rating", label: "Rating", type: "decimal", hint: "0\u20135" },
+      { key: "imageUrl", label: "Image URL", type: "string" },
+      { key: "highlights", label: "Highlights", type: "string" },
+      { key: "bestTimeToVisit", label: "Best Time To Visit", type: "string" },
+      { key: "duration", label: "Duration", type: "string" },
+      { key: "difficulty", label: "Difficulty", type: "enum", options: ["easy", "moderate", "hard"] },
+      { key: "groupSize", label: "Group Size", type: "string" },
+      { key: "inclusions", label: "Inclusions", type: "string" },
+      { key: "exclusions", label: "Exclusions", type: "string" },
+      { key: "isActive", label: "Status", type: "enum", options: ["active", "inactive"] }
+    ]
+  },
+  {
+    id: "offers",
+    label: "Offers & Packages",
+    description: "Promotional offers and discounts",
+    table: offers,
+    fields: [
+      { key: "title", label: "Title", type: "string", required: true },
+      { key: "description", label: "Description", type: "string" },
+      { key: "discountType", label: "Discount Type", type: "enum", required: true, options: ["percentage", "fixed"] },
+      { key: "discountValue", label: "Discount Value", type: "decimal", required: true },
+      { key: "promoCode", label: "Promo Code", type: "string" },
+      { key: "startDate", label: "Start Date", type: "date", required: true },
+      { key: "endDate", label: "End Date", type: "date", required: true },
+      { key: "category", label: "Category", type: "string" },
+      { key: "destination", label: "Destination", type: "string" },
+      { key: "imageUrl", label: "Image URL", type: "string" },
+      { key: "totalSpots", label: "Total Spots", type: "number" },
+      { key: "isActive", label: "Status", type: "enum", options: ["active", "inactive", "expired"] },
+      { key: "badgeText", label: "Badge Text", type: "string" }
+    ]
+  },
+  {
+    id: "blog",
+    label: "Blog Articles",
+    description: "Blog posts and articles",
+    table: blogPosts,
+    fields: [
+      { key: "slug", label: "Slug", type: "string", required: true, hint: "Unique URL slug" },
+      { key: "title", label: "Title", type: "string", required: true },
+      { key: "excerpt", label: "Excerpt", type: "string", required: true },
+      { key: "content", label: "Content", type: "string", required: true },
+      { key: "metaTitle", label: "Meta Title", type: "string" },
+      { key: "metaDescription", label: "Meta Description", type: "string" },
+      { key: "metaKeywords", label: "Meta Keywords", type: "string" },
+      { key: "coverImageUrl", label: "Cover Image URL", type: "string" },
+      { key: "category", label: "Category", type: "string" },
+      { key: "authorName", label: "Author Name", type: "string" },
+      { key: "status", label: "Status", type: "enum", options: ["draft", "published", "archived"] }
+    ]
+  },
+  {
+    id: "reviews",
+    label: "Reviews",
+    description: "Customer reviews and ratings",
+    table: reviews,
+    fields: [
+      { key: "guestName", label: "Guest Name", type: "string" },
+      { key: "tripName", label: "Trip Name", type: "string", required: true },
+      { key: "destination", label: "Destination", type: "string" },
+      { key: "rating", label: "Rating", type: "number", required: true, hint: "1\u20135" },
+      { key: "title", label: "Title", type: "string" },
+      { key: "content", label: "Content", type: "string", required: true },
+      { key: "isApproved", label: "Moderation", type: "enum", options: ["pending", "approved", "rejected"] }
+    ]
+  },
+  {
+    id: "gallery",
+    label: "Gallery",
+    description: "Gallery images",
+    table: galleryItems,
+    fields: [
+      { key: "imageUrl", label: "Image URL", type: "string", required: true },
+      { key: "title", label: "Title", type: "string", required: true },
+      { key: "description", label: "Description", type: "string" },
+      { key: "category", label: "Category", type: "string", required: true },
+      { key: "location", label: "Location", type: "string" },
+      { key: "featured", label: "Featured", type: "enum", options: ["no", "yes"] },
+      { key: "aspect", label: "Aspect", type: "enum", options: ["landscape", "portrait", "square"] },
+      { key: "isVisible", label: "Visibility", type: "enum", options: ["visible", "hidden"] }
+    ]
+  },
+  {
+    id: "contacts",
+    label: "Contact Messages",
+    description: "Contact form submissions / leads",
+    table: contactMessages,
+    fields: [
+      { key: "name", label: "Name", type: "string", required: true },
+      { key: "email", label: "Email", type: "string", required: true },
+      { key: "phone", label: "Phone", type: "string" },
+      { key: "subject", label: "Subject", type: "string" },
+      { key: "message", label: "Message", type: "string", required: true },
+      { key: "status", label: "Status", type: "enum", options: ["new", "read", "replied", "archived"] }
+    ]
+  }
+];
+function getTable(id) {
+  return IMPORT_TABLES.find((t2) => t2.id === id);
+}
+function coerceValue(field, raw) {
+  if (raw === null || raw === void 0 || typeof raw === "string" && raw.trim() === "") {
+    if (field.required) return { ok: false, error: `${field.label} is required` };
+    return { ok: true, value: void 0 };
+  }
+  const str = String(raw).trim();
+  switch (field.type) {
+    case "string":
+      return { ok: true, value: str };
+    case "number": {
+      const n = Number(str.replace(/,/g, ""));
+      if (!Number.isFinite(n)) return { ok: false, error: `${field.label} "${str}" is not a number` };
+      return { ok: true, value: Math.trunc(n) };
+    }
+    case "decimal": {
+      const n = Number(str.replace(/[$,]/g, ""));
+      if (!Number.isFinite(n)) return { ok: false, error: `${field.label} "${str}" is not a number` };
+      return { ok: true, value: String(n) };
+    }
+    case "date": {
+      let ms;
+      if (/^\d{10}$/.test(str)) ms = Number(str) * 1e3;
+      else if (/^\d{13}$/.test(str)) ms = Number(str);
+      else {
+        const parsed = Date.parse(str);
+        if (Number.isNaN(parsed)) return { ok: false, error: `${field.label} "${str}" is not a valid date` };
+        ms = parsed;
+      }
+      return { ok: true, value: ms };
+    }
+    case "boolean": {
+      const truthy = ["true", "1", "yes", "y", "active", "on"];
+      return { ok: true, value: truthy.includes(str.toLowerCase()) };
+    }
+    case "enum": {
+      const opts = field.options ?? [];
+      const match = opts.find((o) => o.toLowerCase() === str.toLowerCase());
+      if (!match) {
+        return { ok: false, error: `${field.label} "${str}" must be one of: ${opts.join(", ")}` };
+      }
+      return { ok: true, value: match };
+    }
+    default:
+      return { ok: true, value: str };
+  }
+}
+var dataImportRouter = router({
+  /**
+   * Return the list of importable tables with their field definitions so the
+   * client can render a column-mapping UI.
+   */
+  getImportableTables: protectedProcedure.query(() => {
+    return IMPORT_TABLES.map((t2) => ({
+      id: t2.id,
+      label: t2.label,
+      description: t2.description,
+      fields: t2.fields.map((f) => ({
+        key: f.key,
+        label: f.label,
+        type: f.type,
+        required: !!f.required,
+        options: f.options ?? null,
+        hint: f.hint ?? null
+      }))
+    }));
+  }),
+  /**
+   * Validate (dry run) a batch of mapped rows without writing to the DB.
+   * Returns per-row errors so the admin can fix the source file first.
+   */
+  validateImport: protectedProcedure.input(z18.object({
+    tableId: z18.string(),
+    rows: z18.array(z18.record(z18.string(), z18.any()))
+  })).mutation(({ input }) => {
+    const target = getTable(input.tableId);
+    if (!target) throw new Error(`Unknown import table: ${input.tableId}`);
+    const rowErrors = [];
+    input.rows.forEach((row, idx) => {
+      const errors = [];
+      for (const field of target.fields) {
+        const result = coerceValue(field, row[field.key]);
+        if (!result.ok) errors.push(result.error);
+      }
+      if (errors.length) rowErrors.push({ row: idx + 1, errors });
+    });
+    return {
+      totalRows: input.rows.length,
+      validRows: input.rows.length - rowErrors.length,
+      invalidRows: rowErrors.length,
+      rowErrors: rowErrors.slice(0, 100)
+    };
+  }),
+  /**
+   * Import mapped rows into the target table. Each row is coerced/validated;
+   * invalid rows are skipped (with reasons) and valid rows inserted.
+   */
+  importRecords: protectedProcedure.input(z18.object({
+    tableId: z18.string(),
+    rows: z18.array(z18.record(z18.string(), z18.any())),
+    skipInvalid: z18.boolean().default(true)
+  })).mutation(async ({ input }) => {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+    const target = getTable(input.tableId);
+    if (!target) throw new Error(`Unknown import table: ${input.tableId}`);
+    let imported = 0;
+    let skipped = 0;
+    let failed = 0;
+    const errors = [];
+    for (let i = 0; i < input.rows.length; i++) {
+      const row = input.rows[i];
+      const record = {};
+      const rowIssues = [];
+      for (const field of target.fields) {
+        const result = coerceValue(field, row[field.key]);
+        if (!result.ok) {
+          rowIssues.push(result.error);
+        } else if (result.value !== void 0) {
+          record[field.key] = result.value;
+        }
+      }
+      if (rowIssues.length) {
+        if (input.skipInvalid) {
+          skipped++;
+          errors.push({ row: i + 1, message: rowIssues.join("; ") });
+          continue;
+        } else {
+          failed++;
+          errors.push({ row: i + 1, message: rowIssues.join("; ") });
+          continue;
+        }
+      }
+      try {
+        await db.insert(target.table).values(record);
+        imported++;
+      } catch (e) {
+        if (e?.code === "ER_DUP_ENTRY" || e?.message?.toLowerCase().includes("duplicate")) {
+          skipped++;
+          errors.push({ row: i + 1, message: "Duplicate record skipped" });
+        } else {
+          failed++;
+          errors.push({ row: i + 1, message: e?.message || "Insert failed" });
+        }
+      }
+    }
+    return {
+      success: failed === 0,
+      importedAt: (/* @__PURE__ */ new Date()).toISOString(),
+      tableId: input.tableId,
+      totalRows: input.rows.length,
+      imported,
+      skipped,
+      failed,
+      errors: errors.slice(0, 100)
+    };
+  })
+});
+
+// server/routers.ts
+import { z as z19 } from "zod";
 import { TRPCError as TRPCError6 } from "@trpc/server";
 import { createHash, timingSafeEqual } from "crypto";
 var appRouter = router({
@@ -4515,7 +4722,7 @@ var appRouter = router({
         success: true
       };
     }),
-    login: publicProcedure.input(z18.object({ email: z18.string().email(), password: z18.string().min(1) })).mutation(async ({ ctx, input }) => {
+    login: publicProcedure.input(z19.object({ email: z19.string().email(), password: z19.string().min(1) })).mutation(async ({ ctx, input }) => {
       try {
         const adminEmail = ENV.adminEmail;
         const adminPasswordHash = ENV.adminPasswordHash;
@@ -4562,6 +4769,8 @@ var appRouter = router({
           loginMethod: "password",
           role: "admin",
           lastSignedIn: /* @__PURE__ */ new Date()
+        }).catch((err) => {
+          console.warn("[Auth] Could not persist admin user to DB (non-fatal):", err);
         });
         const sessionToken = await sdk.createSessionToken(openId, {
           expiresInMs: ONE_YEAR_MS,
@@ -4586,7 +4795,7 @@ var appRouter = router({
      * check app_metadata.role === 'admin', upsert the user in DB with role='admin',
      * then issue a session cookie so the rest of the app treats them as authenticated admin.
      */
-    supabaseLogin: publicProcedure.input(z18.object({ accessToken: z18.string().min(1) })).mutation(async ({ ctx, input }) => {
+    supabaseLogin: publicProcedure.input(z19.object({ accessToken: z19.string().min(1) })).mutation(async ({ ctx, input }) => {
       const supabase = getServerSupabase();
       if (!supabase) {
         throw new TRPCError6({
@@ -4603,7 +4812,8 @@ var appRouter = router({
       }
       const supabaseUser = data.user;
       const appMeta = supabaseUser.app_metadata ?? {};
-      const role = appMeta["role"];
+      const userMeta = supabaseUser.user_metadata ?? {};
+      const role = appMeta["role"] ?? userMeta["role"];
       if (role !== "admin") {
         throw new TRPCError6({
           code: "FORBIDDEN",
@@ -4611,15 +4821,18 @@ var appRouter = router({
         });
       }
       const name = supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "Admin";
-      await upsertUser({
-        openId: supabaseUser.id,
+      const openId = `admin:${(supabaseUser.email ?? supabaseUser.id).toLowerCase()}`;
+      upsertUser({
+        openId,
         email: supabaseUser.email ?? null,
         name,
         loginMethod: "supabase",
         role: "admin",
         lastSignedIn: /* @__PURE__ */ new Date()
+      }).catch((err) => {
+        console.warn("[Auth] Could not persist Supabase admin user to DB (non-fatal):", err);
       });
-      const sessionToken = await sdk.createSessionToken(supabaseUser.id, {
+      const sessionToken = await sdk.createSessionToken(openId, {
         expiresInMs: ONE_YEAR_MS,
         name
       });
@@ -4636,9 +4849,9 @@ var appRouter = router({
      * Call this once during setup; subsequent calls are idempotent (returns existing user).
      */
     ensureAdmin: publicProcedure.input(
-      z18.object({
-        email: z18.string().email(),
-        password: z18.string().min(8, "Password must be at least 8 characters")
+      z19.object({
+        email: z19.string().email(),
+        password: z19.string().min(8, "Password must be at least 8 characters")
       })
     ).mutation(async ({ input }) => {
       const supabase = getServerSupabase();
@@ -4721,7 +4934,9 @@ var appRouter = router({
   // Site Settings (real DB-backed)
   siteSettings: siteSettingsRouter,
   // Backup & Export (real DB export)
-  backup: backupRouter
+  backup: backupRouter,
+  // Data Import (import records from external tools via CSV/JSON)
+  dataImport: dataImportRouter
 });
 
 // server/_core/context.ts
@@ -4776,186 +4991,20 @@ async function createContext(opts) {
 
 // server/_core/vite.ts
 import express from "express";
-import fs2 from "fs";
+import fs from "fs";
 import { nanoid as nanoid5 } from "nanoid";
 import path2 from "path";
-import { createServer as createViteServer } from "vite";
-
-// vite.config.ts
-import { jsxLocPlugin } from "@builder.io/vite-plugin-jsx-loc";
-import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
-import fs from "node:fs";
-import path from "node:path";
-import { defineConfig } from "vite";
-var maybeManusRuntime = null;
-try {
-  if (process.env.VITE_ENABLE_MANUS_RUNTIME === "true") {
-    const { vitePluginManusRuntime } = await import("vite-plugin-manus-runtime");
-    maybeManusRuntime = vitePluginManusRuntime();
-  }
-} catch {
-  maybeManusRuntime = null;
-}
-var PROJECT_ROOT = import.meta.dirname;
-var LOG_DIR = path.join(PROJECT_ROOT, ".manus-logs");
-var MAX_LOG_SIZE_BYTES = 1 * 1024 * 1024;
-var TRIM_TARGET_BYTES = Math.floor(MAX_LOG_SIZE_BYTES * 0.6);
-function ensureLogDir() {
-  if (!fs.existsSync(LOG_DIR)) {
-    fs.mkdirSync(LOG_DIR, { recursive: true });
-  }
-}
-function trimLogFile(logPath, maxSize) {
-  try {
-    if (!fs.existsSync(logPath) || fs.statSync(logPath).size <= maxSize) {
-      return;
-    }
-    const lines = fs.readFileSync(logPath, "utf-8").split("\n");
-    const keptLines = [];
-    let keptBytes = 0;
-    const targetSize = TRIM_TARGET_BYTES;
-    for (let i = lines.length - 1; i >= 0; i--) {
-      const lineBytes = Buffer.byteLength(`${lines[i]}
-`, "utf-8");
-      if (keptBytes + lineBytes > targetSize) break;
-      keptLines.unshift(lines[i]);
-      keptBytes += lineBytes;
-    }
-    fs.writeFileSync(logPath, keptLines.join("\n"), "utf-8");
-  } catch {
-  }
-}
-function writeToLogFile(source, entries) {
-  if (entries.length === 0) return;
-  ensureLogDir();
-  const logPath = path.join(LOG_DIR, `${source}.log`);
-  const lines = entries.map((entry) => {
-    const ts = (/* @__PURE__ */ new Date()).toISOString();
-    return `[${ts}] ${JSON.stringify(entry)}`;
-  });
-  fs.appendFileSync(logPath, `${lines.join("\n")}
-`, "utf-8");
-  trimLogFile(logPath, MAX_LOG_SIZE_BYTES);
-}
-function vitePluginManusDebugCollector() {
-  return {
-    name: "manus-debug-collector",
-    transformIndexHtml(html) {
-      if (process.env.NODE_ENV === "production") {
-        return html;
-      }
-      return {
-        html,
-        tags: [
-          {
-            tag: "script",
-            attrs: {
-              src: "/__manus__/debug-collector.js",
-              defer: true
-            },
-            injectTo: "head"
-          }
-        ]
-      };
-    },
-    configureServer(server) {
-      server.middlewares.use("/__manus__/logs", (req, res, next) => {
-        if (req.method !== "POST") {
-          return next();
-        }
-        const handlePayload = (payload) => {
-          if (payload.consoleLogs?.length > 0) {
-            writeToLogFile("browserConsole", payload.consoleLogs);
-          }
-          if (payload.networkRequests?.length > 0) {
-            writeToLogFile("networkRequests", payload.networkRequests);
-          }
-          if (payload.sessionEvents?.length > 0) {
-            writeToLogFile("sessionReplay", payload.sessionEvents);
-          }
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ success: true }));
-        };
-        const reqBody = req.body;
-        if (reqBody && typeof reqBody === "object") {
-          try {
-            handlePayload(reqBody);
-          } catch (e) {
-            res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ success: false, error: String(e) }));
-          }
-          return;
-        }
-        let body = "";
-        req.on("data", (chunk) => {
-          body += chunk.toString();
-        });
-        req.on("end", () => {
-          try {
-            const payload = JSON.parse(body);
-            handlePayload(payload);
-          } catch (e) {
-            res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ success: false, error: String(e) }));
-          }
-        });
-      });
-    }
-  };
-}
-var plugins = [
-  react(),
-  tailwindcss(),
-  jsxLocPlugin(),
-  // Only include Manus runtime when explicitly enabled
-  ...maybeManusRuntime ? [maybeManusRuntime] : [],
-  vitePluginManusDebugCollector()
-];
-var vite_config_default = defineConfig({
-  base: "/",
-  plugins,
-  resolve: {
-    alias: {
-      "@": path.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path.resolve(import.meta.dirname, "shared"),
-      "@assets": path.resolve(import.meta.dirname, "attached_assets")
-    }
-  },
-  envDir: path.resolve(import.meta.dirname),
-  root: path.resolve(import.meta.dirname, "client"),
-  publicDir: path.resolve(import.meta.dirname, "client", "public"),
-  build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
-    emptyOutDir: true
-  },
-  server: {
-    host: true,
-    allowedHosts: [
-      ".manuspre.computer",
-      ".manus.computer",
-      ".manus-asia.computer",
-      ".manuscomputer.ai",
-      ".manusvm.computer",
-      "localhost",
-      "127.0.0.1"
-    ],
-    fs: {
-      strict: true,
-      deny: ["**/.*"]
-    }
-  }
-});
-
-// server/_core/vite.ts
+var DIRNAME = typeof __dirname !== "undefined" ? __dirname : new URL(".", import.meta.url).pathname;
 async function setupVite(app, server) {
+  const { createServer: createViteServer } = await import("vite");
+  const viteConfig = (await Promise.resolve().then(() => (init_vite_config(), vite_config_exports))).default;
   const serverOptions = {
     middlewareMode: true,
     hmr: { server },
     allowedHosts: true
   };
   const vite = await createViteServer({
-    ...vite_config_default,
+    ...viteConfig,
     configFile: false,
     server: serverOptions,
     appType: "custom"
@@ -4964,13 +5013,8 @@ async function setupVite(app, server) {
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
     try {
-      const clientTemplate = path2.resolve(
-        import.meta.dirname,
-        "../..",
-        "client",
-        "index.html"
-      );
-      let template = await fs2.promises.readFile(clientTemplate, "utf-8");
+      const clientTemplate = path2.resolve(DIRNAME, "../..", "client", "index.html");
+      let template = await fs.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid5()}"`
@@ -4984,8 +5028,8 @@ async function setupVite(app, server) {
   });
 }
 function serveStatic(app) {
-  const distPath = process.env.NODE_ENV === "development" ? path2.resolve(import.meta.dirname, "../..", "dist", "public") : path2.resolve(import.meta.dirname, "public");
-  if (!fs2.existsSync(distPath)) {
+  const distPath = process.env.NODE_ENV === "development" ? path2.resolve(DIRNAME, "../..", "dist", "public") : path2.resolve(DIRNAME, "public");
+  if (!fs.existsSync(distPath)) {
     console.error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
@@ -5014,9 +5058,13 @@ async function findAvailablePort(startPort = 3e3) {
   }
   throw new Error(`No available port found starting from ${startPort}`);
 }
-async function startServer() {
+function createApp() {
   const app = express2();
-  const server = createServer(app);
+  const allowedOrigins = process.env.NODE_ENV === "production" ? ["https://vanirgroup.com", "https://www.vanirgroup.com"] : true;
+  app.use(cors({
+    origin: allowedOrigins,
+    credentials: true
+  }));
   app.use(express2.json({ limit: "50mb" }));
   app.use(express2.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
@@ -5024,27 +5072,32 @@ async function startServer() {
   registerOAuthRoutes(app);
   app.use(
     "/api/trpc",
-    createExpressMiddleware({
-      router: appRouter,
-      createContext
-    })
+    createExpressMiddleware({ router: appRouter, createContext })
   );
+  return app;
+}
+async function startServer() {
+  const app = createApp();
+  const server = createServer(app);
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
-  const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
-  if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+  if (process.env.VERCEL !== "1") {
+    const preferredPort = parseInt(process.env.PORT || "3000");
+    const port = await findAvailablePort(preferredPort);
+    if (port !== preferredPort) {
+      console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+    }
+    server.listen(port, () => {
+      console.log(`Server running on http://localhost:${port}/`);
+    });
   }
-  server.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}/`);
-  });
   return app;
 }
 startServer().catch(console.error);
 export {
+  createApp,
   startServer
 };
