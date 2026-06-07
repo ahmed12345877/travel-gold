@@ -72,7 +72,12 @@ export default function AdminGallery() {
       setShowImageModal(false);
       setEditingImage(null);
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => {
+      const message = err.data?.zodError 
+        ? Object.values(err.data.zodError).flat().join(", ")
+        : err.message || "فشل في إضافة الصورة";
+      toast.error(message);
+    },
   });
 
   const updateImageMut = trpc.gallery.update.useMutation({
@@ -83,7 +88,12 @@ export default function AdminGallery() {
       setShowImageModal(false);
       setEditingImage(null);
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => {
+      const message = err.data?.zodError 
+        ? Object.values(err.data.zodError).flat().join(", ")
+        : err.message || "فشل في تحديث الصورة";
+      toast.error(message);
+    },
   });
 
   const deleteImageMut = trpc.gallery.delete.useMutation({
@@ -93,11 +103,21 @@ export default function AdminGallery() {
       toast.success("تم حذف الصورة");
       setDeleteConfirm(null);
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => {
+      const message = err.data?.zodError 
+        ? Object.values(err.data.zodError).flat().join(", ")
+        : err.message || "فشل في حذف الصورة";
+      toast.error(message);
+    },
   });
 
   const uploadImageMut = trpc.gallery.uploadImage.useMutation({
-    onError: (err) => toast.error(err.message),
+    onError: (err) => {
+      const message = err.data?.zodError 
+        ? Object.values(err.data.zodError).flat().join(", ")
+        : err.message || "فشل في رفع الصورة";
+      toast.error(message);
+    },
   });
 
   const createVideoMut = trpc.gallery.createVideo.useMutation({
@@ -108,7 +128,12 @@ export default function AdminGallery() {
       setShowVideoModal(false);
       setEditingVideo(null);
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => {
+      const message = err.data?.zodError 
+        ? Object.values(err.data.zodError).flat().join(", ")
+        : err.message || "فشل في إضافة الفيديو";
+      toast.error(message);
+    },
   });
 
   const updateVideoMut = trpc.gallery.updateVideo.useMutation({
@@ -119,7 +144,12 @@ export default function AdminGallery() {
       setShowVideoModal(false);
       setEditingVideo(null);
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => {
+      const message = err.data?.zodError 
+        ? Object.values(err.data.zodError).flat().join(", ")
+        : err.message || "فشل في تحديث الفيديو";
+      toast.error(message);
+    },
   });
 
   const deleteVideoMut = trpc.gallery.deleteVideo.useMutation({
@@ -129,7 +159,12 @@ export default function AdminGallery() {
       toast.success("تم حذف الفيديو");
       setDeleteConfirm(null);
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => {
+      const message = err.data?.zodError 
+        ? Object.values(err.data.zodError).flat().join(", ")
+        : err.message || "فشل في حذف الفيديو";
+      toast.error(message);
+    },
   });
 
   /* ─── Filtered Data ─── */
