@@ -1,98 +1,135 @@
-import { z } from "zod";<font></font>
-import { COOKIE_NAME, ONE_YEAR_MS } from "../../shared/const";<font></font>
-import { getSessionCookieOptions } from "../_core/cookies";<font></font>
-import { systemRouter } from "../_core/systemRouter";<font></font>
-import { publicProcedure, router } from "../_core/trpc";<font></font>
-import { sdk } from "../_core/sdk";<font></font>
-import { ENV } from "../_core/env";<font></font>
-import { bookingsRouter } from "./bookings";<font></font>
-import { reviewsRouter } from "./reviews";<font></font>
-import { offersRouter } from "./offers";<font></font>
-import { contactRouter } from "./contact";<font></font>
-import { uploadsRouter } from "./uploads";<font></font>
-import { galleryRouter } from "./gallery";<font></font>
-import { usersRouter } from "./users";<font></font>
-import { blogRouter } from "./blog";<font></font>
-import { marketingRouter } from "./marketing";<font></font>
-import { aiCommandRouter } from "./aiCommand";<font></font>
-import { aiStudioRouter } from "./aiStudio";<font></font>
-import { backupRouter } from "./backup";<font></font>
-import { dataImportRouter } from "./dataImport";<font></font>
-import { siteSettingsRouter } from "./siteSettings";<font></font>
-import { adminBlogRouter } from "./admin.blog";<font></font>
-import { adminDestinationsRouter } from "./admin.destinations";<font></font>
-import { adminOffersRouter } from "./admin.offers";<font></font>
-<font></font>
-export const appRouter = router({<font></font>
-  system: systemRouter,<font></font>
-<font></font>
-  auth: router({<font></font>
-    me: publicProcedure.query((opts) => opts.ctx.user),<font></font>
-<font></font>
-    logout: publicProcedure.mutation(({ ctx }) => {<font></font>
-      const cookieOptions = getSessionCookieOptions(ctx.req);<font></font>
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });<font></font>
-      return { success: true } as const;<font></font>
-    }),<font></font>
-<font></font>
-    passwordLogin: publicProcedure<font></font>
-      .input(z.object({ email: z.string().email(), password: z.string() }))<font></font>
-      .mutation(async ({ ctx, input }) => {<font></font>
-        const expectedEmail = ENV.adminEmail;<font></font>
-        const expectedHash = ENV.adminPasswordHash;<font></font>
-<font></font>
-        if (!expectedEmail || !expectedHash) {<font></font>
-          throw new Error("Admin login not configured");<font></font>
-        }<font></font>
-<font></font>
-        if (input.email.toLowerCase() !== expectedEmail.toLowerCase()) {<font></font>
-          throw new Error("Invalid credentials");<font></font>
-        }<font></font>
-<font></font>
-        const encoder = new TextEncoder();<font></font>
-        const data = encoder.encode(input.password);<font></font>
-        const hashBuffer = await crypto.subtle.digest("SHA-256", data);<font></font>
-        const hashHex = Array.from(new Uint8Array(hashBuffer))<font></font>
-          .map((b) => b.toString(16).padStart(2, "0"))<font></font>
-          .join("");<font></font>
-<font></font>
-        if (hashHex !== expectedHash) {<font></font>
-          throw new Error("Invalid credentials");<font></font>
-        }<font></font>
-<font></font>
-        const openId = `admin:${input.email}`;<font></font>
-        const sessionToken = await sdk.createSessionToken(openId, {<font></font>
-          name: "Admin",<font></font>
-          expiresInMs: ONE_YEAR_MS,<font></font>
-        });<font></font>
-<font></font>
-        const cookieOptions = getSessionCookieOptions(ctx.req);<font></font>
-        ctx.res.cookie(COOKIE_NAME, sessionToken, {<font></font>
-          ...cookieOptions,<font></font>
-          maxAge: ONE_YEAR_MS,<font></font>
-        });<font></font>
-<font></font>
-        return { success: true };<font></font>
-      }),<font></font>
-  }),<font></font>
-<font></font>
-  bookings: bookingsRouter,<font></font>
-  reviews: reviewsRouter,<font></font>
-  offers: offersRouter,<font></font>
-  contact: contactRouter,<font></font>
-  uploads: uploadsRouter,<font></font>
-  gallery: galleryRouter,<font></font>
-  users: usersRouter,<font></font>
-  blog: blogRouter,<font></font>
-  marketing: marketingRouter,<font></font>
-  aiCommand: aiCommandRouter,<font></font>
-  aiStudio: aiStudioRouter,<font></font>
-  backup: backupRouter,<font></font>
-  dataImport: dataImportRouter,<font></font>
-  siteSettings: siteSettingsRouter,<font></font>
-  adminBlog: adminBlogRouter,<font></font>
-  adminDestinations: adminDestinationsRouter,<font></font>
-  adminOffers: adminOffersRouter,<font></font>
-});<font></font>
-<font></font>
+import { z } from "zod";
+import { COOKIE_NAME, ONE_YEAR_MS } from "../../shared/const";
+import { getSessionCookieOptions } from "../_core/cookies";
+import { systemRouter } from "../_core/systemRouter";
+import { publicProcedure, router } from "../_core/trpc";
+import { sdk } from "../_core/sdk";
+import { ENV } from "../_core/env";
+import { bookingsRouter } from "./bookings";
+import { reviewsRouter } from "./reviews";
+import { offersRouter } from "./offers";
+import { contactRouter } from "./contact";
+import { uploadsRouter } from "./uploads";
+import { galleryRouter } from "./gallery";
+import { usersRouter } from "./users";
+import { blogRouter } from "./blog";
+import { marketingRouter } from "./marketing";
+import { aiCommandRouter } from "./aiCommand";
+import { aiStudioRouter } from "./aiStudio";
+import { backupRouter } from "./backup";
+import { dataImportRouter } from "./dataImport";
+import { siteSettingsRouter } from "./siteSettings";
+import { adminBlogRouter } from "./admin.blog";
+import { adminDestinationsRouter } from "./admin.destinations";
+import { adminOffersRouter } from "./admin.offers";
+
+export const appRouter = router({
+  system: systemRouter,
+
+  auth: router({
+    me: publicProcedure.query((opts) => opts.ctx.user),
+
+    logout: publicProcedure.mutation(({ ctx }) => {
+      const cookieOptions = getSessionCookieOptions(ctx.req);
+      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      return { success: true } as const;
+    }),
+
+    login: publicProcedure
+      .input(z.object({ email: z.string().email(), password: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const expectedEmail = ENV.adminEmail;
+        const expectedHash = ENV.adminPasswordHash;
+
+        if (!expectedEmail || !expectedHash) {
+          throw new Error("Admin login not configured");
+        }
+
+        if (input.email.toLowerCase() !== expectedEmail.toLowerCase()) {
+          throw new Error("Invalid credentials");
+        }
+
+        const encoder = new TextEncoder();
+        const data = encoder.encode(input.password);
+        const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+        const hashHex = Array.from(new Uint8Array(hashBuffer))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+
+        if (hashHex !== expectedHash) {
+          throw new Error("Invalid credentials");
+        }
+
+        const openId = `admin:${input.email}`;
+        const sessionToken = await sdk.createSessionToken(openId, {
+          name: "Admin",
+          expiresInMs: ONE_YEAR_MS,
+        });
+
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, {
+          ...cookieOptions,
+          maxAge: ONE_YEAR_MS,
+        });
+
+        return { success: true };
+      }),
+
+    supabaseLogin: publicProcedure
+      .input(z.object({ accessToken: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const { getServerSupabase } = await import("../_core/supabase");
+        const supa = getServerSupabase();
+        if (!supa) throw new Error("Supabase not configured");
+
+        const { data: authData, error } = await supa.auth.getUser(input.accessToken);
+        if (error || !authData.user) throw new Error("Invalid token");
+
+        const { upsertUser, getUserByOpenId } = await import("../db");
+        const u = authData.user;
+        await upsertUser({
+          openId: u.id,
+          name: u.user_metadata?.full_name || u.email?.split("@")[0] || null,
+          email: u.email ?? null,
+          loginMethod: "supabase",
+          lastSignedIn: new Date(),
+        });
+
+        const dbUser = await getUserByOpenId(u.id);
+        if (!dbUser || dbUser.role !== "admin") throw new Error("Admin access denied");
+
+        const sessionToken = await sdk.createSessionToken(u.id, {
+          name: dbUser.name || "Admin",
+          expiresInMs: ONE_YEAR_MS,
+        });
+
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, {
+          ...cookieOptions,
+          maxAge: ONE_YEAR_MS,
+        });
+
+        return { success: true };
+      }),
+  }),
+
+  bookings: bookingsRouter,
+  reviews: reviewsRouter,
+  offers: offersRouter,
+  contact: contactRouter,
+  uploads: uploadsRouter,
+  gallery: galleryRouter,
+  users: usersRouter,
+  blog: blogRouter,
+  marketing: marketingRouter,
+  aiCommand: aiCommandRouter,
+  aiStudio: aiStudioRouter,
+  backup: backupRouter,
+  dataImport: dataImportRouter,
+  siteSettings: siteSettingsRouter,
+  adminBlog: adminBlogRouter,
+  adminDestinations: adminDestinationsRouter,
+  adminOffers: adminOffersRouter,
+});
+
 export type AppRouter = typeof appRouter;
