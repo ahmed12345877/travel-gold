@@ -61,7 +61,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       lastSignedIn: new Date(),
     });
 
-    const sessionToken = await sdk.createSessionToken(userInfo.openId, {
+   const sessionToken = await sdk.createSessionToken(userInfo.openId, {
+  // استخدام ?. بدلاً من الشروط الثلاثية المتداخلة الطويلة
+  email: userInfo.profile?.email,
+  name: userInfo.profile?.name ?? userInfo.username ?? "User"
+});
+
       name: (userInfo as any).name || "",
       expiresInMs: ONE_YEAR_MS,
     });
