@@ -1,5 +1,10 @@
 import PageMeta from "@/components/PageMeta";
 import { supabase, fetchSupabaseAuthSettings } from "@/lib/supabase";
+import {
+  firebaseEmailLogin,
+  firebaseGoogleLogin,
+  isFirebaseConfigured,
+} from "@/lib/firebase-api";
 import { trpc } from "@/lib/trpc";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
@@ -89,10 +94,54 @@ export default function AdminLogin() {
     }
     setLoading(true);
     setStatus(null);
+
+    // Try Firebase email/password first if configured
+    if (isFirebaseConfigured) {
+      try {
+        await firebaseEmailLogin(email, password);
+        navigate("/admin");
+        return;
+      } catch (err: any) {
+        const msg = err?.message || "Invalid credentials";
+        // If the error is clearly a Firebase auth error (wrong password, user not found), surface it
+        if (
+          msg.includes("INVALID_PASSWORD") ||
+          msg.includes("USER_NOT_FOUND") ||
+          msg.includes("invalid-credential") ||
+          msg.includes("wrong-password") ||
+          msg.includes("user-not-found") ||
+          msg.includes("Admin access denied")
+        ) {
+          setStatus({ type: "error", msg: msg.includes("Admin access denied") ? "Admin access denied." : "Invalid email or password." });
+          setLoading(false);
+          return;
+        }
+        // Otherwise fall through to the tRPC login (legacy)
+      }
+    }
+
     loginMutation.mutate({ email, password });
   };
 
+  const handleFirebaseGoogleLogin = async () => {
+    setLoading(true);
+    setStatus(null);
+    try {
+      await firebaseGoogleLogin();
+      navigate("/admin");
+    } catch (err: any) {
+      setStatus({ type: "error", msg: err?.message || "Google sign-in failed." });
+      setLoading(false);
+    }
+  };
+
   const signInWithGoogle = async () => {
+    // Prefer Firebase Google sign-in when configured
+    if (isFirebaseConfigured) {
+      await handleFirebaseGoogleLogin();
+      return;
+    }
+
     if (!supabase) return;
     setLoading(true);
     setStatus(null);
@@ -153,6 +202,8 @@ export default function AdminLogin() {
     }
   };
 
+  const showGoogleButton = isFirebaseConfigured || (hasSupabase && (!providerState.checked || providerState.googleEnabled));
+
   return (
     <div className="min-h-screen bg-[#080810] flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <PageMeta
@@ -184,10 +235,10 @@ export default function AdminLogin() {
                   </div>
                 )}
                 {/* Preload image */}
-                <img 
-                  src={LOGO_URL} 
-                  alt="" 
-                  className="hidden" 
+                <img
+                  src={LOGO_URL}
+                  alt=""
+                  className="hidden"
                   onLoad={() => setLogoLoaded(true)}
                   onError={() => setLogoLoaded(false)}
                 />
@@ -214,8 +265,8 @@ export default function AdminLogin() {
                 </p>
               </div>
 
-              {/* Tab switcher – show only if Supabase is configured */}
-              {hasSupabase && (
+              {/* Tab switcher – show only if Supabase or magic link is relevant */}
+              {hasSupabase && !isFirebaseConfigured && (
                 <div className="flex gap-1 bg-white/5 rounded-xl p-1">
                   <button
                     onClick={() => setActiveTab("password")}
@@ -241,7 +292,7 @@ export default function AdminLogin() {
               )}
 
               {/* Email + Password form */}
-              {(!hasSupabase || activeTab === "password") && (
+              {(!hasSupabase || isFirebaseConfigured || activeTab === "password") && (
                 <form onSubmit={handlePasswordLogin} className="space-y-3">
                   <div className="relative">
                     <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
@@ -330,8 +381,8 @@ export default function AdminLogin() {
                 </form>
               )}
 
-              {/* Magic Link */}
-              {hasSupabase && activeTab === "magic" && (
+              {/* Magic Link – only if Supabase is configured and Firebase is not */}
+              {hasSupabase && !isFirebaseConfigured && activeTab === "magic" && (
                 <div className="space-y-3">
                   <div className="relative">
                     <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
@@ -372,7 +423,7 @@ export default function AdminLogin() {
               )}
 
               {/* Google sign-in */}
-              {hasSupabase && (
+              {showGoogleButton && (
                 <div>
                   <div className="flex items-center gap-3 my-1">
                     <div className="flex-1 h-px bg-white/8" />
@@ -382,7 +433,7 @@ export default function AdminLogin() {
                   <button
                     type="button"
                     onClick={signInWithGoogle}
-                    disabled={loading || (providerState.checked && !providerState.googleEnabled)}
+                    disabled={loading || (!isFirebaseConfigured && providerState.checked && !providerState.googleEnabled)}
                     className="w-full h-[50px] flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl text-sm text-white font-normal transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
@@ -393,9 +444,9 @@ export default function AdminLogin() {
                     </svg>
                     Continue with Google
                   </button>
-                  {providerState.checked && !providerState.googleEnabled && (
+                  {!isFirebaseConfigured && providerState.checked && !providerState.googleEnabled && (
                     <p className="mt-2 text-[11px] text-amber-300/70">
-                      Google provider is disabled in Supabase. Enable it in Dashboard → Authentication → Providers.
+                      Google provider is disabled. Enable it in Firebase Console → Authentication → Sign-in method, or Supabase Dashboard → Authentication → Providers.
                     </p>
                   )}
                 </div>
