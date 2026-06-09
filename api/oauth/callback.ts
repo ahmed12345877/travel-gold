@@ -6,8 +6,17 @@ import { sdk } from "../../server/_core/sdk";
 
 function getQueryParam(req: VercelRequest, key: string): string | undefined {
   const value = req.query[key];
-  return typeof value === "string" ? value : Array.isArray(value) ? value[0] : undefined;
+// تفكيك العملية الثلاثية المتداخلة إلى عبارات شرطية مستقلة ونظيفة
+if (typeof value === "string") {
+    return value;
+} 
+
+if (Array.isArray(value)) {
+    return value[0];
 }
+
+return undefined;
+
 
 function serializeCookie(name: string, value: string, options: ReturnType<typeof getSessionCookieOptions> & { maxAge: number }) {
   const parts = [
