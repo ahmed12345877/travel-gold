@@ -35,7 +35,8 @@ if (!credentialApp) {
 }
 
 // 3. تهيئة التطبيق بنظام الـ Modular الحديث المتوافق 100% مع السيرفر الحقيقي
-if (getApps().length === 0) {
+const appsList = getApps();
+if (!appsList || appsList.length === 0) {
   initializeApp({
     credential: credentialApp,
     storageBucket: process.env.FIREBASE_STORAGE_BUCKET || undefined
