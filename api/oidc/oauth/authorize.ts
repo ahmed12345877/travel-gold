@@ -1,4 +1,4 @@
-import type { IncomingMessage, ServerResponse } from "http";
+import type { IncomingMessage, ServerResponse } from "node:http";
 
 function getSupabaseBase(): string {
   const base = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
