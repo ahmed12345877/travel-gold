@@ -1,5 +1,5 @@
 
-import type { IncomingMessage, ServerResponse } from "http";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import { nodeHTTPRequestHandler } from "@trpc/server/adapters/node-http";
 // ✅ الصحيح: تحديد الملف والامتداد بدقة
 import { appRouter } from '../../server/routers/index.js';
