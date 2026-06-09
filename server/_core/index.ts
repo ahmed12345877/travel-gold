@@ -8,6 +8,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { registerDownloadProxy } from "../downloadProxy";
+import { registerFirebaseAuthRoutes } from "../authExpressRouter";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -42,14 +43,27 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 export function createApp() {
   const app = express();
   
-  // Enable CORS for all origins in development, restrict in production
-  const allowedOrigins = process.env.NODE_ENV === 'production'
-    ? ['https://vanirgroup.com', 'https://www.vanirgroup.com']
-    : true; // Allow all origins in development
-    
+  // Enable CORS for all origins in development, restrict in production.
+  // In production, CORS_ORIGINS (comma-separated) overrides the default allowlist
+  // so Render-hosted frontends can be added without a code change.
+  let allowedOrigins: string[] | boolean;
+  if (process.env.NODE_ENV === 'production') {
+    const extra = (process.env.CORS_ORIGINS || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    allowedOrigins = [
+      'https://vanirgroup.com',
+      'https://www.vanirgroup.com',
+      ...extra,
+    ];
+  } else {
+    allowedOrigins = true; // allow all in development
+  }
+
   app.use(cors({
     origin: allowedOrigins,
-    credentials: true
+    credentials: true,
   }));
 
 app.use(express.json({ limit: "50mb" }));
@@ -59,6 +73,7 @@ app.use(express.json({ limit: "50mb" }));
   registerStorageProxy(app);
   registerDownloadProxy(app);
   registerOAuthRoutes(app);
+  registerFirebaseAuthRoutes(app);
   app.use(
     "/api/trpc",
     createExpressMiddleware({ router: appRouter, createContext })

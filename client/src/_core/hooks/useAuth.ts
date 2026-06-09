@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
 import { useCallback, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
+import { firebaseSignOut } from "@/lib/firebase-api";
 
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
@@ -26,7 +27,8 @@ export function useAuth(options?: UseAuthOptions) {
 
   const logout = useCallback(async () => {
     try {
-      // Sign out Supabase session if present
+      // Sign out Firebase and Supabase sessions if present
+      try { await firebaseSignOut(); } catch {}
       try { await supabase?.auth.signOut(); } catch {}
       await logoutMutation.mutateAsync();
     } catch (error: unknown) {
