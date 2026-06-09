@@ -1,42 +1,40 @@
 import admin from "firebase-admin";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { existsSync } from "node:fs";
+import fs from "node:fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-if (!admin.apps.length) {
-  let credential: admin.credential.Credential;
+// 1. قراءة الشفرة السرية من متغير البيئة في موقع Render بطريقة آمنة وصحيحة
+let credential: admin.ServiceAccount | undefined;
+const envJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 
-  // Prefer FIREBASE_SERVICE_ACCOUNT_JSON env var (base64 or raw JSON string).
-  // This is the recommended approach for Render / containerised deployments so
-  // the private key never has to be committed to the repository.
-  const envJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  if (envJson) {
-    let parsed: object;
-    try {
-      // Try raw JSON first, then base64-encoded JSON
-      const raw = envJson.startsWith('{') ? envJson : Buffer.from(envJson, 'base64').toString('utf8');
-      parsed = JSON.parse(raw);
-    } catch {
-      throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is set but could not be parsed as JSON or base64-encoded JSON');
-    }
-    credential = admin.credential.cert(parsed as admin.ServiceAccount);
-  } else {
-    // Fall back to local key files (development / legacy path)
-    const primaryKeyPath = path.resolve(__dirname, "firebase-key.json");
-    const fallbackKeyPath = path.resolve(__dirname, "firebase-key.json.json");
-    const serviceAccountPath = existsSync(primaryKeyPath) ? primaryKeyPath : fallbackKeyPath;
-    credential = admin.credential.cert(serviceAccountPath);
+if (envJson) {
+  try {
+    const rawJson = envJson.trim().startsWith("{") 
+      ? envJson 
+      : Buffer.from(envJson, "base64").toString("utf8");
+    credential = JSON.parse(rawJson);
+  } catch (e) {
+    console.error("[Firebase] Failed to parse credentials from env:", e);
   }
+}
+
+// 2. كود التحقق الآمن لبيئة الـ ES Modules لمنع تكرار التهيئة أو الانهيار
+// تم استبدال الكود المعطوب بكود متوافق مع خوادم الإنتاج لمنع خطأ TypeError
+const apps = admin.apps;
+if (apps && apps.length === 0) {
+  const primaryKeyPath = path.resolve(__dirname, "../../firebase-key.json");
+  const fallbackKeyPath = path.resolve(__dirname, "firebase-key.json");
+  const serviceAccountPath = fs.existsSync(primaryKeyPath) ? primaryKeyPath : fallbackKeyPath;
 
   admin.initializeApp({
-    credential,
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || undefined,
+    credential: credential ? admin.credential.cert(credential) : admin.credential.cert(serviceAccountPath),
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || undefined
   });
 }
 
-// تصدير الأدوات الأساسية لكي تستخدمها الـ tRPC Routers فوراً وبدون أخطاء
+// 3. تصدير الدوال الأساسية بنفس المسميات السابقة لتعمل مع الـ REST APIs والـ Routers
 export const db = admin.firestore();
 export const bucket = admin.storage().bucket();
