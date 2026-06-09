@@ -1,4 +1,4 @@
-import type { IncomingMessage, ServerResponse } from "http";
+import type { IncomingMessage, ServerResponse } from "node:http";
 
 function getSupabaseBase(): string {
   const base = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -12,16 +12,16 @@ export default async function handler(_req: IncomingMessage, res: ServerResponse
     const upstream = `${base}/auth/v1/.well-known/jwks.json`;
     const r = await fetch(upstream, { headers: { Accept: "application/json" } });
     const body = await r.text();
-    res.statusCode = r.status;
-    res.setHeader("Content-Type", r.headers.get("content-type") || "application/json; charset=utf-8");
-    // Permissive CORS for JWKS
-    res.setHeader("Access-Control-Allow-Origin", "*");
+
+    res.writeHead(r.status, { "Content-Type": "application/json" });
     res.end(body);
-  } catch (err: any) {
-    res.statusCode = 500;
-    res.setHeader("Content-Type", "application/json; charset=utf-8");
-    res.end(JSON.stringify({ error: "JWKS_PROXY_ERROR", message: err?.message || String(err) }));
+
+  } catch (error) {
+    res.writeHead(500, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Failed to fetch JWKS keys" }));
   }
 }
 
+// اترك هذا السطر كما هو في النهاية 👇
 export const runtime = "nodejs";
+
