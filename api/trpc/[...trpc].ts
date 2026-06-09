@@ -89,8 +89,11 @@ export default async function trpcHandler(req: IncomingMessage, res: ServerRespo
   }
 }
 
-export const runtime = "nodejs";
-
-export const config = {
-  api: { bodyParser: false },
+module.exports = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb', // رفع الحد لمنع ظهور خطأ الـ JSON وحرف الـ A
+    },
+  },
 };
+
