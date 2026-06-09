@@ -89,11 +89,17 @@ export default async function trpcHandler(req: IncomingMessage, res: ServerRespo
   }
 }
 
-module.exports = {
-  experimental: {
-    serverActions: {
-      bodySizeLimit: '10mb', // رفع الحد لمنع ظهور خطأ الـ JSON وحرف الـ A
+// تفعيل الـ Body Parser مع رفع الحد الأقصى لحجم البيانات ليتناسب مع ملفات الرفع الكبيرة
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb', // رفع الحد لمنع ظهور خطأ الـ JSON وحرف الـ A
     },
+    responseLimit: false, // إلغاء قيود حجم الرد البرمجي لتجنب الأخطاء
   },
 };
+
+// اترك سطر الـ runtime كما هو لضمان تشغيله ببيئة Node.js المستقرة
+export const runtime = "nodejs";
+
 
