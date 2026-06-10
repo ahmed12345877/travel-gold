@@ -6,8 +6,7 @@ import { createRoot } from "react-dom/client";
 import { HelmetProvider } from "react-helmet-async";
 import superjson from "superjson";
 import App from "./App";
-import { getLoginUrl } from "./const";
-import { supabase } from "./lib/supabase";
+import { getAuth } from "firebase/auth"; // 1. استيراد مكتبة الفيربيز الرسمية
 import { GlobalThemeStyleInjector } from "./contexts/GlobalThemeStyleInjector";
 import { ThemeColorsApplier } from "./contexts/ThemeColorsApplier";
 import { ThemeColorsProvider } from "./contexts/ThemeColorsProvider";
@@ -16,44 +15,38 @@ import "./index.css";
 
 const queryClient = new QueryClient();
 
+// دالة لإعادة توجيه المستخدم لصفحة الدخول إذا انتهت صلاحية جلسته
 const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
   if (typeof window === "undefined") return;
 
   const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
-
   if (!isUnauthorized) return;
 
-  // Route unauthorized users to the internal admin login to avoid external NXDOMAINs
   window.location.href = "/admin/login";
 };
 
+// مراقبة الأخطاء العامة في جلب البيانات
 queryClient.getQueryCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
-    const error = event.query.state.error;
-    redirectToLoginIfUnauthorized(error);
-    console.error("[API Query Error]", error);
+    redirectToLoginIfUnauthorized(event.query.state.error);
+    console.error("[API Query Error]", event.query.state.error);
   }
 });
 
 queryClient.getMutationCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
-    const error = event.mutation.state.error;
-    redirectToLoginIfUnauthorized(error);
-    console.error("[API Mutation Error]", error);
+    redirectToLoginIfUnauthorized(event.mutation.state.error);
+    console.error("[API Mutation Error]", event.mutation.state.error);
   }
 });
 
-// Dynamically resolve API URL based on current environment
+// تحديد رابط الـ API بشكل صحيح للنطاق الفرعي والسيرفر
 function getApiUrl(): string {
-  // In production, use relative path (same origin)
-  // In development, use the dev server's origin
-  if (typeof window !== "undefined") {
-    return `${window.location.origin}/api/trpc`;
-  }
-  return "/api/trpc";
+  return "https://vanirgroup.com";
 }
 
+// إنشاء عميل tRPC وتمرير الـ Token الخاص بـ Firebase تلقائياً مع كل طلب
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
@@ -62,14 +55,22 @@ const trpcClient = trpc.createClient({
       async fetch(input, init) {
         let token: string | null = null;
         try {
-          const session = await supabase?.auth.getSession();
-          token = session?.data.session?.access_token ?? null;
-        } catch {
+          // 2. جلب المستخدم الحالي النشط من Firebase وتوليد رمز أمان جديد له
+          const auth = getAuth();
+          const currentUser = auth.currentUser;
+          if (currentUser) {
+            token = await currentUser.getIdToken();
+          }
+        } catch (err) {
+          console.error("فشل جلب الـ Token من Firebase:", err);
           token = null;
         }
 
         const headers = new Headers(init?.headers || {});
-        if (token) headers.set("Authorization", `Bearer ${token}`);
+        // إذا كان للأدمن جلسة نشطة، نرسل الرمز للسيرفر ليفحصه ويسمح بالدخول
+        if (token) {
+          headers.set("Authorization", `Bearer ${token}`);
+        }
 
         return globalThis.fetch(input, {
           ...(init ?? {}),
@@ -81,6 +82,7 @@ const trpcClient = trpc.createClient({
   ],
 });
 
+// تشغيل الواجهة الأمامية للموقع
 createRoot(document.getElementById("root")!).render(
   <HelmetProvider>
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
