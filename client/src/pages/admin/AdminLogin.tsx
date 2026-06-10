@@ -36,21 +36,6 @@ export default function AdminLogin() {
     checked: false,
   });
 
-  const loginMutation = trpc.auth.login.useMutation({
-    onSuccess: () => {
-      navigate("/admin");
-    },
-    onError: (err) => {
-      const raw = err.message || "";
-      const msg =
-        raw.startsWith("Unexpected token") || raw.includes("not valid JSON") || raw.includes("Failed to fetch")
-          ? "Cannot reach the server. Please check your connection and try again."
-          : raw || "Invalid credentials. Please try again.";
-      setStatus({ type: "error", msg });
-      setLoading(false);
-    },
-  });
-
   const supabaseLoginMutation = trpc.auth.supabaseLogin.useMutation({
     onSuccess: () => {
       navigate("/admin");
@@ -95,32 +80,19 @@ export default function AdminLogin() {
     setLoading(true);
     setStatus(null);
 
-    // Try Firebase email/password first if configured
-    if (isFirebaseConfigured) {
-      try {
-        await firebaseEmailLogin(email, password);
-        navigate("/admin");
-        return;
-      } catch (err: any) {
-        const msg = err?.message || "Invalid credentials";
-        // If the error is clearly a Firebase auth error (wrong password, user not found), surface it
-        if (
-          msg.includes("INVALID_PASSWORD") ||
-          msg.includes("USER_NOT_FOUND") ||
-          msg.includes("invalid-credential") ||
-          msg.includes("wrong-password") ||
-          msg.includes("user-not-found") ||
-          msg.includes("Admin access denied")
-        ) {
-          setStatus({ type: "error", msg: msg.includes("Admin access denied") ? "Admin access denied." : "Invalid email or password." });
-          setLoading(false);
-          return;
-        }
-        // Otherwise fall through to the tRPC login (legacy)
-      }
+    try {
+      await firebaseEmailLogin(email, password);
+      navigate("/admin");
+    } catch (err: any) {
+      const msg: string = err?.message || "Authentication failed.";
+      const displayMsg = msg.includes("Admin access denied")
+        ? "Admin access denied."
+        : msg.includes("not configured") || msg.includes("VITE_FIREBASE_API_KEY")
+        ? "Firebase is not configured. Contact your administrator."
+        : "Invalid email or password.";
+      setStatus({ type: "error", msg: displayMsg });
+      setLoading(false);
     }
-
-    loginMutation.mutate({ email, password });
   };
 
   const handleFirebaseGoogleLogin = async () => {
