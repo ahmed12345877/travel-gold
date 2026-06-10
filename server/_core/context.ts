@@ -89,8 +89,13 @@ export async function createContext(
     }
   }
 
-  // Final DB refresh (in case Manus returned a user without latest role)
-  if (user?.openId) {
+  // Final DB refresh for SQL-backed sessions only.
+  // firebase: and admin: sessions are self-contained — skip the SQL lookup.
+  if (
+    user?.openId &&
+    !user.openId.startsWith("firebase:") &&
+    !user.openId.startsWith("admin:")
+  ) {
     const fresh = await db.getUserByOpenId(user.openId);
     if (fresh) user = fresh;
   }

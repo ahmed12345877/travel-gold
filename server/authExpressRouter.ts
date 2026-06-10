@@ -3,32 +3,42 @@ import admin from "firebase-admin";
 import { sdk } from "./_core/sdk";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { COOKIE_NAME, ONE_YEAR_MS } from "../shared/const";
-import * as db from "./db";
+import { db as firestoreDb } from "./_core/firebaseAdmin";
 
 // Ensure Firebase Admin is initialized before this module is used
 import "./_core/firebaseAdmin";
 
 async function resolveAdminUser(uid: string, email: string | undefined, displayName: string | undefined) {
-  const openId = `firebase:${uid}`;
+  // Upsert user into Firestore (merge so existing role/fields are preserved)
+  await firestoreDb.collection("users").doc(uid).set(
+    {
+      uid,
+      email: email ?? null,
+      name: displayName || email?.split("@")[0] || null,
+      loginMethod: "firebase",
+      lastSignedIn: new Date(),
+    },
+    { merge: true }
+  );
 
-  await db.upsertUser({
-    openId,
-    name: displayName || email?.split("@")[0] || null,
-    email: email ?? null,
-    loginMethod: "firebase",
-    lastSignedIn: new Date(),
-  });
+  const userDoc = await firestoreDb.collection("users").doc(uid).get();
+  const userData = userDoc.data();
 
-  const user = await db.getUserByOpenId(openId);
-  if (!user || user.role !== "admin") {
+  if (!userData || userData.role !== "admin") {
     throw new Error("Admin access denied");
   }
-  return user;
+
+  return {
+    uid,
+    email: email ?? (userData.email as string | null) ?? null,
+    name: displayName || (userData.name as string | null) || null,
+    role: userData.role as string,
+  };
 }
 
 async function issueSession(req: Request, res: Response, uid: string, email: string | undefined, displayName: string | undefined) {
   const user = await resolveAdminUser(uid, email, displayName);
-  const openId = user.openId;
+  const openId = `firebase:${uid}`;
 
   const sessionToken = await sdk.createSessionToken(openId, {
     name: user.name || "Admin",

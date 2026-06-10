@@ -7,6 +7,7 @@ import { SignJWT, jwtVerify } from "jose";
 import type { User } from "../../drizzle/schema";
 import * as db from "../db";
 import { ENV } from "./env";
+import { db as firestoreDb } from "./firebaseAdmin";
 import type {
   ExchangeTokenRequest,
   ExchangeTokenResponse,
@@ -286,6 +287,33 @@ class SDKServer {
         loginMethod: "password",
         avatarUrl: null,
         role: "admin",
+        createdAt: now,
+        updatedAt: now,
+        lastSignedIn: now,
+      } satisfies User;
+    }
+
+    // Firebase sessions: verify identity and role via Firestore, never SQL.
+    if (sessionUserId.startsWith("firebase:")) {
+      const uid = sessionUserId.slice("firebase:".length);
+      const userDoc = await firestoreDb.collection("users").doc(uid).get();
+      if (!userDoc.exists) {
+        throw ForbiddenError("Firebase user not found");
+      }
+      const userData = userDoc.data()!;
+      if (userData.role !== "admin") {
+        throw ForbiddenError("Admin access denied");
+      }
+      await firestoreDb.collection("users").doc(uid).set({ lastSignedIn: now }, { merge: true });
+      return {
+        id: 0,
+        openId: sessionUserId,
+        name: session.name || (userData.name as string) || "Admin",
+        email: (userData.email as string) ?? null,
+        phone: null,
+        loginMethod: "firebase",
+        avatarUrl: null,
+        role: "admin" as const,
         createdAt: now,
         updatedAt: now,
         lastSignedIn: now,
