@@ -2,6 +2,8 @@ import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import {
   getAuth,
   signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
   GoogleAuthProvider,
   signInWithPopup,
   type UserCredential,
@@ -26,7 +28,6 @@ function getFirebaseApp(): FirebaseApp | null {
 
 export const isFirebaseConfigured = Boolean(env.VITE_FIREBASE_API_KEY);
 
-// Resolve the backend base URL: use VITE_API_URL in production, or same origin in dev
 function apiBase(): string {
   return (env.VITE_API_URL ?? "").replace(/\/$/, "");
 }
@@ -56,6 +57,19 @@ export async function firebaseEmailLogin(email: string, password: string): Promi
   await callAuthEndpoint("/api/auth/login", idToken);
 }
 
+export async function firebaseEmailSignUp(email: string, password: string, name?: string): Promise<void> {
+  const app = getFirebaseApp();
+  if (!app) throw new Error("Firebase is not configured. Set VITE_FIREBASE_API_KEY.");
+
+  const auth = getAuth(app);
+  const credential: UserCredential = await createUserWithEmailAndPassword(auth, email, password);
+  if (name) {
+    await updateProfile(credential.user, { displayName: name });
+  }
+  const idToken = await credential.user.getIdToken();
+  await callAuthEndpoint("/api/auth/login", idToken);
+}
+
 export async function firebaseGoogleLogin(): Promise<void> {
   const app = getFirebaseApp();
   if (!app) throw new Error("Firebase is not configured. Set VITE_FIREBASE_API_KEY.");
@@ -66,7 +80,7 @@ export async function firebaseGoogleLogin(): Promise<void> {
 
   const credential: UserCredential = await signInWithPopup(auth, provider);
   const idToken = await credential.user.getIdToken();
-  await callAuthEndpoint("/api/auth/google", idToken);
+  await callAuthEndpoint("/api/auth/login", idToken);
 }
 
 export async function firebaseSignOut(): Promise<void> {

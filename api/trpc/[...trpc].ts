@@ -2,6 +2,8 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { nodeHTTPRequestHandler } from "@trpc/server/adapters/node-http";
 import { appRouter } from '../../server/routers/index.js';
 import { createContext } from "../../server/_core/context.js";
+// Initialize Firebase Admin so getAuth() works in createContext
+import "../../server/_core/firebaseAdmin.js";
 
 // Cookie options type (inline to avoid express dependency issues)
 interface CookieOpts {

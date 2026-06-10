@@ -1,12 +1,10 @@
 import PageMeta from "@/components/PageMeta";
-import { supabase, fetchSupabaseAuthSettings } from "@/lib/supabase";
 import {
   firebaseEmailLogin,
   firebaseGoogleLogin,
   isFirebaseConfigured,
 } from "@/lib/firebase-api";
-import { trpc } from "@/lib/trpc";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { Mail, Lock, ArrowRight, Shield } from "lucide-react";
 
@@ -20,56 +18,10 @@ export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [magicEmail, setMagicEmail] = useState("");
   const [status, setStatus] = useState<{ type: "error" | "success"; msg: string } | null>(null);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"password" | "magic">("password");
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [, navigate] = useLocation();
-
-  const hasSupabase = Boolean(supabase);
-
-  const [providerState, setProviderState] = useState({
-    googleEnabled: false,
-    emailEnabled: false,
-    emailSignupsEnabled: false,
-    checked: false,
-  });
-
-  const supabaseLoginMutation = trpc.auth.supabaseLogin.useMutation({
-    onSuccess: () => {
-      navigate("/admin");
-    },
-    onError: (err) => {
-      const raw = err.message || "";
-      const msg =
-        raw.startsWith("Unexpected token") || raw.includes("not valid JSON") || raw.includes("Failed to fetch")
-          ? "Cannot reach the server. Please check your connection and try again."
-          : raw || "Admin access denied.";
-      setStatus({ type: "error", msg });
-      setLoading(false);
-    },
-  });
-
-  useEffect(() => {
-    if (!supabase) return;
-    supabase.auth.getSession().then(({ data }) => {
-      const token = data?.session?.access_token;
-      if (token) {
-        setLoading(true);
-        supabaseLoginMutation.mutate({ accessToken: token });
-      }
-    });
-
-    void (async () => {
-      const settings = await fetchSupabaseAuthSettings();
-      const googleEnabled = Boolean(settings?.external?.google?.enabled);
-      const emailEnabled = Boolean(settings?.email?.enabled);
-      const emailSignupsEnabled = Boolean(settings?.email?.enable_signup);
-      setProviderState({ googleEnabled, emailEnabled, emailSignupsEnabled, checked: true });
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,25 +29,35 @@ export default function AdminLogin() {
       setStatus({ type: "error", msg: "Please enter your email and password." });
       return;
     }
+    if (!isFirebaseConfigured) {
+      setStatus({ type: "error", msg: "Firebase is not configured. Contact your administrator." });
+      return;
+    }
     setLoading(true);
     setStatus(null);
-
     try {
       await firebaseEmailLogin(email, password);
       navigate("/admin");
     } catch (err: any) {
       const msg: string = err?.message || "Authentication failed.";
-      const displayMsg = msg.includes("Admin access denied")
-        ? "Admin access denied."
-        : msg.includes("not configured") || msg.includes("VITE_FIREBASE_API_KEY")
-        ? "Firebase is not configured. Contact your administrator."
-        : "Invalid email or password.";
-      setStatus({ type: "error", msg: displayMsg });
+      setStatus({
+        type: "error",
+        msg: msg.includes("Admin access denied")
+          ? "Admin access denied. This account does not have admin privileges."
+          : msg.includes("not configured") || msg.includes("VITE_FIREBASE_API_KEY")
+          ? "Firebase is not configured. Contact your administrator."
+          : "Invalid email or password.",
+      });
+    } finally {
       setLoading(false);
     }
   };
 
-  const handleFirebaseGoogleLogin = async () => {
+  const handleGoogleLogin = async () => {
+    if (!isFirebaseConfigured) {
+      setStatus({ type: "error", msg: "Firebase is not configured. Contact your administrator." });
+      return;
+    }
     setLoading(true);
     setStatus(null);
     try {
@@ -103,78 +65,10 @@ export default function AdminLogin() {
       navigate("/admin");
     } catch (err: any) {
       setStatus({ type: "error", msg: err?.message || "Google sign-in failed." });
-      setLoading(false);
-    }
-  };
-
-  const signInWithGoogle = async () => {
-    // Prefer Firebase Google sign-in when configured
-    if (isFirebaseConfigured) {
-      await handleFirebaseGoogleLogin();
-      return;
-    }
-
-    if (!supabase) return;
-    setLoading(true);
-    setStatus(null);
-    try {
-      if (providerState.checked && !providerState.googleEnabled) {
-        throw new Error(
-          "Google login is not enabled. Enable it in Supabase Dashboard → Authentication → Providers → Google."
-        );
-      }
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-      if (token) {
-        supabaseLoginMutation.mutate({ accessToken: token });
-        return;
-      }
-      const next = encodeURIComponent("/admin");
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback?next=${next}` },
-      });
-      if (error) {
-        if (error.message?.toLowerCase().includes("provider") || error.message?.toLowerCase().includes("not enabled")) {
-          throw new Error("Google login is not enabled yet. Please enable the Google provider in your Supabase Dashboard → Authentication → Providers.");
-        }
-        throw error;
-      }
-    } catch (e: any) {
-      setStatus({ type: "error", msg: e?.message || "Failed to start Google sign-in." });
-      setLoading(false);
-    }
-  };
-
-  const sendMagicLink = async () => {
-    if (!supabase) return;
-    if (!magicEmail) {
-      setStatus({ type: "error", msg: "Please enter your email." });
-      return;
-    }
-    setLoading(true);
-    setStatus(null);
-    try {
-      if (providerState.checked && (!providerState.emailEnabled || !providerState.emailSignupsEnabled)) {
-        throw new Error(
-          "Email-based sign-in/up is disabled. Enable Email provider (and Signups) in Supabase Dashboard → Authentication → Providers."
-        );
-      }
-      const next = encodeURIComponent("/admin");
-      const { error } = await supabase.auth.signInWithOtp({
-        email: magicEmail,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${next}` },
-      });
-      if (error) throw error;
-      setStatus({ type: "success", msg: "Magic link sent! Check your inbox." });
-    } catch (e: any) {
-      setStatus({ type: "error", msg: e?.message || "Failed to send magic link." });
     } finally {
       setLoading(false);
     }
   };
-
-  const showGoogleButton = isFirebaseConfigured || (hasSupabase && (!providerState.checked || providerState.googleEnabled));
 
   return (
     <div className="min-h-screen bg-[#080810] flex items-center justify-center p-4 sm:p-6 lg:p-8">
@@ -237,165 +131,96 @@ export default function AdminLogin() {
                 </p>
               </div>
 
-              {/* Tab switcher – show only if Supabase or magic link is relevant */}
-              {hasSupabase && !isFirebaseConfigured && (
-                <div className="flex gap-1 bg-white/5 rounded-xl p-1">
-                  <button
-                    onClick={() => setActiveTab("password")}
-                    className="flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all"
-                    style={{
-                      background: activeTab === "password" ? "rgba(201,168,76,0.18)" : "transparent",
-                      color: activeTab === "password" ? "#c9a84c" : "rgba(255,255,255,0.4)",
-                    }}
-                  >
-                    Password
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("magic")}
-                    className="flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all"
-                    style={{
-                      background: activeTab === "magic" ? "rgba(201,168,76,0.18)" : "transparent",
-                      color: activeTab === "magic" ? "#c9a84c" : "rgba(255,255,255,0.4)",
-                    }}
-                  >
-                    Magic Link
-                  </button>
-                </div>
-              )}
-
               {/* Email + Password form */}
-              {(!hasSupabase || isFirebaseConfigured || activeTab === "password") && (
-                <form onSubmit={handlePasswordLogin} className="space-y-3">
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="admin@vanirgroup.com"
-                      autoComplete="username"
-                      className="w-full h-[50px] bg-white/4 border border-white/10 rounded-xl pl-11 pr-4 text-white text-sm placeholder:text-gray-600 focus:outline-none transition-all"
-                      style={{ caretColor: "#c9a84c" }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = "rgba(201,168,76,0.5)";
-                        e.target.style.boxShadow = "0 0 0 2px rgba(201,168,76,0.08)";
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = "rgba(255,255,255,0.1)";
-                        e.target.style.boxShadow = "none";
-                      }}
-                    />
-                  </div>
-
-                  <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••••••"
-                      autoComplete="current-password"
-                      className="w-full h-[50px] bg-white/4 border border-white/10 rounded-xl pl-11 pr-11 text-white text-sm placeholder:text-gray-600 focus:outline-none transition-all"
-                      style={{ caretColor: "#c9a84c" }}
-                      onFocus={(e) => {
-                        e.currentTarget.style.borderColor = "rgba(201,168,76,0.5)";
-                        e.currentTarget.style.boxShadow = "0 0 0 2px rgba(201,168,76,0.08)";
-                      }}
-                      onBlur={(e) => {
-                        e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
-                        e.currentTarget.style.boxShadow = "none";
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-300 transition-colors"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                      {showPassword ? (
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-4.803m5.596-3.856a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                      ) : (
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full h-[50px] rounded-xl text-sm font-bold uppercase tracking-widest transition-all"
-                    style={{
-                      background: loading
-                        ? "rgba(201,168,76,0.3)"
-                        : "linear-gradient(135deg, #c9a84c 0%, #e8c96a 50%, #c9a84c 100%)",
-                      color: "#0d0a06",
-                      boxShadow: loading ? "none" : "0 4px 20px rgba(201,168,76,0.25)",
-                      cursor: loading ? "not-allowed" : "pointer",
+              <form onSubmit={handlePasswordLogin} className="space-y-3">
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="admin@vanirgroup.com"
+                    autoComplete="username"
+                    className="w-full h-[50px] bg-white/4 border border-white/10 rounded-xl pl-11 pr-4 text-white text-sm placeholder:text-gray-600 focus:outline-none transition-all"
+                    style={{ caretColor: "#c9a84c" }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = "rgba(201,168,76,0.5)";
+                      e.target.style.boxShadow = "0 0 0 2px rgba(201,168,76,0.08)";
                     }}
-                  >
-                    {loading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span
-                          className="inline-block w-4 h-4 border-2 rounded-full animate-spin"
-                          style={{ borderColor: "#0d0a06 #0d0a06 transparent #0d0a06" }}
-                        />
-                        Verifying…
-                      </span>
-                    ) : (
-                      "Enter Admin Panel"
-                    )}
-                  </button>
-                </form>
-              )}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = "rgba(255,255,255,0.1)";
+                      e.target.style.boxShadow = "none";
+                    }}
+                  />
+                </div>
 
-              {/* Magic Link – only if Supabase is configured and Firebase is not */}
-              {hasSupabase && !isFirebaseConfigured && activeTab === "magic" && (
-                <div className="space-y-3">
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-                    <input
-                      type="email"
-                      value={magicEmail}
-                      onChange={(e) => setMagicEmail(e.target.value)}
-                      placeholder="you@vanirgroup.com"
-                      className="w-full h-[50px] bg-white/4 border border-white/10 rounded-xl pl-11 pr-4 text-white text-sm placeholder:text-gray-600 focus:outline-none transition-all"
-                      style={{ caretColor: "#c9a84c" }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = "rgba(201,168,76,0.5)";
-                        e.target.style.boxShadow = "0 0 0 2px rgba(201,168,76,0.08)";
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = "rgba(255,255,255,0.1)";
-                        e.target.style.boxShadow = "none";
-                      }}
-                    />
-                  </div>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                    autoComplete="current-password"
+                    className="w-full h-[50px] bg-white/4 border border-white/10 rounded-xl pl-11 pr-11 text-white text-sm placeholder:text-gray-600 focus:outline-none transition-all"
+                    style={{ caretColor: "#c9a84c" }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "rgba(201,168,76,0.5)";
+                      e.currentTarget.style.boxShadow = "0 0 0 2px rgba(201,168,76,0.08)";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                  />
                   <button
                     type="button"
-                    onClick={sendMagicLink}
-                    disabled={loading}
-                    className="w-full h-[50px] rounded-xl text-sm font-bold uppercase tracking-widest transition-all"
-                    style={{
-                      background: loading
-                        ? "rgba(201,168,76,0.3)"
-                        : "linear-gradient(135deg, #c9a84c 0%, #e8c96a 50%, #c9a84c 100%)",
-                      color: "#0d0a06",
-                      boxShadow: loading ? "none" : "0 4px 20px rgba(201,168,76,0.25)",
-                      cursor: loading ? "not-allowed" : "pointer",
-                    }}
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-300 transition-colors"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    {loading ? "Sending…" : "Send Magic Link"}
+                    {showPassword ? (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-4.803m5.596-3.856a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
                   </button>
                 </div>
-              )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-[50px] rounded-xl text-sm font-bold uppercase tracking-widest transition-all"
+                  style={{
+                    background: loading
+                      ? "rgba(201,168,76,0.3)"
+                      : "linear-gradient(135deg, #c9a84c 0%, #e8c96a 50%, #c9a84c 100%)",
+                    color: "#0d0a06",
+                    boxShadow: loading ? "none" : "0 4px 20px rgba(201,168,76,0.25)",
+                    cursor: loading ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span
+                        className="inline-block w-4 h-4 border-2 rounded-full animate-spin"
+                        style={{ borderColor: "#0d0a06 #0d0a06 transparent #0d0a06" }}
+                      />
+                      Verifying…
+                    </span>
+                  ) : (
+                    "Enter Admin Panel"
+                  )}
+                </button>
+              </form>
 
               {/* Google sign-in */}
-              {showGoogleButton && (
+              {isFirebaseConfigured && (
                 <div>
                   <div className="flex items-center gap-3 my-1">
                     <div className="flex-1 h-px bg-white/8" />
@@ -404,8 +229,8 @@ export default function AdminLogin() {
                   </div>
                   <button
                     type="button"
-                    onClick={signInWithGoogle}
-                    disabled={loading || (!isFirebaseConfigured && providerState.checked && !providerState.googleEnabled)}
+                    onClick={handleGoogleLogin}
+                    disabled={loading}
                     className="w-full h-[50px] flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl text-sm text-white font-normal transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
@@ -416,11 +241,6 @@ export default function AdminLogin() {
                     </svg>
                     Continue with Google
                   </button>
-                  {!isFirebaseConfigured && providerState.checked && !providerState.googleEnabled && (
-                    <p className="mt-2 text-[11px] text-amber-300/70">
-                      Google provider is disabled. Enable it in Firebase Console → Authentication → Sign-in method, or Supabase Dashboard → Authentication → Providers.
-                    </p>
-                  )}
                 </div>
               )}
 
@@ -495,12 +315,12 @@ export default function AdminLogin() {
                 >
                   <span className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>VANIR GROUP</span>
                 </div>
-                <button
-                  className="ml-auto w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                <div
+                  className="ml-auto w-8 h-8 rounded-full flex items-center justify-center"
                   style={{ background: "linear-gradient(135deg, #c9a84c, #e8c96a)" }}
                 >
                   <ArrowRight className="w-4 h-4" style={{ color: "#0d0a06" }} />
-                </button>
+                </div>
               </div>
             </div>
           </div>
