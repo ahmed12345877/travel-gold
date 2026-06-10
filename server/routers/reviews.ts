@@ -1,19 +1,39 @@
 import { z } from "zod";
 import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
 import { adminProcedure } from "../_core/trpc";
-import {
-  createReview,
-  getApprovedReviews,
-  getAllReviews,
-  getReviewById,
-  updateReviewApproval,
-  addAdminReply,
-  incrementHelpfulCount,
-  getReviewStats,
-  getDb,
-} from "../db";
-import { eq, desc } from "drizzle-orm";
-import { reviews } from "../../drizzle/schema";
+import { db } from "../_core/firebaseAdmin";
+import type { Timestamp, DocumentData } from "firebase-admin/firestore";
+
+function toDateValue(v: unknown): Date | null {
+  if (!v) return null;
+  if (v instanceof Date) return v;
+  if (typeof (v as Timestamp).toDate === "function") return (v as Timestamp).toDate();
+  if (typeof v === "number") return new Date(v);
+  if (typeof v === "string") return new Date(v);
+  return null;
+}
+
+function docToReview(docId: string, data: DocumentData) {
+  return {
+    id: docId,
+    tripName: data.tripName ?? "",
+    destination: data.destination ?? null,
+    rating: data.rating ?? 0,
+    title: data.title ?? null,
+    content: data.content ?? "",
+    photoUrls: data.photoUrls ?? [],
+    travelDate: data.travelDate ?? null,
+    guestName: data.guestName ?? null,
+    guestAvatarUrl: data.guestAvatarUrl ?? null,
+    userId: data.userId ?? null,
+    isApproved: data.isApproved ?? "pending",
+    helpfulCount: data.helpfulCount ?? 0,
+    adminReply: data.adminReply ?? null,
+    adminReplyAt: toDateValue(data.adminReplyAt),
+    createdAt: toDateValue(data.createdAt),
+    updatedAt: toDateValue(data.updatedAt),
+  };
+}
 
 export const reviewsRouter = router({
   /** List approved reviews (public) */
@@ -25,20 +45,46 @@ export const reviewsRouter = router({
       }).optional()
     )
     .query(async ({ input }) => {
-      const { limit = 50, offset = 0 } = input ?? {};
-      return getApprovedReviews(limit, offset);
+      const { limit = 50 } = input ?? {};
+      const snap = await db
+        .collection("reviews")
+        .where("isApproved", "==", "approved")
+        .orderBy("createdAt", "desc")
+        .limit(limit)
+        .get();
+      return snap.docs.map((d) => docToReview(d.id, d.data()));
     }),
 
   /** Get review stats (public) */
   stats: publicProcedure.query(async () => {
-    return getReviewStats();
+    const snap = await db
+      .collection("reviews")
+      .where("isApproved", "==", "approved")
+      .get();
+
+    const all = snap.docs.map((d) => d.data());
+    const total = all.length;
+    if (total === 0) {
+      return { total: 0, average: 0, distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } };
+    }
+
+    const sum = all.reduce((acc, r) => acc + (r.rating ?? 0), 0);
+    const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    all.forEach((r) => {
+      const rating = r.rating;
+      if (rating >= 1 && rating <= 5) distribution[rating]++;
+    });
+
+    return { total, average: Math.round((sum / total) * 10) / 10, distribution };
   }),
 
   /** Get single review by ID (public) */
   getById: publicProcedure
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
-      return getReviewById(input.id);
+      const snap = await db.collection("reviews").doc(input.id).get();
+      if (!snap.exists) return null;
+      return docToReview(snap.id, snap.data()!);
     }),
 
   /** Create a new review (public - guests can review too) */
@@ -57,30 +103,40 @@ export const reviewsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      return createReview({
+      const now = new Date();
+      const docData = {
         ...input,
-        userId: ctx.user?.id ?? null,
+        userId: ctx.user?.openId ?? null,
         isApproved: "pending",
         helpfulCount: 0,
-      });
+        createdAt: now,
+        updatedAt: now,
+      };
+      const ref = await db.collection("reviews").add(docData);
+      return docToReview(ref.id, docData);
     }),
 
   /** Get current user's reviews */
   myReviews: protectedProcedure.query(async ({ ctx }) => {
-    const db = await getDb();
-    if (!db) return [];
-    return db
-      .select()
-      .from(reviews)
-      .where(eq(reviews.userId, ctx.user.id))
-      .orderBy(desc(reviews.createdAt));
+    const snap = await db
+      .collection("reviews")
+      .where("userId", "==", ctx.user.openId)
+      .orderBy("createdAt", "desc")
+      .get();
+    return snap.docs.map((d) => docToReview(d.id, d.data()));
   }),
 
   /** Mark review as helpful (public) */
   markHelpful: publicProcedure
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
-      return incrementHelpfulCount(input.id);
+      const ref = db.collection("reviews").doc(input.id);
+      const snap = await ref.get();
+      if (!snap.exists) return null;
+      const current = snap.data()!.helpfulCount ?? 0;
+      await ref.update({ helpfulCount: current + 1 });
+      const updated = await ref.get();
+      return docToReview(updated.id, updated.data()!);
     }),
 
   /** List all reviews including pending (admin only) */
@@ -92,31 +148,48 @@ export const reviewsRouter = router({
       }).optional()
     )
     .query(async ({ input }) => {
-      const { limit = 50, offset = 0 } = input ?? {};
-      return getAllReviews(limit, offset);
+      const { limit = 50 } = input ?? {};
+      const snap = await db
+        .collection("reviews")
+        .orderBy("createdAt", "desc")
+        .limit(limit)
+        .get();
+      return snap.docs.map((d) => docToReview(d.id, d.data()));
     }),
 
   /** Approve or reject a review (admin only) */
   moderate: adminProcedure
     .input(
       z.object({
-        id: z.number(),
+        id: z.string(),
         isApproved: z.enum(["pending", "approved", "rejected"]),
       })
     )
     .mutation(async ({ input }) => {
-      return updateReviewApproval(input.id, input.isApproved);
+      const ref = db.collection("reviews").doc(input.id);
+      await ref.update({ isApproved: input.isApproved, updatedAt: new Date() });
+      const snap = await ref.get();
+      if (!snap.exists) return null;
+      return docToReview(snap.id, snap.data()!);
     }),
 
   /** Add admin reply to a review (admin only) */
   reply: adminProcedure
     .input(
       z.object({
-        id: z.number(),
+        id: z.string(),
         adminReply: z.string().min(1),
       })
     )
     .mutation(async ({ input }) => {
-      return addAdminReply(input.id, input.adminReply);
+      const ref = db.collection("reviews").doc(input.id);
+      await ref.update({
+        adminReply: input.adminReply,
+        adminReplyAt: new Date(),
+        updatedAt: new Date(),
+      });
+      const snap = await ref.get();
+      if (!snap.exists) return null;
+      return docToReview(snap.id, snap.data()!);
     }),
 });

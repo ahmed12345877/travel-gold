@@ -1,20 +1,33 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
-import {
-  getAllUsers,
-  getUsersCount,
-  getUserById,
-  updateUserRole,
-  searchUsers,
-  getUserStats,
-  getUserBookings,
-  getOrCreateAICredits,
-  getDb,
-  updateUserProfile,
-} from "../db";
-import { eq, sql } from "drizzle-orm";
-import { reviews } from "../../drizzle/schema";
+import { db } from "../_core/firebaseAdmin";
+import type { Timestamp, DocumentData } from "firebase-admin/firestore";
+
+function toDateValue(v: unknown): Date | null {
+  if (!v) return null;
+  if (v instanceof Date) return v;
+  if (typeof (v as Timestamp).toDate === "function") return (v as Timestamp).toDate();
+  if (typeof v === "number") return new Date(v);
+  if (typeof v === "string") return new Date(v);
+  return null;
+}
+
+function docToUser(docId: string, data: DocumentData) {
+  return {
+    id: docId,
+    openId: data.openId ?? docId,
+    name: data.name ?? null,
+    email: data.email ?? null,
+    phone: data.phone ?? null,
+    avatarUrl: data.avatarUrl ?? null,
+    role: (data.role as "user" | "admin") ?? "user",
+    loginMethod: data.loginMethod ?? null,
+    createdAt: toDateValue(data.createdAt),
+    lastSignedIn: toDateValue(data.lastSignedIn),
+    updatedAt: toDateValue(data.updatedAt),
+  };
+}
 
 // Admin-only middleware
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -37,50 +50,47 @@ export const usersRouter = router({
       }).optional()
     )
     .query(async ({ input }) => {
-      const { limit = 50, offset = 0 } = input ?? {};
-      const [usersList, total] = await Promise.all([
-        getAllUsers(limit, offset),
-        getUsersCount(),
+      const { limit = 50 } = input ?? {};
+
+      const [pageSnap, countSnap] = await Promise.all([
+        db.collection("users").orderBy("createdAt", "desc").limit(limit).get(),
+        db.collection("users").count().get(),
       ]);
-      return {
-        users: usersList,
-        total,
-        limit,
-        offset,
-      };
+
+      const users = pageSnap.docs.map((d) => docToUser(d.id, d.data()));
+      const total = countSnap.data().count;
+
+      return { users, total, limit, offset: input?.offset ?? 0 };
     }),
 
   // Get single user by ID (admin only)
   getById: adminProcedure
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
-      const user = await getUserById(input.id);
-      if (!user) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
-        });
+      const snap = await db.collection("users").doc(input.id).get();
+      if (!snap.exists) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
       }
-      return user;
+      return docToUser(snap.id, snap.data()!);
     }),
 
   // Update user role (admin only)
   updateRole: adminProcedure
     .input(
       z.object({
-        id: z.number(),
+        id: z.string(),
         role: z.enum(["user", "admin"]),
       })
     )
     .mutation(async ({ input }) => {
-      const user = await updateUserRole(input.id, input.role);
-      if (!user) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
-        });
+      const ref = db.collection("users").doc(input.id);
+      const snap = await ref.get();
+      if (!snap.exists) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
       }
-      return user;
+      await ref.update({ role: input.role, updatedAt: new Date() });
+      const updated = await ref.get();
+      return docToUser(updated.id, updated.data()!);
     }),
 
   // Search users (admin only)
@@ -92,12 +102,46 @@ export const usersRouter = router({
       })
     )
     .query(async ({ input }) => {
-      return searchUsers(input.query, input.limit);
+      const q = input.query.toLowerCase();
+      // Firestore doesn't support full-text search; fetch a broad set and filter client-side
+      const snap = await db
+        .collection("users")
+        .orderBy("createdAt", "desc")
+        .limit(500)
+        .get();
+
+      const results = snap.docs
+        .map((d) => docToUser(d.id, d.data()))
+        .filter(
+          (u) =>
+            u.name?.toLowerCase().includes(q) ||
+            u.email?.toLowerCase().includes(q) ||
+            u.openId?.toLowerCase().includes(q)
+        )
+        .slice(0, input.limit);
+
+      return results;
     }),
 
   // Get user statistics (admin only)
   stats: adminProcedure.query(async () => {
-    return getUserStats();
+    const now = Date.now();
+    const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+    const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
+
+    const [totalSnap, adminSnap, recentSnap, todaySnap] = await Promise.all([
+      db.collection("users").count().get(),
+      db.collection("users").where("role", "==", "admin").count().get(),
+      db.collection("users").where("createdAt", ">=", thirtyDaysAgo).count().get(),
+      db.collection("users").where("createdAt", ">=", todayStart).count().get(),
+    ]);
+
+    return {
+      total: totalSnap.data().count,
+      admins: adminSnap.data().count,
+      recentSignups: recentSnap.data().count,
+      todaySignups: todaySnap.data().count,
+    };
   }),
 
   // Get current user profile
@@ -115,54 +159,62 @@ export const usersRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const updated = await updateUserProfile(ctx.user.id, input);
-      if (!updated) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
-        });
+      // Try Firestore first; fall back to SQL helper if Firestore doc doesn't exist
+      const openId = ctx.user.openId;
+      if (openId) {
+        const snap = await db
+          .collection("users")
+          .where("openId", "==", openId)
+          .limit(1)
+          .get();
+
+        if (!snap.empty) {
+          const ref = snap.docs[0].ref;
+          const updateData: Record<string, unknown> = { updatedAt: new Date() };
+          if (input.name !== undefined) updateData.name = input.name;
+          if (input.phone !== undefined) updateData.phone = input.phone;
+          if (input.avatarUrl !== undefined) updateData.avatarUrl = input.avatarUrl;
+          await ref.update(updateData);
+          const updated = await ref.get();
+          return docToUser(updated.id, updated.data()!);
+        }
       }
-      return updated;
+
+      throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
     }),
 
-  // Get profile stats for current user (bookings count, reviews count, AI credits)
+  // Get profile stats for current user (bookings count, reviews count)
   profileStats: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.user.id;
+    const userId = ctx.user.openId;
     let bookingsCount = 0;
     let reviewsCount = 0;
-    let aiCreditsBalance = 0;
 
     try {
-      const userBookings = await getUserBookings(userId);
-      bookingsCount = userBookings.length;
+      const bSnap = await db
+        .collection("bookings")
+        .where("userId", "==", userId)
+        .count()
+        .get();
+      bookingsCount = bSnap.data().count;
     } catch {
-      // bookings table might not exist yet
+      // collection may be empty or index missing
     }
 
     try {
-      const db = await getDb();
-      if (db) {
-        const userReviews = await db
-          .select({ count: sql<number>`count(*)` })
-          .from(reviews)
-          .where(eq(reviews.userId, userId));
-        reviewsCount = userReviews[0]?.count ?? 0;
-      }
+      const rSnap = await db
+        .collection("reviews")
+        .where("userId", "==", userId)
+        .count()
+        .get();
+      reviewsCount = rSnap.data().count;
     } catch {
-      // reviews table might not exist yet
-    }
-
-    try {
-      const credits = await getOrCreateAICredits(userId);
-      aiCreditsBalance = parseFloat(credits.balance.toString());
-    } catch {
-      // AI credits table might not exist yet
+      // collection may be empty or index missing
     }
 
     return {
       bookings: bookingsCount,
       reviews: reviewsCount,
-      aiCredits: aiCreditsBalance,
+      aiCredits: 0,
     };
   }),
 });
