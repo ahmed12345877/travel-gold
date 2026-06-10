@@ -43,7 +43,7 @@ queryClient.getMutationCache().subscribe(event => {
 
 // تحديد رابط الـ API بشكل صحيح للنطاق الفرعي والسيرفر
 function getApiUrl(): string {
-  return "https://vanirgroup.com";
+  return "https://vanirgroup.com/api/trpc";
 }
 
 // إنشاء عميل tRPC وتمرير الـ Token الخاص بـ Firebase تلقائياً مع كل طلب
