@@ -1,14 +1,7 @@
-
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { nodeHTTPRequestHandler } from "@trpc/server/adapters/node-http";
-// ✅ الصحيح: تحديد الملف والامتداد بدقة
 import { appRouter } from '../../server/routers/index.js';
 import { createContext } from "../../server/_core/context.js";
-
-
-
-
-
 
 // Cookie options type (inline to avoid express dependency issues)
 interface CookieOpts {
@@ -51,8 +44,36 @@ function appendSetCookie(res: ServerResponse, header: string) {
   res.setHeader("Set-Cookie", next);
 }
 
+// --- إضافة دالة لمعالجة CORS ---
+function handleCORS(req: IncomingMessage, res: ServerResponse): boolean {
+  // نطاق الواجهة الأمامية المصرح له
+  const allowedOrigin = "https://www.vanirgroup.com"; // تأكد أن هذا هو نطاق الواجهة الأمامية بالظبط
+
+  const origin = req.headers.origin;
+  if (origin && origin === allowedOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true'); // مهم جدا إذا كنت تستخدم الكوكيز أو Authorization headers
+  }
+  // معالجة طلبات preflight (OPTIONS)
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204); // No Content
+    res.end();
+    return true; // تم معالجة طلب CORS preflight، لا داعي للمتابعة
+  }
+  return false; // ليس طلب CORS preflight أو ليس من نطاق مصرح به، تابع
+}
+// --- نهاية إضافة دالة لمعالجة CORS ---
+
 export default async function trpcHandler(req: IncomingMessage, res: ServerResponse) {
   try {
+    // --- استدعاء دالة CORS في بداية المعالج ---
+    if (handleCORS(req, res)) {
+      return; // إذا تم معالجة CORS، توقف هنا
+    }
+    // --- نهاية استدعاء دالة CORS ---
+
     const resShim = {
       clearCookie(name: string, cookieOptions?: CookieOpts) {
         appendSetCookie(res, serializeCookie(name, "", { ...(cookieOptions ?? {}), maxAge: 0 }));
@@ -101,5 +122,3 @@ export const config = {
 
 // اترك سطر الـ runtime كما هو لضمان تشغيله ببيئة Node.js المستقرة
 export const runtime = "nodejs";
-
-
