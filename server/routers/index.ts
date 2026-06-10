@@ -74,43 +74,6 @@ export const appRouter = router({
 
         return { success: true };
       }),
-
-    supabaseLogin: publicProcedure
-      .input(z.object({ accessToken: z.string() }))
-      .mutation(async ({ ctx, input }) => {
-        const { getServerSupabase } = await import("../_core/supabase");
-        const supa = getServerSupabase();
-        if (!supa) throw new Error("Supabase not configured");
-
-        const { data: authData, error } = await supa.auth.getUser(input.accessToken);
-        if (error || !authData.user) throw new Error("Invalid token");
-
-        const { upsertUser, getUserByOpenId } = await import("../db");
-        const u = authData.user;
-        await upsertUser({
-          openId: u.id,
-          name: u.user_metadata?.full_name || u.email?.split("@")[0] || null,
-          email: u.email ?? null,
-          loginMethod: "supabase",
-          lastSignedIn: new Date(),
-        });
-
-        const dbUser = await getUserByOpenId(u.id);
-        if (!dbUser || dbUser.role !== "admin") throw new Error("Admin access denied");
-
-        const sessionToken = await sdk.createSessionToken(u.id, {
-          name: dbUser.name || "Admin",
-          expiresInMs: ONE_YEAR_MS,
-        });
-
-        const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(COOKIE_NAME, sessionToken, {
-          ...cookieOptions,
-          maxAge: ONE_YEAR_MS,
-        });
-
-        return { success: true };
-      }),
   }),
 
   bookings: bookingsRouter,

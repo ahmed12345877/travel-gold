@@ -1,9 +1,8 @@
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
+import { firebaseSignOut } from "@/lib/firebase-api";
 import { TRPCClientError } from "@trpc/client";
 import { useCallback, useEffect, useMemo } from "react";
-import { supabase } from "@/lib/supabase";
-import { firebaseSignOut } from "@/lib/firebase-api";
 
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
@@ -11,7 +10,7 @@ type UseAuthOptions = {
 };
 
 export function useAuth(options?: UseAuthOptions) {
- const { redirectOnUnauthenticated = false, redirectPath = "/admin/login" } = options ?? {};
+  const { redirectOnUnauthenticated = false, redirectPath = "/admin/login" } = options ?? {};
   const utils = trpc.useUtils();
 
   const meQuery = trpc.auth.me.useQuery(undefined, {
@@ -27,9 +26,7 @@ export function useAuth(options?: UseAuthOptions) {
 
   const logout = useCallback(async () => {
     try {
-      // Sign out Firebase and Supabase sessions if present
       try { await firebaseSignOut(); } catch {}
-      try { await supabase?.auth.signOut(); } catch {}
       await logoutMutation.mutateAsync();
     } catch (error: unknown) {
       if (

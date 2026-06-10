@@ -1,9 +1,9 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import type { User } from "../../drizzle/schema";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { getServerSupabase } from "./supabase";
 import { sdk } from "./sdk";
 import * as db from "../db";
+
+import { getAuth } from "firebase-admin/auth";
 
 // Extended response type that includes cookie helpers (from Express or our shim)
 interface CookieResponse {
@@ -30,7 +30,6 @@ export type TrpcContext = {
   req: MinimalRequest;
   res: CookieResponse;
   user: User | null;
-  supabase: SupabaseClient | null;
   contextData: {
     role: string | null;
     userId: string | null;
@@ -42,41 +41,30 @@ export async function createContext(
   opts: { req: MinimalRequest; res: CookieResponse }
 ): Promise<TrpcContext> {
   let user: User | null = null;
-  const supabase = getServerSupabase();
 
-  // 1) Try Supabase JWT from Authorization header first
+  // 1) Verify Firebase ID token from Authorization header
   const bearer = getBearerToken(opts.req);
-  if (bearer && supabase) {
+  if (bearer) {
     try {
-      const { data, error } = await supabase.auth.getUser(bearer);
-      if (!error && data.user) {
-        const u = data.user;
+      const decoded = await getAuth().verifyIdToken(bearer);
+      const openId = `firebase:${decoded.uid}`;
+      const name =
+        decoded.name ||
+        (decoded.email ? decoded.email.split("@")[0] : null) ||
+        null;
 
-        const name =
-          (u.user_metadata && (u.user_metadata as any).name) ||
-          u.user_metadata?.full_name ||
-          u.email?.split("@")[0] ||
-          null;
+      await db.upsertUser({
+        openId,
+        name,
+        email: decoded.email ?? null,
+        loginMethod: "firebase",
+        lastSignedIn: new Date(),
+      }).catch(() => {});
 
-        const appMeta = (u.app_metadata ?? {}) as Record<string, unknown>;
-        const supabaseRole = appMeta["role"] === "admin" ? "admin" : undefined;
-
-        // Upsert user in your DB
-        await db.upsertUser({
-          openId: u.id,
-          name,
-          email: u.email ?? null,
-          loginMethod: "supabase",
-          lastSignedIn: new Date(),
-          ...(supabaseRole ? { role: supabaseRole } : {}),
-        });
-
-        // Refetch from DB to ensure role is correct
-        const found = await db.getUserByOpenId(u.id);
-        if (found) user = found;
-      }
+      const found = await db.getUserByOpenId(openId);
+      if (found) user = found;
     } catch {
-      // ignore and fall back to Manus
+      // Invalid or expired Firebase token — fall through to session cookie
     }
   }
 
@@ -104,7 +92,6 @@ export async function createContext(
     req: opts.req,
     res: opts.res,
     user,
-    supabase,
     contextData: {
       role: user?.role ?? null,
       userId: user?.openId ?? null,

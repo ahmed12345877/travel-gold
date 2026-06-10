@@ -1,15 +1,19 @@
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { supabase, fetchSupabaseAuthSettings } from "@/lib/supabase";
 import { trpc } from "@/lib/trpc";
 import PageMeta from "@/components/PageMeta";
 import { LogIn, UserPlus, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import {
+  firebaseEmailLogin,
+  firebaseEmailSignUp,
+  firebaseGoogleLogin,
+  isFirebaseConfigured,
+} from "@/lib/firebase-api";
 
 const LOGO_URL =
   "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/ss_c5f7e7e2.png";
@@ -25,105 +29,75 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [providerState, setProviderState] = useState({
-    checked: false,
-    googleEnabled: false,
-    emailEnabled: false,
-    emailSignupsEnabled: false,
-  });
-
+  const [submitting, setSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const supabaseLoginMutation = trpc.auth.supabaseLogin.useMutation();
 
   const searchParams = new URLSearchParams(globalThis.location?.search || "");
   const nextPath = searchParams.get("next") || "/";
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      const dest = nextPath.startsWith("/admin") ? nextPath : (user as any)?.role === "admin" ? "/admin" : "/";
+      const dest =
+        nextPath.startsWith("/admin")
+          ? nextPath
+          : (user as any)?.role === "admin"
+          ? "/admin"
+          : "/";
       setLocation(dest);
     }
   }, [isAuthenticated, user, setLocation, nextPath]);
 
-  useEffect(() => {
-    if (!supabase) return;
-    void (async () => {
-      const settings = await fetchSupabaseAuthSettings();
-      const googleEnabled = Boolean(settings?.external?.google?.enabled);
-      const emailEnabled = Boolean(settings?.email?.enabled);
-      const emailSignupsEnabled = Boolean(settings?.email?.enable_signup);
-      setProviderState({ checked: true, googleEnabled, emailEnabled, emailSignupsEnabled });
-    })();
-  }, []);
-
-  const handleOAuthLogin = async () => {
+  const handleGoogleLogin = async () => {
+    if (!isFirebaseConfigured) {
+      toast.error("Authentication is not configured. Contact your administrator.");
+      return;
+    }
+    setSubmitting(true);
+    setAuthError(null);
     try {
-      if (supabase && (!providerState.checked || providerState.googleEnabled)) {
-        const next = encodeURIComponent(nextPath);
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: { redirectTo: `${window.location.origin}/auth/callback?next=${next}` },
-        });
-        if (!error && data?.url) {
-          window.location.href = data.url;
-          return;
-        }
-      }
-    } catch {}
-    window.location.href = getLoginUrl();
+      await firebaseGoogleLogin();
+      setLocation(nextPath.startsWith("/admin") ? nextPath : "/");
+    } catch (err: any) {
+      setAuthError(err?.message || "Google sign-in failed.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleEmailAuth = async () => {
-    if (!supabase) return handleOAuthLogin();
-    if (providerState.checked && (!providerState.emailEnabled || (activeTab === "signup" && !providerState.emailSignupsEnabled))) {
-      return handleOAuthLogin();
-    }
-    if (!email || !password) return handleOAuthLogin();
-    setAuthError(null);
-    if (activeTab === "signin") {
-      const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        setAuthError(error.message);
-        return;
-      }
-
-      // Check admin role from app_metadata (set by admin API) or user_metadata fallback
-      const appRole = (authData?.session?.user?.app_metadata as any)?.role;
-      const metaRole = (authData?.session?.user?.user_metadata as any)?.role;
-      const isAdmin = appRole === "admin" || metaRole === "admin";
-
-      // If user is admin and not already heading to /admin, send them there
-      const targetPath = isAdmin && !nextPath.startsWith("/admin") ? "/admin" : nextPath;
-
-      if (targetPath.startsWith("/admin")) {
-        const accessToken = authData?.session?.access_token;
-        if (!accessToken) {
-          setAuthError("Could not retrieve session token.");
-          return;
-        }
-        try {
-          await supabaseLoginMutation.mutateAsync({ accessToken });
-          setLocation(targetPath);
-        } catch (err: any) {
-          await supabase.auth.signOut();
-          setAuthError(err?.message || "This account does not have admin privileges.");
-        }
-        return;
-      }
-      setLocation(targetPath);
+    if (!isFirebaseConfigured) {
+      setAuthError("Authentication is not configured. Contact your administrator.");
       return;
-    } else {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { name } },
-      });
-      if (!error) {
-        setLocation(nextPath);
-        return;
-      }
     }
-    handleOAuthLogin();
+    if (!email || !password) {
+      setAuthError("Please enter your email and password.");
+      return;
+    }
+    setSubmitting(true);
+    setAuthError(null);
+    try {
+      if (activeTab === "signin") {
+        await firebaseEmailLogin(email, password);
+      } else {
+        await firebaseEmailSignUp(email, password, name || undefined);
+      }
+      setLocation(nextPath.startsWith("/admin") ? nextPath : "/");
+    } catch (err: any) {
+      const msg: string = err?.message || "Authentication failed.";
+      setAuthError(
+        msg.includes("wrong-password") || msg.includes("invalid-credential")
+          ? "Invalid email or password."
+          : msg.includes("email-already-in-use")
+          ? "An account with this email already exists."
+          : msg.includes("weak-password")
+          ? "Password must be at least 6 characters."
+          : msg.includes("Admin access denied")
+          ? "This account does not have the required permissions."
+          : msg
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -175,7 +149,7 @@ export default function Login() {
                 {/* Tab switcher */}
                 <div className="flex gap-1 bg-white/5 rounded-xl p-1">
                   <button
-                    onClick={() => setActiveTab("signin")}
+                    onClick={() => { setActiveTab("signin"); setAuthError(null); }}
                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
                       activeTab === "signin"
                         ? "bg-[var(--theme-primary)] text-black shadow-lg"
@@ -186,7 +160,7 @@ export default function Login() {
                     Sign In
                   </button>
                   <button
-                    onClick={() => setActiveTab("signup")}
+                    onClick={() => { setActiveTab("signup"); setAuthError(null); }}
                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
                       activeTab === "signup"
                         ? "bg-[var(--theme-primary)] text-black shadow-lg"
@@ -201,8 +175,9 @@ export default function Login() {
                 {/* Google button */}
                 <button
                   type="button"
-                  onClick={handleOAuthLogin}
-                  className="w-full h-[50px] flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl text-sm text-white font-normal transition-all"
+                  onClick={handleGoogleLogin}
+                  disabled={submitting}
+                  className="w-full h-[50px] flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl text-sm text-white font-normal transition-all disabled:opacity-50"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -213,7 +188,7 @@ export default function Login() {
                   {activeTab === "signin" ? "Continue with Google" : "Sign up with Google"}
                 </button>
 
-                {/* Social: Facebook + Apple */}
+                {/* Social: Facebook + Apple (coming soon) */}
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -311,9 +286,15 @@ export default function Login() {
 
                   <Button
                     type="submit"
-                    className="w-full h-[50px] bg-[var(--theme-primary)] hover:bg-[#c49a48] text-black font-semibold rounded-xl text-sm shadow-lg shadow-[var(--theme-primary)]/20 transition-all"
+                    disabled={submitting}
+                    className="w-full h-[50px] bg-[var(--theme-primary)] hover:bg-[#c49a48] text-black font-semibold rounded-xl text-sm shadow-lg shadow-[var(--theme-primary)]/20 transition-all disabled:opacity-50"
                   >
-                    {activeTab === "signin" ? (
+                    {submitting ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="inline-block w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                        {activeTab === "signin" ? "Signing in…" : "Creating account…"}
+                      </span>
+                    ) : activeTab === "signin" ? (
                       <>
                         <LogIn className="w-4 h-4 mr-2" />
                         Sign In
@@ -338,7 +319,7 @@ export default function Login() {
                     <>
                       Don&apos;t have an account?{" "}
                       <button
-                        onClick={() => setActiveTab("signup")}
+                        onClick={() => { setActiveTab("signup"); setAuthError(null); }}
                         className="text-[var(--theme-primary)] hover:text-[#c49a48] font-medium transition-colors"
                       >
                         Sign up
@@ -348,7 +329,7 @@ export default function Login() {
                     <>
                       Already have an account?{" "}
                       <button
-                        onClick={() => setActiveTab("signin")}
+                        onClick={() => { setActiveTab("signin"); setAuthError(null); }}
                         className="text-[var(--theme-primary)] hover:text-[#c49a48] font-medium transition-colors"
                       >
                         Sign in
