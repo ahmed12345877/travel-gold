@@ -3,37 +3,32 @@ import { router, publicProcedure } from "../_core/trpc";
 import { adminProcedure } from "../_core/trpc";
 import { storagePut } from "../storage";
 import { nanoid } from "nanoid";
-import {
-  createGalleryItem,
-  getVisibleGalleryItems,
-  getAllGalleryItems,
-  getGalleryItemById,
-  updateGalleryItem,
-  deleteGalleryItem,
-  createGalleryVideo,
-  getVisibleGalleryVideos,
-  getAllGalleryVideos,
-  getGalleryVideoById,
-  updateGalleryVideo,
-  deleteGalleryVideo,
-} from "../db";
+import { db } from "../_core/firebaseAdmin";
+
+const ITEMS_COL = "gallery_items";
+const VIDEOS_COL = "gallery_videos";
 
 export const galleryRouter = router({
   // ─── Public Endpoints ───
 
-  /** List visible gallery items (public) */
   listVisible: publicProcedure.query(async () => {
-    return getVisibleGalleryItems();
+    const snap = await db.collection(ITEMS_COL)
+      .where("isVisible", "==", "visible")
+      .orderBy("sortOrder", "asc")
+      .get();
+    return snap.docs.map((d) => d.data());
   }),
 
-  /** List visible gallery videos (public) */
   listVisibleVideos: publicProcedure.query(async () => {
-    return getVisibleGalleryVideos();
+    const snap = await db.collection(VIDEOS_COL)
+      .where("isVisible", "==", "visible")
+      .orderBy("sortOrder", "asc")
+      .get();
+    return snap.docs.map((d) => d.data());
   }),
 
   // ─── Admin Endpoints: Gallery Items ───
 
-  /** List all gallery items (admin) */
   listAll: adminProcedure
     .input(
       z.object({
@@ -43,10 +38,14 @@ export const galleryRouter = router({
     )
     .query(async ({ input }) => {
       const { limit = 100, offset = 0 } = input ?? {};
-      return getAllGalleryItems(limit, offset);
+      const snap = await db.collection(ITEMS_COL)
+        .orderBy("createdAt", "desc")
+        .offset(offset)
+        .limit(limit)
+        .get();
+      return snap.docs.map((d) => d.data());
     }),
 
-  /** Create a gallery item (admin) */
   create: adminProcedure
     .input(
       z.object({
@@ -65,13 +64,17 @@ export const galleryRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      return createGalleryItem({
+      const id = Date.now();
+      const item = {
         ...input,
+        id,
         isVisible: "visible",
-      });
+        createdAt: new Date(),
+      };
+      await db.collection(ITEMS_COL).add(item);
+      return item;
     }),
 
-  /** Update a gallery item (admin) */
   update: adminProcedure
     .input(
       z.object({
@@ -93,18 +96,21 @@ export const galleryRouter = router({
     )
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
-      return updateGalleryItem(id, data);
+      const snap = await db.collection(ITEMS_COL).where("id", "==", id).limit(1).get();
+      if (snap.empty) throw new Error("Gallery item not found");
+      await snap.docs[0].ref.set(data, { merge: true });
+      const updated = (await snap.docs[0].ref.get()).data();
+      return updated;
     }),
 
-  /** Delete a gallery item (admin) */
   delete: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      await deleteGalleryItem(input.id);
+      const snap = await db.collection(ITEMS_COL).where("id", "==", input.id).limit(1).get();
+      if (!snap.empty) await snap.docs[0].ref.delete();
       return { success: true };
     }),
 
-  /** Upload gallery image (admin) */
   uploadImage: adminProcedure
     .input(
       z.object({
@@ -129,7 +135,6 @@ export const galleryRouter = router({
 
   // ─── Admin Endpoints: Gallery Videos ───
 
-  /** List all gallery videos (admin) */
   listAllVideos: adminProcedure
     .input(
       z.object({
@@ -139,10 +144,14 @@ export const galleryRouter = router({
     )
     .query(async ({ input }) => {
       const { limit = 50, offset = 0 } = input ?? {};
-      return getAllGalleryVideos(limit, offset);
+      const snap = await db.collection(VIDEOS_COL)
+        .orderBy("createdAt", "desc")
+        .offset(offset)
+        .limit(limit)
+        .get();
+      return snap.docs.map((d) => d.data());
     }),
 
-  /** Create a gallery video (admin) */
   createVideo: adminProcedure
     .input(
       z.object({
@@ -156,13 +165,17 @@ export const galleryRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      return createGalleryVideo({
+      const id = Date.now();
+      const video = {
         ...input,
+        id,
         isVisible: "visible",
-      });
+        createdAt: new Date(),
+      };
+      await db.collection(VIDEOS_COL).add(video);
+      return video;
     }),
 
-  /** Update a gallery video (admin) */
   updateVideo: adminProcedure
     .input(
       z.object({
@@ -179,14 +192,18 @@ export const galleryRouter = router({
     )
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
-      return updateGalleryVideo(id, data);
+      const snap = await db.collection(VIDEOS_COL).where("id", "==", id).limit(1).get();
+      if (snap.empty) throw new Error("Gallery video not found");
+      await snap.docs[0].ref.set(data, { merge: true });
+      const updated = (await snap.docs[0].ref.get()).data();
+      return updated;
     }),
 
-  /** Delete a gallery video (admin) */
   deleteVideo: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      await deleteGalleryVideo(input.id);
+      const snap = await db.collection(VIDEOS_COL).where("id", "==", input.id).limit(1).get();
+      if (!snap.empty) await snap.docs[0].ref.delete();
       return { success: true };
     }),
 });
