@@ -4,22 +4,30 @@ import { sdk } from "./_core/sdk";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { COOKIE_NAME, ONE_YEAR_MS } from "../shared/const";
 import { db as firestoreDb } from "./_core/firebaseAdmin";
+import { ENV } from "./_core/env";
 
 // Ensure Firebase Admin is initialized before this module is used
 import "./_core/firebaseAdmin";
 
 async function resolveAdminUser(uid: string, email: string | undefined, displayName: string | undefined) {
+  // If the authenticated email matches the configured ADMIN_EMAIL, stamp role=admin
+  // on upsert so the first login doesn't require a manual Firestore edit.
+  const isConfiguredAdmin =
+    email && ENV.adminEmail && email.toLowerCase() === ENV.adminEmail.toLowerCase();
+
+  const upsertFields: Record<string, unknown> = {
+    uid,
+    email: email ?? null,
+    name: displayName || email?.split("@")[0] || null,
+    loginMethod: "firebase",
+    lastSignedIn: new Date(),
+  };
+  if (isConfiguredAdmin) {
+    upsertFields.role = "admin";
+  }
+
   // Upsert user into Firestore (merge so existing role/fields are preserved)
-  await firestoreDb.collection("users").doc(uid).set(
-    {
-      uid,
-      email: email ?? null,
-      name: displayName || email?.split("@")[0] || null,
-      loginMethod: "firebase",
-      lastSignedIn: new Date(),
-    },
-    { merge: true }
-  );
+  await firestoreDb.collection("users").doc(uid).set(upsertFields, { merge: true });
 
   const userDoc = await firestoreDb.collection("users").doc(uid).get();
   const userData = userDoc.data();
