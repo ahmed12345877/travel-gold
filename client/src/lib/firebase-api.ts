@@ -11,10 +11,11 @@ import {
 
 const env = import.meta.env as Record<string, string | undefined>;
 
+// إعدادات Firebase الخاصة بك
 const firebaseConfig = {
-  apiKey: env.VITE_FIREBASE_API_KEY ?? "",
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN ?? `${env.VITE_FIREBASE_PROJECT_ID ?? ""}.firebaseapp.com`,
-  projectId: env.VITE_FIREBASE_PROJECT_ID ?? "",
+  apiKey: env.VITE_FIREBASE_API_KEY ?? "API_KEY_الخاص_بك",
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN ?? "vanirgroup.com", // أو gen-lang-client-0364375301.firebaseapp.com
+  projectId: env.VITE_FIREBASE_PROJECT_ID ?? "gen-lang-client-0364375301",
   storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET ?? `${env.VITE_FIREBASE_PROJECT_ID ?? ""}.appspot.com`,
   messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? "",
   appId: env.VITE_FIREBASE_APP_ID ?? "",
@@ -57,6 +58,16 @@ export async function firebaseEmailLogin(email: string, password: string): Promi
   await callAuthEndpoint("/api/auth/login", idToken);
 }
 
+// 2. لتسجيل الدخول بحساب موجود (Sign In)
+async function loginUser(email: string, password: string) {
+  try {
+    const userCredential = await firebaseEmailLogin(email, password);
+    console.log("تم تسجيل الدخول بنجاح:", userCredential);
+  } catch (error) {
+    console.error("خطأ في تسجيل الدخول:", (error as any).message);
+  }
+}
+
 export async function firebaseEmailSignUp(email: string, password: string, name?: string): Promise<void> {
   const app = getFirebaseApp();
   if (!app) throw new Error("Firebase is not configured. Set VITE_FIREBASE_API_KEY.");
@@ -68,6 +79,16 @@ export async function firebaseEmailSignUp(email: string, password: string, name?
   }
   const idToken = await credential.user.getIdToken();
   await callAuthEndpoint("/api/auth/login", idToken);
+}
+
+// 1. لإنشاء حساب جديد (Sign Up)
+async function registerUser(email: string, password: string) {
+  try {
+    const userCredential = await firebaseEmailSignUp(email, password);
+    console.log("تم تسجيل الحساب بنجاح:", userCredential);
+  } catch (error) {
+    console.error("خطأ في إنشاء الحساب:", (error as any).message);
+  }
 }
 
 export async function firebaseGoogleLogin(): Promise<void> {
