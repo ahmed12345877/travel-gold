@@ -10,6 +10,7 @@ const __dirname = path.dirname(__filename);
 
 // 1. قراءة الشفرة السرية من متغير البيئة في موقع Render بأمان تام
 let credentialApp: any = undefined;
+let serviceAccountObj: any = undefined;
 const envJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 
 if (envJson) {
@@ -17,7 +18,8 @@ if (envJson) {
     const rawJson = envJson.trim().startsWith("{") 
       ? envJson 
       : Buffer.from(envJson, "base64").toString("utf8");
-    credentialApp = cert(JSON.parse(rawJson));
+    serviceAccountObj = JSON.parse(rawJson);
+    credentialApp = cert(serviceAccountObj);
   } catch (e) {
     console.error("[Firebase] Failed to parse credentials from env:", e);
   }
@@ -30,19 +32,73 @@ if (!credentialApp) {
   const serviceAccountPath = fs.existsSync(primaryKeyPath) ? primaryKeyPath : fallbackKeyPath;
   
   if (fs.existsSync(serviceAccountPath)) {
-    credentialApp = cert(serviceAccountPath);
+    try {
+      serviceAccountObj = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf-8'));
+      credentialApp = cert(serviceAccountPath);
+    } catch (e) {
+      console.error("[Firebase] Failed to read local service account:", e);
+    }
   }
 }
 
 // 3. تهيئة التطبيق بنظام الـ Modular الحديث المتوافق 100% مع السيرفر الحقيقي
 const appsList = getApps();
 if (!appsList || appsList.length === 0) {
+  if (!credentialApp) {
+    throw new Error(
+      'CRITICAL: Firebase credentials not found. ' +
+      'Set FIREBASE_SERVICE_ACCOUNT_JSON environment variable or place firebase-key.json in the project root.'
+    );
+  }
+
+  // Determine storage bucket name with fallback
+  let storageBucketName = process.env.FIREBASE_STORAGE_BUCKET;
+  
+  if (!storageBucketName && serviceAccountObj && serviceAccountObj.project_id) {
+    storageBucketName = `${serviceAccountObj.project_id}.appspot.com`;
+    console.warn(
+      '[Firebase] WARNING: FIREBASE_STORAGE_BUCKET not set. ' +
+      'Derived bucket from service account. ' +
+      'Set FIREBASE_STORAGE_BUCKET environment variable explicitly for production.'
+    );
+  }
+
+  if (!storageBucketName) {
+    throw new Error(
+      'CRITICAL: Cannot determine Firebase Storage bucket. ' +
+      'Either set FIREBASE_STORAGE_BUCKET environment variable ' +
+      'or ensure FIREBASE_SERVICE_ACCOUNT_JSON contains valid project_id.'
+    );
+  }
+
+  console.log(`[Firebase] Initializing with storage bucket: ${storageBucketName}`);
+
   initializeApp({
     credential: credentialApp,
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || undefined
+    storageBucket: storageBucketName
   });
 }
 
 // 4. تصدير الدوال الأساسية بنفس المسميات السابقة لتعمل مع الـ REST APIs والـ Routers دون تعديل
 export const db = getFirestore();
-export const bucket = getStorage().bucket();
+
+// Get storage bucket name with validation
+function getStorageBucketName(): string {
+  const bucket = process.env.FIREBASE_STORAGE_BUCKET;
+  
+  if (bucket) {
+    return bucket;
+  }
+
+  if (serviceAccountObj && serviceAccountObj.project_id) {
+    return `${serviceAccountObj.project_id}.appspot.com`;
+  }
+
+  throw new Error(
+    'CRITICAL: Firebase Storage bucket name not available. ' +
+    'This should not happen after initialization. ' +
+    'Ensure FIREBASE_SERVICE_ACCOUNT_JSON is set correctly.'
+  );
+}
+
+export const bucket = getStorage().bucket(getStorageBucketName());
