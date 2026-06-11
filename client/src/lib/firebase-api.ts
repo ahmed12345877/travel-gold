@@ -12,9 +12,11 @@ import {
 const env = import.meta.env as Record<string, string | undefined>;
 
 // إعدادات Firebase الخاصة بك
+// تم ربط النطاق المخصص (vanirgroup.com) لتجنب مشاكل ملفات تعريف الارتباط التابعة لجهات خارجية
+// هذا يضمن توافقية مع Safari و Chrome الذي يحظران third-party cookies
 const firebaseConfig = {
   apiKey: env.VITE_FIREBASE_API_KEY ?? "API_KEY_الخاص_بك",
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN ?? "vanirgroup.com", // أو gen-lang-client-0364375301.firebaseapp.com
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN ?? "vanirgroup.com", // النطاق المخصص - استخدم هذا بدلاً من gen-lang-client-0364375301.firebaseapp.com
   projectId: env.VITE_FIREBASE_PROJECT_ID ?? "gen-lang-client-0364375301",
   storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET ?? `${env.VITE_FIREBASE_PROJECT_ID ?? ""}.appspot.com`,
   messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? "",
