@@ -39,10 +39,20 @@ export async function storagePut(
 ): Promise<{ key: string; url: string }> {
   const key = normalizeKey(relKey);
 
+  // Convert data to Buffer explicitly - Firebase requires Buffer type
+  let fileBuffer: Buffer;
+  if (typeof data === 'string') {
+    fileBuffer = Buffer.from(data, 'utf-8');
+  } else if (ArrayBuffer.isView(data) || data instanceof Uint8Array) {
+    fileBuffer = Buffer.from(data as Uint8Array);
+  } else {
+    fileBuffer = data as Buffer;
+  }
+
   // Try Firebase Storage first if configured
   try {
     console.log(`[Storage] Attempting Firebase Storage upload for: ${key}`);
-    const result = await firebaseStoragePut(key, data as Buffer, contentType);
+    const result = await firebaseStoragePut(key, fileBuffer, contentType);
     console.log(`[Storage] Firebase Storage upload successful for: ${key}`);
     return { key, url: result.url };
   } catch (firebaseErr) {
@@ -53,11 +63,7 @@ export async function storagePut(
   console.log(`[Storage] Using local filesystem fallback for: ${key}`);
   const localPath = path.join(LOCAL_UPLOADS_DIR, key);
   ensureLocalDir(localPath);
-  const buffer =
-    typeof data === 'string'
-      ? Buffer.from(data, 'utf-8')
-      : Buffer.from(data as any);
-  fs.writeFileSync(localPath, buffer);
+  fs.writeFileSync(localPath, fileBuffer);
   return { key, url: `/uploads/${key}` };
 }
 

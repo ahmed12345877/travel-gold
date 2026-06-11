@@ -34,7 +34,7 @@ if (!credentialApp) {
   if (fs.existsSync(serviceAccountPath)) {
     try {
       serviceAccountObj = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf-8'));
-      credentialApp = cert(serviceAccountPath);
+      credentialApp = cert(serviceAccountObj);
     } catch (e) {
       console.error("[Firebase] Failed to read local service account:", e);
     }
@@ -101,4 +101,15 @@ function getStorageBucketName(): string {
   );
 }
 
-export const bucket = getStorage().bucket(getStorageBucketName());
+// Lazy bucket getter - computed on first use, not at import time
+export function getBucket() {
+  return getStorage().bucket(getStorageBucketName());
+}
+
+// For backwards compatibility, also export bucket as a getter property
+Object.defineProperty(module.exports, 'bucket', {
+  get() {
+    return getBucket();
+  },
+  enumerable: true,
+});
