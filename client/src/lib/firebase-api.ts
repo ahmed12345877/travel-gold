@@ -1,4 +1,5 @@
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
 import {
   getAuth,
   signInWithEmailAndPassword,
@@ -11,22 +12,31 @@ import {
 
 const env = import.meta.env as Record<string, string | undefined>;
 
-// إعدادات Firebase الخاصة بك
+// إعدادات Firebase الكاملة من Firebase Console
 // تم ربط النطاق المخصص (vanirgroup.com) لتجنب مشاكل ملفات تعريف الارتباط التابعة لجهات خارجية
 // هذا يضمن توافقية مع Safari و Chrome الذي يحظران third-party cookies
 const firebaseConfig = {
-  apiKey: env.VITE_FIREBASE_API_KEY ?? "API_KEY_الخاص_بك",
+  apiKey: env.VITE_FIREBASE_API_KEY ?? "",
   authDomain: env.VITE_FIREBASE_AUTH_DOMAIN ?? "vanirgroup.com", // النطاق المخصص - استخدم هذا بدلاً من gen-lang-client-0364375301.firebaseapp.com
   projectId: env.VITE_FIREBASE_PROJECT_ID ?? "gen-lang-client-0364375301",
-  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET ?? `${env.VITE_FIREBASE_PROJECT_ID ?? ""}.appspot.com`,
-  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? "",
-  appId: env.VITE_FIREBASE_APP_ID ?? "",
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET ?? "gen-lang-client-0364375301.firebasestorage.app",
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? "1001729880037",
+  appId: env.VITE_FIREBASE_APP_ID ?? "1:1001729880037:web:0cf4200a2a48e96547090c",
+  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID ?? "G-5ETHDXPS4L",
 };
 
 function getFirebaseApp(): FirebaseApp | null {
   if (!firebaseConfig.apiKey) return null;
   if (getApps().length) return getApps()[0];
-  return initializeApp(firebaseConfig);
+  
+  const app = initializeApp(firebaseConfig);
+  
+  // تهيئة Google Analytics إذا كان measurementId متوفراً
+  if (firebaseConfig.measurementId) {
+    getAnalytics(app);
+  }
+  
+  return app;
 }
 
 export const isFirebaseConfigured = Boolean(env.VITE_FIREBASE_API_KEY);
