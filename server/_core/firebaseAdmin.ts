@@ -1,6 +1,7 @@
-import { initializeApp, cert, getApps, ServiceAccount } from "firebase-admin/app";
+import { initializeApp, cert, getApps, ServiceAccount, App } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
+import type { Bucket } from "firebase-admin/storage";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs";
@@ -9,8 +10,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // 1. قراءة الشفرة السرية من متغير البيئة في موقع Render بأمان تام
-let credentialApp: any = undefined;
-let serviceAccountObj: any = undefined;
+let credentialApp: ReturnType<typeof cert> | undefined = undefined;
+let serviceAccountObj: Record<string, unknown> | undefined = undefined;
 const envJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 
 if (envJson) {
@@ -102,7 +103,7 @@ function getStorageBucketName(): string {
 }
 
 // Cache bucket instance on first use to avoid repeated lookups (performance optimization)
-let cachedBucket: any = null;
+let cachedBucket: Bucket | null = null;
 
 /**
  * Lazy-loaded Firebase Storage bucket with caching
