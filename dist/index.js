@@ -351,21 +351,21 @@ var siteSettings = pgTable("site_settings", {
 });
 
 // server/_core/env.ts
-var ENV = {
-  appId: process.env.VITE_APP_ID ?? "",
-  cookieSecret: process.env.JWT_SECRET ?? "",
-  databaseUrl: process.env.DATABASE_URL ?? "",
+var ENV.production = {
+  appId: process.env.VITE_FIREBASE_APP_ID ?? "",
+  authdomin: process.env.VITE_FIREBASE_AUTH_DOMAIN ?? "",
+  projectid: process.env.VITE_FIREBASE_PROJECT_ID ?? "",
   oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
-  ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
+   storagebucket: process.env.VITE_FIREBASE_STORAGE_BUCKET ?? "",
+  senderid: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? "",
+   accountjson: process.env.FIREBASE_SERVICE_ACCOUNT_JSON ?? "",
+  ApiKey: process.env.VITE_FIREBASE_API_KEY ?? "",
   isProduction: process.env.NODE_ENV === "production",
-  forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
-  forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
+  ApiUrl: process.env.VITE_API_URL ?? "",
   openaiApiKey: process.env.OPENAI_API_KEY ?? "",
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
-  /** Admin email for direct password login (no OAuth required) */
-  adminEmail: process.env.ADMIN_EMAIL ?? "",
-  /** SHA-256 hex hash of the admin password */
-  adminPasswordHash: process.env.ADMIN_PASSWORD_HASH ?? ""
+
 };
 
 // server/db.ts
