@@ -142,6 +142,7 @@ export function getFirebaseStorage() {
   
   // Use cached bucket name if available
   if (cachedStorageBucket) {
+    console.log(`[Firebase Admin] Using cached storage bucket: ${cachedStorageBucket}`)
     return admin.storage(app).bucket(cachedStorageBucket)
   }
 
@@ -172,5 +173,6 @@ export function getFirebaseStorage() {
   const bucketName = getStorageBucketName(serviceAccount)
   cachedStorageBucket = bucketName
   
+  console.log(`[Firebase Admin] Caching and using storage bucket: ${bucketName}`)
   return admin.storage(app).bucket(bucketName)
 }
