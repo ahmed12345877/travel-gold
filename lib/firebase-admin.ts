@@ -1,4 +1,4 @@
-import * as admin from 'firebase-admin'
+import admin from 'firebase-admin'
 
 // Firebase Storage Bucket name - defined as constant for immutability
 const FIREBASE_STORAGE_BUCKET = 'gen-lang-client-0364375301.firebasestorage.app'
@@ -43,7 +43,7 @@ export function initializeFirebaseAdmin(): admin.app.App {
 
   // Initialize Firebase Admin with the service account credentials
   firebaseAppInstance = admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+    credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
     storageBucket: FIREBASE_STORAGE_BUCKET,
   })
 
