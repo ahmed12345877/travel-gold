@@ -1,6 +1,7 @@
-import { initializeApp, cert, getApps, ServiceAccount } from "firebase-admin/app";
+import { initializeApp, cert, getApps, ServiceAccount, App } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
+import type { Bucket } from "firebase-admin/storage";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs";
@@ -9,8 +10,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // 1. قراءة الشفرة السرية من متغير البيئة في موقع Render بأمان تام
-let credentialApp: any = undefined;
-let serviceAccountObj: any = undefined;
+let credentialApp: ReturnType<typeof cert> | undefined = undefined;
+let serviceAccountObj: Record<string, unknown> | undefined = undefined;
 const envJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 
 if (envJson) {
@@ -34,7 +35,7 @@ if (!credentialApp) {
   if (fs.existsSync(serviceAccountPath)) {
     try {
       serviceAccountObj = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf-8'));
-      credentialApp = cert(serviceAccountPath);
+      credentialApp = cert(serviceAccountObj);
     } catch (e) {
       console.error("[Firebase] Failed to read local service account:", e);
     }
@@ -101,4 +102,22 @@ function getStorageBucketName(): string {
   );
 }
 
-export const bucket = getStorage().bucket(getStorageBucketName());
+// Cache bucket instance on first use to avoid repeated lookups (performance optimization)
+let cachedBucket: Bucket | null = null;
+
+/**
+ * Lazy-loaded Firebase Storage bucket with caching
+ * - Computed on first call, then cached for reuse
+ * - Avoids repeated bucket lookups and reduces overhead
+ * - Works correctly with ESM (no module.exports dependency)
+ * 
+ * @returns Firebase Storage bucket instance
+ * @throws Error if bucket name cannot be determined
+ */
+export function getBucket() {
+  if (cachedBucket) {
+    return cachedBucket;
+  }
+  cachedBucket = getStorage().bucket(getStorageBucketName());
+  return cachedBucket;
+}
