@@ -101,15 +101,22 @@ function getStorageBucketName(): string {
   );
 }
 
-// Lazy bucket getter - computed on first use, not at import time
-export function getBucket() {
-  return getStorage().bucket(getStorageBucketName());
-}
+// Cache bucket instance on first use to avoid repeated lookups (performance optimization)
+let cachedBucket: any = null;
 
-// For backwards compatibility, also export bucket as a getter property
-Object.defineProperty(module.exports, 'bucket', {
-  get() {
-    return getBucket();
-  },
-  enumerable: true,
-});
+/**
+ * Lazy-loaded Firebase Storage bucket with caching
+ * - Computed on first call, then cached for reuse
+ * - Avoids repeated bucket lookups and reduces overhead
+ * - Works correctly with ESM (no module.exports dependency)
+ * 
+ * @returns Firebase Storage bucket instance
+ * @throws Error if bucket name cannot be determined
+ */
+export function getBucket() {
+  if (cachedBucket) {
+    return cachedBucket;
+  }
+  cachedBucket = getStorage().bucket(getStorageBucketName());
+  return cachedBucket;
+}
