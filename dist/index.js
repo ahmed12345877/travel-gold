@@ -13,6 +13,8 @@ var vite_config_exports = {};
 __export(vite_config_exports, {
   default: () => vite_config_default
 });
+import admin from "firebase-admin";
+import { getStorage } from "firebase-admin/storage";
 import { jsxLocPlugin } from "@builder.io/vite-plugin-jsx-loc";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
