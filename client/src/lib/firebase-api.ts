@@ -13,12 +13,14 @@ import {
 const env = import.meta.env as Record<string, string | undefined>;
 
 // إعدادات Firebase الكاملة من Firebase Console
-// تم ربط النطاق المخصص (vanirgroup.com) لتجنب مشاكل ملفات تعريف الارتباط التابعة لجهات خارجية
-// هذا يضمن توافقية مع Safari و Chrome الذي يحظران third-party cookies
+// يدعم النطاق المخصص (vanirgroup.com) لتجنب مشاكل ملفات تعريف الارتباط التابعة لجهات خارجية
+// مع fallback آمن للنطاق الافتراضي من Firebase في بيئات التطوير
+const projectId = env.VITE_FIREBASE_PROJECT_ID ?? "gen-lang-client-0364375301";
 const firebaseConfig = {
   apiKey: env.VITE_FIREBASE_API_KEY ?? "",
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN ?? "vanirgroup.com", // النطاق المخصص - استخدم هذا بدلاً من gen-lang-client-0364375301.firebaseapp.com
-  projectId: env.VITE_FIREBASE_PROJECT_ID ?? "gen-lang-client-0364375301",
+  // استخدم النطاق المخصص إذا كان محدداً، وإلا استخدم النطاق الافتراضي من Firebase
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN ?? `${projectId}.firebaseapp.com`,
+  projectId,
   storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET ?? "gen-lang-client-0364375301.firebasestorage.app",
   messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? "1001729880037",
   appId: env.VITE_FIREBASE_APP_ID ?? "1:1001729880037:web:0cf4200a2a48e96547090c",
@@ -70,16 +72,6 @@ export async function firebaseEmailLogin(email: string, password: string): Promi
   await callAuthEndpoint("/api/auth/login", idToken);
 }
 
-// 2. لتسجيل الدخول بحساب موجود (Sign In)
-async function loginUser(email: string, password: string) {
-  try {
-    const userCredential = await firebaseEmailLogin(email, password);
-    console.log("تم تسجيل الدخول بنجاح:", userCredential);
-  } catch (error) {
-    console.error("خطأ في تسجيل الدخول:", (error as any).message);
-  }
-}
-
 export async function firebaseEmailSignUp(email: string, password: string, name?: string): Promise<void> {
   const app = getFirebaseApp();
   if (!app) throw new Error("Firebase is not configured. Set VITE_FIREBASE_API_KEY.");
@@ -91,16 +83,6 @@ export async function firebaseEmailSignUp(email: string, password: string, name?
   }
   const idToken = await credential.user.getIdToken();
   await callAuthEndpoint("/api/auth/login", idToken);
-}
-
-// 1. لإنشاء حساب جديد (Sign Up)
-async function registerUser(email: string, password: string) {
-  try {
-    const userCredential = await firebaseEmailSignUp(email, password);
-    console.log("تم تسجيل الحساب بنجاح:", userCredential);
-  } catch (error) {
-    console.error("خطأ في إنشاء الحساب:", (error as any).message);
-  }
 }
 
 export async function firebaseGoogleLogin(): Promise<void> {
