@@ -62,10 +62,25 @@ export function serveStatic(app: import("express").Application) {
     );
   }
 
-  app.use(express.static(distPath));
+  // خدمة الملفات الثابتة مع إعدادات كاش ذكية
+  app.use(
+    express.static(distPath, {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith(".html")) {
+          // ملفات HTML: لا تخزين مؤقت - تحقق دائماً من التحديثات
+          res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        } else if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+          // ملفات assets ذات البصمة (hash): تخزين طويل الأمد
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        }
+      },
+    })
+  );
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req: any, res: any) => {
+    // منع تخزين index.html لضمان تحميل أحدث نسخة دائماً
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
