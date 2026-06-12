@@ -16,7 +16,7 @@ import {
 } from "@/lib/firebase-api";
 
 const LOGO_URL =
-  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/ss_c5f7e7e2.png";
+  "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1000149403-Ar0iziCBPWsdylRpW15pdWYcsJtrce.png";
 
 const EGYPT_IMAGE =
   "https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?auto=format&fit=crop&w=1200&q=80";
@@ -31,6 +31,8 @@ export default function Login() {
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [logoLoaded, setLogoLoaded] = useState(false);
+  const [hideLoading, setHideLoading] = useState(false);
 
   const searchParams = new URLSearchParams(globalThis.location?.search || "");
   const nextPath = searchParams.get("next") || "/";
@@ -46,6 +48,14 @@ export default function Login() {
       setLocation(dest);
     }
   }, [isAuthenticated, user, setLocation, nextPath]);
+
+  // إذا استمر التحميل لأكثر من 3 ثوان، اعرض الصفحة على أي حال
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setHideLoading(true);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleGoogleLogin = async () => {
     if (!isFirebaseConfigured) {
@@ -100,10 +110,13 @@ export default function Login() {
     }
   };
 
-  if (loading) {
+  if (loading && !hideLoading) {
     return (
       <div className="min-h-screen bg-[#080810] flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-[var(--theme-primary)] border-t-transparent rounded-full" />
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin w-8 h-8 border-2 border-[var(--theme-primary)] border-t-transparent rounded-full" />
+          <p className="text-sm text-gray-400">Loading...</p>
+        </div>
       </div>
     );
   }
@@ -128,7 +141,26 @@ export default function Login() {
 
                 {/* Logo + Brand */}
                 <div className="flex items-center gap-3 mb-1">
-                  <img src={LOGO_URL} alt="VANIR GROUP" className="w-10 h-10 object-contain" />
+                  {logoLoaded ? (
+                    <img 
+                      src={LOGO_URL} 
+                      alt="VANIR GROUP Logo" 
+                      className="w-12 h-12 object-contain rounded-lg"
+                      style={{ filter: "drop-shadow(0 0 8px rgba(201,168,76,0.3))" }}
+                    />
+                  ) : (
+                    <div className="w-12 h-12 bg-gradient-to-br from-[var(--theme-primary)] to-[#8b6f47] rounded-lg flex items-center justify-center text-white font-bold text-xl">
+                      V
+                    </div>
+                  )}
+                  {/* Preload image */}
+                  <img
+                    src={LOGO_URL}
+                    alt=""
+                    className="hidden"
+                    onLoad={() => setLogoLoaded(true)}
+                    onError={() => setLogoLoaded(false)}
+                  />
                   <span className="text-white font-bold text-xl">
                     VANIR <span className="text-[var(--theme-primary)]">GROUP</span>
                   </span>
