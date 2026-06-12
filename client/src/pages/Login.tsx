@@ -2,7 +2,6 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { trpc } from "@/lib/trpc";
 import PageMeta from "@/components/PageMeta";
 import { LogIn, UserPlus, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
@@ -16,11 +15,10 @@ import {
 } from "@/lib/firebase-api";
 import { ASSETS } from "@/config/assets";
 
-const EGYPT_IMAGE =
-  "https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?auto=format&fit=crop&w=1200&q=80";
+const EGYPT_IMAGE = "/images/egypt-pyramids.png";
 
 export default function Login() {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<"signin" | "signup">("signin");
   const [showPassword, setShowPassword] = useState(false);
@@ -30,11 +28,11 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [logoLoaded, setLogoLoaded] = useState(false);
-  const [hideLoading, setHideLoading] = useState(false);
 
   const searchParams = new URLSearchParams(globalThis.location?.search || "");
   const nextPath = searchParams.get("next") || "/";
 
+  // إذا كان المستخدم مسجلاً بالفعل، أعد توجيهه — بدون حجب عرض النموذج.
   useEffect(() => {
     if (isAuthenticated && user) {
       const dest =
@@ -46,14 +44,6 @@ export default function Login() {
       setLocation(dest);
     }
   }, [isAuthenticated, user, setLocation, nextPath]);
-
-  // إذا استمر التحميل لأكثر من 3 ثوان، اعرض الصفحة على أي حال
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setHideLoading(true);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleGoogleLogin = async () => {
     if (submitting) return; // Prevent duplicate requests
@@ -109,17 +99,6 @@ export default function Login() {
       setSubmitting(false);
     }
   };
-
-  if (loading && !hideLoading) {
-    return (
-      <div className="min-h-screen bg-[#080810] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin w-8 h-8 border-2 border-[var(--theme-primary)] border-t-transparent rounded-full" />
-          <p className="text-sm text-gray-400">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#080810]">
@@ -379,11 +358,13 @@ export default function Login() {
             </div>
 
             {/* Right side – Egypt image pane */}
-            <div className="relative rounded-[1.8rem] m-3 overflow-hidden hidden lg:block">
+            <div className="relative rounded-[1.8rem] m-3 overflow-hidden hidden lg:block bg-gradient-to-br from-[#1a1208] to-[#0d0d1a]">
               <img
                 src={EGYPT_IMAGE}
                 alt="Egypt – Pyramids of Giza"
                 className="absolute inset-0 w-full h-full object-cover"
+                loading="eager"
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
 

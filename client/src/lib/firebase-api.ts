@@ -135,6 +135,36 @@ export async function firebaseGoogleLogin(): Promise<void> {
   await callAuthEndpoint("/api/auth/user-login", idToken);
 }
 
+// ===== Admin authentication =====
+// تستهدف نقاط النهاية الخاصة بالأدمن (/api/auth/login و /api/auth/google)
+// والتي تتحقق من صلاحية "admin" وترفض الحسابات غير المصرح لها.
+
+export async function firebaseAdminEmailLogin(email: string, password: string): Promise<void> {
+  const app = getFirebaseApp();
+  if (!app) throw new Error("Firebase is not configured. Set VITE_FIREBASE_API_KEY.");
+
+  const auth = getAuth(app);
+  const credential: UserCredential = await signInWithEmailAndPassword(auth, email, password);
+  const idToken = await credential.user.getIdToken();
+  // نقطة نهاية الأدمن — تتحقق من الصلاحيات قبل إصدار الجلسة
+  await callAuthEndpoint("/api/auth/login", idToken);
+}
+
+export async function firebaseAdminGoogleLogin(): Promise<void> {
+  const app = getFirebaseApp();
+  if (!app) throw new Error("Firebase is not configured. Set VITE_FIREBASE_API_KEY.");
+
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+
+  const credential: UserCredential = await signInWithPopup(auth, provider);
+  const idToken = await credential.user.getIdToken();
+  // نقطة نهاية الأدمن عبر Google — تتحقق من الصلاحيات قبل إصدار الجلسة
+  await callAuthEndpoint("/api/auth/google", idToken);
+}
+
+
 export async function firebaseSignOut(): Promise<void> {
   const app = getFirebaseApp();
   if (!app) return;
