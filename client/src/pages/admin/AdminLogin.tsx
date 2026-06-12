@@ -1,7 +1,8 @@
 import PageMeta from "@/components/PageMeta";
 import {
-  firebaseEmailLogin,
-  firebaseGoogleLogin,
+  firebaseAdminEmailLogin,
+  firebaseAdminGoogleLogin,
+  firebaseSignOut,
   isFirebaseConfigured,
 } from "@/lib/firebase-api";
 import { useState } from "react";
@@ -9,8 +10,7 @@ import { useLocation } from "wouter";
 import { Mail, Lock, ArrowRight, Shield } from "lucide-react";
 import { ASSETS } from "@/config/assets";
 
-const EGYPT_IMAGE =
-  "https://images.unsplash.com/photo-1568322445389-f64ac2515020?auto=format&fit=crop&w=1200&q=80";
+const EGYPT_IMAGE = "/images/egypt-cairo.png";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -35,9 +35,11 @@ export default function AdminLogin() {
     setLoading(true);
     setStatus(null);
     try {
-      await firebaseEmailLogin(email, password);
+      await firebaseAdminEmailLogin(email, password);
       navigate("/admin");
     } catch (err: any) {
+      // امسح جلسة Firebase حتى لا تبقى معلّقة عند رفض الصلاحية
+      await firebaseSignOut().catch(() => {});
       const msg: string = err?.message || "Authentication failed.";
       setStatus({
         type: "error",
@@ -45,6 +47,10 @@ export default function AdminLogin() {
           ? "Admin access denied. This account does not have admin privileges."
           : msg.includes("not configured") || msg.includes("VITE_FIREBASE_API_KEY")
           ? "Firebase is not configured. Contact your administrator."
+          : msg.includes("wrong-password") || msg.includes("invalid-credential") || msg.includes("user-not-found")
+          ? "Invalid email or password."
+          : msg.includes("Network error")
+          ? "Cannot connect to the authentication server. Please try again."
           : "Invalid email or password.",
       });
     } finally {
@@ -60,10 +66,17 @@ export default function AdminLogin() {
     setLoading(true);
     setStatus(null);
     try {
-      await firebaseGoogleLogin();
+      await firebaseAdminGoogleLogin();
       navigate("/admin");
     } catch (err: any) {
-      setStatus({ type: "error", msg: err?.message || "Google sign-in failed." });
+      await firebaseSignOut().catch(() => {});
+      const msg: string = err?.message || "Google sign-in failed.";
+      setStatus({
+        type: "error",
+        msg: msg.includes("Admin access denied")
+          ? "Admin access denied. This account does not have admin privileges."
+          : msg,
+      });
     } finally {
       setLoading(false);
     }
@@ -258,11 +271,13 @@ export default function AdminLogin() {
           </div>
 
           {/* Right side – Egypt image pane */}
-          <div className="relative rounded-[1.8rem] m-3 overflow-hidden hidden lg:block">
+          <div className="relative rounded-[1.8rem] m-3 overflow-hidden hidden lg:block bg-gradient-to-br from-[#1a1208] to-[#0d0d1a]">
             <img
               src={EGYPT_IMAGE}
               alt="Egypt – Cairo"
               className="absolute inset-0 w-full h-full object-cover"
+              loading="eager"
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
 
