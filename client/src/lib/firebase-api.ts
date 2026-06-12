@@ -44,21 +44,39 @@ function getFirebaseApp(): FirebaseApp | null {
 export const isFirebaseConfigured = Boolean(env.VITE_FIREBASE_API_KEY);
 
 function apiBase(): string {
-  return (env.VITE_API_URL ?? "").replace(/\/$/, "");
+  const apiUrl = env.VITE_API_URL ?? "";
+  if (apiUrl) return apiUrl.replace(/\/$/, "");
+  
+  // Fallback: use relative path to same domain (supports dev and production)
+  // In dev: http://localhost:5000, in prod: https://vanirgroup.com
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+  
+  return "";
 }
 
 async function callAuthEndpoint(path: string, idToken: string): Promise<void> {
   const url = `${apiBase()}${path}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ idToken }),
-  });
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ idToken }),
+    });
 
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({})) as { error?: string };
-    throw new Error(body.error || `Request failed: ${res.status}`);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({})) as { error?: string };
+      throw new Error(body.error || `Request failed: ${res.status}`);
+    }
+  } catch (err: any) {
+    console.error("[v0] Auth endpoint error:", { url, error: err?.message });
+    throw new Error(
+      err?.message?.includes("Failed to fetch")
+        ? `Network error: Cannot connect to authentication server. URL: ${url}`
+        : err?.message || "Authentication failed"
+    );
   }
 }
 
