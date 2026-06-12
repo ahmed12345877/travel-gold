@@ -9,7 +9,7 @@ import { useLocation } from "wouter";
 import { Mail, Lock, ArrowRight, Shield } from "lucide-react";
 
 const LOGO_URL =
-  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/ss_c5f7e7e2.png";
+  "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1000149403-Ar0iziCBPWsdylRpW15pdWYcsJtrce.png";
 
 const EGYPT_IMAGE =
   "https://images.unsplash.com/photo-1568322445389-f64ac2515020?auto=format&fit=crop&w=1200&q=80";
