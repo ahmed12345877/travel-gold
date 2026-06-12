@@ -6,7 +6,8 @@ import { createRoot } from "react-dom/client";
 import { HelmetProvider } from "react-helmet-async";
 import superjson from "superjson";
 import App from "./App";
-import { getAuth } from "firebase/auth"; // 1. استيراد مكتبة الفيربيز الرسمية
+// 1. استيراد دالة Auth الآمنة التي تضمن تهيئة Firebase أولاً
+import { getFirebaseAuth } from "@/lib/firebase-api";
 import { GlobalThemeStyleInjector } from "./contexts/GlobalThemeStyleInjector";
 import { ThemeColorsApplier } from "./contexts/ThemeColorsApplier";
 import { ThemeColorsProvider } from "./contexts/ThemeColorsProvider";
@@ -55,9 +56,9 @@ const trpcClient = trpc.createClient({
       async fetch(input, init) {
         let token: string | null = null;
         try {
-          // 2. جلب المستخدم الحالي النشط من Firebase وتوليد رمز أمان جديد له
-          const auth = getAuth();
-          const currentUser = auth.currentUser;
+          // 2. جلب نسخة Auth بشكل آمن (تهيّئ Firebase تلقائياً إن لم يكن مهيأ بعد)
+          const auth = getFirebaseAuth();
+          const currentUser = auth?.currentUser;
           if (currentUser) {
             token = await currentUser.getIdToken();
           }

@@ -7,6 +7,7 @@ import {
   updateProfile,
   GoogleAuthProvider,
   signInWithPopup,
+  type Auth,
   type UserCredential,
 } from "firebase/auth";
 
@@ -26,19 +27,35 @@ const firebaseConfig = {
   measurementId: env.VITE_FIREBASE_MEASUREMENT_ID ?? "G-5ETHDXPS4L",
 };
 
-function getFirebaseApp(): FirebaseApp | null {
+export function getFirebaseApp(): FirebaseApp | null {
   if (!firebaseConfig.apiKey) return null;
   if (getApps().length) return getApps()[0];
-  
+
   const app = initializeApp(firebaseConfig);
-  
+
   // تهيئة Google Analytics إذا كان measurementId متوفراً
   if (firebaseConfig.measurementId) {
-    getAnalytics(app);
+    try {
+      getAnalytics(app);
+    } catch {
+      // Analytics غير مدعوم في بعض البيئات (SSR / المتصفحات القديمة)
+    }
   }
-  
+
   return app;
 }
+
+// إرجاع نسخة Auth المرتبطة بالتطبيق الأساسي بعد التأكد من تهيئته.
+// هذه الدالة آمنة للاستدعاء في أي وقت لأنها تهيّئ Firebase أولاً إن لزم.
+export function getFirebaseAuth(): Auth | null {
+  const app = getFirebaseApp();
+  if (!app) return null;
+  return getAuth(app);
+}
+
+// تهيئة Firebase فوراً عند تحميل التطبيق حتى يكون التطبيق الأساسي '[DEFAULT]'
+// جاهزاً قبل أي استدعاء لـ getAuth() من tRPC أو غيره.
+getFirebaseApp();
 
 export const isFirebaseConfigured = Boolean(env.VITE_FIREBASE_API_KEY);
 
