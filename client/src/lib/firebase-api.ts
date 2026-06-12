@@ -13,13 +13,12 @@ import {
 const env = import.meta.env as Record<string, string | undefined>;
 
 // إعدادات Firebase الكاملة من Firebase Console
-// يدعم النطاق المخصص (vanirgroup.com) لتجنب مشاكل ملفات تعريف الارتباط التابعة لجهات خارجية
-// مع fallback آمن للنطاق الافتراضي من Firebase في بيئات التطوير
+// استخدم النطاق الافتراضي من Firebase (جاهز للاستخدام)
 const projectId = env.VITE_FIREBASE_PROJECT_ID ?? "gen-lang-client-0364375301";
 const firebaseConfig = {
   apiKey: env.VITE_FIREBASE_API_KEY ?? "",
-  // استخدم النطاق المخصص إذا كان محدداً، وإلا استخدم النطاق الافتراضي من Firebase
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN ?? `${projectId}.firebaseapp.com`,
+  // النطاق الافتراضي من Firebase - معروف وموثوق
+  authDomain: `${projectId}.firebaseapp.com`,
   projectId,
   storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET ?? "gen-lang-client-0364375301.firebasestorage.app",
   messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? "1001729880037",
