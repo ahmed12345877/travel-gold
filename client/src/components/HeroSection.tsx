@@ -9,13 +9,7 @@ import { ArrowRight, Facebook, Instagram } from "lucide-react";
 import { useRef, useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
 import OptimizedImage from "./OptimizedImage";
-
-const HERO_BG =
-  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/misty-hero-bg-L7rPLhy7UyP6hQeLmG4RHw.webp";
-const HERO_VIDEO =
-  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/hero_video_optimized_882588ee.mp4";
-const LOGO_URL =
-  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/vanir-logo-white_74cd1f52.png";
+import { ASSETS } from "@/config/assets";
 
 const CARD_IMAGES = [
   {
@@ -327,12 +321,12 @@ export default function HeroSection() {
             onError={() => setVideoError(true)}
             className="absolute inset-0 w-full h-[120%] object-cover object-center"
           >
-            <source src={HERO_VIDEO} type="video/mp4" />
+            <source src={ASSETS.HERO_VIDEO} type="video/mp4" />
           </video>
         )}
         {videoError && (
           <img
-            src={HERO_BG}
+            src={ASSETS.HERO_BG}
             alt="Misty mountains landscape - atmospheric travel destination"
             className="absolute inset-0 w-full h-[120%] object-cover object-center"
           />
@@ -464,7 +458,7 @@ export default function HeroSection() {
       {/* ── Watermark ── */}
       <div className="absolute bottom-6 left-6 z-[7] pointer-events-none opacity-10">
         <img
-          src={LOGO_URL}
+          src={ASSETS.LOGO_WATERMARK}
           alt="VANIR GROUP logo watermark"
           className="h-8 sm:h-10 md:h-14 lg:h-16 w-auto object-contain"
           draggable={false}

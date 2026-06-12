@@ -4,6 +4,7 @@
  */
 import { Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { ASSETS } from "@/config/assets";
 
 const quickLinks = [
   { label: "Home", href: "/" },
@@ -39,7 +40,7 @@ export default function Footer() {
           <div className="col-span-2 md:col-span-1">
             <a href="/" className="inline-block mb-4">
               <img
-                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/vanir-logo-white_74cd1f52.png"
+                src={ASSETS.LOGO_WATERMARK}
                 alt="VANIR GROUP"
                 className="h-10 sm:h-12 md:h-14 w-auto object-contain"
               />

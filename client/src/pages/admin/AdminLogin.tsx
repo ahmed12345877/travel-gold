@@ -7,9 +7,7 @@ import {
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Mail, Lock, ArrowRight, Shield } from "lucide-react";
-
-const LOGO_URL =
-  "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1000149403-Ar0iziCBPWsdylRpW15pdWYcsJtrce.png";
+import { ASSETS } from "@/config/assets";
 
 const EGYPT_IMAGE =
   "https://images.unsplash.com/photo-1568322445389-f64ac2515020?auto=format&fit=crop&w=1200&q=80";
@@ -25,6 +23,7 @@ export default function AdminLogin() {
 
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return; // Prevent duplicate requests
     if (!email || !password) {
       setStatus({ type: "error", msg: "Please enter your email and password." });
       return;
@@ -87,27 +86,21 @@ export default function AdminLogin() {
 
               {/* Logo + Brand */}
               <div className="flex items-center gap-3 mb-1">
-                {logoLoaded ? (
-                  <img
-                    src={LOGO_URL}
-                    alt="VANIR GROUP"
-                    className="w-10 h-10 object-contain"
-                    onError={() => setLogoLoaded(false)}
-                    style={{ filter: "drop-shadow(0 0 8px rgba(201,168,76,0.3))" }}
-                  />
-                ) : (
-                  <div className="w-10 h-10 bg-gradient-to-br from-[#c9a84c] to-[#a0842d] rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                <img
+                  src={ASSETS.LOGO_MAIN}
+                  alt="VANIR GROUP"
+                  className={`w-10 h-10 object-contain rounded-lg transition-opacity duration-300 ${
+                    logoLoaded ? "opacity-100" : "opacity-0"
+                  }`}
+                  onLoad={() => setLogoLoaded(true)}
+                  onError={() => setLogoLoaded(false)}
+                  style={{ filter: logoLoaded ? "drop-shadow(0 0 8px rgba(201,168,76,0.3))" : "" }}
+                />
+                {!logoLoaded && (
+                  <div className="w-10 h-10 bg-gradient-to-br from-[#c9a84c] to-[#a0842d] rounded-lg flex items-center justify-center text-white font-bold text-lg absolute">
                     V
                   </div>
                 )}
-                {/* Preload image */}
-                <img
-                  src={LOGO_URL}
-                  alt=""
-                  className="hidden"
-                  onLoad={() => setLogoLoaded(true)}
-                  onError={() => setLogoLoaded(false)}
-                />
                 <div>
                   <span className="text-white font-bold text-xl">
                     VANIR <span style={{ color: "#c9a84c" }}>GROUP</span>
