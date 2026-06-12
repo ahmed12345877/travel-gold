@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useThemeMode } from "@/contexts/ThemeModeProvider";
+import { ASSETS } from "@/config/assets";
 
 /* ─── Navigation Structure ─── */
 interface NavLink {
@@ -150,7 +151,7 @@ export default function Navbar() {
           {/* Logo + Brand Name */}
           <a href="/" className="flex items-center gap-1.5 sm:gap-2 shrink-0 group">
             <img
-              src="https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/vanir-logo-correct_2a805e1d.png"
+              src={ASSETS.LOGO_WATERMARK}
               alt="VANIR GROUP"
               className="h-9 sm:h-10 md:h-11 lg:h-12 w-auto object-contain"
             />

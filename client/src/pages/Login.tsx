@@ -14,9 +14,7 @@ import {
   firebaseGoogleLogin,
   isFirebaseConfigured,
 } from "@/lib/firebase-api";
-
-const LOGO_URL =
-  "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1000149403-Ar0iziCBPWsdylRpW15pdWYcsJtrce.png";
+import { ASSETS } from "@/config/assets";
 
 const EGYPT_IMAGE =
   "https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?auto=format&fit=crop&w=1200&q=80";
@@ -58,6 +56,7 @@ export default function Login() {
   }, []);
 
   const handleGoogleLogin = async () => {
+    if (submitting) return; // Prevent duplicate requests
     if (!isFirebaseConfigured) {
       toast.error("Authentication is not configured. Contact your administrator.");
       return;
@@ -75,6 +74,7 @@ export default function Login() {
   };
 
   const handleEmailAuth = async () => {
+    if (submitting) return; // Prevent duplicate requests
     if (!isFirebaseConfigured) {
       setAuthError("Authentication is not configured. Contact your administrator.");
       return;
@@ -141,26 +141,21 @@ export default function Login() {
 
                 {/* Logo + Brand */}
                 <div className="flex items-center gap-3 mb-1">
-                  {logoLoaded ? (
-                    <img 
-                      src={LOGO_URL} 
-                      alt="VANIR GROUP Logo" 
-                      className="w-12 h-12 object-contain rounded-lg"
-                      style={{ filter: "drop-shadow(0 0 8px rgba(201,168,76,0.3))" }}
-                    />
-                  ) : (
-                    <div className="w-12 h-12 bg-gradient-to-br from-[var(--theme-primary)] to-[#8b6f47] rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                      V
-                    </div>
-                  )}
-                  {/* Preload image */}
-                  <img
-                    src={LOGO_URL}
-                    alt=""
-                    className="hidden"
+                  <img 
+                    src={ASSETS.LOGO_MAIN} 
+                    alt="VANIR GROUP Logo" 
+                    className={`w-12 h-12 object-contain rounded-lg transition-opacity duration-300 ${
+                      logoLoaded ? "opacity-100" : "opacity-0"
+                    }`}
+                    style={{ filter: logoLoaded ? "drop-shadow(0 0 8px rgba(201,168,76,0.3))" : "" }}
                     onLoad={() => setLogoLoaded(true)}
                     onError={() => setLogoLoaded(false)}
                   />
+                  {!logoLoaded && (
+                    <div className="w-12 h-12 bg-gradient-to-br from-[var(--theme-primary)] to-[#8b6f47] rounded-lg flex items-center justify-center text-white font-bold text-xl absolute">
+                      V
+                    </div>
+                  )}
                   <span className="text-white font-bold text-xl">
                     VANIR <span className="text-[var(--theme-primary)]">GROUP</span>
                   </span>

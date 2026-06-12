@@ -4,9 +4,7 @@
  * as a transparent watermark on destination/travel images.
  * Supports multiple positions and opacity levels.
  */
-
-const LOGO_URL =
-  "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/vanir-logo-white_74cd1f52.png";
+import { ASSETS } from "@/config/assets";
 
 type WatermarkPosition =
   | "bottom-right"
@@ -60,7 +58,7 @@ export default function WatermarkImage({
         style={{ opacity: watermarkOpacity }}
       >
         <img
-          src={LOGO_URL}
+          src={ASSETS.LOGO_WATERMARK}
           alt="VANIR GROUP watermark"
           className={`${watermarkSize} w-auto object-contain drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]`}
           draggable={false}
