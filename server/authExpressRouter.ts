@@ -146,11 +146,9 @@ export function registerFirebaseAuthRoutes(app: Express) {
         return res.status(400).json({ error: "idToken is required" });
       }
 
-      const decoded = await getAuth().verifyIdToken(idToken);
-const result = await issueSession(req, res, decoded.uid, decoded.email, decoded.name);
-      const decoded = await getAuth().verifyIdToken(idToken);
-const result = await issueSessionForUser(req, res, decoded.uid, decoded.email, decoded.name);
-const decoded = await getAuth().verifyIdToken(idToken);
+            const decoded = await getAuth().verifyIdToken(idToken);
+      const result = await issueSession(req, res, decoded.uid, decoded.email, decoded.name);
+
 
       return res.json(result);
     } catch (err: any) {
