@@ -42,9 +42,19 @@ queryClient.getMutationCache().subscribe(event => {
   }
 });
 
-// تحديد رابط الـ API بشكل صحيح للنطاق الفرعي والسيرفر
+// تحديد رابط الـ API بشكل صحيح حسب النطاق الذي يعمل عليه الموقع.
+// نستخدم VITE_API_URL إن وُجد، وإلا نعتمد على نفس نطاق الواجهة الأمامية
+// (يدعم التطوير المحلي والإنتاج على Render أو أي استضافة أخرى).
 function getApiUrl(): string {
-  return "https://vanirgroup.com/api/trpc";
+  const env = import.meta.env as Record<string, string | undefined>;
+  const configured = env.VITE_API_URL?.replace(/\/$/, "");
+  if (configured) return `${configured}/api/trpc`;
+
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}/api/trpc`;
+  }
+
+  return "/api/trpc";
 }
 
 // إنشاء عميل tRPC وتمرير الـ Token الخاص بـ Firebase تلقائياً مع كل طلب
