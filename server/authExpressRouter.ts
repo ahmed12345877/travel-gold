@@ -36,6 +36,54 @@ async function resolveAdminUser(uid: string, email: string | undefined, displayN
   };
 }
 
+async function issueSessionForAdmin(req: Request, res: Response, uid: string, email: string | undefined, displayName: string | undefined) {
+  const user = await resolveAdminUser(uid, email, displayName);
+  const openId = `firebase:${uid}`;
+
+  const sessionToken = await sdk.createSessionToken(openId, {
+    name: user.name || "Admin",
+    expiresInMs: ONE_YEAR_MS,
+  });
+
+  const cookieOptions = getSessionCookieOptions(req);
+  res.cookie(COOKIE_NAME, sessionToken, {
+    ...cookieOptions,
+    maxAge: ONE_YEAR_MS,
+  });
+
+  return { success: true, email: user.email, name: user.name };
+}
+
+async function issueSessionForUser(req: Request, res: Response, uid: string, email: string | undefined, displayName: string | undefined) {
+  // Simple user session - no role restrictions
+  const openId = `firebase:${uid}`;
+
+  const sessionToken = await sdk.createSessionToken(openId, {
+    name: displayName || email?.split("@")[0] || "User",
+    expiresInMs: ONE_YEAR_MS,
+  });
+
+  const cookieOptions = getSessionCookieOptions(req);
+  res.cookie(COOKIE_NAME, sessionToken, {
+    ...cookieOptions,
+    maxAge: ONE_YEAR_MS,
+  });
+
+  // Upsert user into Firestore
+  await firestoreDb.collection("users").doc(uid).set(
+    {
+      uid,
+      email: email ?? null,
+      name: displayName || email?.split("@")[0] || null,
+      loginMethod: "firebase",
+      lastSignedIn: new Date(),
+    },
+    { merge: true }
+  );
+
+  return { success: true, email: email || null, name: displayName || null };
+}
+
 async function issueSession(req: Request, res: Response, uid: string, email: string | undefined, displayName: string | undefined) {
   const user = await resolveAdminUser(uid, email, displayName);
   const openId = `firebase:${uid}`;
@@ -55,7 +103,7 @@ async function issueSession(req: Request, res: Response, uid: string, email: str
 }
 
 export function registerFirebaseAuthRoutes(app: Express) {
-  // POST /api/auth/login — verify Firebase ID token from email/password sign-in
+  // POST /api/auth/login — verify Firebase ID token from email/password sign-in (ADMIN ONLY)
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
       const { idToken } = req.body as { idToken?: string };
@@ -70,6 +118,23 @@ export function registerFirebaseAuthRoutes(app: Express) {
       const msg = err?.message || "Authentication failed";
       const status = msg === "Admin access denied" ? 403 : 401;
       return res.status(status).json({ error: msg });
+    }
+  });
+
+  // POST /api/auth/user-login — verify Firebase ID token for regular users (email/password or Google)
+  app.post("/api/auth/user-login", async (req: Request, res: Response) => {
+    try {
+      const { idToken } = req.body as { idToken?: string };
+      if (!idToken) {
+        return res.status(400).json({ error: "idToken is required" });
+      }
+
+      const decoded = await admin.auth().verifyIdToken(idToken);
+      const result = await issueSessionForUser(req, res, decoded.uid, decoded.email, decoded.name);
+      return res.json(result);
+    } catch (err: any) {
+      const msg = err?.message || "Authentication failed";
+      return res.status(401).json({ error: msg });
     }
   });
 

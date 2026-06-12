@@ -13,13 +13,12 @@ import {
 const env = import.meta.env as Record<string, string | undefined>;
 
 // إعدادات Firebase الكاملة من Firebase Console
-// يدعم النطاق المخصص (vanirgroup.com) لتجنب مشاكل ملفات تعريف الارتباط التابعة لجهات خارجية
-// مع fallback آمن للنطاق الافتراضي من Firebase في بيئات التطوير
+// استخدم النطاق الافتراضي من Firebase (جاهز للاستخدام)
 const projectId = env.VITE_FIREBASE_PROJECT_ID ?? "gen-lang-client-0364375301";
 const firebaseConfig = {
   apiKey: env.VITE_FIREBASE_API_KEY ?? "",
-  // استخدم النطاق المخصص إذا كان محدداً، وإلا استخدم النطاق الافتراضي من Firebase
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN ?? `${projectId}.firebaseapp.com`,
+  // النطاق الافتراضي من Firebase - معروف وموثوق
+  authDomain: `${projectId}.firebaseapp.com`,
   projectId,
   storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET ?? "gen-lang-client-0364375301.firebasestorage.app",
   messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? "1001729880037",
@@ -44,21 +43,39 @@ function getFirebaseApp(): FirebaseApp | null {
 export const isFirebaseConfigured = Boolean(env.VITE_FIREBASE_API_KEY);
 
 function apiBase(): string {
-  return (env.VITE_API_URL ?? "").replace(/\/$/, "");
+  const apiUrl = env.VITE_API_URL ?? "";
+  if (apiUrl) return apiUrl.replace(/\/$/, "");
+  
+  // Fallback: use relative path to same domain (supports dev and production)
+  // In dev: http://localhost:5000, in prod: https://vanirgroup.com
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+  
+  return "";
 }
 
 async function callAuthEndpoint(path: string, idToken: string): Promise<void> {
   const url = `${apiBase()}${path}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ idToken }),
-  });
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ idToken }),
+    });
 
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({})) as { error?: string };
-    throw new Error(body.error || `Request failed: ${res.status}`);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({})) as { error?: string };
+      throw new Error(body.error || `Request failed: ${res.status}`);
+    }
+  } catch (err: any) {
+    console.error("[v0] Auth endpoint error:", { url, error: err?.message });
+    throw new Error(
+      err?.message?.includes("Failed to fetch")
+        ? `Network error: Cannot connect to authentication server. URL: ${url}`
+        : err?.message || "Authentication failed"
+    );
   }
 }
 
@@ -69,7 +86,8 @@ export async function firebaseEmailLogin(email: string, password: string): Promi
   const auth = getAuth(app);
   const credential: UserCredential = await signInWithEmailAndPassword(auth, email, password);
   const idToken = await credential.user.getIdToken();
-  await callAuthEndpoint("/api/auth/login", idToken);
+  // Use /api/auth/user-login for customer sign-in (email/password)
+  await callAuthEndpoint("/api/auth/user-login", idToken);
 }
 
 export async function firebaseEmailSignUp(email: string, password: string, name?: string): Promise<void> {
@@ -82,7 +100,8 @@ export async function firebaseEmailSignUp(email: string, password: string, name?
     await updateProfile(credential.user, { displayName: name });
   }
   const idToken = await credential.user.getIdToken();
-  await callAuthEndpoint("/api/auth/login", idToken);
+  // Use /api/auth/user-login for customer sign-up (email/password)
+  await callAuthEndpoint("/api/auth/user-login", idToken);
 }
 
 export async function firebaseGoogleLogin(): Promise<void> {
@@ -95,7 +114,8 @@ export async function firebaseGoogleLogin(): Promise<void> {
 
   const credential: UserCredential = await signInWithPopup(auth, provider);
   const idToken = await credential.user.getIdToken();
-  await callAuthEndpoint("/api/auth/login", idToken);
+  // Use /api/auth/user-login for Google sign-in (customers)
+  await callAuthEndpoint("/api/auth/user-login", idToken);
 }
 
 export async function firebaseSignOut(): Promise<void> {
