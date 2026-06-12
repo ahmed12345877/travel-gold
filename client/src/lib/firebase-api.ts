@@ -146,8 +146,14 @@ export async function firebaseAdminEmailLogin(email: string, password: string): 
   const auth = getAuth(app);
   const credential: UserCredential = await signInWithEmailAndPassword(auth, email, password);
   const idToken = await credential.user.getIdToken();
-  // نقطة نهاية الأدمن — تتحقق من الصلاحيات قبل إصدار الجلسة
-  await callAuthEndpoint("/api/auth/login", idToken);
+  // نقطة نهاية الأدمن — تتحقق من الصلاحيات قبل إصدار الجلسة.
+  // عند فشل التحقق نسجّل الخروج من Firebase حتى لا تبقى جلسة معلّقة بدون جلسة تطبيق صالحة.
+  try {
+    await callAuthEndpoint("/api/auth/login", idToken);
+  } catch (err) {
+    await auth.signOut().catch(() => {});
+    throw err;
+  }
 }
 
 export async function firebaseAdminGoogleLogin(): Promise<void> {
@@ -160,8 +166,14 @@ export async function firebaseAdminGoogleLogin(): Promise<void> {
 
   const credential: UserCredential = await signInWithPopup(auth, provider);
   const idToken = await credential.user.getIdToken();
-  // نقطة نهاية الأدمن عبر Google — تتحقق من الصلاحيات قبل إصدار الجلسة
-  await callAuthEndpoint("/api/auth/google", idToken);
+  // نقطة نهاية الأدمن عبر Google — تتحقق من الصلاحيات قبل إصدار الجلسة.
+  // عند فشل التحقق نسجّل الخروج من Firebase حتى لا تبقى جلسة معلّقة بدون جلسة تطبيق صالحة.
+  try {
+    await callAuthEndpoint("/api/auth/google", idToken);
+  } catch (err) {
+    await auth.signOut().catch(() => {});
+    throw err;
+  }
 }
 
 

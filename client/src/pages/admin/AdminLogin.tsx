@@ -59,6 +59,7 @@ export default function AdminLogin() {
   };
 
   const handleGoogleLogin = async () => {
+    if (loading) return;
     if (!isFirebaseConfigured) {
       setStatus({ type: "error", msg: "Firebase is not configured. Contact your administrator." });
       return;
