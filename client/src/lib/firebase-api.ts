@@ -69,7 +69,8 @@ export async function firebaseEmailLogin(email: string, password: string): Promi
   const auth = getAuth(app);
   const credential: UserCredential = await signInWithEmailAndPassword(auth, email, password);
   const idToken = await credential.user.getIdToken();
-  await callAuthEndpoint("/api/auth/login", idToken);
+  // Use /api/auth/user-login for customer sign-in (email/password)
+  await callAuthEndpoint("/api/auth/user-login", idToken);
 }
 
 export async function firebaseEmailSignUp(email: string, password: string, name?: string): Promise<void> {
@@ -82,7 +83,8 @@ export async function firebaseEmailSignUp(email: string, password: string, name?
     await updateProfile(credential.user, { displayName: name });
   }
   const idToken = await credential.user.getIdToken();
-  await callAuthEndpoint("/api/auth/login", idToken);
+  // Use /api/auth/user-login for customer sign-up (email/password)
+  await callAuthEndpoint("/api/auth/user-login", idToken);
 }
 
 export async function firebaseGoogleLogin(): Promise<void> {
@@ -95,7 +97,8 @@ export async function firebaseGoogleLogin(): Promise<void> {
 
   const credential: UserCredential = await signInWithPopup(auth, provider);
   const idToken = await credential.user.getIdToken();
-  await callAuthEndpoint("/api/auth/login", idToken);
+  // Use /api/auth/user-login for Google sign-in (customers)
+  await callAuthEndpoint("/api/auth/user-login", idToken);
 }
 
 export async function firebaseSignOut(): Promise<void> {
