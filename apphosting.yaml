@@ -50,14 +50,6 @@ env:
     availability:
       - BUILD
       - RUNTIME
-  - variable: NG_TRUST_PROXY_HEADERS
-    value: "true"
-    availability:
-      - RUNTIME
-  - variable: NG_ALLOWED_HOSTS
-    value: "vanirgroup.com,travel-gold--gen-lang-client-0364375301.us-east4.hosted.app"
-    availability:
-      - RUNTIME
   - variable: OWNER_NAME
     value: "VanirGroup"
     availability:
