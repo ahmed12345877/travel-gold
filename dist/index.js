@@ -991,55 +991,45 @@ import { fileURLToPath } from "node:url";
 import fs from "node:fs";
 var __filename = fileURLToPath(import.meta.url);
 var __dirname2 = path.dirname(__filename);
-var credentialApp = void 0;
-var serviceAccountObj = void 0;
-var envJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-if (envJson) {
-  try {
-    const rawJson = envJson.trim().startsWith("{") ? envJson : Buffer.from(envJson, "base64").toString("utf8");
-    serviceAccountObj = JSON.parse(rawJson);
-    credentialApp = cert(serviceAccountObj);
-  } catch (e) {
-    console.error("[Firebase] Failed to parse credentials from env:", e);
-  }
-}
-if (!credentialApp) {
-  const primaryKeyPath = path.resolve(__dirname2, "../../firebase-key.json");
-  const fallbackKeyPath = path.resolve(__dirname2, "firebase-key.json");
-  const serviceAccountPath = fs.existsSync(primaryKeyPath) ? primaryKeyPath : fallbackKeyPath;
-  if (fs.existsSync(serviceAccountPath)) {
-    try {
-      serviceAccountObj = JSON.parse(fs.readFileSync(serviceAccountPath, "utf-8"));
-      credentialApp = cert(serviceAccountObj);
-    } catch (e) {
-      console.error("[Firebase] Failed to read local service account:", e);
+var isCloudRun = Boolean(
+  process.env.K_SERVICE || process.env.GOOGLE_CLOUD_PROJECT || process.env.FIREBASE_CONFIG
+);
+var storageBucketName = process.env.FIREBASE_STORAGE_BUCKET || process.env.VITE_FIREBASE_STORAGE_BUCKET || `${process.env.VITE_FIREBASE_PROJECT_ID ?? "gen-lang-client-0364375301"}.firebasestorage.app`;
+if (!getApps().length) {
+  if (isCloudRun) {
+    initializeApp({ storageBucket: storageBucketName });
+    console.log("[Firebase] Initialized with ADC (Cloud Run / Firebase App Hosting)");
+  } else {
+    let credentialApp;
+    const envJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+    if (envJson) {
+      try {
+        const rawJson = envJson.trim().startsWith("{") ? envJson : Buffer.from(envJson, "base64").toString("utf8");
+        credentialApp = cert(JSON.parse(rawJson));
+      } catch (e) {
+        console.error("[Firebase] Failed to parse credentials from env:", e);
+      }
     }
+    if (!credentialApp) {
+      const primaryKeyPath = path.resolve(__dirname2, "../../firebase-key.json");
+      const fallbackKeyPath = path.resolve(__dirname2, "firebase-key.json");
+      const serviceAccountPath = fs.existsSync(primaryKeyPath) ? primaryKeyPath : fallbackKeyPath;
+      if (fs.existsSync(serviceAccountPath)) {
+        try {
+          credentialApp = cert(JSON.parse(fs.readFileSync(serviceAccountPath, "utf-8")));
+        } catch (e) {
+          console.error("[Firebase] Failed to read local service account:", e);
+        }
+      }
+    }
+    if (!credentialApp) {
+      throw new Error(
+        "CRITICAL: Firebase credentials not found. Set FIREBASE_SERVICE_ACCOUNT_JSON or place firebase-key.json in the project root."
+      );
+    }
+    initializeApp({ credential: credentialApp, storageBucket: storageBucketName });
+    console.log("[Firebase] Initialized with explicit credentials (development)");
   }
-}
-var appsList = getApps();
-if (!appsList || appsList.length === 0) {
-  if (!credentialApp) {
-    throw new Error(
-      "CRITICAL: Firebase credentials not found. Set FIREBASE_SERVICE_ACCOUNT_JSON environment variable or place firebase-key.json in the project root."
-    );
-  }
-  let storageBucketName = process.env.FIREBASE_STORAGE_BUCKET;
-  if (!storageBucketName && serviceAccountObj && serviceAccountObj.project_id) {
-    storageBucketName = `${serviceAccountObj.project_id}.appspot.com`;
-    console.warn(
-      "[Firebase] WARNING: FIREBASE_STORAGE_BUCKET not set. Derived bucket from service account. Set FIREBASE_STORAGE_BUCKET environment variable explicitly for production."
-    );
-  }
-  if (!storageBucketName) {
-    throw new Error(
-      "CRITICAL: Cannot determine Firebase Storage bucket. Either set FIREBASE_STORAGE_BUCKET environment variable or ensure FIREBASE_SERVICE_ACCOUNT_JSON contains valid project_id."
-    );
-  }
-  console.log(`[Firebase] Initializing with storage bucket: ${storageBucketName}`);
-  initializeApp({
-    credential: credentialApp,
-    storageBucket: storageBucketName
-  });
 }
 var db = getFirestore();
 
@@ -1150,7 +1140,19 @@ var SDKServer = class {
   }
   getSessionSecret() {
     const secret = ENV.cookieSecret;
-    return new TextEncoder().encode(secret);
+    if (secret) {
+      return new TextEncoder().encode(secret);
+    }
+    const fallback = (process.env.VITE_FIREBASE_APP_ID ?? "") + "|" + (process.env.VITE_FIREBASE_PROJECT_ID ?? "");
+    if (!fallback || fallback === "|") {
+      throw new Error(
+        "JWT_SECRET is not configured and no Firebase fallback is available. Add JWT_SECRET to apphosting.yaml secrets."
+      );
+    }
+    console.warn(
+      "[Auth] JWT_SECRET is not set \u2014 using derived fallback secret. Create a JWT_SECRET secret in Firebase App Hosting for production."
+    );
+    return new TextEncoder().encode(fallback);
   }
   /**
    * Create a session token for a Manus user openId
@@ -1518,16 +1520,19 @@ function registerDownloadProxy(app) {
 // server/authExpressRouter.ts
 import { getAuth } from "firebase-admin/auth";
 async function resolveAdminUser(uid, email, displayName) {
-  await db.collection("users").doc(uid).set(
-    {
-      uid,
-      email: email ?? null,
-      name: displayName || email?.split("@")[0] || null,
-      loginMethod: "firebase",
-      lastSignedIn: /* @__PURE__ */ new Date()
-    },
-    { merge: true }
-  );
+  const bootstrapEmails = (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+  const isBootstrapAdmin = Boolean(email && bootstrapEmails.includes(email.toLowerCase()));
+  const baseData = {
+    uid,
+    email: email ?? null,
+    name: displayName || email?.split("@")[0] || null,
+    loginMethod: "firebase",
+    lastSignedIn: /* @__PURE__ */ new Date()
+  };
+  if (isBootstrapAdmin) {
+    baseData.role = "admin";
+  }
+  await db.collection("users").doc(uid).set(baseData, { merge: true });
   const userDoc = await db.collection("users").doc(uid).get();
   const userData = userDoc.data();
   if (!userData || userData.role !== "admin") {
@@ -1539,6 +1544,20 @@ async function resolveAdminUser(uid, email, displayName) {
     name: displayName || userData.name || null,
     role: userData.role
   };
+}
+async function issueSessionForAdmin(req, res, uid, email, displayName) {
+  const user = await resolveAdminUser(uid, email, displayName);
+  const openId = `firebase:${uid}`;
+  const sessionToken = await sdk.createSessionToken(openId, {
+    name: user.name || "Admin",
+    expiresInMs: ONE_YEAR_MS
+  });
+  const cookieOptions = getSessionCookieOptions(req);
+  res.cookie(COOKIE_NAME, sessionToken, {
+    ...cookieOptions,
+    maxAge: ONE_YEAR_MS
+  });
+  return { success: true, email: user.email, name: user.name };
 }
 async function issueSessionForUser(req, res, uid, email, displayName) {
   const openId = `firebase:${uid}`;
@@ -1563,20 +1582,6 @@ async function issueSessionForUser(req, res, uid, email, displayName) {
   );
   return { success: true, email: email || null, name: displayName || null };
 }
-async function issueSession(req, res, uid, email, displayName) {
-  const user = await resolveAdminUser(uid, email, displayName);
-  const openId = `firebase:${uid}`;
-  const sessionToken = await sdk.createSessionToken(openId, {
-    name: user.name || "Admin",
-    expiresInMs: ONE_YEAR_MS
-  });
-  const cookieOptions = getSessionCookieOptions(req);
-  res.cookie(COOKIE_NAME, sessionToken, {
-    ...cookieOptions,
-    maxAge: ONE_YEAR_MS
-  });
-  return { success: true, email: user.email, name: user.name };
-}
 function registerFirebaseAuthRoutes(app) {
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -1584,10 +1589,13 @@ function registerFirebaseAuthRoutes(app) {
       if (!idToken) {
         return res.status(400).json({ error: "idToken is required" });
       }
-      const decoded = await getAuth().verifyIdToken(idToken);
-      const result = await issueSession(req, res, decoded.uid, decoded.email, decoded.name);
+      const decoded = await getAuth().verifyIdToken(idToken, true);
+      const result = await issueSessionForAdmin(req, res, decoded.uid, decoded.email, decoded.name);
       return res.json(result);
     } catch (err) {
+      if (err?.code === "auth/id-token-revoked") {
+        return res.status(401).json({ error: "Session revoked. Please sign in again." });
+      }
       const msg = err?.message || "Authentication failed";
       const status = msg === "Admin access denied" ? 403 : 401;
       return res.status(status).json({ error: msg });
@@ -1607,16 +1615,19 @@ function registerFirebaseAuthRoutes(app) {
       return res.status(401).json({ error: msg });
     }
   });
-  app.post("/api/auth/google", async (req, res) => {
+  app.post("/api/auth/admin-google", async (req, res) => {
     try {
       const { idToken } = req.body;
       if (!idToken) {
         return res.status(400).json({ error: "idToken is required" });
       }
-      const decoded = await getAuth().verifyIdToken(idToken);
-      const result = await issueSession(req, res, decoded.uid, decoded.email, decoded.name);
+      const decoded = await getAuth().verifyIdToken(idToken, true);
+      const result = await issueSessionForAdmin(req, res, decoded.uid, decoded.email, decoded.name);
       return res.json(result);
     } catch (err) {
+      if (err?.code === "auth/id-token-revoked") {
+        return res.status(401).json({ error: "Session revoked. Please sign in again." });
+      }
       const msg = err?.message || "Google authentication failed";
       const status = msg === "Admin access denied" ? 403 : 401;
       return res.status(status).json({ error: msg });
@@ -5231,6 +5242,8 @@ function serveStatic(app) {
       setHeaders: (res, filePath) => {
         if (filePath.endsWith(".html")) {
           res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+          res.setHeader("Pragma", "no-cache");
+          res.setHeader("Expires", "0");
         } else if (filePath.includes(`${path4.sep}assets${path4.sep}`)) {
           res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
         }
@@ -5239,6 +5252,8 @@ function serveStatic(app) {
   );
   app.use("*", (_req, res) => {
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
     res.sendFile(path4.resolve(distPath, "index.html"));
   });
 }

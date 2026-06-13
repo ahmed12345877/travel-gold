@@ -3,9 +3,9 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Apply dark theme globally - light mode removed */
+/* Ensure dark theme is always applied to the html element */
 html {
-  @apply dark;
+  @apply bg-background text-foreground;
 }
 
 @theme inline {
