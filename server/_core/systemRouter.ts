@@ -6,11 +6,12 @@ export const systemRouter = router({
   health: publicProcedure
     .input(
       z.object({
-        timestamp: z.number().min(0, "timestamp cannot be negative"),
-      })
+        timestamp: z.number().min(0).optional(),
+      }).optional()
     )
     .query(() => ({
-      ok: true,
+      status: "ok",
+      healthy: true,
     })),
 
   notifyOwner: adminProcedure

@@ -1,0 +1,79 @@
+runtime: nodejs22
+
+runConfig:
+  cpu: 1
+  memoryMiB: 512
+  concurrency: 80
+  maxInstances: 10
+  minInstances: 0
+
+env:
+  # ===== Firebase client config =====
+  - variable: VITE_FIREBASE_PROJECT_ID
+    value: "gen-lang-client-0364375301"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: VITE_FIREBASE_AUTH_DOMAIN
+    value: "vanirgroup.com"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: VITE_FIREBASE_APP_ID
+    value: "1:1001729880037:web:0cf4200a2a48e96547090c"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: VITE_FIREBASE_MESSAGING_SENDER_ID
+    value: "1001729880037"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: VITE_FIREBASE_STORAGE_BUCKET
+    value: "gen-lang-client-0364375301.firebasestorage.app"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: VITE_FIREBASE_API_KEY
+    value: "AIzaSyAszyNw2a7_bv02cf0FBXiPXwt3E2-CXdY"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # ===== Server / runtime settings =====
+  - variable: OAUTH_SERVER_URL
+    value: "https://vanirgroup.com"
+    availability:
+      - RUNTIME
+  - variable: NODE_ENV
+    value: "production"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NG_TRUST_PROXY_HEADERS
+    value: "true"
+    availability:
+      - RUNTIME
+  - variable: NG_ALLOWED_HOSTS
+    value: "vanirgroup.com,travel-gold--gen-lang-client-0364375301.us-east4.hosted.app"
+    availability:
+      - RUNTIME
+  - variable: OWNER_NAME
+    value: "VanirGroup"
+    availability:
+      - RUNTIME
+
+  - variable: FIREBASE_STORAGE_BUCKET
+    value: "gen-lang-client-0364375301.firebasestorage.app"
+    availability:
+      - RUNTIME
+
+  # ===== Secrets (read securely at runtime) =====
+  - variable: OPENAI_API_KEY
+    secret: OPENAI_API_KEY
+    availability:
+      - RUNTIME
+  - variable: FIREBASE_SERVICE_ACCOUNT_JSON
+    secret: FIREBASE_SERVICE_ACCOUNT_JSON
+    availability:
+      - RUNTIME

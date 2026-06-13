@@ -8,17 +8,146 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
+// lib/firebase-admin.ts
+import admin from "firebase-admin";
+function validateServiceAccount(serviceAccount) {
+  const requiredFields = ["project_id", "client_email", "private_key"];
+  const missingFields = requiredFields.filter((field) => !serviceAccount[field]);
+  if (missingFields.length > 0) {
+    throw new Error(
+      `Invalid Firebase service account: missing required fields [${missingFields.join(", ")}]. Ensure your FIREBASE_SERVICE_ACCOUNT_JSON contains all required fields.`
+    );
+  }
+}
+function getStorageBucketName(serviceAccount) {
+  if (process.env.FIREBASE_STORAGE_BUCKET) {
+    console.log("[Firebase Admin] Using FIREBASE_STORAGE_BUCKET from environment (recommended)");
+    return process.env.FIREBASE_STORAGE_BUCKET;
+  }
+  const projectId = serviceAccount["project_id"];
+  if (typeof projectId === "string") {
+    const bucket = `${projectId}.appspot.com`;
+    console.log(`[Firebase Admin] WARNING: Derived storage bucket from service account (not recommended). Set FIREBASE_STORAGE_BUCKET environment variable explicitly for production.`);
+    return bucket;
+  }
+  throw new Error(
+    "Could not determine Firebase Storage bucket. CRITICAL: Either explicitly set FIREBASE_STORAGE_BUCKET environment variable (RECOMMENDED) or ensure FIREBASE_SERVICE_ACCOUNT_JSON contains valid project_id field."
+  );
+}
+function initializeFirebaseAdmin() {
+  if (firebaseAppInstance) {
+    return firebaseAppInstance;
+  }
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (!serviceAccountJson) {
+    throw new Error(
+      "CRITICAL: Environment variable FIREBASE_SERVICE_ACCOUNT_JSON is not set. Please add your Firebase service account JSON (downloaded from Firebase Console) to your environment variables."
+    );
+  }
+  let serviceAccount;
+  try {
+    serviceAccount = JSON.parse(serviceAccountJson);
+  } catch (parseError) {
+    const error = parseError instanceof Error ? parseError.message : String(parseError);
+    throw new Error(
+      `FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON. Parse error: ${error}. Please ensure it is properly formatted (no trailing commas, valid strings, etc.).`
+    );
+  }
+  validateServiceAccount(serviceAccount);
+  const storageBucket = getStorageBucketName(serviceAccount);
+  cachedStorageBucket = storageBucket;
+  firebaseAppInstance = admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    storageBucket
+  });
+  console.log(`[Firebase Admin] Successfully initialized Firebase Admin SDK with bucket: ${storageBucket}`);
+  return firebaseAppInstance;
+}
+function getFirebaseApp() {
+  if (firebaseAppInstance) {
+    return firebaseAppInstance;
+  }
+  return initializeFirebaseAdmin();
+}
+function getFirebaseStorage() {
+  const app = getFirebaseApp();
+  if (cachedStorageBucket) {
+    console.log(`[Firebase Admin] Using cached storage bucket: ${cachedStorageBucket}`);
+    return admin.storage(app).bucket(cachedStorageBucket);
+  }
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (!serviceAccountJson) {
+    throw new Error(
+      "CRITICAL: FIREBASE_SERVICE_ACCOUNT_JSON not set. Cannot determine Firebase Storage bucket."
+    );
+  }
+  let serviceAccount;
+  try {
+    serviceAccount = JSON.parse(serviceAccountJson);
+  } catch (parseError) {
+    const error = parseError instanceof Error ? parseError.message : String(parseError);
+    throw new Error(
+      `Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON in fallback path. Parse error: ${error}. This should not occur in normal operation; please check your environment variables.`
+    );
+  }
+  validateServiceAccount(serviceAccount);
+  const bucketName = getStorageBucketName(serviceAccount);
+  cachedStorageBucket = bucketName;
+  console.log(`[Firebase Admin] Caching and using storage bucket: ${bucketName}`);
+  return admin.storage(app).bucket(bucketName);
+}
+var firebaseAppInstance, cachedStorageBucket;
+var init_firebase_admin = __esm({
+  "lib/firebase-admin.ts"() {
+    "use strict";
+    firebaseAppInstance = null;
+    cachedStorageBucket = null;
+  }
+});
+
+// lib/firebase-storage.ts
+async function storagePut(filePath, fileBuffer, contentType = "application/octet-stream", metadata) {
+  try {
+    const bucket = getFirebaseStorage();
+    const file = bucket.file(filePath);
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+    const options = {
+      metadata: {
+        contentType,
+        cacheControl: "public, max-age=31536000",
+        // Cache for 1 year (files are immutable)
+        ...metadata
+      }
+    };
+    await file.save(fileBuffer, options);
+    console.log(`[Firebase Storage] Successfully uploaded: ${filePath}`);
+    return {
+      url: publicUrl,
+      path: filePath,
+      bucket: bucket.name
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    console.error(`[Firebase Storage] Upload failed for ${filePath}:`, errorMessage);
+    throw new Error(`Failed to upload file to Firebase Storage: ${errorMessage}`);
+  }
+}
+var init_firebase_storage = __esm({
+  "lib/firebase-storage.ts"() {
+    "use strict";
+    init_firebase_admin();
+  }
+});
+
 // vite.config.ts
 var vite_config_exports = {};
 __export(vite_config_exports, {
   default: () => vite_config_default
 });
-import admin from "firebase-admin";
-import { getStorage } from "firebase-admin/storage";
 import { jsxLocPlugin } from "@builder.io/vite-plugin-jsx-loc";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import path from "node:path";
+import path3 from "node:path";
 import { defineConfig } from "vite";
 var PROJECT_ROOT, plugins, vite_config_default;
 var init_vite_config = __esm({
@@ -31,17 +160,25 @@ var init_vite_config = __esm({
       plugins,
       resolve: {
         alias: {
-          "@": path.resolve(import.meta.dirname, "client", "src"),
-          "@shared": path.resolve(import.meta.dirname, "shared"),
-          "@assets": path.resolve(import.meta.dirname, "attached_assets")
+          "@": path3.resolve(import.meta.dirname, "client", "src"),
+          "@shared": path3.resolve(import.meta.dirname, "shared"),
+          "@assets": path3.resolve(import.meta.dirname, "attached_assets")
         }
       },
-      envDir: path.resolve(import.meta.dirname),
-      root: path.resolve(import.meta.dirname, "client"),
-      publicDir: path.resolve(import.meta.dirname, "client", "public"),
+      envDir: path3.resolve(import.meta.dirname),
+      root: path3.resolve(import.meta.dirname, "client"),
+      publicDir: path3.resolve(import.meta.dirname, "client", "public"),
       build: {
-        outDir: path.resolve(import.meta.dirname, "dist/public"),
-        emptyOutDir: true
+        outDir: path3.resolve(import.meta.dirname, "dist/public"),
+        emptyOutDir: true,
+        rollupOptions: {
+          output: {
+            // ضمان وجود بصمة (hash) فريدة في أسماء الملفات لكسر الكاش عند كل تحديث
+            entryFileNames: "assets/[name]-[hash].js",
+            chunkFileNames: "assets/[name]-[hash].js",
+            assetFileNames: "assets/[name]-[hash].[ext]"
+          }
+        }
       },
       server: {
         host: true,
@@ -60,6 +197,7 @@ import "dotenv/config";
 import express2 from "express";
 import { createServer } from "http";
 import net from "net";
+import path5 from "path";
 import cors from "cors";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 
@@ -192,7 +330,7 @@ var galleryItems = pgTable("gallery_items", {
   featured: text("featured").$type().default("no").notNull(),
   aspect: text("aspect").$type().default("landscape").notNull(),
   sortOrder: integer("sortOrder").default(0),
-  isVisible: text("isVisible").$type().default("visible").notNull(),
+  isvisible: text("isvisible").$type().default("visible").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull()
 });
@@ -351,21 +489,21 @@ var siteSettings = pgTable("site_settings", {
 });
 
 // server/_core/env.ts
-var ENV.production = {
-  appId: process.env.VITE_FIREBASE_APP_ID ?? "",
-  authdomin: process.env.VITE_FIREBASE_AUTH_DOMAIN ?? "",
-  projectid: process.env.VITE_FIREBASE_PROJECT_ID ?? "",
+var ENV = {
+  appId: process.env.VITE_APP_ID ?? "",
+  cookieSecret: process.env.JWT_SECRET ?? "",
+  databaseUrl: process.env.DATABASE_URL ?? "",
   oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
-   storagebucket: process.env.VITE_FIREBASE_STORAGE_BUCKET ?? "",
-  senderid: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? "",
-   accountjson: process.env.FIREBASE_SERVICE_ACCOUNT_JSON ?? "",
-  ApiKey: process.env.VITE_FIREBASE_API_KEY ?? "",
-  isProduction: process.env.NODE_ENV === "production",
   ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
-  ApiUrl: process.env.VITE_API_URL ?? "",
+  isProduction: process.env.NODE_ENV === "production",
+  forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
+  forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   openaiApiKey: process.env.OPENAI_API_KEY ?? "",
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
-
+  /** Admin email for direct password login (no OAuth required) */
+  adminEmail: process.env.ADMIN_EMAIL ?? "",
+  /** SHA-256 hex hash of the admin password */
+  adminPasswordHash: process.env.ADMIN_PASSWORD_HASH ?? ""
 };
 
 // server/db.ts
@@ -397,8 +535,8 @@ async function upsertUser(user) {
   if (!user.openId) {
     throw new Error("User openId is required for upsert");
   }
-  const db = await getDb();
-  if (!db) {
+  const db2 = await getDb();
+  if (!db2) {
     console.warn("[Database] Cannot upsert user: database not available");
     return;
   }
@@ -433,7 +571,7 @@ async function upsertUser(user) {
     if (Object.keys(updateSet).length === 0) {
       updateSet.lastSignedIn = /* @__PURE__ */ new Date();
     }
-    await db.insert(users).values(values).onConflictDoUpdate({
+    await db2.insert(users).values(values).onConflictDoUpdate({
       target: users.openId,
       set: updateSet
     });
@@ -443,98 +581,98 @@ async function upsertUser(user) {
   }
 }
 async function getUserByOpenId(openId) {
-  const db = await getDb();
-  if (!db) {
+  const db2 = await getDb();
+  if (!db2) {
     console.warn("[Database] Cannot get user: database not available");
     return void 0;
   }
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  const result = await db2.select().from(users).where(eq(users.openId, openId)).limit(1);
   return result.length > 0 ? result[0] : void 0;
 }
 async function createBooking(booking) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(bookings).values(booking).returning();
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.insert(bookings).values(booking).returning();
   return result[0];
 }
 async function getBookingById(id) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.select().from(bookings).where(eq(bookings.id, id)).limit(1);
   return result[0] ?? null;
 }
 async function getBookingByConfirmationCode(code) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(bookings).where(eq(bookings.confirmationCode, code)).limit(1);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.select().from(bookings).where(eq(bookings.confirmationCode, code)).limit(1);
   return result[0] ?? null;
 }
 async function getUserBookings(userId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(bookings).where(eq(bookings.userId, userId)).orderBy(desc(bookings.createdAt));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(bookings).where(eq(bookings.userId, userId)).orderBy(desc(bookings.createdAt));
 }
 async function updateBookingStatus(id, status) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(bookings).set({ status }).where(eq(bookings.id, id));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(bookings).set({ status }).where(eq(bookings.id, id));
   return getBookingById(id);
 }
 async function updateBookingPaymentStatus(id, paymentStatus) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(bookings).set({ paymentStatus }).where(eq(bookings.id, id));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(bookings).set({ paymentStatus }).where(eq(bookings.id, id));
   return getBookingById(id);
 }
 async function getAllBookings(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(bookings).orderBy(desc(bookings.createdAt)).limit(limit).offset(offset);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(bookings).orderBy(desc(bookings.createdAt)).limit(limit).offset(offset);
 }
 async function createReview(review) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(reviews).values(review).returning();
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.insert(reviews).values(review).returning();
   return result[0];
 }
 async function getApprovedReviews(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(reviews).where(eq(reviews.isApproved, "approved")).orderBy(desc(reviews.createdAt)).limit(limit).offset(offset);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(reviews).where(eq(reviews.isApproved, "approved")).orderBy(desc(reviews.createdAt)).limit(limit).offset(offset);
 }
 async function getAllReviews(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(reviews).orderBy(desc(reviews.createdAt)).limit(limit).offset(offset);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(reviews).orderBy(desc(reviews.createdAt)).limit(limit).offset(offset);
 }
 async function getReviewById(id) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(reviews).where(eq(reviews.id, id)).limit(1);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.select().from(reviews).where(eq(reviews.id, id)).limit(1);
   return result[0] ?? null;
 }
 async function updateReviewApproval(id, isApproved) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(reviews).set({ isApproved }).where(eq(reviews.id, id));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(reviews).set({ isApproved }).where(eq(reviews.id, id));
   return getReviewById(id);
 }
 async function addAdminReply(id, adminReply) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(reviews).set({ adminReply, adminReplyAt: /* @__PURE__ */ new Date() }).where(eq(reviews.id, id));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(reviews).set({ adminReply, adminReplyAt: /* @__PURE__ */ new Date() }).where(eq(reviews.id, id));
   return getReviewById(id);
 }
 async function incrementHelpfulCount(id) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(reviews).set({ helpfulCount: sql`${reviews.helpfulCount} + 1` }).where(eq(reviews.id, id));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(reviews).set({ helpfulCount: sql`${reviews.helpfulCount} + 1` }).where(eq(reviews.id, id));
   return getReviewById(id);
 }
 async function getReviewStats() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const allApproved = await db.select().from(reviews).where(eq(reviews.isApproved, "approved"));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const allApproved = await db2.select().from(reviews).where(eq(reviews.isApproved, "approved"));
   const total = allApproved.length;
   if (total === 0) return { total: 0, average: 0, distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } };
   const sum = allApproved.reduce((acc, r) => acc + r.rating, 0);
@@ -545,138 +683,72 @@ async function getReviewStats() {
   return { total, average: Math.round(sum / total * 10) / 10, distribution };
 }
 async function createOffer(offer) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(offers).values(offer).returning();
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.insert(offers).values(offer).returning();
   return result[0];
 }
 async function getActiveOffers() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
   const now = Date.now();
-  return db.select().from(offers).where(and(
+  return db2.select().from(offers).where(and(
     eq(offers.isActive, "active"),
     lte(offers.startDate, now),
     gte(offers.endDate, now)
   )).orderBy(asc(offers.endDate));
 }
 async function getAllOffers(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(offers).orderBy(desc(offers.createdAt)).limit(limit).offset(offset);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(offers).orderBy(desc(offers.createdAt)).limit(limit).offset(offset);
 }
 async function getOfferByPromoCode(promoCode) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(offers).where(eq(offers.promoCode, promoCode)).limit(1);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.select().from(offers).where(eq(offers.promoCode, promoCode)).limit(1);
   return result[0] ?? null;
 }
 async function updateOffer(id, data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(offers).set(data).where(eq(offers.id, id));
-  const rows = await db.select().from(offers).where(eq(offers.id, id)).limit(1);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(offers).set(data).where(eq(offers.id, id));
+  const rows = await db2.select().from(offers).where(eq(offers.id, id)).limit(1);
   return rows[0];
 }
 async function createContactMessage(message) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(contactMessages).values(message).returning();
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.insert(contactMessages).values(message).returning();
   return result[0];
 }
 async function getAllContactMessages(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(contactMessages).orderBy(desc(contactMessages.createdAt)).limit(limit).offset(offset);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(contactMessages).orderBy(desc(contactMessages.createdAt)).limit(limit).offset(offset);
 }
 async function updateContactMessageStatus(id, status) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(contactMessages).set({ status }).where(eq(contactMessages.id, id));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(contactMessages).set({ status }).where(eq(contactMessages.id, id));
 }
 async function createFileUpload(file) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(fileUploads).values(file).returning();
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.insert(fileUploads).values(file).returning();
   return result[0];
 }
 async function getUserFiles(userId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(fileUploads).where(eq(fileUploads.userId, userId)).orderBy(desc(fileUploads.createdAt));
-}
-async function createGalleryItem(item) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(galleryItems).values(item).returning();
-  return result[0];
-}
-async function getVisibleGalleryItems() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(galleryItems).where(eq(galleryItems.isVisible, "visible")).orderBy(asc(galleryItems.sortOrder), desc(galleryItems.createdAt));
-}
-async function getAllGalleryItems(limit = 100, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(galleryItems).orderBy(asc(galleryItems.sortOrder), desc(galleryItems.createdAt)).limit(limit).offset(offset);
-}
-async function getGalleryItemById(id) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(galleryItems).where(eq(galleryItems.id, id)).limit(1);
-  return result[0] ?? null;
-}
-async function updateGalleryItem(id, data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(galleryItems).set(data).where(eq(galleryItems.id, id));
-  return getGalleryItemById(id);
-}
-async function deleteGalleryItem(id) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.delete(galleryItems).where(eq(galleryItems.id, id));
-}
-async function createGalleryVideo(video) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(galleryVideos).values(video).returning();
-  return result[0];
-}
-async function getVisibleGalleryVideos() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(galleryVideos).where(eq(galleryVideos.isVisible, "visible")).orderBy(asc(galleryVideos.sortOrder), desc(galleryVideos.createdAt));
-}
-async function getAllGalleryVideos(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(galleryVideos).orderBy(asc(galleryVideos.sortOrder), desc(galleryVideos.createdAt)).limit(limit).offset(offset);
-}
-async function getGalleryVideoById(id) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(galleryVideos).where(eq(galleryVideos.id, id)).limit(1);
-  return result[0] ?? null;
-}
-async function updateGalleryVideo(id, data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(galleryVideos).set(data).where(eq(galleryVideos.id, id));
-  return getGalleryVideoById(id);
-}
-async function deleteGalleryVideo(id) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.delete(galleryVideos).where(eq(galleryVideos.id, id));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(fileUploads).where(eq(fileUploads.userId, userId)).orderBy(desc(fileUploads.createdAt));
 }
 async function getOrCreateAISubscription(userId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  let subscription = await db.select().from(aiSubscriptions).where(eq(aiSubscriptions.userId, userId)).limit(1);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  let subscription = await db2.select().from(aiSubscriptions).where(eq(aiSubscriptions.userId, userId)).limit(1);
   if (subscription.length === 0) {
-    const result = await db.insert(aiSubscriptions).values({
+    const result = await db2.insert(aiSubscriptions).values({
       userId,
       plan: "free",
       status: "active",
@@ -687,9 +759,9 @@ async function getOrCreateAISubscription(userId) {
   return subscription[0];
 }
 async function updateAISubscription(userId, plan, stripeSubscriptionId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(aiSubscriptions).set({
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(aiSubscriptions).set({
     plan,
     status: "active",
     renewalDate: Date.now() + 30 * 24 * 60 * 60 * 1e3,
@@ -698,11 +770,11 @@ async function updateAISubscription(userId, plan, stripeSubscriptionId) {
   return getOrCreateAISubscription(userId);
 }
 async function getOrCreateAICredits(userId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  let credits = await db.select().from(aiCredits).where(eq(aiCredits.userId, userId)).limit(1);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  let credits = await db2.select().from(aiCredits).where(eq(aiCredits.userId, userId)).limit(1);
   if (credits.length === 0) {
-    const result = await db.insert(aiCredits).values({
+    const result = await db2.insert(aiCredits).values({
       userId,
       balance: "5",
       totalUsed: "0"
@@ -712,12 +784,12 @@ async function getOrCreateAICredits(userId) {
   return credits[0];
 }
 async function addAICredits(userId, amount, reason) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
   const credits = await getOrCreateAICredits(userId);
   const newBalance = parseFloat(credits.balance.toString()) + amount;
-  await db.update(aiCredits).set({ balance: newBalance.toString() }).where(eq(aiCredits.userId, userId));
-  await db.insert(aiTransactions).values({
+  await db2.update(aiCredits).set({ balance: newBalance.toString() }).where(eq(aiCredits.userId, userId));
+  await db2.insert(aiTransactions).values({
     userId,
     type: reason === "purchase" ? "purchase" : reason === "monthly_allowance" ? "monthly_allowance" : "bonus",
     amount: amount.toString(),
@@ -726,8 +798,8 @@ async function addAICredits(userId, amount, reason) {
   return getOrCreateAICredits(userId);
 }
 async function deductAICredits(userId, amount) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
   const credits = await getOrCreateAICredits(userId);
   const currentBalance = parseFloat(credits.balance.toString());
   if (currentBalance < amount) {
@@ -735,38 +807,38 @@ async function deductAICredits(userId, amount) {
   }
   const newBalance = currentBalance - amount;
   const newTotalUsed = parseFloat(credits.totalUsed.toString()) + amount;
-  await db.update(aiCredits).set({
+  await db2.update(aiCredits).set({
     balance: newBalance.toString(),
     totalUsed: newTotalUsed.toString()
   }).where(eq(aiCredits.userId, userId));
   return getOrCreateAICredits(userId);
 }
 async function createAIUsage(usage) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(aiUsage).values(usage).returning();
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.insert(aiUsage).values(usage).returning();
   return result[0];
 }
 async function getUserAIUsage(userId, limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(aiUsage).where(eq(aiUsage.userId, userId)).orderBy(desc(aiUsage.createdAt)).limit(limit).offset(offset);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(aiUsage).where(eq(aiUsage.userId, userId)).orderBy(desc(aiUsage.createdAt)).limit(limit).offset(offset);
 }
 async function updateAIUsageStatus(id, status, resultUrl, errorMessage) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(aiUsage).set({
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(aiUsage).set({
     status,
     ...resultUrl && { resultUrl },
     ...errorMessage && { errorMessage }
   }).where(eq(aiUsage.id, id));
-  const rows = await db.select().from(aiUsage).where(eq(aiUsage.id, id)).limit(1);
+  const rows = await db2.select().from(aiUsage).where(eq(aiUsage.id, id)).limit(1);
   return rows[0];
 }
 async function getAIUsageStats(userId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const usage = await db.select().from(aiUsage).where(eq(aiUsage.userId, userId));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const usage = await db2.select().from(aiUsage).where(eq(aiUsage.userId, userId));
   return {
     totalGenerations: usage.length,
     byType: {
@@ -778,44 +850,44 @@ async function getAIUsageStats(userId) {
   };
 }
 async function getAllUsers(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(users).orderBy(desc(users.createdAt)).limit(limit).offset(offset);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.select().from(users).orderBy(desc(users.createdAt)).limit(limit).offset(offset);
   return result;
 }
 async function getUsersCount() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select({ count: sql`count(*)` }).from(users);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.select({ count: sql`count(*)` }).from(users);
   return result[0]?.count ?? 0;
 }
 async function getUserById(id) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.select().from(users).where(eq(users.id, id)).limit(1);
   return result[0] ?? null;
 }
 async function updateUserRole(id, role) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(users).set({ role }).where(eq(users.id, id));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(users).set({ role }).where(eq(users.id, id));
   return getUserById(id);
 }
 async function searchUsers(query, limit = 20) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(users).where(
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.select().from(users).where(
     sql`${users.name} ILIKE ${`%${query}%`} OR ${users.email} ILIKE ${`%${query}%`} OR ${users.openId} ILIKE ${`%${query}%`}`
   ).orderBy(desc(users.createdAt)).limit(limit);
   return result;
 }
 async function getUserStats() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const totalUsers = await db.select({ count: sql`count(*)` }).from(users);
-  const adminUsers = await db.select({ count: sql`count(*)` }).from(users).where(eq(users.role, "admin"));
-  const recentUsers = await db.select({ count: sql`count(*)` }).from(users).where(gte(users.createdAt, sql`NOW() - INTERVAL '30 days'`));
-  const todayUsers = await db.select({ count: sql`count(*)` }).from(users).where(gte(users.createdAt, sql`CURRENT_DATE`));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const totalUsers = await db2.select({ count: sql`count(*)` }).from(users);
+  const adminUsers = await db2.select({ count: sql`count(*)` }).from(users).where(eq(users.role, "admin"));
+  const recentUsers = await db2.select({ count: sql`count(*)` }).from(users).where(gte(users.createdAt, sql`NOW() - INTERVAL '30 days'`));
+  const todayUsers = await db2.select({ count: sql`count(*)` }).from(users).where(gte(users.createdAt, sql`CURRENT_DATE`));
   return {
     total: totalUsers[0]?.count ?? 0,
     admins: adminUsers[0]?.count ?? 0,
@@ -824,8 +896,8 @@ async function getUserStats() {
   };
 }
 async function updateUserProfile(id, data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
   const updateSet = {};
   if (data.name !== void 0) updateSet.name = data.name;
   if (data.phone !== void 0) updateSet.phone = data.phone;
@@ -833,47 +905,47 @@ async function updateUserProfile(id, data) {
   if (Object.keys(updateSet).length === 0) {
     return getUserById(id);
   }
-  await db.update(users).set(updateSet).where(eq(users.id, id));
+  await db2.update(users).set(updateSet).where(eq(users.id, id));
   return getUserById(id);
 }
 async function getPublishedBlogPosts(limit = 10, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(blogPosts).where(eq(blogPosts.status, "published")).orderBy(desc(blogPosts.publishedAt)).limit(limit).offset(offset);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(blogPosts).where(eq(blogPosts.status, "published")).orderBy(desc(blogPosts.publishedAt)).limit(limit).offset(offset);
 }
 async function getBlogPostBySlug(slug) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(blogPosts).where(eq(blogPosts.slug, slug)).limit(1);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.select().from(blogPosts).where(eq(blogPosts.slug, slug)).limit(1);
   return result[0] ?? null;
 }
 async function getBlogPostsByCategory(category, limit = 10, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(blogPosts).where(and(eq(blogPosts.status, "published"), eq(blogPosts.category, category))).orderBy(desc(blogPosts.publishedAt)).limit(limit).offset(offset);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(blogPosts).where(and(eq(blogPosts.status, "published"), eq(blogPosts.category, category))).orderBy(desc(blogPosts.publishedAt)).limit(limit).offset(offset);
 }
 async function createBlogPost(post) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(blogPosts).values(post).returning();
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.insert(blogPosts).values(post).returning();
   return result[0];
 }
 async function updateBlogPost(id, data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(blogPosts).set(data).where(eq(blogPosts.id, id));
-  const rows = await db.select().from(blogPosts).where(eq(blogPosts.id, id)).limit(1);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(blogPosts).set(data).where(eq(blogPosts.id, id));
+  const rows = await db2.select().from(blogPosts).where(eq(blogPosts.id, id)).limit(1);
   return rows[0] ?? null;
 }
 async function getAllBlogPosts(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(blogPosts).orderBy(desc(blogPosts.createdAt)).limit(limit).offset(offset);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(blogPosts).orderBy(desc(blogPosts.createdAt)).limit(limit).offset(offset);
 }
 async function incrementBlogViewCount(id) {
-  const db = await getDb();
-  if (!db) return;
-  await db.update(blogPosts).set({ viewCount: sql`${blogPosts.viewCount} + 1` }).where(eq(blogPosts.id, id));
+  const db2 = await getDb();
+  if (!db2) return;
+  await db2.update(blogPosts).set({ viewCount: sql`${blogPosts.viewCount} + 1` }).where(eq(blogPosts.id, id));
 }
 
 // server/_core/cookies.ts
@@ -909,6 +981,69 @@ var ForbiddenError = (msg) => new HttpError(403, msg);
 import axios from "axios";
 import { parse as parseCookieHeader } from "cookie";
 import { SignJWT, jwtVerify } from "jose";
+
+// server/_core/firebaseAdmin.ts
+import { initializeApp, cert, getApps } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import fs from "node:fs";
+var __filename = fileURLToPath(import.meta.url);
+var __dirname2 = path.dirname(__filename);
+var credentialApp = void 0;
+var serviceAccountObj = void 0;
+var envJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+if (envJson) {
+  try {
+    const rawJson = envJson.trim().startsWith("{") ? envJson : Buffer.from(envJson, "base64").toString("utf8");
+    serviceAccountObj = JSON.parse(rawJson);
+    credentialApp = cert(serviceAccountObj);
+  } catch (e) {
+    console.error("[Firebase] Failed to parse credentials from env:", e);
+  }
+}
+if (!credentialApp) {
+  const primaryKeyPath = path.resolve(__dirname2, "../../firebase-key.json");
+  const fallbackKeyPath = path.resolve(__dirname2, "firebase-key.json");
+  const serviceAccountPath = fs.existsSync(primaryKeyPath) ? primaryKeyPath : fallbackKeyPath;
+  if (fs.existsSync(serviceAccountPath)) {
+    try {
+      serviceAccountObj = JSON.parse(fs.readFileSync(serviceAccountPath, "utf-8"));
+      credentialApp = cert(serviceAccountObj);
+    } catch (e) {
+      console.error("[Firebase] Failed to read local service account:", e);
+    }
+  }
+}
+var appsList = getApps();
+if (!appsList || appsList.length === 0) {
+  if (!credentialApp) {
+    throw new Error(
+      "CRITICAL: Firebase credentials not found. Set FIREBASE_SERVICE_ACCOUNT_JSON environment variable or place firebase-key.json in the project root."
+    );
+  }
+  let storageBucketName = process.env.FIREBASE_STORAGE_BUCKET;
+  if (!storageBucketName && serviceAccountObj && serviceAccountObj.project_id) {
+    storageBucketName = `${serviceAccountObj.project_id}.appspot.com`;
+    console.warn(
+      "[Firebase] WARNING: FIREBASE_STORAGE_BUCKET not set. Derived bucket from service account. Set FIREBASE_STORAGE_BUCKET environment variable explicitly for production."
+    );
+  }
+  if (!storageBucketName) {
+    throw new Error(
+      "CRITICAL: Cannot determine Firebase Storage bucket. Either set FIREBASE_STORAGE_BUCKET environment variable or ensure FIREBASE_SERVICE_ACCOUNT_JSON contains valid project_id."
+    );
+  }
+  console.log(`[Firebase] Initializing with storage bucket: ${storageBucketName}`);
+  initializeApp({
+    credential: credentialApp,
+    storageBucket: storageBucketName
+  });
+}
+var db = getFirestore();
+
+// server/_core/sdk.ts
 var isNonEmptyString = (value) => typeof value === "string" && value.length > 0;
 var EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
 var GET_USER_INFO_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfo`;
@@ -1105,6 +1240,31 @@ var SDKServer = class {
         email,
         phone: null,
         loginMethod: "password",
+        avatarUrl: null,
+        role: "admin",
+        createdAt: now,
+        updatedAt: now,
+        lastSignedIn: now
+      };
+    }
+    if (sessionUserId.startsWith("firebase:")) {
+      const uid = sessionUserId.slice("firebase:".length);
+      const userDoc = await db.collection("users").doc(uid).get();
+      if (!userDoc.exists) {
+        throw ForbiddenError("Firebase user not found");
+      }
+      const userData = userDoc.data();
+      if (userData.role !== "admin") {
+        throw ForbiddenError("Admin access denied");
+      }
+      await db.collection("users").doc(uid).set({ lastSignedIn: now }, { merge: true });
+      return {
+        id: 0,
+        openId: sessionUserId,
+        name: session.name || userData.name || "Admin",
+        email: userData.email ?? null,
+        phone: null,
+        loginMethod: "firebase",
         avatarUrl: null,
         role: "admin",
         createdAt: now,
@@ -1355,6 +1515,115 @@ function registerDownloadProxy(app) {
   });
 }
 
+// server/authExpressRouter.ts
+import { getAuth } from "firebase-admin/auth";
+async function resolveAdminUser(uid, email, displayName) {
+  await db.collection("users").doc(uid).set(
+    {
+      uid,
+      email: email ?? null,
+      name: displayName || email?.split("@")[0] || null,
+      loginMethod: "firebase",
+      lastSignedIn: /* @__PURE__ */ new Date()
+    },
+    { merge: true }
+  );
+  const userDoc = await db.collection("users").doc(uid).get();
+  const userData = userDoc.data();
+  if (!userData || userData.role !== "admin") {
+    throw new Error("Admin access denied");
+  }
+  return {
+    uid,
+    email: email ?? userData.email ?? null,
+    name: displayName || userData.name || null,
+    role: userData.role
+  };
+}
+async function issueSessionForUser(req, res, uid, email, displayName) {
+  const openId = `firebase:${uid}`;
+  const sessionToken = await sdk.createSessionToken(openId, {
+    name: displayName || email?.split("@")[0] || "User",
+    expiresInMs: ONE_YEAR_MS
+  });
+  const cookieOptions = getSessionCookieOptions(req);
+  res.cookie(COOKIE_NAME, sessionToken, {
+    ...cookieOptions,
+    maxAge: ONE_YEAR_MS
+  });
+  await db.collection("users").doc(uid).set(
+    {
+      uid,
+      email: email ?? null,
+      name: displayName || email?.split("@")[0] || null,
+      loginMethod: "firebase",
+      lastSignedIn: /* @__PURE__ */ new Date()
+    },
+    { merge: true }
+  );
+  return { success: true, email: email || null, name: displayName || null };
+}
+async function issueSession(req, res, uid, email, displayName) {
+  const user = await resolveAdminUser(uid, email, displayName);
+  const openId = `firebase:${uid}`;
+  const sessionToken = await sdk.createSessionToken(openId, {
+    name: user.name || "Admin",
+    expiresInMs: ONE_YEAR_MS
+  });
+  const cookieOptions = getSessionCookieOptions(req);
+  res.cookie(COOKIE_NAME, sessionToken, {
+    ...cookieOptions,
+    maxAge: ONE_YEAR_MS
+  });
+  return { success: true, email: user.email, name: user.name };
+}
+function registerFirebaseAuthRoutes(app) {
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { idToken } = req.body;
+      if (!idToken) {
+        return res.status(400).json({ error: "idToken is required" });
+      }
+      const decoded = await getAuth().verifyIdToken(idToken);
+      const result = await issueSession(req, res, decoded.uid, decoded.email, decoded.name);
+      return res.json(result);
+    } catch (err) {
+      const msg = err?.message || "Authentication failed";
+      const status = msg === "Admin access denied" ? 403 : 401;
+      return res.status(status).json({ error: msg });
+    }
+  });
+  app.post("/api/auth/user-login", async (req, res) => {
+    try {
+      const { idToken } = req.body;
+      if (!idToken) {
+        return res.status(400).json({ error: "idToken is required" });
+      }
+      const decoded = await getAuth().verifyIdToken(idToken);
+      const result = await issueSessionForUser(req, res, decoded.uid, decoded.email, decoded.name);
+      return res.json(result);
+    } catch (err) {
+      const msg = err?.message || "Authentication failed";
+      return res.status(401).json({ error: msg });
+    }
+  });
+  app.post("/api/auth/google", async (req, res) => {
+    try {
+      const { idToken } = req.body;
+      if (!idToken) {
+        return res.status(400).json({ error: "idToken is required" });
+      }
+      const decoded = await getAuth().verifyIdToken(idToken);
+      const result = await issueSession(req, res, decoded.uid, decoded.email, decoded.name);
+      return res.json(result);
+    } catch (err) {
+      const msg = err?.message || "Google authentication failed";
+      const status = msg === "Admin access denied" ? 403 : 401;
+      return res.status(status).json({ error: msg });
+    }
+  });
+}
+
 // server/_core/systemRouter.ts
 import { z } from "zod";
 
@@ -1480,10 +1749,11 @@ var adminProcedure = t.procedure.use(
 var systemRouter = router({
   health: publicProcedure.input(
     z.object({
-      timestamp: z.number().min(0, "timestamp cannot be negative")
-    })
+      timestamp: z.number().min(0).optional()
+    }).optional()
   ).query(() => ({
-    ok: true
+    status: "ok",
+    healthy: true
   })),
   notifyOwner: adminProcedure.input(
     z.object({
@@ -1628,9 +1898,9 @@ var reviewsRouter = router({
   }),
   /** Get current user's reviews */
   myReviews: protectedProcedure.query(async ({ ctx }) => {
-    const db = await getDb();
-    if (!db) return [];
-    return db.select().from(reviews).where(eq2(reviews.userId, ctx.user.id)).orderBy(desc2(reviews.createdAt));
+    const db2 = await getDb();
+    if (!db2) return [];
+    return db2.select().from(reviews).where(eq2(reviews.userId, ctx.user.id)).orderBy(desc2(reviews.createdAt));
   }),
   /** Mark review as helpful (public) */
   markHelpful: publicProcedure.input(z3.object({ id: z3.number() })).mutation(async ({ input }) => {
@@ -1798,31 +2068,43 @@ ${input.message.substring(0, 200)}`
 import { z as z6 } from "zod";
 
 // server/storage.ts
+init_firebase_storage();
+import fs2 from "fs";
+import path2 from "path";
+var DIRNAME = typeof __dirname !== "undefined" ? __dirname : new URL(".", import.meta.url).pathname;
+var LOCAL_UPLOADS_DIR = path2.resolve(DIRNAME, "..", "public", "uploads");
+function ensureLocalDir(filePath) {
+  const dir = path2.dirname(filePath);
+  if (!fs2.existsSync(dir)) {
+    fs2.mkdirSync(dir, { recursive: true });
+  }
+}
 function normalizeKey(relKey) {
   return relKey.replace(/^\/+/, "");
 }
-async function storagePut(relKey, data, contentType = "application/octet-stream") {
+async function storagePut2(relKey, data, contentType = "application/octet-stream") {
   const key = normalizeKey(relKey);
-  const supabase = getServerSupabase();
-  const bucket = process.env.SUPABASE_STORAGE_BUCKET;
-  if (supabase && bucket) {
-    const blob = typeof data === "string" ? new Blob([data], { type: contentType }) : new Blob([data], { type: contentType });
-    const { error } = await supabase.storage.from(bucket).upload(key, blob, { contentType, upsert: true });
-    if (error) {
-      throw new Error(`[Supabase Storage] upload failed: ${error.message}`);
-    }
-    const expiresInSec = Number(process.env.SUPABASE_STORAGE_SIGNED_URL_TTL || 3600);
-    const { data: signed, error: signErr } = await supabase.storage.from(bucket).createSignedUrl(key, expiresInSec);
-    if (signErr) {
-      const { data: pub } = supabase.storage.from(bucket).getPublicUrl(key);
-      if (!pub.publicUrl) {
-        throw new Error("[Supabase Storage] failed to obtain URL after upload");
-      }
-      return { key, url: pub.publicUrl };
-    }
-    return { key, url: signed.signedUrl };
+  let fileBuffer;
+  if (typeof data === "string") {
+    fileBuffer = Buffer.from(data, "utf-8");
+  } else if (ArrayBuffer.isView(data) || data instanceof Uint8Array) {
+    fileBuffer = Buffer.from(data);
+  } else {
+    fileBuffer = data;
   }
-  throw new Error("Supabase storage is not configured");
+  try {
+    console.log(`[Storage] Attempting Firebase Storage upload for: ${key}`);
+    const result = await storagePut(key, fileBuffer, contentType);
+    console.log(`[Storage] Firebase Storage upload successful for: ${key}`);
+    return { key, url: result.url };
+  } catch (firebaseErr) {
+    console.warn(`[Storage] Firebase Storage failed for ${key}, falling back to local filesystem:`, firebaseErr);
+  }
+  console.log(`[Storage] Using local filesystem fallback for: ${key}`);
+  const localPath = path2.join(LOCAL_UPLOADS_DIR, key);
+  ensureLocalDir(localPath);
+  fs2.writeFileSync(localPath, fileBuffer);
+  return { key, url: `/uploads/${key}` };
 }
 
 // server/routers/uploads.ts
@@ -1846,7 +2128,7 @@ var uploadsRouter = router({
     const ext = input.filename.split(".").pop() || "bin";
     const randomSuffix = nanoid2(8);
     const fileKey = `user-${ctx.user.id}/${input.purpose || "general"}/${randomSuffix}.${ext}`;
-    const { url } = await storagePut(fileKey, buffer, input.mimeType);
+    const { url } = await storagePut2(fileKey, buffer, input.mimeType);
     const fileRecord = await createFileUpload({
       userId: ctx.user.id,
       fileKey,
@@ -1867,18 +2149,19 @@ var uploadsRouter = router({
 // server/routers/gallery.ts
 import { z as z7 } from "zod";
 import { nanoid as nanoid3 } from "nanoid";
+var ITEMS_COL = "gallery_items";
+var VIDEOS_COL = "gallery_videos";
 var galleryRouter = router({
   // ─── Public Endpoints ───
-  /** List visible gallery items (public) */
   listVisible: publicProcedure.query(async () => {
-    return getVisibleGalleryItems();
+    const snap = await db.collection(ITEMS_COL).where("isVisible", "==", "visible").orderBy("sortOrder", "asc").get();
+    return snap.docs.map((d) => d.data());
   }),
-  /** List visible gallery videos (public) */
   listVisibleVideos: publicProcedure.query(async () => {
-    return getVisibleGalleryVideos();
+    const snap = await db.collection(VIDEOS_COL).where("isVisible", "==", "visible").orderBy("sortOrder", "asc").get();
+    return snap.docs.map((d) => d.data());
   }),
   // ─── Admin Endpoints: Gallery Items ───
-  /** List all gallery items (admin) */
   listAll: adminProcedure.input(
     z7.object({
       limit: z7.number().min(1).max(200).default(100),
@@ -1886,9 +2169,9 @@ var galleryRouter = router({
     }).optional()
   ).query(async ({ input }) => {
     const { limit = 100, offset = 0 } = input ?? {};
-    return getAllGalleryItems(limit, offset);
+    const snap = await db.collection(ITEMS_COL).orderBy("createdAt", "desc").offset(offset).limit(limit).get();
+    return snap.docs.map((d) => d.data());
   }),
-  /** Create a gallery item (admin) */
   create: adminProcedure.input(
     z7.object({
       imageUrl: z7.string().min(1),
@@ -1905,12 +2188,16 @@ var galleryRouter = router({
       sortOrder: z7.number().default(0)
     })
   ).mutation(async ({ input }) => {
-    return createGalleryItem({
+    const id = Date.now();
+    const item = {
       ...input,
-      isVisible: "visible"
-    });
+      id,
+      isVisible: "visible",
+      createdAt: /* @__PURE__ */ new Date()
+    };
+    await db.collection(ITEMS_COL).add(item);
+    return item;
   }),
-  /** Update a gallery item (admin) */
   update: adminProcedure.input(
     z7.object({
       id: z7.number(),
@@ -1930,14 +2217,17 @@ var galleryRouter = router({
     })
   ).mutation(async ({ input }) => {
     const { id, ...data } = input;
-    return updateGalleryItem(id, data);
+    const snap = await db.collection(ITEMS_COL).where("id", "==", id).limit(1).get();
+    if (snap.empty) throw new Error("Gallery item not found");
+    await snap.docs[0].ref.set(data, { merge: true });
+    const updated = (await snap.docs[0].ref.get()).data();
+    return updated;
   }),
-  /** Delete a gallery item (admin) */
   delete: adminProcedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
-    await deleteGalleryItem(input.id);
+    const snap = await db.collection(ITEMS_COL).where("id", "==", input.id).limit(1).get();
+    if (!snap.empty) await snap.docs[0].ref.delete();
     return { success: true };
   }),
-  /** Upload gallery image (admin) */
   uploadImage: adminProcedure.input(
     z7.object({
       fileData: z7.string(),
@@ -1952,11 +2242,10 @@ var galleryRouter = router({
     const ext = input.filename.split(".").pop() || "jpg";
     const randomSuffix = nanoid3(8);
     const fileKey = `gallery/${randomSuffix}.${ext}`;
-    const { url } = await storagePut(fileKey, buffer, input.mimeType);
+    const { url } = await storagePut2(fileKey, buffer, input.mimeType);
     return { url, fileKey };
   }),
   // ─── Admin Endpoints: Gallery Videos ───
-  /** List all gallery videos (admin) */
   listAllVideos: adminProcedure.input(
     z7.object({
       limit: z7.number().min(1).max(100).default(50),
@@ -1964,9 +2253,9 @@ var galleryRouter = router({
     }).optional()
   ).query(async ({ input }) => {
     const { limit = 50, offset = 0 } = input ?? {};
-    return getAllGalleryVideos(limit, offset);
+    const snap = await db.collection(VIDEOS_COL).orderBy("createdAt", "desc").offset(offset).limit(limit).get();
+    return snap.docs.map((d) => d.data());
   }),
-  /** Create a gallery video (admin) */
   createVideo: adminProcedure.input(
     z7.object({
       thumbnailUrl: z7.string().min(1),
@@ -1978,12 +2267,16 @@ var galleryRouter = router({
       sortOrder: z7.number().default(0)
     })
   ).mutation(async ({ input }) => {
-    return createGalleryVideo({
+    const id = Date.now();
+    const video = {
       ...input,
-      isVisible: "visible"
-    });
+      id,
+      isVisible: "visible",
+      createdAt: /* @__PURE__ */ new Date()
+    };
+    await db.collection(VIDEOS_COL).add(video);
+    return video;
   }),
-  /** Update a gallery video (admin) */
   updateVideo: adminProcedure.input(
     z7.object({
       id: z7.number(),
@@ -1998,11 +2291,15 @@ var galleryRouter = router({
     })
   ).mutation(async ({ input }) => {
     const { id, ...data } = input;
-    return updateGalleryVideo(id, data);
+    const snap = await db.collection(VIDEOS_COL).where("id", "==", id).limit(1).get();
+    if (snap.empty) throw new Error("Gallery video not found");
+    await snap.docs[0].ref.set(data, { merge: true });
+    const updated = (await snap.docs[0].ref.get()).data();
+    return updated;
   }),
-  /** Delete a gallery video (admin) */
   deleteVideo: adminProcedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
-    await deleteGalleryVideo(input.id);
+    const snap = await db.collection(VIDEOS_COL).where("id", "==", input.id).limit(1).get();
+    if (!snap.empty) await snap.docs[0].ref.delete();
     return { success: true };
   })
 });
@@ -2044,7 +2341,7 @@ async function generateImageWithDALLE(options) {
   const timestamp2 = Date.now();
   const randomSuffix = Math.random().toString(36).substring(2, 8);
   const s3Key = `ai-generated/${timestamp2}-${randomSuffix}.png`;
-  const { url } = await storagePut(s3Key, buffer, "image/png");
+  const { url } = await storagePut2(s3Key, buffer, "image/png");
   return {
     url,
     s3Key,
@@ -2133,7 +2430,7 @@ async function generateImageWithGemini(options) {
   const randomSuffix = Math.random().toString(36).substring(2, 8);
   const modelPrefix = modelId.replace(/-/g, "");
   const s3Key = `ai-generated/${modelPrefix}-${timestamp2}-${randomSuffix}.${ext}`;
-  const { url } = await storagePut(s3Key, imageBuffer, mimeType);
+  const { url } = await storagePut2(s3Key, imageBuffer, mimeType);
   return {
     url,
     s3Key,
@@ -2498,9 +2795,9 @@ var usersRouter = router({
     } catch {
     }
     try {
-      const db = await getDb();
-      if (db) {
-        const userReviews = await db.select({ count: sql2`count(*)` }).from(reviews).where(eq3(reviews.userId, userId));
+      const db2 = await getDb();
+      if (db2) {
+        const userReviews = await db2.select({ count: sql2`count(*)` }).from(reviews).where(eq3(reviews.userId, userId));
         reviewsCount = userReviews[0]?.count ?? 0;
       }
     } catch {
@@ -2540,10 +2837,18 @@ var blogRouter = router({
     }).optional()
   ).query(async ({ input }) => {
     const { limit = 10, offset = 0, category } = input ?? {};
-    if (category) {
-      return getBlogPostsByCategory(category, limit, offset);
+    try {
+      if (category) {
+        return await getBlogPostsByCategory(category, limit, offset);
+      }
+      return await getPublishedBlogPosts(limit, offset);
+    } catch (err) {
+      console.error("[blog.list] database error:", err);
+      throw new TRPCError4({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch blog posts"
+      });
     }
-    return getPublishedBlogPosts(limit, offset);
   }),
   // Public: Get single post by slug
   getBySlug: publicProcedure.input(z10.object({ slug: z10.string() })).query(async ({ input }) => {
@@ -2847,8 +3152,8 @@ var marketingRouter = router({
       templateId: z11.number().optional()
     })
   ).mutation(async ({ ctx, input }) => {
-    const db = await getDb();
-    if (!db) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    const db2 = await getDb();
+    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
     let systemPrompt = SYSTEM_PROMPTS[input.type] || SYSTEM_PROMPTS.social_media;
     const toneInstruction = TONE_INSTRUCTIONS[input.tone] || TONE_INSTRUCTIONS.luxurious;
     systemPrompt += `
@@ -2883,7 +3188,7 @@ Target platform: ${input.platform}. Optimize content format and length for this 
 Focus destination: ${input.destination}. Include specific details about this destination.`;
     }
     if (input.templateId) {
-      const [template] = await db.select().from(marketingTemplates).where(eq4(marketingTemplates.id, input.templateId)).limit(1);
+      const [template] = await db2.select().from(marketingTemplates).where(eq4(marketingTemplates.id, input.templateId)).limit(1);
       if (template?.systemPrompt) {
         systemPrompt += `
 
@@ -2946,7 +3251,7 @@ ${template.templateContent}`;
         metadata: { wordCount: 0, readingTime: 0, seoScore: 0 }
       };
     }
-    const [saved] = await db.insert(marketingContent).values({
+    const [saved] = await db2.insert(marketingContent).values({
       userId: ctx.user.id,
       type: input.type,
       platform: input.platform || null,
@@ -2979,14 +3284,14 @@ ${template.templateContent}`;
       offset: z11.number().min(0).default(0)
     })
   ).query(async ({ ctx, input }) => {
-    const db = await getDb();
-    if (!db) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    const db2 = await getDb();
+    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
     const conditions = [eq4(marketingContent.userId, ctx.user.id)];
     if (input.type) {
       conditions.push(eq4(marketingContent.type, input.type));
     }
-    const items = await db.select().from(marketingContent).where(and2(...conditions)).orderBy(desc3(marketingContent.createdAt)).limit(input.limit).offset(input.offset);
-    const [countResult] = await db.select({ count: sql3`count(*)` }).from(marketingContent).where(and2(...conditions));
+    const items = await db2.select().from(marketingContent).where(and2(...conditions)).orderBy(desc3(marketingContent.createdAt)).limit(input.limit).offset(input.offset);
+    const [countResult] = await db2.select({ count: sql3`count(*)` }).from(marketingContent).where(and2(...conditions));
     return {
       items,
       total: countResult?.count || 0
@@ -2996,23 +3301,23 @@ ${template.templateContent}`;
    * Toggle favorite status
    */
   toggleFavorite: protectedProcedure.input(z11.object({ id: z11.number() })).mutation(async ({ ctx, input }) => {
-    const db = await getDb();
-    if (!db) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    const [item] = await db.select().from(marketingContent).where(and2(eq4(marketingContent.id, input.id), eq4(marketingContent.userId, ctx.user.id))).limit(1);
+    const db2 = await getDb();
+    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    const [item] = await db2.select().from(marketingContent).where(and2(eq4(marketingContent.id, input.id), eq4(marketingContent.userId, ctx.user.id))).limit(1);
     if (!item) throw new TRPCError5({ code: "NOT_FOUND" });
     const newStatus = item.isFavorite === "yes" ? "no" : "yes";
-    await db.update(marketingContent).set({ isFavorite: newStatus }).where(eq4(marketingContent.id, input.id));
+    await db2.update(marketingContent).set({ isFavorite: newStatus }).where(eq4(marketingContent.id, input.id));
     return { isFavorite: newStatus };
   }),
   /**
    * Delete content
    */
   deleteContent: protectedProcedure.input(z11.object({ id: z11.number() })).mutation(async ({ ctx, input }) => {
-    const db = await getDb();
-    if (!db) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    const [item] = await db.select().from(marketingContent).where(and2(eq4(marketingContent.id, input.id), eq4(marketingContent.userId, ctx.user.id))).limit(1);
+    const db2 = await getDb();
+    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    const [item] = await db2.select().from(marketingContent).where(and2(eq4(marketingContent.id, input.id), eq4(marketingContent.userId, ctx.user.id))).limit(1);
     if (!item) throw new TRPCError5({ code: "NOT_FOUND" });
-    await db.delete(marketingContent).where(eq4(marketingContent.id, input.id));
+    await db2.delete(marketingContent).where(eq4(marketingContent.id, input.id));
     return { success: true };
   }),
   // ─── Calendar ───
@@ -3025,8 +3330,8 @@ ${template.templateContent}`;
       endDate: z11.number().optional()
     })
   ).query(async ({ ctx, input }) => {
-    const db = await getDb();
-    if (!db) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    const db2 = await getDb();
+    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
     const conditions = [eq4(marketingCalendar.userId, ctx.user.id)];
     if (input.startDate) {
       conditions.push(sql3`${marketingCalendar.scheduledDate} >= ${input.startDate}`);
@@ -3034,7 +3339,7 @@ ${template.templateContent}`;
     if (input.endDate) {
       conditions.push(sql3`${marketingCalendar.scheduledDate} <= ${input.endDate}`);
     }
-    return db.select().from(marketingCalendar).where(and2(...conditions)).orderBy(marketingCalendar.scheduledDate);
+    return db2.select().from(marketingCalendar).where(and2(...conditions)).orderBy(marketingCalendar.scheduledDate);
   }),
   /**
    * Add calendar entry
@@ -3050,9 +3355,9 @@ ${template.templateContent}`;
       colorTag: z11.string().default("#D4A853")
     })
   ).mutation(async ({ ctx, input }) => {
-    const db = await getDb();
-    if (!db) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    const [entry] = await db.insert(marketingCalendar).values({
+    const db2 = await getDb();
+    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    const [entry] = await db2.insert(marketingCalendar).values({
       userId: ctx.user.id,
       contentId: input.contentId || null,
       title: input.title,
@@ -3077,10 +3382,10 @@ ${template.templateContent}`;
       colorTag: z11.string().optional()
     })
   ).mutation(async ({ ctx, input }) => {
-    const db = await getDb();
-    if (!db) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    const db2 = await getDb();
+    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
     const { id, ...updates } = input;
-    const [item] = await db.select().from(marketingCalendar).where(and2(eq4(marketingCalendar.id, id), eq4(marketingCalendar.userId, ctx.user.id))).limit(1);
+    const [item] = await db2.select().from(marketingCalendar).where(and2(eq4(marketingCalendar.id, id), eq4(marketingCalendar.userId, ctx.user.id))).limit(1);
     if (!item) throw new TRPCError5({ code: "NOT_FOUND" });
     const cleanUpdates = {};
     if (updates.title !== void 0) cleanUpdates.title = updates.title;
@@ -3089,7 +3394,7 @@ ${template.templateContent}`;
     if (updates.status !== void 0) cleanUpdates.status = updates.status;
     if (updates.colorTag !== void 0) cleanUpdates.colorTag = updates.colorTag;
     if (Object.keys(cleanUpdates).length > 0) {
-      await db.update(marketingCalendar).set(cleanUpdates).where(eq4(marketingCalendar.id, id));
+      await db2.update(marketingCalendar).set(cleanUpdates).where(eq4(marketingCalendar.id, id));
     }
     return { success: true };
   }),
@@ -3097,11 +3402,11 @@ ${template.templateContent}`;
    * Delete calendar entry
    */
   deleteCalendarEntry: protectedProcedure.input(z11.object({ id: z11.number() })).mutation(async ({ ctx, input }) => {
-    const db = await getDb();
-    if (!db) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    const [item] = await db.select().from(marketingCalendar).where(and2(eq4(marketingCalendar.id, input.id), eq4(marketingCalendar.userId, ctx.user.id))).limit(1);
+    const db2 = await getDb();
+    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    const [item] = await db2.select().from(marketingCalendar).where(and2(eq4(marketingCalendar.id, input.id), eq4(marketingCalendar.userId, ctx.user.id))).limit(1);
     if (!item) throw new TRPCError5({ code: "NOT_FOUND" });
-    await db.delete(marketingCalendar).where(eq4(marketingCalendar.id, input.id));
+    await db2.delete(marketingCalendar).where(eq4(marketingCalendar.id, input.id));
     return { success: true };
   }),
   // ─── Templates ───
@@ -3113,26 +3418,26 @@ ${template.templateContent}`;
       type: z11.enum(["social_media", "email", "trip_description", "blog_seo", "ad_copy"]).optional()
     })
   ).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    const db2 = await getDb();
+    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
     const conditions = [];
     if (input.type) {
       conditions.push(eq4(marketingTemplates.type, input.type));
     }
-    return db.select().from(marketingTemplates).where(conditions.length > 0 ? and2(...conditions) : void 0).orderBy(marketingTemplates.sortOrder);
+    return db2.select().from(marketingTemplates).where(conditions.length > 0 ? and2(...conditions) : void 0).orderBy(marketingTemplates.sortOrder);
   }),
   /**
    * Get content generation stats
    */
   getStats: protectedProcedure.query(async ({ ctx }) => {
-    const db = await getDb();
-    if (!db) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    if (!db) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    const [totalContent] = await db.select({ count: sql3`count(*)` }).from(marketingContent).where(eq4(marketingContent.userId, ctx.user.id));
-    const [socialCount] = await db.select({ count: sql3`count(*)` }).from(marketingContent).where(and2(eq4(marketingContent.userId, ctx.user.id), eq4(marketingContent.type, "social_media")));
-    const [emailCount] = await db.select({ count: sql3`count(*)` }).from(marketingContent).where(and2(eq4(marketingContent.userId, ctx.user.id), eq4(marketingContent.type, "email")));
-    const [blogCount] = await db.select({ count: sql3`count(*)` }).from(marketingContent).where(and2(eq4(marketingContent.userId, ctx.user.id), eq4(marketingContent.type, "blog_seo")));
-    const [calendarCount] = await db.select({ count: sql3`count(*)` }).from(marketingCalendar).where(eq4(marketingCalendar.userId, ctx.user.id));
+    const db2 = await getDb();
+    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    const [totalContent] = await db2.select({ count: sql3`count(*)` }).from(marketingContent).where(eq4(marketingContent.userId, ctx.user.id));
+    const [socialCount] = await db2.select({ count: sql3`count(*)` }).from(marketingContent).where(and2(eq4(marketingContent.userId, ctx.user.id), eq4(marketingContent.type, "social_media")));
+    const [emailCount] = await db2.select({ count: sql3`count(*)` }).from(marketingContent).where(and2(eq4(marketingContent.userId, ctx.user.id), eq4(marketingContent.type, "email")));
+    const [blogCount] = await db2.select({ count: sql3`count(*)` }).from(marketingContent).where(and2(eq4(marketingContent.userId, ctx.user.id), eq4(marketingContent.type, "blog_seo")));
+    const [calendarCount] = await db2.select({ count: sql3`count(*)` }).from(marketingCalendar).where(eq4(marketingCalendar.userId, ctx.user.id));
     return {
       totalContent: totalContent?.count || 0,
       socialMedia: socialCount?.count || 0,
@@ -3157,10 +3462,10 @@ var adminDestinationsRouter = router({
       sortOrder: z12.enum(["asc", "desc"]).default("asc")
     }).optional()
   ).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     const { limit = 20, offset = 0, search = "", sortBy = "name", sortOrder = "asc" } = input ?? {};
-    let query = db.select().from(destinations);
+    let query = db2.select().from(destinations);
     if (search) {
       query = query.where(like(destinations.name, `%${search}%`));
     }
@@ -3171,9 +3476,9 @@ var adminDestinationsRouter = router({
   }),
   /** Get single destination by ID */
   getById: adminProcedure.input(z12.object({ id: z12.number() })).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const result = await db.select().from(destinations).where(eq5(destinations.id, input.id));
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const result = await db2.select().from(destinations).where(eq5(destinations.id, input.id));
     return result[0] || null;
   }),
   /** Create new destination */
@@ -3194,9 +3499,9 @@ var adminDestinationsRouter = router({
       exclusions: z12.string().optional()
     })
   ).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const result = await db.insert(destinations).values({
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const result = await db2.insert(destinations).values({
       ...input,
       isActive: "active"
     });
@@ -3222,40 +3527,41 @@ var adminDestinationsRouter = router({
       isActive: z12.enum(["active", "inactive"]).optional()
     })
   ).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     const { id, ...data } = input;
-    await db.update(destinations).set(data).where(eq5(destinations.id, id));
+    await db2.update(destinations).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq5(destinations.id, id));
     return { success: true };
   }),
   /** Delete destination */
   delete: adminProcedure.input(z12.object({ id: z12.number() })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.delete(destinations).where(eq5(destinations.id, input.id));
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.delete(destinations).where(eq5(destinations.id, input.id));
     return { success: true };
   }),
   /** Bulk delete destinations */
   bulkDelete: adminProcedure.input(z12.object({ ids: z12.array(z12.number()) })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.delete(destinations).where(inArray(destinations.id, input.ids));
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.delete(destinations).where(inArray(destinations.id, input.ids));
     return { success: true, deleted: input.ids.length };
   }),
   /** Update destination status (active/inactive) */
   updateStatus: adminProcedure.input(z12.object({ id: z12.number(), isActive: z12.enum(["active", "inactive"]) })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.update(destinations).set({
-      isActive: input.isActive
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.update(destinations).set({
+      isActive: input.isActive,
+      updatedAt: /* @__PURE__ */ new Date()
     }).where(eq5(destinations.id, input.id));
     return { success: true };
   }),
   /** Get statistics */
   getStats: adminProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const allDestinations = await db.select().from(destinations);
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const allDestinations = await db2.select().from(destinations);
     const activeCount = allDestinations.filter((d) => d.isActive === "active").length;
     const avgRating = allDestinations.length > 0 ? (allDestinations.reduce((sum, d) => sum + (parseFloat(d.rating) || 0), 0) / allDestinations.length).toFixed(2) : 0;
     const avgPrice = allDestinations.length > 0 ? (allDestinations.reduce((sum, d) => sum + (parseFloat(d.pricePerPerson) || 0), 0) / allDestinations.length).toFixed(2) : 0;
@@ -3284,10 +3590,10 @@ var adminOffersRouter = router({
       sortOrder: z13.enum(["asc", "desc"]).default("desc")
     }).optional()
   ).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     const { limit = 20, offset = 0, search = "", status, sortBy = "createdAt", sortOrder = "desc" } = input ?? {};
-    let query = db.select().from(offers);
+    let query = db2.select().from(offers);
     if (search) {
       query = query.where(like2(offers.title, `%${search}%`));
     }
@@ -3301,9 +3607,9 @@ var adminOffersRouter = router({
   }),
   /** Get single offer by ID */
   getById: adminProcedure.input(z13.object({ id: z13.number() })).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const result = await db.select().from(offers).where(eq6(offers.id, input.id));
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const result = await db2.select().from(offers).where(eq6(offers.id, input.id));
     return result[0] || null;
   }),
   /** Create new offer */
@@ -3324,9 +3630,9 @@ var adminOffersRouter = router({
       badgeColor: z13.string().optional()
     })
   ).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const result = await db.insert(offers).values({
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const result = await db2.insert(offers).values({
       ...input,
       isActive: "active",
       bookedSpots: 0
@@ -3353,40 +3659,41 @@ var adminOffersRouter = router({
       isActive: z13.enum(["active", "inactive", "expired"]).optional()
     })
   ).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     const { id, ...data } = input;
-    await db.update(offers).set(data).where(eq6(offers.id, id));
+    await db2.update(offers).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq6(offers.id, id));
     return { success: true };
   }),
   /** Delete offer */
   delete: adminProcedure.input(z13.object({ id: z13.number() })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.delete(offers).where(eq6(offers.id, input.id));
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.delete(offers).where(eq6(offers.id, input.id));
     return { success: true };
   }),
   /** Bulk delete offers */
   bulkDelete: adminProcedure.input(z13.object({ ids: z13.array(z13.number()) })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.delete(offers).where(inArray2(offers.id, input.ids));
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.delete(offers).where(inArray2(offers.id, input.ids));
     return { success: true, deleted: input.ids.length };
   }),
   /** Update offer status */
   updateStatus: adminProcedure.input(z13.object({ id: z13.number(), isActive: z13.enum(["active", "inactive", "expired"]) })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.update(offers).set({
-      isActive: input.isActive
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.update(offers).set({
+      isActive: input.isActive,
+      updatedAt: /* @__PURE__ */ new Date()
     }).where(eq6(offers.id, input.id));
     return { success: true };
   }),
   /** Get statistics */
   getStats: adminProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const allOffers = await db.select().from(offers);
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const allOffers = await db2.select().from(offers);
     const activeCount = allOffers.filter((o) => o.isActive === "active").length;
     const totalDiscount = allOffers.reduce((sum, o) => sum + (parseFloat(o.discountValue) || 0), 0);
     const avgDiscount = allOffers.length > 0 ? (totalDiscount / allOffers.length).toFixed(2) : 0;
@@ -3415,10 +3722,10 @@ var adminBlogRouter = router({
       sortOrder: z14.enum(["asc", "desc"]).default("desc")
     }).optional()
   ).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     const { limit = 20, offset = 0, search = "", status, category, sortBy = "createdAt", sortOrder = "desc" } = input ?? {};
-    let query = db.select().from(blogPosts);
+    let query = db2.select().from(blogPosts);
     if (search) {
       query = query.where(like3(blogPosts.title, `%${search}%`));
     }
@@ -3435,16 +3742,16 @@ var adminBlogRouter = router({
   }),
   /** Get single blog post by ID */
   getById: adminProcedure.input(z14.object({ id: z14.number() })).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const result = await db.select().from(blogPosts).where(eq7(blogPosts.id, input.id));
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const result = await db2.select().from(blogPosts).where(eq7(blogPosts.id, input.id));
     return result[0] || null;
   }),
   /** Get blog post by slug */
   getBySlug: adminProcedure.input(z14.object({ slug: z14.string() })).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const result = await db.select().from(blogPosts).where(eq7(blogPosts.slug, input.slug));
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const result = await db2.select().from(blogPosts).where(eq7(blogPosts.slug, input.slug));
     return result[0] || null;
   }),
   /** Create new blog post */
@@ -3464,9 +3771,9 @@ var adminBlogRouter = router({
       readingTime: z14.number().optional()
     })
   ).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const result = await db.insert(blogPosts).values({
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const result = await db2.insert(blogPosts).values({
       ...input,
       status: "draft",
       viewCount: 0
@@ -3492,50 +3799,52 @@ var adminBlogRouter = router({
       status: z14.enum(["draft", "published", "archived"]).optional()
     })
   ).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     const { id, ...data } = input;
-    await db.update(blogPosts).set(data).where(eq7(blogPosts.id, id));
+    await db2.update(blogPosts).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq7(blogPosts.id, id));
     return { success: true };
   }),
   /** Delete blog post */
   delete: adminProcedure.input(z14.object({ id: z14.number() })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.delete(blogPosts).where(eq7(blogPosts.id, input.id));
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.delete(blogPosts).where(eq7(blogPosts.id, input.id));
     return { success: true };
   }),
   /** Bulk delete blog posts */
   bulkDelete: adminProcedure.input(z14.object({ ids: z14.array(z14.number()) })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.delete(blogPosts).where(inArray3(blogPosts.id, input.ids));
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.delete(blogPosts).where(inArray3(blogPosts.id, input.ids));
     return { success: true, deleted: input.ids.length };
   }),
   /** Publish blog post */
   publish: adminProcedure.input(z14.object({ id: z14.number() })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.update(blogPosts).set({
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.update(blogPosts).set({
       status: "published",
-      publishedAt: /* @__PURE__ */ new Date()
+      publishedAt: /* @__PURE__ */ new Date(),
+      updatedAt: /* @__PURE__ */ new Date()
     }).where(eq7(blogPosts.id, input.id));
     return { success: true };
   }),
   /** Archive blog post */
   archive: adminProcedure.input(z14.object({ id: z14.number() })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.update(blogPosts).set({
-      status: "archived"
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.update(blogPosts).set({
+      status: "archived",
+      updatedAt: /* @__PURE__ */ new Date()
     }).where(eq7(blogPosts.id, input.id));
     return { success: true };
   }),
   /** Get statistics */
   getStats: adminProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const allPosts = await db.select().from(blogPosts);
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const allPosts = await db2.select().from(blogPosts);
     const publishedCount = allPosts.filter((p) => p.status === "published").length;
     const draftCount = allPosts.filter((p) => p.status === "draft").length;
     const totalViews = allPosts.reduce((sum, p) => sum + (p.viewCount || 0), 0);
@@ -4032,7 +4341,7 @@ var aiCommandRouter = router({
     const ext = input.filename.split(".").pop() || "bin";
     const randomSuffix = nanoid4(8);
     const fileKey = `ai-command/${ctx.user.id}/${randomSuffix}.${ext}`;
-    const { url } = await storagePut(fileKey, buffer, input.mimeType);
+    const { url } = await storagePut2(fileKey, buffer, input.mimeType);
     return {
       url,
       fileKey,
@@ -4132,9 +4441,9 @@ var siteSettingsRouter = router({
    * Get theme settings (public - no auth required for visitors)
    */
   getTheme: publicProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) return null;
-    const results = await db.select().from(siteSettings).where(eq8(siteSettings.category, "theme"));
+    const db2 = await getDb();
+    if (!db2) return null;
+    const results = await db2.select().from(siteSettings).where(eq8(siteSettings.category, "theme"));
     if (!results.length) return null;
     const settings = {};
     for (const row of results) {
@@ -4149,9 +4458,9 @@ var siteSettingsRouter = router({
     category: z16.string(),
     key: z16.string()
   })).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) return null;
-    const [result] = await db.select().from(siteSettings).where(
+    const db2 = await getDb();
+    if (!db2) return null;
+    const [result] = await db2.select().from(siteSettings).where(
       and3(
         eq8(siteSettings.category, input.category),
         eq8(siteSettings.settingKey, input.key)
@@ -4165,9 +4474,9 @@ var siteSettingsRouter = router({
   getByCategory: protectedProcedure.input(z16.object({
     category: z16.string()
   })).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) return {};
-    const results = await db.select().from(siteSettings).where(eq8(siteSettings.category, input.category));
+    const db2 = await getDb();
+    if (!db2) return {};
+    const results = await db2.select().from(siteSettings).where(eq8(siteSettings.category, input.category));
     const settings = {};
     for (const row of results) {
       settings[row.settingKey] = row.settingValue ?? "";
@@ -4178,9 +4487,9 @@ var siteSettingsRouter = router({
    * Get all settings across all categories
    */
   getAll: protectedProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) return {};
-    const results = await db.select().from(siteSettings);
+    const db2 = await getDb();
+    if (!db2) return {};
+    const results = await db2.select().from(siteSettings);
     const grouped = {};
     for (const row of results) {
       if (!grouped[row.category]) grouped[row.category] = {};
@@ -4196,18 +4505,18 @@ var siteSettingsRouter = router({
     key: z16.string(),
     value: z16.string()
   })).mutation(async ({ input, ctx }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const [existing] = await db.select().from(siteSettings).where(
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const [existing] = await db2.select().from(siteSettings).where(
       and3(
         eq8(siteSettings.category, input.category),
         eq8(siteSettings.settingKey, input.key)
       )
     ).limit(1);
     if (existing) {
-      await db.update(siteSettings).set({ settingValue: input.value, updatedBy: ctx.user.id }).where(eq8(siteSettings.id, existing.id));
+      await db2.update(siteSettings).set({ settingValue: input.value, updatedBy: ctx.user.id }).where(eq8(siteSettings.id, existing.id));
     } else {
-      await db.insert(siteSettings).values({
+      await db2.insert(siteSettings).values({
         category: input.category,
         settingKey: input.key,
         settingValue: input.value,
@@ -4223,20 +4532,20 @@ var siteSettingsRouter = router({
     category: z16.string(),
     settings: z16.record(z16.string(), z16.string())
   })).mutation(async ({ input, ctx }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     const entries = Object.entries(input.settings);
     for (const [key, value] of entries) {
-      const [existing] = await db.select().from(siteSettings).where(
+      const [existing] = await db2.select().from(siteSettings).where(
         and3(
           eq8(siteSettings.category, input.category),
           eq8(siteSettings.settingKey, key)
         )
       ).limit(1);
       if (existing) {
-        await db.update(siteSettings).set({ settingValue: value, updatedBy: ctx.user.id }).where(eq8(siteSettings.id, existing.id));
+        await db2.update(siteSettings).set({ settingValue: value, updatedBy: ctx.user.id }).where(eq8(siteSettings.id, existing.id));
       } else {
-        await db.insert(siteSettings).values({
+        await db2.insert(siteSettings).values({
           category: input.category,
           settingKey: key,
           settingValue: value,
@@ -4253,9 +4562,9 @@ var siteSettingsRouter = router({
     category: z16.string(),
     key: z16.string()
   })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.delete(siteSettings).where(
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.delete(siteSettings).where(
       and3(
         eq8(siteSettings.category, input.category),
         eq8(siteSettings.settingKey, input.key)
@@ -4285,12 +4594,12 @@ var backupRouter = router({
    * Get record counts for all exportable tables
    */
   getExportSections: protectedProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) return [];
+    const db2 = await getDb();
+    if (!db2) return [];
     const sections = [];
     for (const [id, { table, label }] of Object.entries(TABLE_MAP)) {
       try {
-        const [result] = await db.select({ count: sql4`count(*)` }).from(table);
+        const [result] = await db2.select({ count: sql4`count(*)` }).from(table);
         sections.push({
           id,
           label,
@@ -4309,14 +4618,14 @@ var backupRouter = router({
     sections: z17.array(z17.string()),
     format: z17.enum(["json", "csv"]).default("json")
   })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     const exportResult = {};
     for (const sectionId of input.sections) {
       const mapping = TABLE_MAP[sectionId];
       if (!mapping) continue;
       try {
-        const rows = await db.select().from(mapping.table);
+        const rows = await db2.select().from(mapping.table);
         exportResult[sectionId] = {
           label: mapping.label,
           recordCount: rows.length,
@@ -4341,9 +4650,9 @@ var backupRouter = router({
    * Get backup settings from DB
    */
   getSettings: protectedProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) return {};
-    const results = await db.select().from(siteSettings).where(
+    const db2 = await getDb();
+    if (!db2) return {};
+    const results = await db2.select().from(siteSettings).where(
       sql4`${siteSettings.category} = 'backup'`
     );
     const settings = {};
@@ -4363,8 +4672,8 @@ var backupRouter = router({
     })),
     mode: z17.enum(["merge", "replace"]).default("merge")
   })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     const results = {};
     for (const [sectionId, section] of Object.entries(input.sections)) {
       const mapping = TABLE_MAP[sectionId];
@@ -4377,13 +4686,13 @@ var backupRouter = router({
       let errors = 0;
       try {
         if (input.mode === "replace") {
-          await db.delete(mapping.table);
+          await db2.delete(mapping.table);
         }
         for (const row of section.data) {
           try {
             const cleanRow = { ...row };
             delete cleanRow.id;
-            await db.insert(mapping.table).values(cleanRow);
+            await db2.insert(mapping.table).values(cleanRow);
             restored++;
           } catch (e) {
             if (e?.code === "ER_DUP_ENTRY" || e?.message?.includes("Duplicate")) {
@@ -4416,16 +4725,16 @@ var backupRouter = router({
   saveSettings: protectedProcedure.input(z17.object({
     settings: z17.record(z17.string(), z17.string())
   })).mutation(async ({ input, ctx }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     for (const [key, value] of Object.entries(input.settings)) {
-      const existing = await db.select().from(siteSettings).where(
+      const existing = await db2.select().from(siteSettings).where(
         sql4`${siteSettings.category} = 'backup' AND ${siteSettings.settingKey} = ${key}`
       ).limit(1);
       if (existing.length > 0) {
-        await db.update(siteSettings).set({ settingValue: value, updatedBy: ctx.user.id }).where(sql4`${siteSettings.id} = ${existing[0].id}`);
+        await db2.update(siteSettings).set({ settingValue: value, updatedBy: ctx.user.id }).where(sql4`${siteSettings.id} = ${existing[0].id}`);
       } else {
-        await db.insert(siteSettings).values({
+        await db2.insert(siteSettings).values({
           category: "backup",
           settingKey: key,
           settingValue: value,
@@ -4652,8 +4961,8 @@ var dataImportRouter = router({
     rows: z18.array(z18.record(z18.string(), z18.any())),
     skipInvalid: z18.boolean().default(true)
   })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     const target = getTable(input.tableId);
     if (!target) throw new Error(`Unknown import table: ${input.tableId}`);
     let imported = 0;
@@ -4684,7 +4993,7 @@ var dataImportRouter = router({
         }
       }
       try {
-        await db.insert(target.table).values(record);
+        await db2.insert(target.table).values(record);
         imported++;
       } catch (e) {
         if (e?.code === "ER_DUP_ENTRY" || e?.message?.toLowerCase().includes("duplicate")) {
@@ -4791,127 +5100,6 @@ var appRouter = router({
           message: "An unexpected error occurred during login. Please try again."
         });
       }
-    }),
-    /**
-     * Bridge: accept a Supabase Auth JWT access token, verify it server-side,
-     * check app_metadata.role === 'admin', upsert the user in DB with role='admin',
-     * then issue a session cookie so the rest of the app treats them as authenticated admin.
-     */
-    supabaseLogin: publicProcedure.input(z19.object({ accessToken: z19.string().min(1) })).mutation(async ({ ctx, input }) => {
-      const supabase = getServerSupabase();
-      if (!supabase) {
-        throw new TRPCError6({
-          code: "PRECONDITION_FAILED",
-          message: "Supabase is not configured on this server."
-        });
-      }
-      const { data, error } = await supabase.auth.getUser(input.accessToken);
-      if (error || !data.user) {
-        throw new TRPCError6({
-          code: "UNAUTHORIZED",
-          message: "Invalid or expired Supabase session."
-        });
-      }
-      const supabaseUser = data.user;
-      const appMeta = supabaseUser.app_metadata ?? {};
-      const userMeta = supabaseUser.user_metadata ?? {};
-      const role = appMeta["role"] ?? userMeta["role"];
-      if (role !== "admin") {
-        throw new TRPCError6({
-          code: "FORBIDDEN",
-          message: "This account does not have admin privileges."
-        });
-      }
-      const name = supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "Admin";
-      const openId = `admin:${(supabaseUser.email ?? supabaseUser.id).toLowerCase()}`;
-      upsertUser({
-        openId,
-        email: supabaseUser.email ?? null,
-        name,
-        loginMethod: "supabase",
-        role: "admin",
-        lastSignedIn: /* @__PURE__ */ new Date()
-      }).catch((err) => {
-        console.warn("[Auth] Could not persist Supabase admin user to DB (non-fatal):", err);
-      });
-      const sessionToken = await sdk.createSessionToken(openId, {
-        expiresInMs: ONE_YEAR_MS,
-        name
-      });
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.cookie(COOKIE_NAME, sessionToken, {
-        ...cookieOptions,
-        maxAge: ONE_YEAR_MS
-      });
-      return { success: true };
-    }),
-    /**
-     * One-time server-side operation: create (or confirm) the admin user in Supabase Auth
-     * with app_metadata.role = 'admin'. Requires SUPABASE_SERVICE_ROLE_KEY to be set.
-     * Call this once during setup; subsequent calls are idempotent (returns existing user).
-     */
-    ensureAdmin: publicProcedure.input(
-      z19.object({
-        email: z19.string().email(),
-        password: z19.string().min(8, "Password must be at least 8 characters")
-      })
-    ).mutation(async ({ input }) => {
-      const supabase = getServerSupabase();
-      if (!supabase) {
-        throw new TRPCError6({
-          code: "PRECONDITION_FAILED",
-          message: "Supabase service role key is not configured."
-        });
-      }
-      const { data, error } = await supabase.auth.admin.createUser({
-        email: input.email,
-        password: input.password,
-        email_confirm: true,
-        app_metadata: { role: "admin" }
-      });
-      if (error) {
-        if (error.message?.toLowerCase().includes("already") || error.message?.toLowerCase().includes("exists") || error.code === "email_exists") {
-          const { data: listData, error: listError } = await supabase.auth.admin.listUsers();
-          if (listError) {
-            throw new TRPCError6({
-              code: "INTERNAL_SERVER_ERROR",
-              message: `Failed to list users: ${listError.message}`
-            });
-          }
-          const existing = listData.users.find(
-            (u) => u.email?.toLowerCase() === input.email.toLowerCase()
-          );
-          if (existing) {
-            const { error: updateError } = await supabase.auth.admin.updateUserById(existing.id, {
-              app_metadata: { role: "admin" }
-            });
-            if (updateError) {
-              throw new TRPCError6({
-                code: "INTERNAL_SERVER_ERROR",
-                message: `Failed to update admin metadata: ${updateError.message}`
-              });
-            }
-            return {
-              success: true,
-              action: "updated",
-              userId: existing.id
-            };
-          }
-          throw new TRPCError6({
-            code: "CONFLICT",
-            message: "User already exists but could not be located."
-          });
-        }
-        throw new TRPCError6({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Supabase error: ${error.message}`
-        });
-      }
-      return {
-        success: true,
-        action: "created",
-        userId: data.user?.id ?? null
-      };
     })
   }),
   // Feature routers
@@ -4942,6 +5130,7 @@ var appRouter = router({
 });
 
 // server/_core/context.ts
+import { getAuth as getAuth2 } from "firebase-admin/auth";
 function getBearerToken(req) {
   const auth = req.headers["authorization"];
   if (!auth || Array.isArray(auth)) return null;
@@ -4950,29 +5139,22 @@ function getBearerToken(req) {
 }
 async function createContext(opts) {
   let user = null;
-  const supabase = getServerSupabase();
   const bearer = getBearerToken(opts.req);
-  if (bearer && supabase) {
+  if (bearer) {
     try {
-      const { data, error } = await supabase.auth.getUser(bearer);
-      if (!error && data.user) {
-        const u = data.user;
-        const name = u.user_metadata && u.user_metadata.name || u.user_metadata?.full_name || u.email?.split("@")[0] || null;
-        const appMeta = u.app_metadata ?? {};
-        const supabaseRole = appMeta["role"] === "admin" ? "admin" : void 0;
-        await upsertUser({
-          openId: u.id,
-          name,
-          email: u.email ?? null,
-          loginMethod: "supabase",
-          lastSignedIn: /* @__PURE__ */ new Date(),
-          ...supabaseRole ? { role: supabaseRole } : {}
-        });
-        const found = await getUserByOpenId(u.id);
-        if (found) {
-          user = found;
-        }
-      }
+      const decoded = await getAuth2().verifyIdToken(bearer);
+      const openId = `firebase:${decoded.uid}`;
+      const name = decoded.name || (decoded.email ? decoded.email.split("@")[0] : null) || null;
+      await upsertUser({
+        openId,
+        name,
+        email: decoded.email ?? null,
+        loginMethod: "firebase",
+        lastSignedIn: /* @__PURE__ */ new Date()
+      }).catch(() => {
+      });
+      const found = await getUserByOpenId(openId);
+      if (found) user = found;
     } catch {
     }
   }
@@ -4983,20 +5165,28 @@ async function createContext(opts) {
       user = null;
     }
   }
+  if (user?.openId && !user.openId.startsWith("firebase:") && !user.openId.startsWith("admin:")) {
+    const fresh = await getUserByOpenId(user.openId);
+    if (fresh) user = fresh;
+  }
   return {
     req: opts.req,
     res: opts.res,
     user,
-    supabase
+    contextData: {
+      role: user?.role ?? null,
+      userId: user?.openId ?? null,
+      email: user?.email ?? null
+    }
   };
 }
 
 // server/_core/vite.ts
 import express from "express";
-import fs from "fs";
+import fs3 from "fs";
 import { nanoid as nanoid5 } from "nanoid";
-import path2 from "path";
-var DIRNAME = typeof __dirname !== "undefined" ? __dirname : new URL(".", import.meta.url).pathname;
+import path4 from "path";
+var DIRNAME2 = typeof __dirname !== "undefined" ? __dirname : new URL(".", import.meta.url).pathname;
 async function setupVite(app, server) {
   const { createServer: createViteServer } = await import("vite");
   const viteConfig = (await Promise.resolve().then(() => (init_vite_config(), vite_config_exports))).default;
@@ -5015,8 +5205,8 @@ async function setupVite(app, server) {
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
     try {
-      const clientTemplate = path2.resolve(DIRNAME, "../..", "client", "index.html");
-      let template = await fs.promises.readFile(clientTemplate, "utf-8");
+      const clientTemplate = path4.resolve(DIRNAME2, "../..", "client", "index.html");
+      let template = await fs3.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid5()}"`
@@ -5030,19 +5220,31 @@ async function setupVite(app, server) {
   });
 }
 function serveStatic(app) {
-  const distPath = process.env.NODE_ENV === "development" ? path2.resolve(DIRNAME, "../..", "dist", "public") : path2.resolve(DIRNAME, "public");
-  if (!fs.existsSync(distPath)) {
+  const distPath = process.env.NODE_ENV === "development" ? path4.resolve(DIRNAME2, "../..", "dist", "public") : path4.resolve(DIRNAME2, "public");
+  if (!fs3.existsSync(distPath)) {
     console.error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
-  app.use(express.static(distPath));
+  app.use(
+    express.static(distPath, {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith(".html")) {
+          res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        } else if (filePath.includes(`${path4.sep}assets${path4.sep}`)) {
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        }
+      }
+    })
+  );
   app.use("*", (_req, res) => {
-    res.sendFile(path2.resolve(distPath, "index.html"));
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.sendFile(path4.resolve(distPath, "index.html"));
   });
 }
 
 // server/_core/index.ts
+var DIRNAME3 = typeof __dirname !== "undefined" ? __dirname : new URL(".", import.meta.url).pathname;
 function isPortAvailable(port) {
   return new Promise((resolve) => {
     const server = net.createServer();
@@ -5062,16 +5264,32 @@ async function findAvailablePort(startPort = 3e3) {
 }
 function createApp() {
   const app = express2();
-  const allowedOrigins = process.env.NODE_ENV === "production" ? ["https://vanirgroup.com", "https://www.vanirgroup.com"] : true;
+  let allowedOrigins;
+  if (process.env.NODE_ENV === "production") {
+    const extra = (process.env.CORS_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
+    allowedOrigins = [
+      "https://vanirgroup.com",
+      "https://www.vanirgroup.com",
+      ...extra
+    ];
+  } else {
+    allowedOrigins = true;
+  }
   app.use(cors({
     origin: allowedOrigins,
     credentials: true
   }));
+  app.use((_req, res, next) => {
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+    next();
+  });
   app.use(express2.json({ limit: "50mb" }));
   app.use(express2.urlencoded({ limit: "50mb", extended: true }));
+  app.use("/uploads", express2.static(path5.resolve(DIRNAME3, "..", "public", "uploads")));
   registerStorageProxy(app);
   registerDownloadProxy(app);
   registerOAuthRoutes(app);
+  registerFirebaseAuthRoutes(app);
   app.use(
     "/api/trpc",
     createExpressMiddleware({ router: appRouter, createContext })

@@ -1,5 +1,4 @@
 import type { Express, Request, Response } from "express";
-import admin from "firebase-admin";
 import { getAuth } from "firebase-admin/auth";
 import { sdk } from "./_core/sdk";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -112,7 +111,7 @@ export function registerFirebaseAuthRoutes(app: Express) {
         return res.status(400).json({ error: "idToken is required" });
       }
 
-      const decoded = await admin.auth().verifyIdToken(idToken);
+      const decoded = await getAuth().verifyIdToken(idToken);
       const result = await issueSession(req, res, decoded.uid, decoded.email, decoded.name);
       return res.json(result);
     } catch (err: any) {
@@ -130,7 +129,7 @@ export function registerFirebaseAuthRoutes(app: Express) {
         return res.status(400).json({ error: "idToken is required" });
       }
 
-      const decoded = await admin.auth().verifyIdToken(idToken);
+      const decoded = await getAuth().verifyIdToken(idToken);
       const result = await issueSessionForUser(req, res, decoded.uid, decoded.email, decoded.name);
       return res.json(result);
     } catch (err: any) {
@@ -147,7 +146,7 @@ export function registerFirebaseAuthRoutes(app: Express) {
         return res.status(400).json({ error: "idToken is required" });
       }
 
-            const decoded = await getAuth().verifyIdToken(idToken);
+      const decoded = await getAuth().verifyIdToken(idToken);
       const result = await issueSession(req, res, decoded.uid, decoded.email, decoded.name);
 
 
