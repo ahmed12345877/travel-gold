@@ -105,6 +105,22 @@ export default function AdminLayout({
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
   }, [sidebarWidth]);
 
+  // If we're not loading but have no user, wait a moment then try to refetch
+  // This handles the case where the session cookie was just set
+  useEffect(() => {
+    if (!loading && !user && typeof window !== "undefined") {
+      // Only refetch once on mount if coming from login page
+      const isComingFromLogin = document.referrer.includes("/admin/login");
+      if (isComingFromLogin) {
+        const timer = setTimeout(() => {
+          // Trigger a refetch of the auth state
+          window.location.reload();
+        }, 500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [loading, user]);
+
   if (loading) {
     return <DashboardLayoutSkeleton />;
   }
