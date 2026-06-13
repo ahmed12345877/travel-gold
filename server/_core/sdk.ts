@@ -160,7 +160,28 @@ class SDKServer {
 
   private getSessionSecret() {
     const secret = ENV.cookieSecret;
-    return new TextEncoder().encode(secret);
+    if (secret) {
+      return new TextEncoder().encode(secret);
+    }
+    // JWT_SECRET not configured — derive a fallback from Firebase identifiers so the
+    // server can start without crashing. Sessions signed with this fallback are valid
+    // only while the same Firebase project config is in use.
+    // ACTION: set JWT_SECRET as a Firebase App Hosting secret to remove this warning.
+    const fallback =
+      (process.env.VITE_FIREBASE_APP_ID ?? "") +
+      "|" +
+      (process.env.VITE_FIREBASE_PROJECT_ID ?? "");
+    if (!fallback || fallback === "|") {
+      throw new Error(
+        "JWT_SECRET is not configured and no Firebase fallback is available. " +
+          "Add JWT_SECRET to apphosting.yaml secrets."
+      );
+    }
+    console.warn(
+      "[Auth] JWT_SECRET is not set — using derived fallback secret. " +
+        "Create a JWT_SECRET secret in Firebase App Hosting for production."
+    );
+    return new TextEncoder().encode(fallback);
   }
 
   /**
