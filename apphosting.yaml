@@ -63,6 +63,11 @@ env:
     availability:
       - RUNTIME
 
+  - variable: FIREBASE_STORAGE_BUCKET
+    value: "gen-lang-client-0364375301.firebasestorage.app"
+    availability:
+      - RUNTIME
+
   # ===== Secrets (read securely at runtime) =====
   - variable: OPENAI_API_KEY
     secret: OPENAI_API_KEY
