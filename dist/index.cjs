@@ -5,6 +5,9 @@ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
@@ -27,6 +30,191 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
+// lib/firebase-admin.ts
+function validateServiceAccount(serviceAccount) {
+  const requiredFields = ["project_id", "client_email", "private_key"];
+  const missingFields = requiredFields.filter((field) => !serviceAccount[field]);
+  if (missingFields.length > 0) {
+    throw new Error(
+      `Invalid Firebase service account: missing required fields [${missingFields.join(", ")}]. Ensure your FIREBASE_SERVICE_ACCOUNT_JSON contains all required fields.`
+    );
+  }
+}
+function getStorageBucketName(serviceAccount) {
+  if (process.env.FIREBASE_STORAGE_BUCKET) {
+    console.log("[Firebase Admin] Using FIREBASE_STORAGE_BUCKET from environment (recommended)");
+    return process.env.FIREBASE_STORAGE_BUCKET;
+  }
+  const projectId = serviceAccount["project_id"];
+  if (typeof projectId === "string") {
+    const bucket = `${projectId}.appspot.com`;
+    console.log(`[Firebase Admin] WARNING: Derived storage bucket from service account (not recommended). Set FIREBASE_STORAGE_BUCKET environment variable explicitly for production.`);
+    return bucket;
+  }
+  throw new Error(
+    "Could not determine Firebase Storage bucket. CRITICAL: Either explicitly set FIREBASE_STORAGE_BUCKET environment variable (RECOMMENDED) or ensure FIREBASE_SERVICE_ACCOUNT_JSON contains valid project_id field."
+  );
+}
+function initializeFirebaseAdmin() {
+  if (firebaseAppInstance) {
+    return firebaseAppInstance;
+  }
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (!serviceAccountJson) {
+    throw new Error(
+      "CRITICAL: Environment variable FIREBASE_SERVICE_ACCOUNT_JSON is not set. Please add your Firebase service account JSON (downloaded from Firebase Console) to your environment variables."
+    );
+  }
+  let serviceAccount;
+  try {
+    serviceAccount = JSON.parse(serviceAccountJson);
+  } catch (parseError) {
+    const error = parseError instanceof Error ? parseError.message : String(parseError);
+    throw new Error(
+      `FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON. Parse error: ${error}. Please ensure it is properly formatted (no trailing commas, valid strings, etc.).`
+    );
+  }
+  validateServiceAccount(serviceAccount);
+  const storageBucket = getStorageBucketName(serviceAccount);
+  cachedStorageBucket = storageBucket;
+  firebaseAppInstance = import_firebase_admin.default.initializeApp({
+    credential: import_firebase_admin.default.credential.cert(serviceAccount),
+    storageBucket
+  });
+  console.log(`[Firebase Admin] Successfully initialized Firebase Admin SDK with bucket: ${storageBucket}`);
+  return firebaseAppInstance;
+}
+function getFirebaseApp() {
+  if (firebaseAppInstance) {
+    return firebaseAppInstance;
+  }
+  return initializeFirebaseAdmin();
+}
+function getFirebaseStorage() {
+  const app = getFirebaseApp();
+  if (cachedStorageBucket) {
+    console.log(`[Firebase Admin] Using cached storage bucket: ${cachedStorageBucket}`);
+    return import_firebase_admin.default.storage(app).bucket(cachedStorageBucket);
+  }
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (!serviceAccountJson) {
+    throw new Error(
+      "CRITICAL: FIREBASE_SERVICE_ACCOUNT_JSON not set. Cannot determine Firebase Storage bucket."
+    );
+  }
+  let serviceAccount;
+  try {
+    serviceAccount = JSON.parse(serviceAccountJson);
+  } catch (parseError) {
+    const error = parseError instanceof Error ? parseError.message : String(parseError);
+    throw new Error(
+      `Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON in fallback path. Parse error: ${error}. This should not occur in normal operation; please check your environment variables.`
+    );
+  }
+  validateServiceAccount(serviceAccount);
+  const bucketName = getStorageBucketName(serviceAccount);
+  cachedStorageBucket = bucketName;
+  console.log(`[Firebase Admin] Caching and using storage bucket: ${bucketName}`);
+  return import_firebase_admin.default.storage(app).bucket(bucketName);
+}
+var import_firebase_admin, firebaseAppInstance, cachedStorageBucket;
+var init_firebase_admin = __esm({
+  "lib/firebase-admin.ts"() {
+    "use strict";
+    import_firebase_admin = __toESM(require("firebase-admin"), 1);
+    firebaseAppInstance = null;
+    cachedStorageBucket = null;
+  }
+});
+
+// lib/firebase-storage.ts
+async function storagePut(filePath, fileBuffer, contentType = "application/octet-stream", metadata) {
+  try {
+    const bucket = getFirebaseStorage();
+    const file = bucket.file(filePath);
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+    const options = {
+      metadata: {
+        contentType,
+        cacheControl: "public, max-age=31536000",
+        // Cache for 1 year (files are immutable)
+        ...metadata
+      }
+    };
+    await file.save(fileBuffer, options);
+    console.log(`[Firebase Storage] Successfully uploaded: ${filePath}`);
+    return {
+      url: publicUrl,
+      path: filePath,
+      bucket: bucket.name
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    console.error(`[Firebase Storage] Upload failed for ${filePath}:`, errorMessage);
+    throw new Error(`Failed to upload file to Firebase Storage: ${errorMessage}`);
+  }
+}
+var init_firebase_storage = __esm({
+  "lib/firebase-storage.ts"() {
+    "use strict";
+    init_firebase_admin();
+  }
+});
+
+// vite.config.ts
+var vite_config_exports = {};
+__export(vite_config_exports, {
+  default: () => vite_config_default
+});
+var import_vite_plugin_jsx_loc, import_vite, import_plugin_react, import_node_path2, import_vite2, import_meta3, PROJECT_ROOT, plugins, vite_config_default;
+var init_vite_config = __esm({
+  "vite.config.ts"() {
+    "use strict";
+    import_vite_plugin_jsx_loc = require("@builder.io/vite-plugin-jsx-loc");
+    import_vite = __toESM(require("@tailwindcss/vite"), 1);
+    import_plugin_react = __toESM(require("@vitejs/plugin-react"), 1);
+    import_node_path2 = __toESM(require("node:path"), 1);
+    import_vite2 = require("vite");
+    import_meta3 = {};
+    PROJECT_ROOT = import_meta3.dirname;
+    plugins = [(0, import_plugin_react.default)(), (0, import_vite.default)(), (0, import_vite_plugin_jsx_loc.jsxLocPlugin)()];
+    vite_config_default = (0, import_vite2.defineConfig)({
+      base: "/",
+      plugins,
+      resolve: {
+        alias: {
+          "@": import_node_path2.default.resolve(import_meta3.dirname, "client", "src"),
+          "@shared": import_node_path2.default.resolve(import_meta3.dirname, "shared"),
+          "@assets": import_node_path2.default.resolve(import_meta3.dirname, "attached_assets")
+        }
+      },
+      envDir: import_node_path2.default.resolve(import_meta3.dirname),
+      root: import_node_path2.default.resolve(import_meta3.dirname, "client"),
+      publicDir: import_node_path2.default.resolve(import_meta3.dirname, "client", "public"),
+      build: {
+        outDir: import_node_path2.default.resolve(import_meta3.dirname, "dist/public"),
+        emptyOutDir: true,
+        rollupOptions: {
+          output: {
+            // ضمان وجود بصمة (hash) فريدة في أسماء الملفات لكسر الكاش عند كل تحديث
+            entryFileNames: "assets/[name]-[hash].js",
+            chunkFileNames: "assets/[name]-[hash].js",
+            assetFileNames: "assets/[name]-[hash].[ext]"
+          }
+        }
+      },
+      server: {
+        host: true,
+        allowedHosts: ["localhost", "127.0.0.1"],
+        fs: {
+          strict: true,
+          deny: ["**/.*"]
+        }
+      }
+    });
+  }
+});
+
 // server/_core/index.ts
 var index_exports = {};
 __export(index_exports, {
@@ -38,6 +226,8 @@ var import_config = require("dotenv/config");
 var import_express2 = __toESM(require("express"), 1);
 var import_http = require("http");
 var import_net = __toESM(require("net"), 1);
+var import_path3 = __toESM(require("path"), 1);
+var import_cors = __toESM(require("cors"), 1);
 var import_express3 = require("@trpc/server/adapters/express");
 
 // shared/const.ts
@@ -169,7 +359,7 @@ var galleryItems = (0, import_pg_core.pgTable)("gallery_items", {
   featured: (0, import_pg_core.text)("featured").$type().default("no").notNull(),
   aspect: (0, import_pg_core.text)("aspect").$type().default("landscape").notNull(),
   sortOrder: (0, import_pg_core.integer)("sortOrder").default(0),
-  isVisible: (0, import_pg_core.text)("isVisible").$type().default("visible").notNull(),
+  isvisible: (0, import_pg_core.text)("isvisible").$type().default("visible").notNull(),
   createdAt: (0, import_pg_core.timestamp)("createdAt").defaultNow().notNull(),
   updatedAt: (0, import_pg_core.timestamp)("updatedAt").defaultNow().notNull()
 });
@@ -374,8 +564,8 @@ async function upsertUser(user) {
   if (!user.openId) {
     throw new Error("User openId is required for upsert");
   }
-  const db = await getDb();
-  if (!db) {
+  const db2 = await getDb();
+  if (!db2) {
     console.warn("[Database] Cannot upsert user: database not available");
     return;
   }
@@ -410,7 +600,7 @@ async function upsertUser(user) {
     if (Object.keys(updateSet).length === 0) {
       updateSet.lastSignedIn = /* @__PURE__ */ new Date();
     }
-    await db.insert(users).values(values).onConflictDoUpdate({
+    await db2.insert(users).values(values).onConflictDoUpdate({
       target: users.openId,
       set: updateSet
     });
@@ -420,98 +610,98 @@ async function upsertUser(user) {
   }
 }
 async function getUserByOpenId(openId) {
-  const db = await getDb();
-  if (!db) {
+  const db2 = await getDb();
+  if (!db2) {
     console.warn("[Database] Cannot get user: database not available");
     return void 0;
   }
-  const result = await db.select().from(users).where((0, import_drizzle_orm.eq)(users.openId, openId)).limit(1);
+  const result = await db2.select().from(users).where((0, import_drizzle_orm.eq)(users.openId, openId)).limit(1);
   return result.length > 0 ? result[0] : void 0;
 }
 async function createBooking(booking) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(bookings).values(booking).returning();
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.insert(bookings).values(booking).returning();
   return result[0];
 }
 async function getBookingById(id) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(bookings).where((0, import_drizzle_orm.eq)(bookings.id, id)).limit(1);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.select().from(bookings).where((0, import_drizzle_orm.eq)(bookings.id, id)).limit(1);
   return result[0] ?? null;
 }
 async function getBookingByConfirmationCode(code) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(bookings).where((0, import_drizzle_orm.eq)(bookings.confirmationCode, code)).limit(1);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.select().from(bookings).where((0, import_drizzle_orm.eq)(bookings.confirmationCode, code)).limit(1);
   return result[0] ?? null;
 }
 async function getUserBookings(userId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(bookings).where((0, import_drizzle_orm.eq)(bookings.userId, userId)).orderBy((0, import_drizzle_orm.desc)(bookings.createdAt));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(bookings).where((0, import_drizzle_orm.eq)(bookings.userId, userId)).orderBy((0, import_drizzle_orm.desc)(bookings.createdAt));
 }
 async function updateBookingStatus(id, status) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(bookings).set({ status }).where((0, import_drizzle_orm.eq)(bookings.id, id));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(bookings).set({ status }).where((0, import_drizzle_orm.eq)(bookings.id, id));
   return getBookingById(id);
 }
 async function updateBookingPaymentStatus(id, paymentStatus) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(bookings).set({ paymentStatus }).where((0, import_drizzle_orm.eq)(bookings.id, id));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(bookings).set({ paymentStatus }).where((0, import_drizzle_orm.eq)(bookings.id, id));
   return getBookingById(id);
 }
 async function getAllBookings(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(bookings).orderBy((0, import_drizzle_orm.desc)(bookings.createdAt)).limit(limit).offset(offset);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(bookings).orderBy((0, import_drizzle_orm.desc)(bookings.createdAt)).limit(limit).offset(offset);
 }
 async function createReview(review) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(reviews).values(review).returning();
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.insert(reviews).values(review).returning();
   return result[0];
 }
 async function getApprovedReviews(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(reviews).where((0, import_drizzle_orm.eq)(reviews.isApproved, "approved")).orderBy((0, import_drizzle_orm.desc)(reviews.createdAt)).limit(limit).offset(offset);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(reviews).where((0, import_drizzle_orm.eq)(reviews.isApproved, "approved")).orderBy((0, import_drizzle_orm.desc)(reviews.createdAt)).limit(limit).offset(offset);
 }
 async function getAllReviews(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(reviews).orderBy((0, import_drizzle_orm.desc)(reviews.createdAt)).limit(limit).offset(offset);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(reviews).orderBy((0, import_drizzle_orm.desc)(reviews.createdAt)).limit(limit).offset(offset);
 }
 async function getReviewById(id) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(reviews).where((0, import_drizzle_orm.eq)(reviews.id, id)).limit(1);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.select().from(reviews).where((0, import_drizzle_orm.eq)(reviews.id, id)).limit(1);
   return result[0] ?? null;
 }
 async function updateReviewApproval(id, isApproved) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(reviews).set({ isApproved }).where((0, import_drizzle_orm.eq)(reviews.id, id));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(reviews).set({ isApproved }).where((0, import_drizzle_orm.eq)(reviews.id, id));
   return getReviewById(id);
 }
 async function addAdminReply(id, adminReply) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(reviews).set({ adminReply, adminReplyAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm.eq)(reviews.id, id));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(reviews).set({ adminReply, adminReplyAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm.eq)(reviews.id, id));
   return getReviewById(id);
 }
 async function incrementHelpfulCount(id) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(reviews).set({ helpfulCount: import_drizzle_orm.sql`${reviews.helpfulCount} + 1` }).where((0, import_drizzle_orm.eq)(reviews.id, id));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(reviews).set({ helpfulCount: import_drizzle_orm.sql`${reviews.helpfulCount} + 1` }).where((0, import_drizzle_orm.eq)(reviews.id, id));
   return getReviewById(id);
 }
 async function getReviewStats() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const allApproved = await db.select().from(reviews).where((0, import_drizzle_orm.eq)(reviews.isApproved, "approved"));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const allApproved = await db2.select().from(reviews).where((0, import_drizzle_orm.eq)(reviews.isApproved, "approved"));
   const total = allApproved.length;
   if (total === 0) return { total: 0, average: 0, distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } };
   const sum = allApproved.reduce((acc, r) => acc + r.rating, 0);
@@ -522,138 +712,72 @@ async function getReviewStats() {
   return { total, average: Math.round(sum / total * 10) / 10, distribution };
 }
 async function createOffer(offer) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(offers).values(offer).returning();
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.insert(offers).values(offer).returning();
   return result[0];
 }
 async function getActiveOffers() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
   const now = Date.now();
-  return db.select().from(offers).where((0, import_drizzle_orm.and)(
+  return db2.select().from(offers).where((0, import_drizzle_orm.and)(
     (0, import_drizzle_orm.eq)(offers.isActive, "active"),
     (0, import_drizzle_orm.lte)(offers.startDate, now),
     (0, import_drizzle_orm.gte)(offers.endDate, now)
   )).orderBy((0, import_drizzle_orm.asc)(offers.endDate));
 }
 async function getAllOffers(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(offers).orderBy((0, import_drizzle_orm.desc)(offers.createdAt)).limit(limit).offset(offset);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(offers).orderBy((0, import_drizzle_orm.desc)(offers.createdAt)).limit(limit).offset(offset);
 }
 async function getOfferByPromoCode(promoCode) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(offers).where((0, import_drizzle_orm.eq)(offers.promoCode, promoCode)).limit(1);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.select().from(offers).where((0, import_drizzle_orm.eq)(offers.promoCode, promoCode)).limit(1);
   return result[0] ?? null;
 }
 async function updateOffer(id, data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(offers).set(data).where((0, import_drizzle_orm.eq)(offers.id, id));
-  const rows = await db.select().from(offers).where((0, import_drizzle_orm.eq)(offers.id, id)).limit(1);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(offers).set(data).where((0, import_drizzle_orm.eq)(offers.id, id));
+  const rows = await db2.select().from(offers).where((0, import_drizzle_orm.eq)(offers.id, id)).limit(1);
   return rows[0];
 }
 async function createContactMessage(message) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(contactMessages).values(message).returning();
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.insert(contactMessages).values(message).returning();
   return result[0];
 }
 async function getAllContactMessages(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(contactMessages).orderBy((0, import_drizzle_orm.desc)(contactMessages.createdAt)).limit(limit).offset(offset);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(contactMessages).orderBy((0, import_drizzle_orm.desc)(contactMessages.createdAt)).limit(limit).offset(offset);
 }
 async function updateContactMessageStatus(id, status) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(contactMessages).set({ status }).where((0, import_drizzle_orm.eq)(contactMessages.id, id));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(contactMessages).set({ status }).where((0, import_drizzle_orm.eq)(contactMessages.id, id));
 }
 async function createFileUpload(file) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(fileUploads).values(file).returning();
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.insert(fileUploads).values(file).returning();
   return result[0];
 }
 async function getUserFiles(userId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(fileUploads).where((0, import_drizzle_orm.eq)(fileUploads.userId, userId)).orderBy((0, import_drizzle_orm.desc)(fileUploads.createdAt));
-}
-async function createGalleryItem(item) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(galleryItems).values(item).returning();
-  return result[0];
-}
-async function getVisibleGalleryItems() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(galleryItems).where((0, import_drizzle_orm.eq)(galleryItems.isVisible, "visible")).orderBy((0, import_drizzle_orm.asc)(galleryItems.sortOrder), (0, import_drizzle_orm.desc)(galleryItems.createdAt));
-}
-async function getAllGalleryItems(limit = 100, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(galleryItems).orderBy((0, import_drizzle_orm.asc)(galleryItems.sortOrder), (0, import_drizzle_orm.desc)(galleryItems.createdAt)).limit(limit).offset(offset);
-}
-async function getGalleryItemById(id) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(galleryItems).where((0, import_drizzle_orm.eq)(galleryItems.id, id)).limit(1);
-  return result[0] ?? null;
-}
-async function updateGalleryItem(id, data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(galleryItems).set(data).where((0, import_drizzle_orm.eq)(galleryItems.id, id));
-  return getGalleryItemById(id);
-}
-async function deleteGalleryItem(id) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.delete(galleryItems).where((0, import_drizzle_orm.eq)(galleryItems.id, id));
-}
-async function createGalleryVideo(video) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(galleryVideos).values(video).returning();
-  return result[0];
-}
-async function getVisibleGalleryVideos() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(galleryVideos).where((0, import_drizzle_orm.eq)(galleryVideos.isVisible, "visible")).orderBy((0, import_drizzle_orm.asc)(galleryVideos.sortOrder), (0, import_drizzle_orm.desc)(galleryVideos.createdAt));
-}
-async function getAllGalleryVideos(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(galleryVideos).orderBy((0, import_drizzle_orm.asc)(galleryVideos.sortOrder), (0, import_drizzle_orm.desc)(galleryVideos.createdAt)).limit(limit).offset(offset);
-}
-async function getGalleryVideoById(id) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(galleryVideos).where((0, import_drizzle_orm.eq)(galleryVideos.id, id)).limit(1);
-  return result[0] ?? null;
-}
-async function updateGalleryVideo(id, data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(galleryVideos).set(data).where((0, import_drizzle_orm.eq)(galleryVideos.id, id));
-  return getGalleryVideoById(id);
-}
-async function deleteGalleryVideo(id) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.delete(galleryVideos).where((0, import_drizzle_orm.eq)(galleryVideos.id, id));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(fileUploads).where((0, import_drizzle_orm.eq)(fileUploads.userId, userId)).orderBy((0, import_drizzle_orm.desc)(fileUploads.createdAt));
 }
 async function getOrCreateAISubscription(userId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  let subscription = await db.select().from(aiSubscriptions).where((0, import_drizzle_orm.eq)(aiSubscriptions.userId, userId)).limit(1);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  let subscription = await db2.select().from(aiSubscriptions).where((0, import_drizzle_orm.eq)(aiSubscriptions.userId, userId)).limit(1);
   if (subscription.length === 0) {
-    const result = await db.insert(aiSubscriptions).values({
+    const result = await db2.insert(aiSubscriptions).values({
       userId,
       plan: "free",
       status: "active",
@@ -664,9 +788,9 @@ async function getOrCreateAISubscription(userId) {
   return subscription[0];
 }
 async function updateAISubscription(userId, plan, stripeSubscriptionId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(aiSubscriptions).set({
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(aiSubscriptions).set({
     plan,
     status: "active",
     renewalDate: Date.now() + 30 * 24 * 60 * 60 * 1e3,
@@ -675,11 +799,11 @@ async function updateAISubscription(userId, plan, stripeSubscriptionId) {
   return getOrCreateAISubscription(userId);
 }
 async function getOrCreateAICredits(userId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  let credits = await db.select().from(aiCredits).where((0, import_drizzle_orm.eq)(aiCredits.userId, userId)).limit(1);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  let credits = await db2.select().from(aiCredits).where((0, import_drizzle_orm.eq)(aiCredits.userId, userId)).limit(1);
   if (credits.length === 0) {
-    const result = await db.insert(aiCredits).values({
+    const result = await db2.insert(aiCredits).values({
       userId,
       balance: "5",
       totalUsed: "0"
@@ -689,12 +813,12 @@ async function getOrCreateAICredits(userId) {
   return credits[0];
 }
 async function addAICredits(userId, amount, reason) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
   const credits = await getOrCreateAICredits(userId);
   const newBalance = parseFloat(credits.balance.toString()) + amount;
-  await db.update(aiCredits).set({ balance: newBalance.toString() }).where((0, import_drizzle_orm.eq)(aiCredits.userId, userId));
-  await db.insert(aiTransactions).values({
+  await db2.update(aiCredits).set({ balance: newBalance.toString() }).where((0, import_drizzle_orm.eq)(aiCredits.userId, userId));
+  await db2.insert(aiTransactions).values({
     userId,
     type: reason === "purchase" ? "purchase" : reason === "monthly_allowance" ? "monthly_allowance" : "bonus",
     amount: amount.toString(),
@@ -703,8 +827,8 @@ async function addAICredits(userId, amount, reason) {
   return getOrCreateAICredits(userId);
 }
 async function deductAICredits(userId, amount) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
   const credits = await getOrCreateAICredits(userId);
   const currentBalance = parseFloat(credits.balance.toString());
   if (currentBalance < amount) {
@@ -712,38 +836,38 @@ async function deductAICredits(userId, amount) {
   }
   const newBalance = currentBalance - amount;
   const newTotalUsed = parseFloat(credits.totalUsed.toString()) + amount;
-  await db.update(aiCredits).set({
+  await db2.update(aiCredits).set({
     balance: newBalance.toString(),
     totalUsed: newTotalUsed.toString()
   }).where((0, import_drizzle_orm.eq)(aiCredits.userId, userId));
   return getOrCreateAICredits(userId);
 }
 async function createAIUsage(usage) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(aiUsage).values(usage).returning();
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.insert(aiUsage).values(usage).returning();
   return result[0];
 }
 async function getUserAIUsage(userId, limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(aiUsage).where((0, import_drizzle_orm.eq)(aiUsage.userId, userId)).orderBy((0, import_drizzle_orm.desc)(aiUsage.createdAt)).limit(limit).offset(offset);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(aiUsage).where((0, import_drizzle_orm.eq)(aiUsage.userId, userId)).orderBy((0, import_drizzle_orm.desc)(aiUsage.createdAt)).limit(limit).offset(offset);
 }
 async function updateAIUsageStatus(id, status, resultUrl, errorMessage) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(aiUsage).set({
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(aiUsage).set({
     status,
     ...resultUrl && { resultUrl },
     ...errorMessage && { errorMessage }
   }).where((0, import_drizzle_orm.eq)(aiUsage.id, id));
-  const rows = await db.select().from(aiUsage).where((0, import_drizzle_orm.eq)(aiUsage.id, id)).limit(1);
+  const rows = await db2.select().from(aiUsage).where((0, import_drizzle_orm.eq)(aiUsage.id, id)).limit(1);
   return rows[0];
 }
 async function getAIUsageStats(userId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const usage = await db.select().from(aiUsage).where((0, import_drizzle_orm.eq)(aiUsage.userId, userId));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const usage = await db2.select().from(aiUsage).where((0, import_drizzle_orm.eq)(aiUsage.userId, userId));
   return {
     totalGenerations: usage.length,
     byType: {
@@ -755,44 +879,44 @@ async function getAIUsageStats(userId) {
   };
 }
 async function getAllUsers(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(users).orderBy((0, import_drizzle_orm.desc)(users.createdAt)).limit(limit).offset(offset);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.select().from(users).orderBy((0, import_drizzle_orm.desc)(users.createdAt)).limit(limit).offset(offset);
   return result;
 }
 async function getUsersCount() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select({ count: import_drizzle_orm.sql`count(*)` }).from(users);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.select({ count: import_drizzle_orm.sql`count(*)` }).from(users);
   return result[0]?.count ?? 0;
 }
 async function getUserById(id) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(users).where((0, import_drizzle_orm.eq)(users.id, id)).limit(1);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.select().from(users).where((0, import_drizzle_orm.eq)(users.id, id)).limit(1);
   return result[0] ?? null;
 }
 async function updateUserRole(id, role) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(users).set({ role }).where((0, import_drizzle_orm.eq)(users.id, id));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(users).set({ role }).where((0, import_drizzle_orm.eq)(users.id, id));
   return getUserById(id);
 }
 async function searchUsers(query, limit = 20) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(users).where(
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.select().from(users).where(
     import_drizzle_orm.sql`${users.name} ILIKE ${`%${query}%`} OR ${users.email} ILIKE ${`%${query}%`} OR ${users.openId} ILIKE ${`%${query}%`}`
   ).orderBy((0, import_drizzle_orm.desc)(users.createdAt)).limit(limit);
   return result;
 }
 async function getUserStats() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const totalUsers = await db.select({ count: import_drizzle_orm.sql`count(*)` }).from(users);
-  const adminUsers = await db.select({ count: import_drizzle_orm.sql`count(*)` }).from(users).where((0, import_drizzle_orm.eq)(users.role, "admin"));
-  const recentUsers = await db.select({ count: import_drizzle_orm.sql`count(*)` }).from(users).where((0, import_drizzle_orm.gte)(users.createdAt, import_drizzle_orm.sql`NOW() - INTERVAL '30 days'`));
-  const todayUsers = await db.select({ count: import_drizzle_orm.sql`count(*)` }).from(users).where((0, import_drizzle_orm.gte)(users.createdAt, import_drizzle_orm.sql`CURRENT_DATE`));
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const totalUsers = await db2.select({ count: import_drizzle_orm.sql`count(*)` }).from(users);
+  const adminUsers = await db2.select({ count: import_drizzle_orm.sql`count(*)` }).from(users).where((0, import_drizzle_orm.eq)(users.role, "admin"));
+  const recentUsers = await db2.select({ count: import_drizzle_orm.sql`count(*)` }).from(users).where((0, import_drizzle_orm.gte)(users.createdAt, import_drizzle_orm.sql`NOW() - INTERVAL '30 days'`));
+  const todayUsers = await db2.select({ count: import_drizzle_orm.sql`count(*)` }).from(users).where((0, import_drizzle_orm.gte)(users.createdAt, import_drizzle_orm.sql`CURRENT_DATE`));
   return {
     total: totalUsers[0]?.count ?? 0,
     admins: adminUsers[0]?.count ?? 0,
@@ -801,8 +925,8 @@ async function getUserStats() {
   };
 }
 async function updateUserProfile(id, data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
   const updateSet = {};
   if (data.name !== void 0) updateSet.name = data.name;
   if (data.phone !== void 0) updateSet.phone = data.phone;
@@ -810,47 +934,47 @@ async function updateUserProfile(id, data) {
   if (Object.keys(updateSet).length === 0) {
     return getUserById(id);
   }
-  await db.update(users).set(updateSet).where((0, import_drizzle_orm.eq)(users.id, id));
+  await db2.update(users).set(updateSet).where((0, import_drizzle_orm.eq)(users.id, id));
   return getUserById(id);
 }
 async function getPublishedBlogPosts(limit = 10, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(blogPosts).where((0, import_drizzle_orm.eq)(blogPosts.status, "published")).orderBy((0, import_drizzle_orm.desc)(blogPosts.publishedAt)).limit(limit).offset(offset);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(blogPosts).where((0, import_drizzle_orm.eq)(blogPosts.status, "published")).orderBy((0, import_drizzle_orm.desc)(blogPosts.publishedAt)).limit(limit).offset(offset);
 }
 async function getBlogPostBySlug(slug) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(blogPosts).where((0, import_drizzle_orm.eq)(blogPosts.slug, slug)).limit(1);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.select().from(blogPosts).where((0, import_drizzle_orm.eq)(blogPosts.slug, slug)).limit(1);
   return result[0] ?? null;
 }
 async function getBlogPostsByCategory(category, limit = 10, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(blogPosts).where((0, import_drizzle_orm.and)((0, import_drizzle_orm.eq)(blogPosts.status, "published"), (0, import_drizzle_orm.eq)(blogPosts.category, category))).orderBy((0, import_drizzle_orm.desc)(blogPosts.publishedAt)).limit(limit).offset(offset);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(blogPosts).where((0, import_drizzle_orm.and)((0, import_drizzle_orm.eq)(blogPosts.status, "published"), (0, import_drizzle_orm.eq)(blogPosts.category, category))).orderBy((0, import_drizzle_orm.desc)(blogPosts.publishedAt)).limit(limit).offset(offset);
 }
 async function createBlogPost(post) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(blogPosts).values(post).returning();
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const result = await db2.insert(blogPosts).values(post).returning();
   return result[0];
 }
 async function updateBlogPost(id, data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(blogPosts).set(data).where((0, import_drizzle_orm.eq)(blogPosts.id, id));
-  const rows = await db.select().from(blogPosts).where((0, import_drizzle_orm.eq)(blogPosts.id, id)).limit(1);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(blogPosts).set(data).where((0, import_drizzle_orm.eq)(blogPosts.id, id));
+  const rows = await db2.select().from(blogPosts).where((0, import_drizzle_orm.eq)(blogPosts.id, id)).limit(1);
   return rows[0] ?? null;
 }
 async function getAllBlogPosts(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(blogPosts).orderBy((0, import_drizzle_orm.desc)(blogPosts.createdAt)).limit(limit).offset(offset);
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return db2.select().from(blogPosts).orderBy((0, import_drizzle_orm.desc)(blogPosts.createdAt)).limit(limit).offset(offset);
 }
 async function incrementBlogViewCount(id) {
-  const db = await getDb();
-  if (!db) return;
-  await db.update(blogPosts).set({ viewCount: import_drizzle_orm.sql`${blogPosts.viewCount} + 1` }).where((0, import_drizzle_orm.eq)(blogPosts.id, id));
+  const db2 = await getDb();
+  if (!db2) return;
+  await db2.update(blogPosts).set({ viewCount: import_drizzle_orm.sql`${blogPosts.viewCount} + 1` }).where((0, import_drizzle_orm.eq)(blogPosts.id, id));
 }
 
 // server/_core/cookies.ts
@@ -886,6 +1010,70 @@ var ForbiddenError = (msg) => new HttpError(403, msg);
 var import_axios = __toESM(require("axios"), 1);
 var import_cookie = require("cookie");
 var import_jose = require("jose");
+
+// server/_core/firebaseAdmin.ts
+var import_app = require("firebase-admin/app");
+var import_firestore = require("firebase-admin/firestore");
+var import_storage = require("firebase-admin/storage");
+var import_node_path = __toESM(require("node:path"), 1);
+var import_node_url = require("node:url");
+var import_node_fs = __toESM(require("node:fs"), 1);
+var import_meta = {};
+var __filename = (0, import_node_url.fileURLToPath)(import_meta.url);
+var __dirname2 = import_node_path.default.dirname(__filename);
+var credentialApp = void 0;
+var serviceAccountObj = void 0;
+var envJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+if (envJson) {
+  try {
+    const rawJson = envJson.trim().startsWith("{") ? envJson : Buffer.from(envJson, "base64").toString("utf8");
+    serviceAccountObj = JSON.parse(rawJson);
+    credentialApp = (0, import_app.cert)(serviceAccountObj);
+  } catch (e) {
+    console.error("[Firebase] Failed to parse credentials from env:", e);
+  }
+}
+if (!credentialApp) {
+  const primaryKeyPath = import_node_path.default.resolve(__dirname2, "../../firebase-key.json");
+  const fallbackKeyPath = import_node_path.default.resolve(__dirname2, "firebase-key.json");
+  const serviceAccountPath = import_node_fs.default.existsSync(primaryKeyPath) ? primaryKeyPath : fallbackKeyPath;
+  if (import_node_fs.default.existsSync(serviceAccountPath)) {
+    try {
+      serviceAccountObj = JSON.parse(import_node_fs.default.readFileSync(serviceAccountPath, "utf-8"));
+      credentialApp = (0, import_app.cert)(serviceAccountObj);
+    } catch (e) {
+      console.error("[Firebase] Failed to read local service account:", e);
+    }
+  }
+}
+var appsList = (0, import_app.getApps)();
+if (!appsList || appsList.length === 0) {
+  if (!credentialApp) {
+    throw new Error(
+      "CRITICAL: Firebase credentials not found. Set FIREBASE_SERVICE_ACCOUNT_JSON environment variable or place firebase-key.json in the project root."
+    );
+  }
+  let storageBucketName = process.env.FIREBASE_STORAGE_BUCKET;
+  if (!storageBucketName && serviceAccountObj && serviceAccountObj.project_id) {
+    storageBucketName = `${serviceAccountObj.project_id}.appspot.com`;
+    console.warn(
+      "[Firebase] WARNING: FIREBASE_STORAGE_BUCKET not set. Derived bucket from service account. Set FIREBASE_STORAGE_BUCKET environment variable explicitly for production."
+    );
+  }
+  if (!storageBucketName) {
+    throw new Error(
+      "CRITICAL: Cannot determine Firebase Storage bucket. Either set FIREBASE_STORAGE_BUCKET environment variable or ensure FIREBASE_SERVICE_ACCOUNT_JSON contains valid project_id."
+    );
+  }
+  console.log(`[Firebase] Initializing with storage bucket: ${storageBucketName}`);
+  (0, import_app.initializeApp)({
+    credential: credentialApp,
+    storageBucket: storageBucketName
+  });
+}
+var db = (0, import_firestore.getFirestore)();
+
+// server/_core/sdk.ts
 var isNonEmptyString = (value) => typeof value === "string" && value.length > 0;
 var EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
 var GET_USER_INFO_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfo`;
@@ -1082,6 +1270,31 @@ var SDKServer = class {
         email,
         phone: null,
         loginMethod: "password",
+        avatarUrl: null,
+        role: "admin",
+        createdAt: now,
+        updatedAt: now,
+        lastSignedIn: now
+      };
+    }
+    if (sessionUserId.startsWith("firebase:")) {
+      const uid = sessionUserId.slice("firebase:".length);
+      const userDoc = await db.collection("users").doc(uid).get();
+      if (!userDoc.exists) {
+        throw ForbiddenError("Firebase user not found");
+      }
+      const userData = userDoc.data();
+      if (userData.role !== "admin") {
+        throw ForbiddenError("Admin access denied");
+      }
+      await db.collection("users").doc(uid).set({ lastSignedIn: now }, { merge: true });
+      return {
+        id: 0,
+        openId: sessionUserId,
+        name: session.name || userData.name || "Admin",
+        email: userData.email ?? null,
+        phone: null,
+        loginMethod: "firebase",
         avatarUrl: null,
         role: "admin",
         createdAt: now,
@@ -1332,6 +1545,115 @@ function registerDownloadProxy(app) {
   });
 }
 
+// server/authExpressRouter.ts
+var import_auth = require("firebase-admin/auth");
+async function resolveAdminUser(uid, email, displayName) {
+  await db.collection("users").doc(uid).set(
+    {
+      uid,
+      email: email ?? null,
+      name: displayName || email?.split("@")[0] || null,
+      loginMethod: "firebase",
+      lastSignedIn: /* @__PURE__ */ new Date()
+    },
+    { merge: true }
+  );
+  const userDoc = await db.collection("users").doc(uid).get();
+  const userData = userDoc.data();
+  if (!userData || userData.role !== "admin") {
+    throw new Error("Admin access denied");
+  }
+  return {
+    uid,
+    email: email ?? userData.email ?? null,
+    name: displayName || userData.name || null,
+    role: userData.role
+  };
+}
+async function issueSessionForUser(req, res, uid, email, displayName) {
+  const openId = `firebase:${uid}`;
+  const sessionToken = await sdk.createSessionToken(openId, {
+    name: displayName || email?.split("@")[0] || "User",
+    expiresInMs: ONE_YEAR_MS
+  });
+  const cookieOptions = getSessionCookieOptions(req);
+  res.cookie(COOKIE_NAME, sessionToken, {
+    ...cookieOptions,
+    maxAge: ONE_YEAR_MS
+  });
+  await db.collection("users").doc(uid).set(
+    {
+      uid,
+      email: email ?? null,
+      name: displayName || email?.split("@")[0] || null,
+      loginMethod: "firebase",
+      lastSignedIn: /* @__PURE__ */ new Date()
+    },
+    { merge: true }
+  );
+  return { success: true, email: email || null, name: displayName || null };
+}
+async function issueSession(req, res, uid, email, displayName) {
+  const user = await resolveAdminUser(uid, email, displayName);
+  const openId = `firebase:${uid}`;
+  const sessionToken = await sdk.createSessionToken(openId, {
+    name: user.name || "Admin",
+    expiresInMs: ONE_YEAR_MS
+  });
+  const cookieOptions = getSessionCookieOptions(req);
+  res.cookie(COOKIE_NAME, sessionToken, {
+    ...cookieOptions,
+    maxAge: ONE_YEAR_MS
+  });
+  return { success: true, email: user.email, name: user.name };
+}
+function registerFirebaseAuthRoutes(app) {
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { idToken } = req.body;
+      if (!idToken) {
+        return res.status(400).json({ error: "idToken is required" });
+      }
+      const decoded = await (0, import_auth.getAuth)().verifyIdToken(idToken);
+      const result = await issueSession(req, res, decoded.uid, decoded.email, decoded.name);
+      return res.json(result);
+    } catch (err) {
+      const msg = err?.message || "Authentication failed";
+      const status = msg === "Admin access denied" ? 403 : 401;
+      return res.status(status).json({ error: msg });
+    }
+  });
+  app.post("/api/auth/user-login", async (req, res) => {
+    try {
+      const { idToken } = req.body;
+      if (!idToken) {
+        return res.status(400).json({ error: "idToken is required" });
+      }
+      const decoded = await (0, import_auth.getAuth)().verifyIdToken(idToken);
+      const result = await issueSessionForUser(req, res, decoded.uid, decoded.email, decoded.name);
+      return res.json(result);
+    } catch (err) {
+      const msg = err?.message || "Authentication failed";
+      return res.status(401).json({ error: msg });
+    }
+  });
+  app.post("/api/auth/google", async (req, res) => {
+    try {
+      const { idToken } = req.body;
+      if (!idToken) {
+        return res.status(400).json({ error: "idToken is required" });
+      }
+      const decoded = await (0, import_auth.getAuth)().verifyIdToken(idToken);
+      const result = await issueSession(req, res, decoded.uid, decoded.email, decoded.name);
+      return res.json(result);
+    } catch (err) {
+      const msg = err?.message || "Google authentication failed";
+      const status = msg === "Admin access denied" ? 403 : 401;
+      return res.status(status).json({ error: msg });
+    }
+  });
+}
+
 // server/_core/systemRouter.ts
 var import_zod = require("zod");
 
@@ -1457,10 +1779,11 @@ var adminProcedure = t.procedure.use(
 var systemRouter = router({
   health: publicProcedure.input(
     import_zod.z.object({
-      timestamp: import_zod.z.number().min(0, "timestamp cannot be negative")
-    })
+      timestamp: import_zod.z.number().min(0).optional()
+    }).optional()
   ).query(() => ({
-    ok: true
+    status: "ok",
+    healthy: true
   })),
   notifyOwner: adminProcedure.input(
     import_zod.z.object({
@@ -1605,9 +1928,9 @@ var reviewsRouter = router({
   }),
   /** Get current user's reviews */
   myReviews: protectedProcedure.query(async ({ ctx }) => {
-    const db = await getDb();
-    if (!db) return [];
-    return db.select().from(reviews).where((0, import_drizzle_orm2.eq)(reviews.userId, ctx.user.id)).orderBy((0, import_drizzle_orm2.desc)(reviews.createdAt));
+    const db2 = await getDb();
+    if (!db2) return [];
+    return db2.select().from(reviews).where((0, import_drizzle_orm2.eq)(reviews.userId, ctx.user.id)).orderBy((0, import_drizzle_orm2.desc)(reviews.createdAt));
   }),
   /** Mark review as helpful (public) */
   markHelpful: publicProcedure.input(import_zod3.z.object({ id: import_zod3.z.number() })).mutation(async ({ input }) => {
@@ -1775,31 +2098,44 @@ ${input.message.substring(0, 200)}`
 var import_zod6 = require("zod");
 
 // server/storage.ts
+var import_fs = __toESM(require("fs"), 1);
+var import_path = __toESM(require("path"), 1);
+init_firebase_storage();
+var import_meta2 = {};
+var DIRNAME = typeof __dirname !== "undefined" ? __dirname : new URL(".", import_meta2.url).pathname;
+var LOCAL_UPLOADS_DIR = import_path.default.resolve(DIRNAME, "..", "public", "uploads");
+function ensureLocalDir(filePath) {
+  const dir = import_path.default.dirname(filePath);
+  if (!import_fs.default.existsSync(dir)) {
+    import_fs.default.mkdirSync(dir, { recursive: true });
+  }
+}
 function normalizeKey(relKey) {
   return relKey.replace(/^\/+/, "");
 }
-async function storagePut(relKey, data, contentType = "application/octet-stream") {
+async function storagePut2(relKey, data, contentType = "application/octet-stream") {
   const key = normalizeKey(relKey);
-  const supabase = getServerSupabase();
-  const bucket = process.env.SUPABASE_STORAGE_BUCKET;
-  if (supabase && bucket) {
-    const blob = typeof data === "string" ? new Blob([data], { type: contentType }) : new Blob([data], { type: contentType });
-    const { error } = await supabase.storage.from(bucket).upload(key, blob, { contentType, upsert: true });
-    if (error) {
-      throw new Error(`[Supabase Storage] upload failed: ${error.message}`);
-    }
-    const expiresInSec = Number(process.env.SUPABASE_STORAGE_SIGNED_URL_TTL || 3600);
-    const { data: signed, error: signErr } = await supabase.storage.from(bucket).createSignedUrl(key, expiresInSec);
-    if (signErr) {
-      const { data: pub } = supabase.storage.from(bucket).getPublicUrl(key);
-      if (!pub.publicUrl) {
-        throw new Error("[Supabase Storage] failed to obtain URL after upload");
-      }
-      return { key, url: pub.publicUrl };
-    }
-    return { key, url: signed.signedUrl };
+  let fileBuffer;
+  if (typeof data === "string") {
+    fileBuffer = Buffer.from(data, "utf-8");
+  } else if (ArrayBuffer.isView(data) || data instanceof Uint8Array) {
+    fileBuffer = Buffer.from(data);
+  } else {
+    fileBuffer = data;
   }
-  throw new Error("Supabase storage is not configured");
+  try {
+    console.log(`[Storage] Attempting Firebase Storage upload for: ${key}`);
+    const result = await storagePut(key, fileBuffer, contentType);
+    console.log(`[Storage] Firebase Storage upload successful for: ${key}`);
+    return { key, url: result.url };
+  } catch (firebaseErr) {
+    console.warn(`[Storage] Firebase Storage failed for ${key}, falling back to local filesystem:`, firebaseErr);
+  }
+  console.log(`[Storage] Using local filesystem fallback for: ${key}`);
+  const localPath = import_path.default.join(LOCAL_UPLOADS_DIR, key);
+  ensureLocalDir(localPath);
+  import_fs.default.writeFileSync(localPath, fileBuffer);
+  return { key, url: `/uploads/${key}` };
 }
 
 // server/routers/uploads.ts
@@ -1823,7 +2159,7 @@ var uploadsRouter = router({
     const ext = input.filename.split(".").pop() || "bin";
     const randomSuffix = (0, import_nanoid2.nanoid)(8);
     const fileKey = `user-${ctx.user.id}/${input.purpose || "general"}/${randomSuffix}.${ext}`;
-    const { url } = await storagePut(fileKey, buffer, input.mimeType);
+    const { url } = await storagePut2(fileKey, buffer, input.mimeType);
     const fileRecord = await createFileUpload({
       userId: ctx.user.id,
       fileKey,
@@ -1844,18 +2180,19 @@ var uploadsRouter = router({
 // server/routers/gallery.ts
 var import_zod7 = require("zod");
 var import_nanoid3 = require("nanoid");
+var ITEMS_COL = "gallery_items";
+var VIDEOS_COL = "gallery_videos";
 var galleryRouter = router({
   // ─── Public Endpoints ───
-  /** List visible gallery items (public) */
   listVisible: publicProcedure.query(async () => {
-    return getVisibleGalleryItems();
+    const snap = await db.collection(ITEMS_COL).where("isVisible", "==", "visible").orderBy("sortOrder", "asc").get();
+    return snap.docs.map((d) => d.data());
   }),
-  /** List visible gallery videos (public) */
   listVisibleVideos: publicProcedure.query(async () => {
-    return getVisibleGalleryVideos();
+    const snap = await db.collection(VIDEOS_COL).where("isVisible", "==", "visible").orderBy("sortOrder", "asc").get();
+    return snap.docs.map((d) => d.data());
   }),
   // ─── Admin Endpoints: Gallery Items ───
-  /** List all gallery items (admin) */
   listAll: adminProcedure.input(
     import_zod7.z.object({
       limit: import_zod7.z.number().min(1).max(200).default(100),
@@ -1863,9 +2200,9 @@ var galleryRouter = router({
     }).optional()
   ).query(async ({ input }) => {
     const { limit = 100, offset = 0 } = input ?? {};
-    return getAllGalleryItems(limit, offset);
+    const snap = await db.collection(ITEMS_COL).orderBy("createdAt", "desc").offset(offset).limit(limit).get();
+    return snap.docs.map((d) => d.data());
   }),
-  /** Create a gallery item (admin) */
   create: adminProcedure.input(
     import_zod7.z.object({
       imageUrl: import_zod7.z.string().min(1),
@@ -1882,12 +2219,16 @@ var galleryRouter = router({
       sortOrder: import_zod7.z.number().default(0)
     })
   ).mutation(async ({ input }) => {
-    return createGalleryItem({
+    const id = Date.now();
+    const item = {
       ...input,
-      isVisible: "visible"
-    });
+      id,
+      isVisible: "visible",
+      createdAt: /* @__PURE__ */ new Date()
+    };
+    await db.collection(ITEMS_COL).add(item);
+    return item;
   }),
-  /** Update a gallery item (admin) */
   update: adminProcedure.input(
     import_zod7.z.object({
       id: import_zod7.z.number(),
@@ -1907,14 +2248,17 @@ var galleryRouter = router({
     })
   ).mutation(async ({ input }) => {
     const { id, ...data } = input;
-    return updateGalleryItem(id, data);
+    const snap = await db.collection(ITEMS_COL).where("id", "==", id).limit(1).get();
+    if (snap.empty) throw new Error("Gallery item not found");
+    await snap.docs[0].ref.set(data, { merge: true });
+    const updated = (await snap.docs[0].ref.get()).data();
+    return updated;
   }),
-  /** Delete a gallery item (admin) */
   delete: adminProcedure.input(import_zod7.z.object({ id: import_zod7.z.number() })).mutation(async ({ input }) => {
-    await deleteGalleryItem(input.id);
+    const snap = await db.collection(ITEMS_COL).where("id", "==", input.id).limit(1).get();
+    if (!snap.empty) await snap.docs[0].ref.delete();
     return { success: true };
   }),
-  /** Upload gallery image (admin) */
   uploadImage: adminProcedure.input(
     import_zod7.z.object({
       fileData: import_zod7.z.string(),
@@ -1929,11 +2273,10 @@ var galleryRouter = router({
     const ext = input.filename.split(".").pop() || "jpg";
     const randomSuffix = (0, import_nanoid3.nanoid)(8);
     const fileKey = `gallery/${randomSuffix}.${ext}`;
-    const { url } = await storagePut(fileKey, buffer, input.mimeType);
+    const { url } = await storagePut2(fileKey, buffer, input.mimeType);
     return { url, fileKey };
   }),
   // ─── Admin Endpoints: Gallery Videos ───
-  /** List all gallery videos (admin) */
   listAllVideos: adminProcedure.input(
     import_zod7.z.object({
       limit: import_zod7.z.number().min(1).max(100).default(50),
@@ -1941,9 +2284,9 @@ var galleryRouter = router({
     }).optional()
   ).query(async ({ input }) => {
     const { limit = 50, offset = 0 } = input ?? {};
-    return getAllGalleryVideos(limit, offset);
+    const snap = await db.collection(VIDEOS_COL).orderBy("createdAt", "desc").offset(offset).limit(limit).get();
+    return snap.docs.map((d) => d.data());
   }),
-  /** Create a gallery video (admin) */
   createVideo: adminProcedure.input(
     import_zod7.z.object({
       thumbnailUrl: import_zod7.z.string().min(1),
@@ -1955,12 +2298,16 @@ var galleryRouter = router({
       sortOrder: import_zod7.z.number().default(0)
     })
   ).mutation(async ({ input }) => {
-    return createGalleryVideo({
+    const id = Date.now();
+    const video = {
       ...input,
-      isVisible: "visible"
-    });
+      id,
+      isVisible: "visible",
+      createdAt: /* @__PURE__ */ new Date()
+    };
+    await db.collection(VIDEOS_COL).add(video);
+    return video;
   }),
-  /** Update a gallery video (admin) */
   updateVideo: adminProcedure.input(
     import_zod7.z.object({
       id: import_zod7.z.number(),
@@ -1975,11 +2322,15 @@ var galleryRouter = router({
     })
   ).mutation(async ({ input }) => {
     const { id, ...data } = input;
-    return updateGalleryVideo(id, data);
+    const snap = await db.collection(VIDEOS_COL).where("id", "==", id).limit(1).get();
+    if (snap.empty) throw new Error("Gallery video not found");
+    await snap.docs[0].ref.set(data, { merge: true });
+    const updated = (await snap.docs[0].ref.get()).data();
+    return updated;
   }),
-  /** Delete a gallery video (admin) */
   deleteVideo: adminProcedure.input(import_zod7.z.object({ id: import_zod7.z.number() })).mutation(async ({ input }) => {
-    await deleteGalleryVideo(input.id);
+    const snap = await db.collection(VIDEOS_COL).where("id", "==", input.id).limit(1).get();
+    if (!snap.empty) await snap.docs[0].ref.delete();
     return { success: true };
   })
 });
@@ -2021,7 +2372,7 @@ async function generateImageWithDALLE(options) {
   const timestamp2 = Date.now();
   const randomSuffix = Math.random().toString(36).substring(2, 8);
   const s3Key = `ai-generated/${timestamp2}-${randomSuffix}.png`;
-  const { url } = await storagePut(s3Key, buffer, "image/png");
+  const { url } = await storagePut2(s3Key, buffer, "image/png");
   return {
     url,
     s3Key,
@@ -2110,7 +2461,7 @@ async function generateImageWithGemini(options) {
   const randomSuffix = Math.random().toString(36).substring(2, 8);
   const modelPrefix = modelId.replace(/-/g, "");
   const s3Key = `ai-generated/${modelPrefix}-${timestamp2}-${randomSuffix}.${ext}`;
-  const { url } = await storagePut(s3Key, imageBuffer, mimeType);
+  const { url } = await storagePut2(s3Key, imageBuffer, mimeType);
   return {
     url,
     s3Key,
@@ -2475,9 +2826,9 @@ var usersRouter = router({
     } catch {
     }
     try {
-      const db = await getDb();
-      if (db) {
-        const userReviews = await db.select({ count: import_drizzle_orm3.sql`count(*)` }).from(reviews).where((0, import_drizzle_orm3.eq)(reviews.userId, userId));
+      const db2 = await getDb();
+      if (db2) {
+        const userReviews = await db2.select({ count: import_drizzle_orm3.sql`count(*)` }).from(reviews).where((0, import_drizzle_orm3.eq)(reviews.userId, userId));
         reviewsCount = userReviews[0]?.count ?? 0;
       }
     } catch {
@@ -2517,10 +2868,18 @@ var blogRouter = router({
     }).optional()
   ).query(async ({ input }) => {
     const { limit = 10, offset = 0, category } = input ?? {};
-    if (category) {
-      return getBlogPostsByCategory(category, limit, offset);
+    try {
+      if (category) {
+        return await getBlogPostsByCategory(category, limit, offset);
+      }
+      return await getPublishedBlogPosts(limit, offset);
+    } catch (err) {
+      console.error("[blog.list] database error:", err);
+      throw new import_server4.TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch blog posts"
+      });
     }
-    return getPublishedBlogPosts(limit, offset);
   }),
   // Public: Get single post by slug
   getBySlug: publicProcedure.input(import_zod10.z.object({ slug: import_zod10.z.string() })).query(async ({ input }) => {
@@ -2824,8 +3183,8 @@ var marketingRouter = router({
       templateId: import_zod11.z.number().optional()
     })
   ).mutation(async ({ ctx, input }) => {
-    const db = await getDb();
-    if (!db) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    const db2 = await getDb();
+    if (!db2) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
     let systemPrompt = SYSTEM_PROMPTS[input.type] || SYSTEM_PROMPTS.social_media;
     const toneInstruction = TONE_INSTRUCTIONS[input.tone] || TONE_INSTRUCTIONS.luxurious;
     systemPrompt += `
@@ -2860,7 +3219,7 @@ Target platform: ${input.platform}. Optimize content format and length for this 
 Focus destination: ${input.destination}. Include specific details about this destination.`;
     }
     if (input.templateId) {
-      const [template] = await db.select().from(marketingTemplates).where((0, import_drizzle_orm4.eq)(marketingTemplates.id, input.templateId)).limit(1);
+      const [template] = await db2.select().from(marketingTemplates).where((0, import_drizzle_orm4.eq)(marketingTemplates.id, input.templateId)).limit(1);
       if (template?.systemPrompt) {
         systemPrompt += `
 
@@ -2923,7 +3282,7 @@ ${template.templateContent}`;
         metadata: { wordCount: 0, readingTime: 0, seoScore: 0 }
       };
     }
-    const [saved] = await db.insert(marketingContent).values({
+    const [saved] = await db2.insert(marketingContent).values({
       userId: ctx.user.id,
       type: input.type,
       platform: input.platform || null,
@@ -2956,14 +3315,14 @@ ${template.templateContent}`;
       offset: import_zod11.z.number().min(0).default(0)
     })
   ).query(async ({ ctx, input }) => {
-    const db = await getDb();
-    if (!db) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    const db2 = await getDb();
+    if (!db2) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
     const conditions = [(0, import_drizzle_orm4.eq)(marketingContent.userId, ctx.user.id)];
     if (input.type) {
       conditions.push((0, import_drizzle_orm4.eq)(marketingContent.type, input.type));
     }
-    const items = await db.select().from(marketingContent).where((0, import_drizzle_orm4.and)(...conditions)).orderBy((0, import_drizzle_orm4.desc)(marketingContent.createdAt)).limit(input.limit).offset(input.offset);
-    const [countResult] = await db.select({ count: import_drizzle_orm4.sql`count(*)` }).from(marketingContent).where((0, import_drizzle_orm4.and)(...conditions));
+    const items = await db2.select().from(marketingContent).where((0, import_drizzle_orm4.and)(...conditions)).orderBy((0, import_drizzle_orm4.desc)(marketingContent.createdAt)).limit(input.limit).offset(input.offset);
+    const [countResult] = await db2.select({ count: import_drizzle_orm4.sql`count(*)` }).from(marketingContent).where((0, import_drizzle_orm4.and)(...conditions));
     return {
       items,
       total: countResult?.count || 0
@@ -2973,23 +3332,23 @@ ${template.templateContent}`;
    * Toggle favorite status
    */
   toggleFavorite: protectedProcedure.input(import_zod11.z.object({ id: import_zod11.z.number() })).mutation(async ({ ctx, input }) => {
-    const db = await getDb();
-    if (!db) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    const [item] = await db.select().from(marketingContent).where((0, import_drizzle_orm4.and)((0, import_drizzle_orm4.eq)(marketingContent.id, input.id), (0, import_drizzle_orm4.eq)(marketingContent.userId, ctx.user.id))).limit(1);
+    const db2 = await getDb();
+    if (!db2) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    const [item] = await db2.select().from(marketingContent).where((0, import_drizzle_orm4.and)((0, import_drizzle_orm4.eq)(marketingContent.id, input.id), (0, import_drizzle_orm4.eq)(marketingContent.userId, ctx.user.id))).limit(1);
     if (!item) throw new import_server5.TRPCError({ code: "NOT_FOUND" });
     const newStatus = item.isFavorite === "yes" ? "no" : "yes";
-    await db.update(marketingContent).set({ isFavorite: newStatus }).where((0, import_drizzle_orm4.eq)(marketingContent.id, input.id));
+    await db2.update(marketingContent).set({ isFavorite: newStatus }).where((0, import_drizzle_orm4.eq)(marketingContent.id, input.id));
     return { isFavorite: newStatus };
   }),
   /**
    * Delete content
    */
   deleteContent: protectedProcedure.input(import_zod11.z.object({ id: import_zod11.z.number() })).mutation(async ({ ctx, input }) => {
-    const db = await getDb();
-    if (!db) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    const [item] = await db.select().from(marketingContent).where((0, import_drizzle_orm4.and)((0, import_drizzle_orm4.eq)(marketingContent.id, input.id), (0, import_drizzle_orm4.eq)(marketingContent.userId, ctx.user.id))).limit(1);
+    const db2 = await getDb();
+    if (!db2) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    const [item] = await db2.select().from(marketingContent).where((0, import_drizzle_orm4.and)((0, import_drizzle_orm4.eq)(marketingContent.id, input.id), (0, import_drizzle_orm4.eq)(marketingContent.userId, ctx.user.id))).limit(1);
     if (!item) throw new import_server5.TRPCError({ code: "NOT_FOUND" });
-    await db.delete(marketingContent).where((0, import_drizzle_orm4.eq)(marketingContent.id, input.id));
+    await db2.delete(marketingContent).where((0, import_drizzle_orm4.eq)(marketingContent.id, input.id));
     return { success: true };
   }),
   // ─── Calendar ───
@@ -3002,8 +3361,8 @@ ${template.templateContent}`;
       endDate: import_zod11.z.number().optional()
     })
   ).query(async ({ ctx, input }) => {
-    const db = await getDb();
-    if (!db) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    const db2 = await getDb();
+    if (!db2) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
     const conditions = [(0, import_drizzle_orm4.eq)(marketingCalendar.userId, ctx.user.id)];
     if (input.startDate) {
       conditions.push(import_drizzle_orm4.sql`${marketingCalendar.scheduledDate} >= ${input.startDate}`);
@@ -3011,7 +3370,7 @@ ${template.templateContent}`;
     if (input.endDate) {
       conditions.push(import_drizzle_orm4.sql`${marketingCalendar.scheduledDate} <= ${input.endDate}`);
     }
-    return db.select().from(marketingCalendar).where((0, import_drizzle_orm4.and)(...conditions)).orderBy(marketingCalendar.scheduledDate);
+    return db2.select().from(marketingCalendar).where((0, import_drizzle_orm4.and)(...conditions)).orderBy(marketingCalendar.scheduledDate);
   }),
   /**
    * Add calendar entry
@@ -3027,9 +3386,9 @@ ${template.templateContent}`;
       colorTag: import_zod11.z.string().default("#D4A853")
     })
   ).mutation(async ({ ctx, input }) => {
-    const db = await getDb();
-    if (!db) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    const [entry] = await db.insert(marketingCalendar).values({
+    const db2 = await getDb();
+    if (!db2) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    const [entry] = await db2.insert(marketingCalendar).values({
       userId: ctx.user.id,
       contentId: input.contentId || null,
       title: input.title,
@@ -3054,10 +3413,10 @@ ${template.templateContent}`;
       colorTag: import_zod11.z.string().optional()
     })
   ).mutation(async ({ ctx, input }) => {
-    const db = await getDb();
-    if (!db) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    const db2 = await getDb();
+    if (!db2) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
     const { id, ...updates } = input;
-    const [item] = await db.select().from(marketingCalendar).where((0, import_drizzle_orm4.and)((0, import_drizzle_orm4.eq)(marketingCalendar.id, id), (0, import_drizzle_orm4.eq)(marketingCalendar.userId, ctx.user.id))).limit(1);
+    const [item] = await db2.select().from(marketingCalendar).where((0, import_drizzle_orm4.and)((0, import_drizzle_orm4.eq)(marketingCalendar.id, id), (0, import_drizzle_orm4.eq)(marketingCalendar.userId, ctx.user.id))).limit(1);
     if (!item) throw new import_server5.TRPCError({ code: "NOT_FOUND" });
     const cleanUpdates = {};
     if (updates.title !== void 0) cleanUpdates.title = updates.title;
@@ -3066,7 +3425,7 @@ ${template.templateContent}`;
     if (updates.status !== void 0) cleanUpdates.status = updates.status;
     if (updates.colorTag !== void 0) cleanUpdates.colorTag = updates.colorTag;
     if (Object.keys(cleanUpdates).length > 0) {
-      await db.update(marketingCalendar).set(cleanUpdates).where((0, import_drizzle_orm4.eq)(marketingCalendar.id, id));
+      await db2.update(marketingCalendar).set(cleanUpdates).where((0, import_drizzle_orm4.eq)(marketingCalendar.id, id));
     }
     return { success: true };
   }),
@@ -3074,11 +3433,11 @@ ${template.templateContent}`;
    * Delete calendar entry
    */
   deleteCalendarEntry: protectedProcedure.input(import_zod11.z.object({ id: import_zod11.z.number() })).mutation(async ({ ctx, input }) => {
-    const db = await getDb();
-    if (!db) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    const [item] = await db.select().from(marketingCalendar).where((0, import_drizzle_orm4.and)((0, import_drizzle_orm4.eq)(marketingCalendar.id, input.id), (0, import_drizzle_orm4.eq)(marketingCalendar.userId, ctx.user.id))).limit(1);
+    const db2 = await getDb();
+    if (!db2) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    const [item] = await db2.select().from(marketingCalendar).where((0, import_drizzle_orm4.and)((0, import_drizzle_orm4.eq)(marketingCalendar.id, input.id), (0, import_drizzle_orm4.eq)(marketingCalendar.userId, ctx.user.id))).limit(1);
     if (!item) throw new import_server5.TRPCError({ code: "NOT_FOUND" });
-    await db.delete(marketingCalendar).where((0, import_drizzle_orm4.eq)(marketingCalendar.id, input.id));
+    await db2.delete(marketingCalendar).where((0, import_drizzle_orm4.eq)(marketingCalendar.id, input.id));
     return { success: true };
   }),
   // ─── Templates ───
@@ -3090,26 +3449,26 @@ ${template.templateContent}`;
       type: import_zod11.z.enum(["social_media", "email", "trip_description", "blog_seo", "ad_copy"]).optional()
     })
   ).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    const db2 = await getDb();
+    if (!db2) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
     const conditions = [];
     if (input.type) {
       conditions.push((0, import_drizzle_orm4.eq)(marketingTemplates.type, input.type));
     }
-    return db.select().from(marketingTemplates).where(conditions.length > 0 ? (0, import_drizzle_orm4.and)(...conditions) : void 0).orderBy(marketingTemplates.sortOrder);
+    return db2.select().from(marketingTemplates).where(conditions.length > 0 ? (0, import_drizzle_orm4.and)(...conditions) : void 0).orderBy(marketingTemplates.sortOrder);
   }),
   /**
    * Get content generation stats
    */
   getStats: protectedProcedure.query(async ({ ctx }) => {
-    const db = await getDb();
-    if (!db) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    if (!db) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    const [totalContent] = await db.select({ count: import_drizzle_orm4.sql`count(*)` }).from(marketingContent).where((0, import_drizzle_orm4.eq)(marketingContent.userId, ctx.user.id));
-    const [socialCount] = await db.select({ count: import_drizzle_orm4.sql`count(*)` }).from(marketingContent).where((0, import_drizzle_orm4.and)((0, import_drizzle_orm4.eq)(marketingContent.userId, ctx.user.id), (0, import_drizzle_orm4.eq)(marketingContent.type, "social_media")));
-    const [emailCount] = await db.select({ count: import_drizzle_orm4.sql`count(*)` }).from(marketingContent).where((0, import_drizzle_orm4.and)((0, import_drizzle_orm4.eq)(marketingContent.userId, ctx.user.id), (0, import_drizzle_orm4.eq)(marketingContent.type, "email")));
-    const [blogCount] = await db.select({ count: import_drizzle_orm4.sql`count(*)` }).from(marketingContent).where((0, import_drizzle_orm4.and)((0, import_drizzle_orm4.eq)(marketingContent.userId, ctx.user.id), (0, import_drizzle_orm4.eq)(marketingContent.type, "blog_seo")));
-    const [calendarCount] = await db.select({ count: import_drizzle_orm4.sql`count(*)` }).from(marketingCalendar).where((0, import_drizzle_orm4.eq)(marketingCalendar.userId, ctx.user.id));
+    const db2 = await getDb();
+    if (!db2) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    if (!db2) throw new import_server5.TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+    const [totalContent] = await db2.select({ count: import_drizzle_orm4.sql`count(*)` }).from(marketingContent).where((0, import_drizzle_orm4.eq)(marketingContent.userId, ctx.user.id));
+    const [socialCount] = await db2.select({ count: import_drizzle_orm4.sql`count(*)` }).from(marketingContent).where((0, import_drizzle_orm4.and)((0, import_drizzle_orm4.eq)(marketingContent.userId, ctx.user.id), (0, import_drizzle_orm4.eq)(marketingContent.type, "social_media")));
+    const [emailCount] = await db2.select({ count: import_drizzle_orm4.sql`count(*)` }).from(marketingContent).where((0, import_drizzle_orm4.and)((0, import_drizzle_orm4.eq)(marketingContent.userId, ctx.user.id), (0, import_drizzle_orm4.eq)(marketingContent.type, "email")));
+    const [blogCount] = await db2.select({ count: import_drizzle_orm4.sql`count(*)` }).from(marketingContent).where((0, import_drizzle_orm4.and)((0, import_drizzle_orm4.eq)(marketingContent.userId, ctx.user.id), (0, import_drizzle_orm4.eq)(marketingContent.type, "blog_seo")));
+    const [calendarCount] = await db2.select({ count: import_drizzle_orm4.sql`count(*)` }).from(marketingCalendar).where((0, import_drizzle_orm4.eq)(marketingCalendar.userId, ctx.user.id));
     return {
       totalContent: totalContent?.count || 0,
       socialMedia: socialCount?.count || 0,
@@ -3134,10 +3493,10 @@ var adminDestinationsRouter = router({
       sortOrder: import_zod12.z.enum(["asc", "desc"]).default("asc")
     }).optional()
   ).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     const { limit = 20, offset = 0, search = "", sortBy = "name", sortOrder = "asc" } = input ?? {};
-    let query = db.select().from(destinations);
+    let query = db2.select().from(destinations);
     if (search) {
       query = query.where((0, import_drizzle_orm5.like)(destinations.name, `%${search}%`));
     }
@@ -3148,9 +3507,9 @@ var adminDestinationsRouter = router({
   }),
   /** Get single destination by ID */
   getById: adminProcedure.input(import_zod12.z.object({ id: import_zod12.z.number() })).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const result = await db.select().from(destinations).where((0, import_drizzle_orm5.eq)(destinations.id, input.id));
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const result = await db2.select().from(destinations).where((0, import_drizzle_orm5.eq)(destinations.id, input.id));
     return result[0] || null;
   }),
   /** Create new destination */
@@ -3171,9 +3530,9 @@ var adminDestinationsRouter = router({
       exclusions: import_zod12.z.string().optional()
     })
   ).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const result = await db.insert(destinations).values({
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const result = await db2.insert(destinations).values({
       ...input,
       isActive: "active"
     });
@@ -3199,40 +3558,41 @@ var adminDestinationsRouter = router({
       isActive: import_zod12.z.enum(["active", "inactive"]).optional()
     })
   ).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     const { id, ...data } = input;
-    await db.update(destinations).set(data).where((0, import_drizzle_orm5.eq)(destinations.id, id));
+    await db2.update(destinations).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm5.eq)(destinations.id, id));
     return { success: true };
   }),
   /** Delete destination */
   delete: adminProcedure.input(import_zod12.z.object({ id: import_zod12.z.number() })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.delete(destinations).where((0, import_drizzle_orm5.eq)(destinations.id, input.id));
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.delete(destinations).where((0, import_drizzle_orm5.eq)(destinations.id, input.id));
     return { success: true };
   }),
   /** Bulk delete destinations */
   bulkDelete: adminProcedure.input(import_zod12.z.object({ ids: import_zod12.z.array(import_zod12.z.number()) })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.delete(destinations).where((0, import_drizzle_orm5.inArray)(destinations.id, input.ids));
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.delete(destinations).where((0, import_drizzle_orm5.inArray)(destinations.id, input.ids));
     return { success: true, deleted: input.ids.length };
   }),
   /** Update destination status (active/inactive) */
   updateStatus: adminProcedure.input(import_zod12.z.object({ id: import_zod12.z.number(), isActive: import_zod12.z.enum(["active", "inactive"]) })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.update(destinations).set({
-      isActive: input.isActive
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.update(destinations).set({
+      isActive: input.isActive,
+      updatedAt: /* @__PURE__ */ new Date()
     }).where((0, import_drizzle_orm5.eq)(destinations.id, input.id));
     return { success: true };
   }),
   /** Get statistics */
   getStats: adminProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const allDestinations = await db.select().from(destinations);
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const allDestinations = await db2.select().from(destinations);
     const activeCount = allDestinations.filter((d) => d.isActive === "active").length;
     const avgRating = allDestinations.length > 0 ? (allDestinations.reduce((sum, d) => sum + (parseFloat(d.rating) || 0), 0) / allDestinations.length).toFixed(2) : 0;
     const avgPrice = allDestinations.length > 0 ? (allDestinations.reduce((sum, d) => sum + (parseFloat(d.pricePerPerson) || 0), 0) / allDestinations.length).toFixed(2) : 0;
@@ -3261,10 +3621,10 @@ var adminOffersRouter = router({
       sortOrder: import_zod13.z.enum(["asc", "desc"]).default("desc")
     }).optional()
   ).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     const { limit = 20, offset = 0, search = "", status, sortBy = "createdAt", sortOrder = "desc" } = input ?? {};
-    let query = db.select().from(offers);
+    let query = db2.select().from(offers);
     if (search) {
       query = query.where((0, import_drizzle_orm6.like)(offers.title, `%${search}%`));
     }
@@ -3278,9 +3638,9 @@ var adminOffersRouter = router({
   }),
   /** Get single offer by ID */
   getById: adminProcedure.input(import_zod13.z.object({ id: import_zod13.z.number() })).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const result = await db.select().from(offers).where((0, import_drizzle_orm6.eq)(offers.id, input.id));
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const result = await db2.select().from(offers).where((0, import_drizzle_orm6.eq)(offers.id, input.id));
     return result[0] || null;
   }),
   /** Create new offer */
@@ -3301,9 +3661,9 @@ var adminOffersRouter = router({
       badgeColor: import_zod13.z.string().optional()
     })
   ).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const result = await db.insert(offers).values({
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const result = await db2.insert(offers).values({
       ...input,
       isActive: "active",
       bookedSpots: 0
@@ -3330,40 +3690,41 @@ var adminOffersRouter = router({
       isActive: import_zod13.z.enum(["active", "inactive", "expired"]).optional()
     })
   ).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     const { id, ...data } = input;
-    await db.update(offers).set(data).where((0, import_drizzle_orm6.eq)(offers.id, id));
+    await db2.update(offers).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm6.eq)(offers.id, id));
     return { success: true };
   }),
   /** Delete offer */
   delete: adminProcedure.input(import_zod13.z.object({ id: import_zod13.z.number() })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.delete(offers).where((0, import_drizzle_orm6.eq)(offers.id, input.id));
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.delete(offers).where((0, import_drizzle_orm6.eq)(offers.id, input.id));
     return { success: true };
   }),
   /** Bulk delete offers */
   bulkDelete: adminProcedure.input(import_zod13.z.object({ ids: import_zod13.z.array(import_zod13.z.number()) })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.delete(offers).where((0, import_drizzle_orm6.inArray)(offers.id, input.ids));
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.delete(offers).where((0, import_drizzle_orm6.inArray)(offers.id, input.ids));
     return { success: true, deleted: input.ids.length };
   }),
   /** Update offer status */
   updateStatus: adminProcedure.input(import_zod13.z.object({ id: import_zod13.z.number(), isActive: import_zod13.z.enum(["active", "inactive", "expired"]) })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.update(offers).set({
-      isActive: input.isActive
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.update(offers).set({
+      isActive: input.isActive,
+      updatedAt: /* @__PURE__ */ new Date()
     }).where((0, import_drizzle_orm6.eq)(offers.id, input.id));
     return { success: true };
   }),
   /** Get statistics */
   getStats: adminProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const allOffers = await db.select().from(offers);
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const allOffers = await db2.select().from(offers);
     const activeCount = allOffers.filter((o) => o.isActive === "active").length;
     const totalDiscount = allOffers.reduce((sum, o) => sum + (parseFloat(o.discountValue) || 0), 0);
     const avgDiscount = allOffers.length > 0 ? (totalDiscount / allOffers.length).toFixed(2) : 0;
@@ -3392,10 +3753,10 @@ var adminBlogRouter = router({
       sortOrder: import_zod14.z.enum(["asc", "desc"]).default("desc")
     }).optional()
   ).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     const { limit = 20, offset = 0, search = "", status, category, sortBy = "createdAt", sortOrder = "desc" } = input ?? {};
-    let query = db.select().from(blogPosts);
+    let query = db2.select().from(blogPosts);
     if (search) {
       query = query.where((0, import_drizzle_orm7.like)(blogPosts.title, `%${search}%`));
     }
@@ -3412,16 +3773,16 @@ var adminBlogRouter = router({
   }),
   /** Get single blog post by ID */
   getById: adminProcedure.input(import_zod14.z.object({ id: import_zod14.z.number() })).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const result = await db.select().from(blogPosts).where((0, import_drizzle_orm7.eq)(blogPosts.id, input.id));
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const result = await db2.select().from(blogPosts).where((0, import_drizzle_orm7.eq)(blogPosts.id, input.id));
     return result[0] || null;
   }),
   /** Get blog post by slug */
   getBySlug: adminProcedure.input(import_zod14.z.object({ slug: import_zod14.z.string() })).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const result = await db.select().from(blogPosts).where((0, import_drizzle_orm7.eq)(blogPosts.slug, input.slug));
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const result = await db2.select().from(blogPosts).where((0, import_drizzle_orm7.eq)(blogPosts.slug, input.slug));
     return result[0] || null;
   }),
   /** Create new blog post */
@@ -3441,9 +3802,9 @@ var adminBlogRouter = router({
       readingTime: import_zod14.z.number().optional()
     })
   ).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const result = await db.insert(blogPosts).values({
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const result = await db2.insert(blogPosts).values({
       ...input,
       status: "draft",
       viewCount: 0
@@ -3469,50 +3830,52 @@ var adminBlogRouter = router({
       status: import_zod14.z.enum(["draft", "published", "archived"]).optional()
     })
   ).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     const { id, ...data } = input;
-    await db.update(blogPosts).set(data).where((0, import_drizzle_orm7.eq)(blogPosts.id, id));
+    await db2.update(blogPosts).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm7.eq)(blogPosts.id, id));
     return { success: true };
   }),
   /** Delete blog post */
   delete: adminProcedure.input(import_zod14.z.object({ id: import_zod14.z.number() })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.delete(blogPosts).where((0, import_drizzle_orm7.eq)(blogPosts.id, input.id));
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.delete(blogPosts).where((0, import_drizzle_orm7.eq)(blogPosts.id, input.id));
     return { success: true };
   }),
   /** Bulk delete blog posts */
   bulkDelete: adminProcedure.input(import_zod14.z.object({ ids: import_zod14.z.array(import_zod14.z.number()) })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.delete(blogPosts).where((0, import_drizzle_orm7.inArray)(blogPosts.id, input.ids));
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.delete(blogPosts).where((0, import_drizzle_orm7.inArray)(blogPosts.id, input.ids));
     return { success: true, deleted: input.ids.length };
   }),
   /** Publish blog post */
   publish: adminProcedure.input(import_zod14.z.object({ id: import_zod14.z.number() })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.update(blogPosts).set({
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.update(blogPosts).set({
       status: "published",
-      publishedAt: /* @__PURE__ */ new Date()
+      publishedAt: /* @__PURE__ */ new Date(),
+      updatedAt: /* @__PURE__ */ new Date()
     }).where((0, import_drizzle_orm7.eq)(blogPosts.id, input.id));
     return { success: true };
   }),
   /** Archive blog post */
   archive: adminProcedure.input(import_zod14.z.object({ id: import_zod14.z.number() })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.update(blogPosts).set({
-      status: "archived"
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.update(blogPosts).set({
+      status: "archived",
+      updatedAt: /* @__PURE__ */ new Date()
     }).where((0, import_drizzle_orm7.eq)(blogPosts.id, input.id));
     return { success: true };
   }),
   /** Get statistics */
   getStats: adminProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const allPosts = await db.select().from(blogPosts);
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const allPosts = await db2.select().from(blogPosts);
     const publishedCount = allPosts.filter((p) => p.status === "published").length;
     const draftCount = allPosts.filter((p) => p.status === "draft").length;
     const totalViews = allPosts.reduce((sum, p) => sum + (p.viewCount || 0), 0);
@@ -4009,7 +4372,7 @@ var aiCommandRouter = router({
     const ext = input.filename.split(".").pop() || "bin";
     const randomSuffix = (0, import_nanoid4.nanoid)(8);
     const fileKey = `ai-command/${ctx.user.id}/${randomSuffix}.${ext}`;
-    const { url } = await storagePut(fileKey, buffer, input.mimeType);
+    const { url } = await storagePut2(fileKey, buffer, input.mimeType);
     return {
       url,
       fileKey,
@@ -4109,9 +4472,9 @@ var siteSettingsRouter = router({
    * Get theme settings (public - no auth required for visitors)
    */
   getTheme: publicProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) return null;
-    const results = await db.select().from(siteSettings).where((0, import_drizzle_orm8.eq)(siteSettings.category, "theme"));
+    const db2 = await getDb();
+    if (!db2) return null;
+    const results = await db2.select().from(siteSettings).where((0, import_drizzle_orm8.eq)(siteSettings.category, "theme"));
     if (!results.length) return null;
     const settings = {};
     for (const row of results) {
@@ -4126,9 +4489,9 @@ var siteSettingsRouter = router({
     category: import_zod16.z.string(),
     key: import_zod16.z.string()
   })).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) return null;
-    const [result] = await db.select().from(siteSettings).where(
+    const db2 = await getDb();
+    if (!db2) return null;
+    const [result] = await db2.select().from(siteSettings).where(
       (0, import_drizzle_orm8.and)(
         (0, import_drizzle_orm8.eq)(siteSettings.category, input.category),
         (0, import_drizzle_orm8.eq)(siteSettings.settingKey, input.key)
@@ -4142,9 +4505,9 @@ var siteSettingsRouter = router({
   getByCategory: protectedProcedure.input(import_zod16.z.object({
     category: import_zod16.z.string()
   })).query(async ({ input }) => {
-    const db = await getDb();
-    if (!db) return {};
-    const results = await db.select().from(siteSettings).where((0, import_drizzle_orm8.eq)(siteSettings.category, input.category));
+    const db2 = await getDb();
+    if (!db2) return {};
+    const results = await db2.select().from(siteSettings).where((0, import_drizzle_orm8.eq)(siteSettings.category, input.category));
     const settings = {};
     for (const row of results) {
       settings[row.settingKey] = row.settingValue ?? "";
@@ -4155,9 +4518,9 @@ var siteSettingsRouter = router({
    * Get all settings across all categories
    */
   getAll: protectedProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) return {};
-    const results = await db.select().from(siteSettings);
+    const db2 = await getDb();
+    if (!db2) return {};
+    const results = await db2.select().from(siteSettings);
     const grouped = {};
     for (const row of results) {
       if (!grouped[row.category]) grouped[row.category] = {};
@@ -4173,18 +4536,18 @@ var siteSettingsRouter = router({
     key: import_zod16.z.string(),
     value: import_zod16.z.string()
   })).mutation(async ({ input, ctx }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const [existing] = await db.select().from(siteSettings).where(
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    const [existing] = await db2.select().from(siteSettings).where(
       (0, import_drizzle_orm8.and)(
         (0, import_drizzle_orm8.eq)(siteSettings.category, input.category),
         (0, import_drizzle_orm8.eq)(siteSettings.settingKey, input.key)
       )
     ).limit(1);
     if (existing) {
-      await db.update(siteSettings).set({ settingValue: input.value, updatedBy: ctx.user.id }).where((0, import_drizzle_orm8.eq)(siteSettings.id, existing.id));
+      await db2.update(siteSettings).set({ settingValue: input.value, updatedBy: ctx.user.id }).where((0, import_drizzle_orm8.eq)(siteSettings.id, existing.id));
     } else {
-      await db.insert(siteSettings).values({
+      await db2.insert(siteSettings).values({
         category: input.category,
         settingKey: input.key,
         settingValue: input.value,
@@ -4200,20 +4563,20 @@ var siteSettingsRouter = router({
     category: import_zod16.z.string(),
     settings: import_zod16.z.record(import_zod16.z.string(), import_zod16.z.string())
   })).mutation(async ({ input, ctx }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     const entries = Object.entries(input.settings);
     for (const [key, value] of entries) {
-      const [existing] = await db.select().from(siteSettings).where(
+      const [existing] = await db2.select().from(siteSettings).where(
         (0, import_drizzle_orm8.and)(
           (0, import_drizzle_orm8.eq)(siteSettings.category, input.category),
           (0, import_drizzle_orm8.eq)(siteSettings.settingKey, key)
         )
       ).limit(1);
       if (existing) {
-        await db.update(siteSettings).set({ settingValue: value, updatedBy: ctx.user.id }).where((0, import_drizzle_orm8.eq)(siteSettings.id, existing.id));
+        await db2.update(siteSettings).set({ settingValue: value, updatedBy: ctx.user.id }).where((0, import_drizzle_orm8.eq)(siteSettings.id, existing.id));
       } else {
-        await db.insert(siteSettings).values({
+        await db2.insert(siteSettings).values({
           category: input.category,
           settingKey: key,
           settingValue: value,
@@ -4230,9 +4593,9 @@ var siteSettingsRouter = router({
     category: import_zod16.z.string(),
     key: import_zod16.z.string()
   })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    await db.delete(siteSettings).where(
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
+    await db2.delete(siteSettings).where(
       (0, import_drizzle_orm8.and)(
         (0, import_drizzle_orm8.eq)(siteSettings.category, input.category),
         (0, import_drizzle_orm8.eq)(siteSettings.settingKey, input.key)
@@ -4262,12 +4625,12 @@ var backupRouter = router({
    * Get record counts for all exportable tables
    */
   getExportSections: protectedProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) return [];
+    const db2 = await getDb();
+    if (!db2) return [];
     const sections = [];
     for (const [id, { table, label }] of Object.entries(TABLE_MAP)) {
       try {
-        const [result] = await db.select({ count: import_drizzle_orm9.sql`count(*)` }).from(table);
+        const [result] = await db2.select({ count: import_drizzle_orm9.sql`count(*)` }).from(table);
         sections.push({
           id,
           label,
@@ -4286,14 +4649,14 @@ var backupRouter = router({
     sections: import_zod17.z.array(import_zod17.z.string()),
     format: import_zod17.z.enum(["json", "csv"]).default("json")
   })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     const exportResult = {};
     for (const sectionId of input.sections) {
       const mapping = TABLE_MAP[sectionId];
       if (!mapping) continue;
       try {
-        const rows = await db.select().from(mapping.table);
+        const rows = await db2.select().from(mapping.table);
         exportResult[sectionId] = {
           label: mapping.label,
           recordCount: rows.length,
@@ -4318,9 +4681,9 @@ var backupRouter = router({
    * Get backup settings from DB
    */
   getSettings: protectedProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) return {};
-    const results = await db.select().from(siteSettings).where(
+    const db2 = await getDb();
+    if (!db2) return {};
+    const results = await db2.select().from(siteSettings).where(
       import_drizzle_orm9.sql`${siteSettings.category} = 'backup'`
     );
     const settings = {};
@@ -4340,8 +4703,8 @@ var backupRouter = router({
     })),
     mode: import_zod17.z.enum(["merge", "replace"]).default("merge")
   })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     const results = {};
     for (const [sectionId, section] of Object.entries(input.sections)) {
       const mapping = TABLE_MAP[sectionId];
@@ -4354,13 +4717,13 @@ var backupRouter = router({
       let errors = 0;
       try {
         if (input.mode === "replace") {
-          await db.delete(mapping.table);
+          await db2.delete(mapping.table);
         }
         for (const row of section.data) {
           try {
             const cleanRow = { ...row };
             delete cleanRow.id;
-            await db.insert(mapping.table).values(cleanRow);
+            await db2.insert(mapping.table).values(cleanRow);
             restored++;
           } catch (e) {
             if (e?.code === "ER_DUP_ENTRY" || e?.message?.includes("Duplicate")) {
@@ -4393,16 +4756,16 @@ var backupRouter = router({
   saveSettings: protectedProcedure.input(import_zod17.z.object({
     settings: import_zod17.z.record(import_zod17.z.string(), import_zod17.z.string())
   })).mutation(async ({ input, ctx }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     for (const [key, value] of Object.entries(input.settings)) {
-      const existing = await db.select().from(siteSettings).where(
+      const existing = await db2.select().from(siteSettings).where(
         import_drizzle_orm9.sql`${siteSettings.category} = 'backup' AND ${siteSettings.settingKey} = ${key}`
       ).limit(1);
       if (existing.length > 0) {
-        await db.update(siteSettings).set({ settingValue: value, updatedBy: ctx.user.id }).where(import_drizzle_orm9.sql`${siteSettings.id} = ${existing[0].id}`);
+        await db2.update(siteSettings).set({ settingValue: value, updatedBy: ctx.user.id }).where(import_drizzle_orm9.sql`${siteSettings.id} = ${existing[0].id}`);
       } else {
-        await db.insert(siteSettings).values({
+        await db2.insert(siteSettings).values({
           category: "backup",
           settingKey: key,
           settingValue: value,
@@ -4629,8 +4992,8 @@ var dataImportRouter = router({
     rows: import_zod18.z.array(import_zod18.z.record(import_zod18.z.string(), import_zod18.z.any())),
     skipInvalid: import_zod18.z.boolean().default(true)
   })).mutation(async ({ input }) => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
+    const db2 = await getDb();
+    if (!db2) throw new Error("Database not available");
     const target = getTable(input.tableId);
     if (!target) throw new Error(`Unknown import table: ${input.tableId}`);
     let imported = 0;
@@ -4661,7 +5024,7 @@ var dataImportRouter = router({
         }
       }
       try {
-        await db.insert(target.table).values(record);
+        await db2.insert(target.table).values(record);
         imported++;
       } catch (e) {
         if (e?.code === "ER_DUP_ENTRY" || e?.message?.toLowerCase().includes("duplicate")) {
@@ -4703,13 +5066,9 @@ var appRouter = router({
     }),
     login: publicProcedure.input(import_zod19.z.object({ email: import_zod19.z.string().email(), password: import_zod19.z.string().min(1) })).mutation(async ({ ctx, input }) => {
       try {
-        console.log("[v0] Login attempt for:", input.email);
         const adminEmail = ENV.adminEmail;
         const adminPasswordHash = ENV.adminPasswordHash;
-        console.log("[v0] ADMIN_EMAIL configured:", !!adminEmail);
-        console.log("[v0] ADMIN_PASSWORD_HASH configured:", !!adminPasswordHash);
         if (!adminEmail || !adminPasswordHash) {
-          console.log("[v0] Admin credentials not configured");
           throw new import_server6.TRPCError({
             code: "PRECONDITION_FAILED",
             message: "Admin login is not configured on this server. Set ADMIN_EMAIL and ADMIN_PASSWORD_HASH environment variables."
@@ -4742,10 +5101,8 @@ var appRouter = router({
           }
         }
         if (!match) {
-          console.log("[v0] Password mismatch");
           throw new import_server6.TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password." });
         }
-        console.log("[v0] Password matched, creating session");
         const openId = `admin:${adminEmail.toLowerCase()}`;
         await upsertUser({
           openId,
@@ -4761,9 +5118,7 @@ var appRouter = router({
           expiresInMs: ONE_YEAR_MS,
           name: "Admin"
         });
-        console.log("[v0] Session token created, setting cookie");
         const cookieOptions = getSessionCookieOptions(ctx.req);
-        console.log("[v0] Cookie options:", JSON.stringify(cookieOptions));
         ctx.res.cookie(COOKIE_NAME, sessionToken, {
           ...cookieOptions,
           maxAge: ONE_YEAR_MS
@@ -4776,127 +5131,6 @@ var appRouter = router({
           message: "An unexpected error occurred during login. Please try again."
         });
       }
-    }),
-    /**
-     * Bridge: accept a Supabase Auth JWT access token, verify it server-side,
-     * check app_metadata.role === 'admin', upsert the user in DB with role='admin',
-     * then issue a session cookie so the rest of the app treats them as authenticated admin.
-     */
-    supabaseLogin: publicProcedure.input(import_zod19.z.object({ accessToken: import_zod19.z.string().min(1) })).mutation(async ({ ctx, input }) => {
-      const supabase = getServerSupabase();
-      if (!supabase) {
-        throw new import_server6.TRPCError({
-          code: "PRECONDITION_FAILED",
-          message: "Supabase is not configured on this server."
-        });
-      }
-      const { data, error } = await supabase.auth.getUser(input.accessToken);
-      if (error || !data.user) {
-        throw new import_server6.TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Invalid or expired Supabase session."
-        });
-      }
-      const supabaseUser = data.user;
-      const appMeta = supabaseUser.app_metadata ?? {};
-      const userMeta = supabaseUser.user_metadata ?? {};
-      const role = appMeta["role"] ?? userMeta["role"];
-      if (role !== "admin") {
-        throw new import_server6.TRPCError({
-          code: "FORBIDDEN",
-          message: "This account does not have admin privileges."
-        });
-      }
-      const name = supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "Admin";
-      const openId = `admin:${(supabaseUser.email ?? supabaseUser.id).toLowerCase()}`;
-      upsertUser({
-        openId,
-        email: supabaseUser.email ?? null,
-        name,
-        loginMethod: "supabase",
-        role: "admin",
-        lastSignedIn: /* @__PURE__ */ new Date()
-      }).catch((err) => {
-        console.warn("[Auth] Could not persist Supabase admin user to DB (non-fatal):", err);
-      });
-      const sessionToken = await sdk.createSessionToken(openId, {
-        expiresInMs: ONE_YEAR_MS,
-        name
-      });
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.cookie(COOKIE_NAME, sessionToken, {
-        ...cookieOptions,
-        maxAge: ONE_YEAR_MS
-      });
-      return { success: true };
-    }),
-    /**
-     * One-time server-side operation: create (or confirm) the admin user in Supabase Auth
-     * with app_metadata.role = 'admin'. Requires SUPABASE_SERVICE_ROLE_KEY to be set.
-     * Call this once during setup; subsequent calls are idempotent (returns existing user).
-     */
-    ensureAdmin: publicProcedure.input(
-      import_zod19.z.object({
-        email: import_zod19.z.string().email(),
-        password: import_zod19.z.string().min(8, "Password must be at least 8 characters")
-      })
-    ).mutation(async ({ input }) => {
-      const supabase = getServerSupabase();
-      if (!supabase) {
-        throw new import_server6.TRPCError({
-          code: "PRECONDITION_FAILED",
-          message: "Supabase service role key is not configured."
-        });
-      }
-      const { data, error } = await supabase.auth.admin.createUser({
-        email: input.email,
-        password: input.password,
-        email_confirm: true,
-        app_metadata: { role: "admin" }
-      });
-      if (error) {
-        if (error.message?.toLowerCase().includes("already") || error.message?.toLowerCase().includes("exists") || error.code === "email_exists") {
-          const { data: listData, error: listError } = await supabase.auth.admin.listUsers();
-          if (listError) {
-            throw new import_server6.TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: `Failed to list users: ${listError.message}`
-            });
-          }
-          const existing = listData.users.find(
-            (u) => u.email?.toLowerCase() === input.email.toLowerCase()
-          );
-          if (existing) {
-            const { error: updateError } = await supabase.auth.admin.updateUserById(existing.id, {
-              app_metadata: { role: "admin" }
-            });
-            if (updateError) {
-              throw new import_server6.TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: `Failed to update admin metadata: ${updateError.message}`
-              });
-            }
-            return {
-              success: true,
-              action: "updated",
-              userId: existing.id
-            };
-          }
-          throw new import_server6.TRPCError({
-            code: "CONFLICT",
-            message: "User already exists but could not be located."
-          });
-        }
-        throw new import_server6.TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Supabase error: ${error.message}`
-        });
-      }
-      return {
-        success: true,
-        action: "created",
-        userId: data.user?.id ?? null
-      };
     })
   }),
   // Feature routers
@@ -4927,6 +5161,7 @@ var appRouter = router({
 });
 
 // server/_core/context.ts
+var import_auth2 = require("firebase-admin/auth");
 function getBearerToken(req) {
   const auth = req.headers["authorization"];
   if (!auth || Array.isArray(auth)) return null;
@@ -4935,29 +5170,22 @@ function getBearerToken(req) {
 }
 async function createContext(opts) {
   let user = null;
-  const supabase = getServerSupabase();
   const bearer = getBearerToken(opts.req);
-  if (bearer && supabase) {
+  if (bearer) {
     try {
-      const { data, error } = await supabase.auth.getUser(bearer);
-      if (!error && data.user) {
-        const u = data.user;
-        const name = u.user_metadata && u.user_metadata.name || u.user_metadata?.full_name || u.email?.split("@")[0] || null;
-        const appMeta = u.app_metadata ?? {};
-        const supabaseRole = appMeta["role"] === "admin" ? "admin" : void 0;
-        await upsertUser({
-          openId: u.id,
-          name,
-          email: u.email ?? null,
-          loginMethod: "supabase",
-          lastSignedIn: /* @__PURE__ */ new Date(),
-          ...supabaseRole ? { role: supabaseRole } : {}
-        });
-        const found = await getUserByOpenId(u.id);
-        if (found) {
-          user = found;
-        }
-      }
+      const decoded = await (0, import_auth2.getAuth)().verifyIdToken(bearer);
+      const openId = `firebase:${decoded.uid}`;
+      const name = decoded.name || (decoded.email ? decoded.email.split("@")[0] : null) || null;
+      await upsertUser({
+        openId,
+        name,
+        email: decoded.email ?? null,
+        loginMethod: "firebase",
+        lastSignedIn: /* @__PURE__ */ new Date()
+      }).catch(() => {
+      });
+      const found = await getUserByOpenId(openId);
+      if (found) user = found;
     } catch {
     }
   }
@@ -4968,24 +5196,32 @@ async function createContext(opts) {
       user = null;
     }
   }
+  if (user?.openId && !user.openId.startsWith("firebase:") && !user.openId.startsWith("admin:")) {
+    const fresh = await getUserByOpenId(user.openId);
+    if (fresh) user = fresh;
+  }
   return {
     req: opts.req,
     res: opts.res,
     user,
-    supabase
+    contextData: {
+      role: user?.role ?? null,
+      userId: user?.openId ?? null,
+      email: user?.email ?? null
+    }
   };
 }
 
 // server/_core/vite.ts
 var import_express = __toESM(require("express"), 1);
-var import_fs = __toESM(require("fs"), 1);
+var import_fs2 = __toESM(require("fs"), 1);
 var import_nanoid5 = require("nanoid");
-var import_path = __toESM(require("path"), 1);
-var import_meta = {};
-var DIRNAME = typeof __dirname !== "undefined" ? __dirname : new URL(".", import_meta.url).pathname;
+var import_path2 = __toESM(require("path"), 1);
+var import_meta4 = {};
+var DIRNAME2 = typeof __dirname !== "undefined" ? __dirname : new URL(".", import_meta4.url).pathname;
 async function setupVite(app, server) {
   const { createServer: createViteServer } = await import("vite");
-  const viteConfig = (await import("../../vite.config")).default;
+  const viteConfig = (await Promise.resolve().then(() => (init_vite_config(), vite_config_exports))).default;
   const serverOptions = {
     middlewareMode: true,
     hmr: { server },
@@ -5001,8 +5237,8 @@ async function setupVite(app, server) {
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
     try {
-      const clientTemplate = import_path.default.resolve(DIRNAME, "../..", "client", "index.html");
-      let template = await import_fs.default.promises.readFile(clientTemplate, "utf-8");
+      const clientTemplate = import_path2.default.resolve(DIRNAME2, "../..", "client", "index.html");
+      let template = await import_fs2.default.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${(0, import_nanoid5.nanoid)()}"`
@@ -5016,19 +5252,32 @@ async function setupVite(app, server) {
   });
 }
 function serveStatic(app) {
-  const distPath = process.env.NODE_ENV === "development" ? import_path.default.resolve(DIRNAME, "../..", "dist", "public") : import_path.default.resolve(DIRNAME, "public");
-  if (!import_fs.default.existsSync(distPath)) {
+  const distPath = process.env.NODE_ENV === "development" ? import_path2.default.resolve(DIRNAME2, "../..", "dist", "public") : import_path2.default.resolve(DIRNAME2, "public");
+  if (!import_fs2.default.existsSync(distPath)) {
     console.error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
-  app.use(import_express.default.static(distPath));
+  app.use(
+    import_express.default.static(distPath, {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith(".html")) {
+          res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        } else if (filePath.includes(`${import_path2.default.sep}assets${import_path2.default.sep}`)) {
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        }
+      }
+    })
+  );
   app.use("*", (_req, res) => {
-    res.sendFile(import_path.default.resolve(distPath, "index.html"));
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.sendFile(import_path2.default.resolve(distPath, "index.html"));
   });
 }
 
 // server/_core/index.ts
+var import_meta5 = {};
+var DIRNAME3 = typeof __dirname !== "undefined" ? __dirname : new URL(".", import_meta5.url).pathname;
 function isPortAvailable(port) {
   return new Promise((resolve) => {
     const server = import_net.default.createServer();
@@ -5048,11 +5297,32 @@ async function findAvailablePort(startPort = 3e3) {
 }
 function createApp() {
   const app = (0, import_express2.default)();
+  let allowedOrigins;
+  if (process.env.NODE_ENV === "production") {
+    const extra = (process.env.CORS_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
+    allowedOrigins = [
+      "https://vanirgroup.com",
+      "https://www.vanirgroup.com",
+      ...extra
+    ];
+  } else {
+    allowedOrigins = true;
+  }
+  app.use((0, import_cors.default)({
+    origin: allowedOrigins,
+    credentials: true
+  }));
+  app.use((_req, res, next) => {
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+    next();
+  });
   app.use(import_express2.default.json({ limit: "50mb" }));
   app.use(import_express2.default.urlencoded({ limit: "50mb", extended: true }));
+  app.use("/uploads", import_express2.default.static(import_path3.default.resolve(DIRNAME3, "..", "public", "uploads")));
   registerStorageProxy(app);
   registerDownloadProxy(app);
   registerOAuthRoutes(app);
+  registerFirebaseAuthRoutes(app);
   app.use(
     "/api/trpc",
     (0, import_express3.createExpressMiddleware)({ router: appRouter, createContext })
@@ -5060,17 +5330,8 @@ function createApp() {
   return app;
 }
 async function startServer() {
-  const app = (0, import_express2.default)();
+  const app = createApp();
   const server = (0, import_http.createServer)(app);
-  app.use(import_express2.default.json({ limit: "50mb" }));
-  app.use(import_express2.default.urlencoded({ limit: "50mb", extended: true }));
-  registerStorageProxy(app);
-  registerDownloadProxy(app);
-  registerOAuthRoutes(app);
-  app.use(
-    "/api/trpc",
-    (0, import_express3.createExpressMiddleware)({ router: appRouter, createContext })
-  );
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
