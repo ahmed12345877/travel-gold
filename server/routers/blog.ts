@@ -34,10 +34,18 @@ export const blogRouter = router({
     )
     .query(async ({ input }) => {
       const { limit = 10, offset = 0, category } = input ?? {};
-      if (category) {
-        return getBlogPostsByCategory(category, limit, offset);
+      try {
+        if (category) {
+          return await getBlogPostsByCategory(category, limit, offset);
+        }
+        return await getPublishedBlogPosts(limit, offset);
+      } catch (err) {
+        console.error("[blog.list] database error:", err);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch blog posts",
+        });
       }
-      return getPublishedBlogPosts(limit, offset);
     }),
 
   // Public: Get single post by slug
