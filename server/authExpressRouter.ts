@@ -96,24 +96,6 @@ async function issueSessionForUser(req: Request, res: Response, uid: string, ema
   return { success: true, email: email || null, name: displayName || null };
 }
 
-async function issueSession(req: Request, res: Response, uid: string, email: string | undefined, displayName: string | undefined) {
-  const user = await resolveAdminUser(uid, email, displayName);
-  const openId = `firebase:${uid}`;
-
-  const sessionToken = await sdk.createSessionToken(openId, {
-    name: user.name || "Admin",
-    expiresInMs: ONE_YEAR_MS,
-  });
-
-  const cookieOptions = getSessionCookieOptions(req);
-  res.cookie(COOKIE_NAME, sessionToken, {
-    ...cookieOptions,
-    maxAge: ONE_YEAR_MS,
-  });
-
-  return { success: true, email: user.email, name: user.name };
-}
-
 export function registerFirebaseAuthRoutes(app: Express) {
   // POST /api/auth/login — verify Firebase ID token from email/password sign-in (ADMIN ONLY)
   app.post("/api/auth/login", async (req: Request, res: Response) => {
@@ -124,7 +106,7 @@ export function registerFirebaseAuthRoutes(app: Express) {
       }
 
       const decoded = await getAuth().verifyIdToken(idToken);
-      const result = await issueSession(req, res, decoded.uid, decoded.email, decoded.name);
+      const result = await issueSessionForAdmin(req, res, decoded.uid, decoded.email, decoded.name);
       return res.json(result);
     } catch (err: any) {
       const msg = err?.message || "Authentication failed";
@@ -150,7 +132,7 @@ export function registerFirebaseAuthRoutes(app: Express) {
     }
   });
 
-  // POST /api/auth/google — verify Google ID token obtained via Firebase Google Sign-In
+  // POST /api/auth/google — Google Sign-In for regular users; no admin role required
   app.post("/api/auth/google", async (req: Request, res: Response) => {
     try {
       const { idToken } = req.body as { idToken?: string };
@@ -159,9 +141,24 @@ export function registerFirebaseAuthRoutes(app: Express) {
       }
 
       const decoded = await getAuth().verifyIdToken(idToken);
-      const result = await issueSession(req, res, decoded.uid, decoded.email, decoded.name);
+      const result = await issueSessionForUser(req, res, decoded.uid, decoded.email, decoded.name);
+      return res.json(result);
+    } catch (err: any) {
+      const msg = err?.message || "Google authentication failed";
+      return res.status(401).json({ error: msg });
+    }
+  });
 
+  // POST /api/auth/admin-google — Google Sign-In restricted to admin users
+  app.post("/api/auth/admin-google", async (req: Request, res: Response) => {
+    try {
+      const { idToken } = req.body as { idToken?: string };
+      if (!idToken) {
+        return res.status(400).json({ error: "idToken is required" });
+      }
 
+      const decoded = await getAuth().verifyIdToken(idToken);
+      const result = await issueSessionForAdmin(req, res, decoded.uid, decoded.email, decoded.name);
       return res.json(result);
     } catch (err: any) {
       const msg = err?.message || "Google authentication failed";
