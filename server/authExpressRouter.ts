@@ -105,10 +105,14 @@ export function registerFirebaseAuthRoutes(app: Express) {
         return res.status(400).json({ error: "idToken is required" });
       }
 
-      const decoded = await getAuth().verifyIdToken(idToken);
+      // checkRevoked=true rejects tokens that have been revoked (e.g. after sign-out on another device).
+      const decoded = await getAuth().verifyIdToken(idToken, true);
       const result = await issueSessionForAdmin(req, res, decoded.uid, decoded.email, decoded.name);
       return res.json(result);
     } catch (err: any) {
+      if (err?.code === "auth/id-token-revoked") {
+        return res.status(401).json({ error: "Session revoked. Please sign in again." });
+      }
       const msg = err?.message || "Authentication failed";
       const status = msg === "Admin access denied" ? 403 : 401;
       return res.status(status).json({ error: msg });
@@ -132,24 +136,8 @@ export function registerFirebaseAuthRoutes(app: Express) {
     }
   });
 
-  // POST /api/auth/google — Google Sign-In for regular users; no admin role required
-  app.post("/api/auth/google", async (req: Request, res: Response) => {
-    try {
-      const { idToken } = req.body as { idToken?: string };
-      if (!idToken) {
-        return res.status(400).json({ error: "idToken is required" });
-      }
-
-      const decoded = await getAuth().verifyIdToken(idToken);
-      const result = await issueSessionForUser(req, res, decoded.uid, decoded.email, decoded.name);
-      return res.json(result);
-    } catch (err: any) {
-      const msg = err?.message || "Google authentication failed";
-      return res.status(401).json({ error: msg });
-    }
-  });
-
   // POST /api/auth/admin-google — Google Sign-In restricted to admin users
+  // checkRevoked=true rejects tokens that have been revoked (e.g. after sign-out on another device).
   app.post("/api/auth/admin-google", async (req: Request, res: Response) => {
     try {
       const { idToken } = req.body as { idToken?: string };
@@ -157,10 +145,13 @@ export function registerFirebaseAuthRoutes(app: Express) {
         return res.status(400).json({ error: "idToken is required" });
       }
 
-      const decoded = await getAuth().verifyIdToken(idToken);
+      const decoded = await getAuth().verifyIdToken(idToken, true);
       const result = await issueSessionForAdmin(req, res, decoded.uid, decoded.email, decoded.name);
       return res.json(result);
     } catch (err: any) {
+      if (err?.code === "auth/id-token-revoked") {
+        return res.status(401).json({ error: "Session revoked. Please sign in again." });
+      }
       const msg = err?.message || "Google authentication failed";
       const status = msg === "Admin access denied" ? 403 : 401;
       return res.status(status).json({ error: msg });
