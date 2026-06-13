@@ -135,7 +135,7 @@ export async function firebaseGoogleLogin(): Promise<void> {
 }
 
 // ===== Admin authentication =====
-// تستهدف نقاط النهاية الخاصة بالأدمن (/api/auth/login و /api/auth/google)
+// تستهدف نقاط النهاية الخاصة بالأدمن (/api/auth/login و /api/auth/admin-google)
 // والتي تتحقق من صلاحية "admin" وترفض الحسابات غير المصرح لها.
 
 export async function firebaseAdminEmailLogin(email: string, password: string): Promise<void> {
@@ -168,7 +168,7 @@ export async function firebaseAdminGoogleLogin(): Promise<void> {
   // نقطة نهاية الأدمن عبر Google — تتحقق من الصلاحيات قبل إصدار الجلسة.
   // عند فشل التحقق نسجّل الخروج من Firebase حتى لا تبقى جلسة معلّقة بدون جلسة تطبيق صالحة.
   try {
-    await callAuthEndpoint("/api/auth/google", idToken);
+    await callAuthEndpoint("/api/auth/admin-google", idToken);
   } catch (err) {
     await auth.signOut().catch(() => {});
     throw err;
