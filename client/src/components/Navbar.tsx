@@ -4,11 +4,10 @@
  * White links with gold hover, glass-blur background on scroll
  */
 import { useState, useEffect, useRef } from "react";
-import { Search, Menu, X, ChevronDown, MoreHorizontal, User, LogOut, Moon, Sun } from "lucide-react";
+import { Search, Menu, X, ChevronDown, MoreHorizontal, User, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { useThemeMode } from "@/contexts/ThemeModeProvider";
 import { ASSETS } from "@/config/assets";
 
 /* ─── Navigation Structure ─── */
@@ -36,7 +35,6 @@ export default function Navbar() {
   const [location] = useLocation();
   const dropdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { user, isAuthenticated, logout } = useAuth();
-  const { mode, toggleMode } = useThemeMode();
 
   const isHome = location === "/";
 
@@ -342,19 +340,6 @@ export default function Navbar() {
 
           {/* Right actions - compressed for mobile */}
           <div className="flex items-center gap-1 sm:gap-1.5">
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleMode}
-              className="text-white/50 hover:text-[var(--theme-primary)] transition-colors p-1 rounded-md hover:bg-white/5"
-              title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}
-            >
-              {mode === 'light' ? (
-                <Moon size={16} className="sm:w-[18px] sm:h-[18px]" />
-              ) : (
-                <Sun size={16} className="sm:w-[18px] sm:h-[18px]" />
-              )}
-            </button>
-
             {/* Search */}
             <button className="text-white/50 hover:text-white transition-colors p-1">
               <Search size={16} className="sm:w-[18px] sm:h-[18px]" />
