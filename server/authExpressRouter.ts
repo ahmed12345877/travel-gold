@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import admin from "firebase-admin";
+import { getAuth } from "firebase-admin/auth";
 import { sdk } from "./_core/sdk";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { COOKIE_NAME, ONE_YEAR_MS } from "../shared/const";

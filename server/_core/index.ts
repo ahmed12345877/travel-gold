@@ -66,6 +66,13 @@ export function createApp() {
     credentials: true,
   }));
 
+  // Allow Firebase Google Sign-In popup to communicate back.
+  // COOP: same-origin blocks popup.closed checks which Firebase signInWithPopup depends on.
+  app.use((_req, res, next) => {
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+    next();
+  });
+
 app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // Serve locally-uploaded files (fallback when Supabase is not configured)
