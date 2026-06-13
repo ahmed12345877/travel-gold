@@ -64,7 +64,7 @@ env:
   # Add your email here to bootstrap your admin account without editing Firestore manually.
   # Example: "admin@example.com,other@example.com"
   - variable: ADMIN_EMAILS
-    value: ""
+    value: "admin@vanirgroup.com"
     availability:
       - RUNTIME
 
