@@ -9,17 +9,29 @@ import { db as firestoreDb } from "./_core/firebaseAdmin";
 import "./_core/firebaseAdmin";
 
 async function resolveAdminUser(uid: string, email: string | undefined, displayName: string | undefined) {
-  // Upsert user into Firestore (merge so existing role/fields are preserved)
-  await firestoreDb.collection("users").doc(uid).set(
-    {
-      uid,
-      email: email ?? null,
-      name: displayName || email?.split("@")[0] || null,
-      loginMethod: "firebase",
-      lastSignedIn: new Date(),
-    },
-    { merge: true }
-  );
+  // ADMIN_EMAILS: comma-separated list of emails that are granted admin role on first login.
+  // Set this env var in apphosting.yaml (or locally in .env) to bootstrap the first admin
+  // without needing to manually edit Firestore.
+  const bootstrapEmails = (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  const isBootstrapAdmin = Boolean(email && bootstrapEmails.includes(email.toLowerCase()));
+
+  const baseData: Record<string, unknown> = {
+    uid,
+    email: email ?? null,
+    name: displayName || email?.split("@")[0] || null,
+    loginMethod: "firebase",
+    lastSignedIn: new Date(),
+  };
+
+  // Auto-grant admin role when email is in ADMIN_EMAILS (will not downgrade an existing role).
+  if (isBootstrapAdmin) {
+    baseData.role = "admin";
+  }
+
+  await firestoreDb.collection("users").doc(uid).set(baseData, { merge: true });
 
   const userDoc = await firestoreDb.collection("users").doc(uid).get();
   const userData = userDoc.data();
