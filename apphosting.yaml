@@ -60,6 +60,21 @@ env:
     availability:
       - RUNTIME
 
+  # ADMIN_EMAILS: comma-separated list of emails that are auto-granted admin role on first login.
+  # Add your email here to bootstrap your admin account without editing Firestore manually.
+  # Example: "admin@example.com,other@example.com"
+  - variable: ADMIN_EMAILS
+    value: "admin@vanirgroup.com"
+    availability:
+      - RUNTIME
+
+  # CORS_ORIGINS: extra origins allowed to call the API (comma-separated).
+  # Includes the Firebase App Hosting preview domain so the hosted.app URL also works.
+  - variable: CORS_ORIGINS
+    value: "https://travel-gold--gen-lang-client-0364375301.us-east4.hosted.app"
+    availability:
+      - RUNTIME
+
   # ===== Secrets (read securely at runtime) =====
   - variable: OPENAI_API_KEY
     secret: OPENAI_API_KEY
