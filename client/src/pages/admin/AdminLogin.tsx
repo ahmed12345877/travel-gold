@@ -36,7 +36,7 @@ export default function AdminLogin() {
     setStatus(null);
     try {
       await firebaseAdminEmailLogin(email, password);
-      navigate("/admin");
+      window.location.href = "/admin";
     } catch (err: any) {
       // امسح جلسة Firebase حتى لا تبقى معلّقة عند رفض الصلاحية
       await firebaseSignOut().catch(() => {});
@@ -68,7 +68,7 @@ export default function AdminLogin() {
     setStatus(null);
     try {
       await firebaseAdminGoogleLogin();
-      navigate("/admin");
+      window.location.href = "/admin";
     } catch (err: any) {
       await firebaseSignOut().catch(() => {});
       const msg: string = err?.message || "Google sign-in failed.";
