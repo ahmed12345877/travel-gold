@@ -8,11 +8,13 @@ import superjson from "superjson";
 import App from "./App";
 // 1. استيراد دالة Auth الآمنة التي تضمن تهيئة Firebase أولاً
 import { getFirebaseAuth } from "@/lib/firebase-api";
-import { GlobalThemeStyleInjector } from "./contexts/GlobalThemeStyleInjector";
-import { ThemeColorsApplier } from "./contexts/ThemeColorsApplier";
 import { ThemeColorsProvider } from "./contexts/ThemeColorsProvider";
-import { ThemeModeProvider } from "./contexts/ThemeModeProvider";
 import "./index.css";
+
+// Ensure dark theme is always applied
+if (typeof document !== 'undefined') {
+  document.documentElement.classList.add('dark');
+}
 
 const queryClient = new QueryClient();
 
@@ -98,13 +100,9 @@ createRoot(document.getElementById("root")!).render(
   <HelmetProvider>
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <ThemeModeProvider>
-          <GlobalThemeStyleInjector />
-          <ThemeColorsApplier />
-          <ThemeColorsProvider>
-            <App />
-          </ThemeColorsProvider>
-        </ThemeModeProvider>
+        <ThemeColorsProvider>
+          <App />
+        </ThemeColorsProvider>
       </QueryClientProvider>
     </trpc.Provider>
   </HelmetProvider>
