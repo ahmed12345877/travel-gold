@@ -1,5 +1,8 @@
 export const ENV = {
-  appId: process.env.VITE_APP_ID ?? "",
+  // VITE_APP_ID is the Manus OAuth app id (unused in the Firebase auth flow).
+  // Fall back to VITE_FIREBASE_APP_ID so the signed session always carries a
+  // stable, non-empty app identifier in production.
+  appId: process.env.VITE_APP_ID ?? process.env.VITE_FIREBASE_APP_ID ?? "",
   cookieSecret: process.env.JWT_SECRET ?? "",
   databaseUrl: process.env.DATABASE_URL ?? "",
   oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
