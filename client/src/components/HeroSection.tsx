@@ -87,173 +87,97 @@ function AmbientParticles() {
   );
 }
 
-/* ── Card Stack — shared container perspective + click-to-focus ── */
+/* ── Fan Card — per-card rotateY perspective fan matching reference ── */
 
-// Each card sits in the stack with a fixed horizontal offset.
-// The OUTER container carries the isometric angle from the spec:
-//   perspective(1200px) rotateY(-20deg) skewY(4deg)
-// Clicking a card elevates it (translateZ + resets rotateY) while
-// the others dim, giving a "bring to front" focus effect.
+// Individual rotateY values create the cascade:
+// leftmost card is nearly edge-on (42°), rightmost is near-flat (3°).
+// Each card steps 82px to the right with increasing z-depth.
+const FAN_CONFIG = [
+  { rotateY: 42, z:  0,  delay: 0.2 },
+  { rotateY: 26, z: 20,  delay: 0.35 },
+  { rotateY: 12, z: 36,  delay: 0.50 },
+  { rotateY:  3, z: 48,  delay: 0.65 },
+];
 
-const STACK_STEP = 88; // px between card left-edges
+const CARD_W = 170;  // px — portrait width
+const CARD_H = 300;  // px — portrait height (~1:1.76 ratio)
+const STEP   = 82;   // px — horizontal step between card left-edges
 
-function StackCard({
+function FanCard({
   img,
   index,
-  activeIndex,
-  onActivate,
 }: {
   img: (typeof CARD_IMAGES)[0];
   index: number;
-  activeIndex: number;
-  onActivate: (i: number) => void;
 }) {
   const [, navigate] = useLocation();
-  const isActive = index === activeIndex;
-  const isOther = activeIndex !== -1 && !isActive;
+  const cfg = FAN_CONFIG[index];
+  const [hovered, setHovered] = useState(false);
 
   return (
     <motion.div
       className="absolute cursor-pointer"
       style={{
-        // Portrait 1:1.78 ratio — tall cards matching reference
-        width: 158,
-        height: 282,
-        left: index * STACK_STEP,
+        width: CARD_W,
+        height: CARD_H,
+        left: index * STEP,
         top: "50%",
         transformOrigin: "center center",
-        zIndex: isActive ? 20 : index + 1,
+        zIndex: hovered ? 20 : index + 1,
       }}
-      // Per-card: only handle vertical centering + focus elevation.
-      // The container carries rotateY / skewY so no per-card rotation needed.
-      transformTemplate={({ y }) =>
-        `translateY(calc(-50% + ${y})) translateZ(0px)`
+      // transformTemplate keeps vertical centering and perspective stable while
+      // Framer Motion animates rotateY and y independently each frame.
+      transformTemplate={({ rotateY, y }) =>
+        `translateY(calc(-50% + ${y})) perspective(1000px) rotateY(${rotateY}) translateZ(${cfg.z}px)`
       }
-      animate={{
-        y: isActive ? "-60px" : "0px",
-        scale: isActive ? 1.06 : isOther ? 0.96 : 1,
-        opacity: isOther ? 0.55 : 1,
-        filter: isOther ? "brightness(0.6)" : "brightness(1)",
-      }}
-      transition={{ duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
-      initial={{ opacity: 0, y: "60px" }}
-      whileInView={{ opacity: 1, y: "0px" }}
-      viewport={{ once: true }}
-      onClick={() => {
-        if (isActive) {
-          navigate(img.link);
-        } else {
-          onActivate(index);
-        }
-      }}
+      initial={{ opacity: 0, rotateY: `${cfg.rotateY + 18}deg`, y: "55px" }}
+      animate={{ opacity: 1, rotateY: `${cfg.rotateY}deg`, y: "0px" }}
+      transition={{ duration: 1.0, delay: cfg.delay, ease: [0.23, 1, 0.32, 1] }}
+      whileHover={{ y: "-14px", transition: { duration: 0.35, ease: "easeOut" } }}
+      onClick={() => navigate(img.link)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
-      {/* Card shell */}
       <div
         className="relative w-full h-full overflow-hidden"
         style={{
-          borderRadius: 12,
-          boxShadow: isActive
-            ? "0 24px 64px rgba(0,0,0,0.75), 0 0 0 1px rgba(212,168,83,0.4)"
-            : "6px 12px 36px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.10)",
-          transition: "box-shadow 0.45s ease",
+          borderRadius: 10,
+          boxShadow: hovered
+            ? "0 20px 60px rgba(0,0,0,0.75), 0 0 0 1px rgba(212,168,83,0.35)"
+            : "4px 10px 32px rgba(0,0,0,0.60), 0 0 0 1px rgba(255,255,255,0.10)",
+          transition: "box-shadow 0.35s ease",
         }}
       >
-        {/* Full-bleed image — object-cover preserves full resolution & ratio */}
-        <div className="absolute inset-0">
-          <OptimizedImage
-            src={img.src}
-            alt={img.alt}
-            lazy={false}
-            goldShimmer
-            containerClassName="absolute inset-0"
-            className="w-full h-full object-cover object-center"
-          />
-        </div>
-
-        {/* Gradient scrim — fades to black at bottom for label legibility */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-
-        {/* Gold accent line — top edge */}
-        <div
-          className="absolute top-0 left-0 right-0 h-[2px] pointer-events-none"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent, #D4A853, transparent)",
-            opacity: isActive ? 1 : 0.35,
-            transition: "opacity 0.45s",
-          }}
+        {/* Full-bleed image — fills card completely, no text overlay */}
+        <OptimizedImage
+          src={img.src}
+          alt={img.alt}
+          lazy={false}
+          goldShimmer
+          containerClassName="absolute inset-0"
+          className="w-full h-full object-cover object-center"
         />
 
-        {/* Label — glassmorphism panel at bottom */}
+        {/* Subtle top gold accent on hover */}
         <div
-          className="absolute bottom-0 left-0 right-0 px-3 py-3 z-10"
+          className="absolute top-0 left-0 right-0 h-[2px] pointer-events-none transition-opacity duration-400"
           style={{
-            backdropFilter: "blur(8px)",
-            WebkitBackdropFilter: "blur(8px)",
-            background: "rgba(0, 0, 0, 0.38)",
-            borderTop: "1px solid rgba(255,255,255,0.08)",
+            background: "linear-gradient(90deg, transparent, #D4A853, transparent)",
+            opacity: hovered ? 0.85 : 0,
           }}
-        >
-          {/* Category — gold, uppercase, no wrapping */}
-          <p
-            className="text-[var(--theme-primary)] uppercase font-semibold whitespace-nowrap overflow-hidden text-ellipsis"
-            style={{ fontSize: 9, letterSpacing: "0.20em", lineHeight: 1.4 }}
-          >
-            {img.sub}
-          </p>
-          {/* Title — white, no wrapping */}
-          <p
-            className="text-white font-bold whitespace-nowrap overflow-hidden text-ellipsis"
-            style={{ fontSize: 13, lineHeight: 1.35 }}
-          >
-            {img.label}
-          </p>
-        </div>
-
-        {/* Active indicator ring */}
-        {isActive && (
-          <motion.div
-            className="absolute inset-0 pointer-events-none"
-            style={{ borderRadius: 12 }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div
-              className="absolute inset-0"
-              style={{
-                borderRadius: 12,
-                boxShadow: "inset 0 0 0 1.5px rgba(212,168,83,0.65)",
-              }}
-            />
-          </motion.div>
-        )}
+        />
       </div>
     </motion.div>
   );
 }
 
-/* ── Card Stack Container ── */
+/* ── Fan Cards Container ── */
 function CinematicCardsRow() {
   const [, navigate] = useLocation();
-  // -1 means no card is actively focused
-  const [activeIndex, setActiveIndex] = useState<number>(-1);
 
-  // Clicking outside the stack resets focus
-  const containerRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    function handleOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setActiveIndex(-1);
-      }
-    }
-    document.addEventListener("mousedown", handleOutside);
-    return () => document.removeEventListener("mousedown", handleOutside);
-  }, []);
-
-  // Container: 4 × 88px step + 158px card = 510px total footprint
-  // Extra 40px right padding so last card isn't clipped by container edge
-  const W = STACK_STEP * (CARD_IMAGES.length - 1) + 158 + 40;
+  // Total footprint: 4 cards × step(82) + card-width(170) = 416px
+  const W = (CARD_IMAGES.length - 1) * STEP + CARD_W + 30; // 30px right breathing room
+  const H = CARD_H + 30; // 30px for hover lift clearance
 
   return (
     <>
@@ -273,53 +197,17 @@ function CinematicCardsRow() {
               containerClassName="absolute inset-0"
               className="w-full h-full object-cover object-center"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-            <div
-              className="absolute bottom-0 left-0 right-0 px-2 py-2"
-              style={{
-                backdropFilter: "blur(8px)",
-                WebkitBackdropFilter: "blur(8px)",
-                background: "rgba(0,0,0,0.35)",
-              }}
-            >
-              <p
-                className="text-[var(--theme-primary)] uppercase font-semibold whitespace-nowrap overflow-hidden text-ellipsis"
-                style={{ fontSize: 8, letterSpacing: "0.18em" }}
-              >
-                {img.sub}
-              </p>
-              <p
-                className="text-white font-bold whitespace-nowrap overflow-hidden text-ellipsis"
-                style={{ fontSize: 11 }}
-              >
-                {img.label}
-              </p>
-            </div>
           </div>
         ))}
       </div>
 
-      {/* Tablet+ — isometric container + stacked cards */}
+      {/* Tablet+ — perspective fan */}
       <div
-        className="hidden sm:block"
-        style={{
-          // Isometric angle applied once to the whole group — matches spec exactly
-          transform: "perspective(1200px) rotateY(-20deg) skewY(4deg)",
-          transformOrigin: "center center",
-          width: W,
-          height: 320,
-          position: "relative",
-        }}
-        ref={containerRef}
+        className="hidden sm:block relative"
+        style={{ width: W, height: H }}
       >
         {CARD_IMAGES.map((img, i) => (
-          <StackCard
-            key={i}
-            img={img}
-            index={i}
-            activeIndex={activeIndex}
-            onActivate={setActiveIndex}
-          />
+          <FanCard key={i} img={img} index={i} />
         ))}
       </div>
     </>
@@ -472,16 +360,6 @@ export default function HeroSection() {
                 className="hero-btn-primary group inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 font-semibold text-xs sm:text-sm tracking-wide w-full sm:w-auto"
               >
                 Begin Your Journey
-                <ArrowRight
-                  size={16}
-                  className="group-hover:translate-x-1 transition-transform duration-300"
-                />
-              </a>
-              <a
-                href="/gallery"
-                className="hero-btn-secondary group inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 border-2 font-semibold text-xs sm:text-sm tracking-wide backdrop-blur-sm w-full sm:w-auto"
-              >
-                Explore Gallery
                 <ArrowRight
                   size={16}
                   className="group-hover:translate-x-1 transition-transform duration-300"
