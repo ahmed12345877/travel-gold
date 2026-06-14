@@ -105,13 +105,28 @@ export default function AdminLayout({
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
   }, [sidebarWidth]);
 
-  // If we're not loading but have no user, redirect to login page
+  // If we're not loading but have no user, wait briefly before redirecting.
+  // This gives the session cookie time to propagate after a hard navigation
+  // from AdminLogin, preventing a redirect loop if the cookie isn't readable yet.
   useEffect(() => {
     if (!loading && !user && typeof window !== "undefined") {
       const currentPath = window.location.pathname;
-      if (currentPath !== "/admin/login") {
-        window.location.href = "/admin/login";
-      }
+      if (currentPath === "/admin/login") return;
+      // Single retry: poll /api/auth/me once after a short delay before giving up.
+      const timer = setTimeout(async () => {
+        try {
+          const res = await fetch("/api/auth/me", { credentials: "include" });
+          if (res.ok) {
+            // Session is now readable — reload to pick up the auth state
+            window.location.reload();
+          } else {
+            window.location.href = "/admin/login";
+          }
+        } catch {
+          window.location.href = "/admin/login";
+        }
+      }, 400);
+      return () => clearTimeout(timer);
     }
   }, [loading, user]);
 
