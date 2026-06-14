@@ -314,7 +314,7 @@ class SDKServer {
       } satisfies User;
     }
 
-    // Firebase sessions: verify identity and role via Firestore, never SQL.
+    // Firebase sessions: verify identity via Firestore, return role as-is.
     if (sessionUserId.startsWith("firebase:")) {
       const uid = sessionUserId.slice("firebase:".length);
       const userDoc = await firestoreDb.collection("users").doc(uid).get();
@@ -322,19 +322,19 @@ class SDKServer {
         throw ForbiddenError("Firebase user not found");
       }
       const userData = userDoc.data()!;
-      if (userData.role !== "admin") {
-        throw ForbiddenError("Admin access denied");
-      }
+      // Allow any authenticated Firebase user through — role is passed as-is.
+      // Admin routes do their own role check downstream.
+      const userRole = (userData.role as string) ?? "user";
       await firestoreDb.collection("users").doc(uid).set({ lastSignedIn: now }, { merge: true });
       return {
         id: 0,
         openId: sessionUserId,
-        name: session.name || (userData.name as string) || "Admin",
+        name: session.name || (userData.name as string) || null,
         email: (userData.email as string) ?? null,
         phone: null,
         loginMethod: "firebase",
         avatarUrl: null,
-        role: "admin" as const,
+        role: userRole as any,
         createdAt: now,
         updatedAt: now,
         lastSignedIn: now,

@@ -13,18 +13,25 @@ import { ASSETS } from "@/config/assets";
 const EGYPT_IMAGE = "/images/egypt-cairo.png";
 
 // Poll /api/auth/me to verify session was set on server
-// Use exponential backoff: 50ms, 100ms, 200ms, 400ms (total max 750ms)
-async function waitForServerSession(): Promise<void> {
-  const delays = [50, 100, 200, 400];
-  for (const delayMs of delays) {
-    const res = await fetch('/api/auth/me', {
-      credentials: 'include',
-    }).catch(() => null);
-    if (res?.ok) return; // Session verified
+// Use exponential backoff: 100ms, 200ms, 400ms, 800ms (total max ~1.5s)
+async function waitForServerSession(maxRetries = 5): Promise<boolean> {
+  const delays = [100, 200, 300, 400, 500];
+  for (let i = 0; i < maxRetries; i++) {
+    const delayMs = delays[i] ?? 500;
     await new Promise(r => setTimeout(r, delayMs));
+    try {
+      const res = await fetch('/api/auth/me', {
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data) return true; // Session verified with user data
+      }
+    } catch {
+      // Network error, keep retrying
+    }
   }
-  // If we still don't have a session after retries, continue anyway
-  // (the auth check on admin page will catch it)
+  return false; // Could not verify session after retries
 }
 
 export default function AdminLogin() {
@@ -53,10 +60,10 @@ export default function AdminLogin() {
       console.log("[v0] Admin login attempting with email:", email);
       await firebaseAdminEmailLogin(email, password);
       console.log("[v0] Firebase login successful, waiting for server session...");
-      // Verify session was set on server before navigating
-      await waitForServerSession();
-      console.log("[v0] Server session verified, navigating to /admin");
-      navigate("/admin");
+      const sessionReady = await waitForServerSession();
+      console.log("[v0] Session ready:", sessionReady);
+      // Use hard navigate so tRPC cache is fully cleared and auth state is fresh
+      window.location.href = "/admin";
     } catch (err: any) {
       // امسح جلسة Firebase حتى لا تبقى معلّقة عند رفض الصلاحية
       await firebaseSignOut().catch(() => {});
@@ -91,10 +98,10 @@ export default function AdminLogin() {
       console.log("[v0] Admin Google login attempting...");
       await firebaseAdminGoogleLogin();
       console.log("[v0] Google login successful, waiting for server session...");
-      // Verify session was set on server before navigating
-      await waitForServerSession();
-      console.log("[v0] Server session verified, navigating to /admin");
-      navigate("/admin");
+      const sessionReady = await waitForServerSession();
+      console.log("[v0] Session ready:", sessionReady);
+      // Use hard navigate so tRPC cache is fully cleared and auth state is fresh
+      window.location.href = "/admin";
     } catch (err: any) {
       await firebaseSignOut().catch(() => {});
       const msg: string = err?.message || "Google sign-in failed.";
