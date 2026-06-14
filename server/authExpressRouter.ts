@@ -109,6 +109,19 @@ async function issueSessionForUser(req: Request, res: Response, uid: string, ema
 }
 
 export function registerFirebaseAuthRoutes(app: Express) {
+  // GET /api/auth/me — lightweight session check used by client to poll for cookie readiness
+  app.get("/api/auth/me", async (req: Request, res: Response) => {
+    try {
+      const user = await sdk.authenticateRequest(req).catch(() => null);
+      if (user) {
+        return res.json({ id: user.id, email: user.email, name: user.name, role: user.role });
+      }
+      return res.status(401).json({ error: "Not authenticated" });
+    } catch {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+  });
+
   // POST /api/auth/login — verify Firebase ID token from email/password sign-in (ADMIN ONLY)
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {

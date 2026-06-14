@@ -105,23 +105,12 @@ export default function AdminLayout({
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
   }, [sidebarWidth]);
 
-  // If we're not loading but have no user, wait a moment then try to refetch
-  // This handles the case where the session cookie was just set
+  // If we're not loading but have no user, redirect to login page
   useEffect(() => {
     if (!loading && !user && typeof window !== "undefined") {
-      console.log("[v0] No user found in AdminLayout, checking if coming from login...");
-      // Only refetch once on mount if coming from login page
-      const isComingFromLogin = document.referrer.includes("/admin/login");
-      console.log("[v0] isComingFromLogin:", isComingFromLogin, "referrer:", document.referrer);
-      if (isComingFromLogin) {
-        console.log("[v0] Coming from login, reloading in 500ms to refetch auth state...");
-        const timer = setTimeout(() => {
-          // Trigger a refetch of the auth state
-          window.location.reload();
-        }, 500);
-        return () => clearTimeout(timer);
-      } else {
-        console.log("[v0] Not coming from login, redirecting to login page");
+      const currentPath = window.location.pathname;
+      if (currentPath !== "/admin/login") {
+        window.location.href = "/admin/login";
       }
     }
   }, [loading, user]);

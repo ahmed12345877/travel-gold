@@ -55,7 +55,8 @@ export default function Login() {
     setAuthError(null);
     try {
       await firebaseGoogleLogin();
-      setLocation(nextPath.startsWith("/admin") ? nextPath : "/");
+      // Hard navigate to clear tRPC cache and load fresh auth state
+      window.location.href = nextPath.startsWith("/admin") ? nextPath : "/";
     } catch (err: any) {
       setAuthError(err?.message || "Google sign-in failed.");
     } finally {
@@ -81,7 +82,8 @@ export default function Login() {
       } else {
         await firebaseEmailSignUp(email, password, name || undefined);
       }
-      setLocation(nextPath.startsWith("/admin") ? nextPath : "/");
+      // Hard navigate to clear tRPC cache and load fresh auth state
+      window.location.href = nextPath.startsWith("/admin") ? nextPath : "/";
     } catch (err: any) {
       const msg: string = err?.message || "Authentication failed.";
       setAuthError(
