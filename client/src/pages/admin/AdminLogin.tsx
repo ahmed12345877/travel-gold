@@ -27,8 +27,6 @@ async function waitForServerSession(): Promise<void> {
   // (the auth check on admin page will catch it)
 }
 
-const EGYPT_IMAGE = "/images/egypt-cairo.png";
-
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
