@@ -89,14 +89,18 @@ function AmbientParticles() {
 
 /* ── Fan Card (Perspective Layout matching reference image) ── */
 
-// Rotation and offset config for the 4-card fan:
-// Cards spread from left (most rotated) to right (least rotated),
-// overlapping like playing cards fanned out in 3D perspective.
+// Geometry derived from reference image:
+// - 4 cards, each ~155×285px (portrait ~1:1.84 ratio)
+// - Horizontal step between card left-edges: ~92px  → ~40% overlap
+// - rotateY: 42° → 26° → 12° → 3°  (steep fan, leftmost almost edge-on)
+// - rotateZ: 0 on all cards (no visible tilt in reference)
+// - translateZ increases right-ward so rightmost card appears "closest"
+// - No lateral translateX offset needed — left positioning handles spread
 const FAN_CONFIG = [
-  { rotateY: 38, rotateZ: -4, x: 0,   z: 0,   shadow: "rgba(0,0,0,0.55)" },
-  { rotateY: 22, rotateZ: -2, x: -18, z: 10,  shadow: "rgba(0,0,0,0.50)" },
-  { rotateY: 10, rotateZ:  0, x: -36, z: 20,  shadow: "rgba(0,0,0,0.45)" },
-  { rotateY:  0, rotateZ:  2, x: -50, z: 30,  shadow: "rgba(0,0,0,0.40)" },
+  { rotateY: 42, rotateZ: 0, z:  0,  shadow: "rgba(0,0,0,0.60)" },
+  { rotateY: 26, rotateZ: 0, z: 20,  shadow: "rgba(0,0,0,0.50)" },
+  { rotateY: 12, rotateZ: 0, z: 35,  shadow: "rgba(0,0,0,0.42)" },
+  { rotateY:  3, rotateZ: 0, z: 45,  shadow: "rgba(0,0,0,0.35)" },
 ];
 
 function FanCard({
@@ -114,23 +118,21 @@ function FanCard({
     <motion.div
       className="absolute cursor-pointer"
       style={{
-        // card dimensions - tall portrait aspect ratio matching reference
-        width: "clamp(110px, 13vw, 190px)",
-        height: "clamp(180px, 21vw, 310px)",
-        // z-index so rightmost card is on top
+        // Portrait card: ~1:1.84 ratio matching reference (155×285px at base)
+        width: "clamp(100px, 11.5vw, 158px)",
+        height: "clamp(184px, 21.2vw, 290px)",
         zIndex: index + 1,
-        // fan spread: each card offset to the right
-        left: `calc(${index} * clamp(60px, 8vw, 110px))`,
+        // Step = 92px at base → ~40% overlap between adjacent cards
+        left: `calc(${index} * clamp(62px, 7.1vw, 96px))`,
         top: "50%",
-        transformOrigin: "bottom center",
+        transformOrigin: "center center",
       }}
-      // transformTemplate composes static geometry (translateY centering, translateX
-      // fan offset, perspective, rotateZ tilt, translateZ depth) with Framer Motion's
-      // per-frame animated values (rotateY, y) so neither overrides the other.
+      // transformTemplate: static vertical-centering + perspective + depth
+      // compose with Framer Motion's animated rotateY and y each frame.
       transformTemplate={({ rotateY, y }) =>
-        `translateY(calc(-50% + ${y})) translateX(${cfg.x}px) perspective(900px) rotateY(${rotateY}) rotateZ(${cfg.rotateZ}deg) translateZ(${cfg.z}px)`
+        `translateY(calc(-50% + ${y})) perspective(1000px) rotateY(${rotateY}) rotateZ(${cfg.rotateZ}deg) translateZ(${cfg.z}px)`
       }
-      initial={{ opacity: 0, rotateY: `${cfg.rotateY + 15}deg`, y: "60px" }}
+      initial={{ opacity: 0, rotateY: `${cfg.rotateY + 18}deg`, y: "50px" }}
       animate={{ opacity: 1, rotateY: `${cfg.rotateY}deg`, y: "0px" }}
       transition={{
         duration: 1,
@@ -228,9 +230,10 @@ function FanCard({
 /* ── Fan Cards Container ── */
 function CinematicCardsRow() {
   const [, navigate] = useLocation();
-  // Total width needed = 4 cards × step + card width
-  const containerWidth = "clamp(340px, 52vw, 750px)";
-  const containerHeight = "clamp(200px, 25vw, 340px)";
+  // Container: 4 cards × step(96px) + card-width(158px) = 544px wide
+  // Height = card-height(290px) + hover-lift clearance(20px) = 310px
+  const containerWidth = "clamp(320px, 43vw, 544px)";
+  const containerHeight = "clamp(204px, 23.6vw, 310px)";
 
   return (
     <>
