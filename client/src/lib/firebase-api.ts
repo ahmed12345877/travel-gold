@@ -58,7 +58,7 @@ getFirebaseApp();
 
 export const isFirebaseConfigured = Boolean(env.VITE_FIREBASE_API_KEY);
 
-function apiBase(): string {
+export function apiBase(): string {
   const apiUrl = env.VITE_API_URL ?? "";
   if (apiUrl) return apiUrl.replace(/\/$/, "");
   
@@ -69,6 +69,29 @@ function apiBase(): string {
   }
   
   return "";
+}
+
+// Read-only session check. Polls the SAME origin that the login request used
+// (apiBase) so it can see the session cookie even when VITE_API_URL points to a
+// different API origin than the page. Returns true once the session is confirmed.
+export async function verifyServerSession(maxRetries = 5): Promise<boolean> {
+  const delays = [0, 150, 300, 500, 800];
+  for (let i = 0; i < maxRetries; i++) {
+    const delayMs = delays[i] ?? 800;
+    if (delayMs > 0) {
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+    try {
+      const res = await fetch(`${apiBase()}/api/auth/me`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data) return true;
+      }
+    } catch {
+      // Network error — keep retrying
+    }
+  }
+  return false;
 }
 
 async function callAuthEndpoint(path: string, idToken: string): Promise<void> {

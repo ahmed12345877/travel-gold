@@ -20,6 +20,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
+import { apiBase } from "@/lib/firebase-api";
 import { useIsMobile } from "@/hooks/useMobile";
 import {
   LayoutDashboard,
@@ -112,10 +113,11 @@ export default function AdminLayout({
     if (!loading && !user && typeof window !== "undefined") {
       const currentPath = window.location.pathname;
       if (currentPath === "/admin/login") return;
-      // Single retry: poll /api/auth/me once after a short delay before giving up.
+      // Single retry: poll the session endpoint (on the same origin the login
+      // request used) once after a short delay before giving up.
       const timer = setTimeout(async () => {
         try {
-          const res = await fetch("/api/auth/me", { credentials: "include" });
+          const res = await fetch(`${apiBase()}/api/auth/me`, { credentials: "include" });
           if (res.ok) {
             // Session is now readable — reload to pick up the auth state
             window.location.reload();

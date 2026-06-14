@@ -4,6 +4,7 @@ import {
   firebaseAdminGoogleLogin,
   firebaseSignOut,
   isFirebaseConfigured,
+  verifyServerSession,
 } from "@/lib/firebase-api";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -11,28 +12,6 @@ import { Mail, Lock, ArrowRight, Shield } from "lucide-react";
 import { ASSETS } from "@/config/assets";
 
 const EGYPT_IMAGE = "/images/egypt-cairo.png";
-
-// Poll /api/auth/me to verify session was set on server.
-// Tries immediately first, then retries with increasing delays.
-async function waitForServerSession(maxRetries = 5): Promise<boolean> {
-  const delays = [0, 150, 300, 500, 800];
-  for (let i = 0; i < maxRetries; i++) {
-    const delayMs = delays[i] ?? 800;
-    if (delayMs > 0) {
-      await new Promise(r => setTimeout(r, delayMs));
-    }
-    try {
-      const res = await fetch('/api/auth/me', { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json().catch(() => null);
-        if (data) return true;
-      }
-    } catch {
-      // Network error — keep retrying
-    }
-  }
-  return false;
-}
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -60,7 +39,7 @@ export default function AdminLogin() {
       console.log("[v0] Admin login attempting with email:", email);
       await firebaseAdminEmailLogin(email, password);
       console.log("[v0] Firebase login successful, waiting for server session...");
-      const sessionReady = await waitForServerSession();
+      const sessionReady = await verifyServerSession();
       if (sessionReady) {
         window.location.href = "/admin";
       } else {
@@ -101,7 +80,7 @@ export default function AdminLogin() {
       console.log("[v0] Admin Google login attempting...");
       await firebaseAdminGoogleLogin();
       console.log("[v0] Google login successful, waiting for server session...");
-      const sessionReady = await waitForServerSession();
+      const sessionReady = await verifyServerSession();
       if (sessionReady) {
         window.location.href = "/admin";
       } else {
