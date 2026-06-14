@@ -163,14 +163,19 @@ export async function firebaseAdminGoogleLogin(): Promise<void> {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
 
-  const credential: UserCredential = await signInWithPopup(auth, provider);
-  const idToken = await credential.user.getIdToken();
-  // نقطة نهاية الأدمن عبر Google — تتحقق من الصلاحيات قبل إصدار الجلسة.
-  // عند فشل التحقق نسجّل الخروج من Firebase حتى لا تبقى جلسة معلّقة بدون جلسة تطبيق صالحة.
   try {
+    const credential: UserCredential = await signInWithPopup(auth, provider);
+    const idToken = await credential.user.getIdToken();
+    // نقطة نهاية الأدمن عبر Google — تتحقق من الصلاحيات قبل إصدار الجلسة.
+    // عند فشل التحقق نسجّل الخروج من Firebase حتى لا تبقى جلسة معلّقة بدون جلسة تطبيق صالحة.
     await callAuthEndpoint("/api/auth/admin-google", idToken);
-  } catch (err) {
-    await auth.signOut().catch(() => {});
+  } catch (err: any) {
+    // Only sign out if the error is not a user-cancelled popup
+    // Use error.code instead of error.message for reliable popup-cancel detection
+    const code = err?.code;
+    if (code !== 'auth/popup-closed-by-user') {
+      await auth.signOut().catch(() => {});
+    }
     throw err;
   }
 }
