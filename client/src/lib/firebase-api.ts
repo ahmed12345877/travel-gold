@@ -169,9 +169,11 @@ export async function firebaseAdminGoogleLogin(): Promise<void> {
     // نقطة نهاية الأدمن عبر Google — تتحقق من الصلاحيات قبل إصدار الجلسة.
     // عند فشل التحقق نسجّل الخروج من Firebase حتى لا تبقى جلسة معلّقة بدون جلسة تطبيق صالحة.
     await callAuthEndpoint("/api/auth/admin-google", idToken);
-  } catch (err) {
+  } catch (err: any) {
     // Only sign out if the error is not a user-cancelled popup
-    if (err instanceof Error && err.message !== "Firebase.auth: An internal AuthError has occurred, with error code: auth/popup-closed-by-user") {
+    // Use error.code instead of error.message for reliable popup-cancel detection
+    const code = err?.code;
+    if (code !== 'auth/popup-closed-by-user') {
       await auth.signOut().catch(() => {});
     }
     throw err;

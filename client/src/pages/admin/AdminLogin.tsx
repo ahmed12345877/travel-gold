@@ -12,6 +12,23 @@ import { ASSETS } from "@/config/assets";
 
 const EGYPT_IMAGE = "/images/egypt-cairo.png";
 
+// Poll /api/auth/me to verify session was set on server
+// Use exponential backoff: 50ms, 100ms, 200ms, 400ms (total max 750ms)
+async function waitForServerSession(): Promise<void> {
+  const delays = [50, 100, 200, 400];
+  for (const delayMs of delays) {
+    const res = await fetch('/api/auth/me', {
+      credentials: 'include',
+    }).catch(() => null);
+    if (res?.ok) return; // Session verified
+    await new Promise(r => setTimeout(r, delayMs));
+  }
+  // If we still don't have a session after retries, continue anyway
+  // (the auth check on admin page will catch it)
+}
+
+const EGYPT_IMAGE = "/images/egypt-cairo.png";
+
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,8 +53,8 @@ export default function AdminLogin() {
     setStatus(null);
     try {
       await firebaseAdminEmailLogin(email, password);
-      // Redirect after successful auth - use navigate for cleaner transition
-      // Session cookie is now set on the server, navigate will trigger useAuth to refetch
+      // Verify session was set on server before navigating
+      await waitForServerSession();
       navigate("/admin");
     } catch (err: any) {
       // امسح جلسة Firebase حتى لا تبقى معلّقة عند رفض الصلاحية
@@ -70,9 +87,8 @@ export default function AdminLogin() {
     setStatus(null);
     try {
       await firebaseAdminGoogleLogin();
-      // Add delay to ensure session cookie is fully established before redirect
-      // Also wait for popup to properly close to avoid COOP header issues
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Verify session was set on server before navigating
+      await waitForServerSession();
       navigate("/admin");
     } catch (err: any) {
       await firebaseSignOut().catch(() => {});
