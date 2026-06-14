@@ -18,6 +18,14 @@ async function resolveAdminUser(uid: string, email: string | undefined, displayN
     .filter(Boolean);
   const isBootstrapAdmin = Boolean(email && bootstrapEmails.includes(email.toLowerCase()));
 
+  console.log("[v0] resolveAdminUser:", {
+    uid,
+    email,
+    displayName,
+    bootstrapEmails: bootstrapEmails.slice(0, 1).map(e => e.substring(0, 3) + '***'),
+    isBootstrapAdmin,
+  });
+
   const baseData: Record<string, unknown> = {
     uid,
     email: email ?? null,
@@ -29,6 +37,7 @@ async function resolveAdminUser(uid: string, email: string | undefined, displayN
   // Auto-grant admin role when email is in ADMIN_EMAILS (will not downgrade an existing role).
   if (isBootstrapAdmin) {
     baseData.role = "admin";
+    console.log("[v0] Bootstrap admin detected, setting role to admin");
   }
 
   await firestoreDb.collection("users").doc(uid).set(baseData, { merge: true });
@@ -36,7 +45,10 @@ async function resolveAdminUser(uid: string, email: string | undefined, displayN
   const userDoc = await firestoreDb.collection("users").doc(uid).get();
   const userData = userDoc.data();
 
+  console.log("[v0] Admin user resolved:", { uid, role: userData?.role, email });
+
   if (!userData || userData.role !== "admin") {
+    console.error("[v0] Access denied - user not admin. Role:", userData?.role);
     throw new Error("Admin access denied");
   }
 
@@ -102,18 +114,24 @@ export function registerFirebaseAuthRoutes(app: Express) {
     try {
       const { idToken } = req.body as { idToken?: string };
       if (!idToken) {
+        console.log("[v0] /api/auth/login: Missing idToken");
         return res.status(400).json({ error: "idToken is required" });
       }
 
+      console.log("[v0] /api/auth/login: Verifying admin ID token");
       // checkRevoked=true rejects tokens that have been revoked (e.g. after sign-out on another device).
       const decoded = await getAuth().verifyIdToken(idToken, true);
+      console.log("[v0] /api/auth/login: Token verified for email:", decoded.email);
       const result = await issueSessionForAdmin(req, res, decoded.uid, decoded.email, decoded.name);
+      console.log("[v0] /api/auth/login: Admin session issued successfully");
       return res.json(result);
     } catch (err: any) {
       if (err?.code === "auth/id-token-revoked") {
+        console.error("[v0] /api/auth/login: Token revoked");
         return res.status(401).json({ error: "Session revoked. Please sign in again." });
       }
       const msg = err?.message || "Authentication failed";
+      console.error("[v0] /api/auth/login: Error:", msg);
       const status = msg === "Admin access denied" ? 403 : 401;
       return res.status(status).json({ error: msg });
     }

@@ -50,14 +50,18 @@ export default function AdminLogin() {
     setLoading(true);
     setStatus(null);
     try {
+      console.log("[v0] Admin login attempting with email:", email);
       await firebaseAdminEmailLogin(email, password);
+      console.log("[v0] Firebase login successful, waiting for server session...");
       // Verify session was set on server before navigating
       await waitForServerSession();
+      console.log("[v0] Server session verified, navigating to /admin");
       navigate("/admin");
     } catch (err: any) {
       // امسح جلسة Firebase حتى لا تبقى معلّقة عند رفض الصلاحية
       await firebaseSignOut().catch(() => {});
       const msg: string = err?.message || "Authentication failed.";
+      console.error("[v0] Admin login error:", { message: msg, email });
       setStatus({
         type: "error",
         msg: msg.includes("Admin access denied")
@@ -84,13 +88,17 @@ export default function AdminLogin() {
     setLoading(true);
     setStatus(null);
     try {
+      console.log("[v0] Admin Google login attempting...");
       await firebaseAdminGoogleLogin();
+      console.log("[v0] Google login successful, waiting for server session...");
       // Verify session was set on server before navigating
       await waitForServerSession();
+      console.log("[v0] Server session verified, navigating to /admin");
       navigate("/admin");
     } catch (err: any) {
       await firebaseSignOut().catch(() => {});
       const msg: string = err?.message || "Google sign-in failed.";
+      console.error("[v0] Google login error:", { message: msg });
       setStatus({
         type: "error",
         msg: msg.includes("Admin access denied")

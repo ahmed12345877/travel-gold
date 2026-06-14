@@ -109,14 +109,19 @@ export default function AdminLayout({
   // This handles the case where the session cookie was just set
   useEffect(() => {
     if (!loading && !user && typeof window !== "undefined") {
+      console.log("[v0] No user found in AdminLayout, checking if coming from login...");
       // Only refetch once on mount if coming from login page
       const isComingFromLogin = document.referrer.includes("/admin/login");
+      console.log("[v0] isComingFromLogin:", isComingFromLogin, "referrer:", document.referrer);
       if (isComingFromLogin) {
+        console.log("[v0] Coming from login, reloading in 500ms to refetch auth state...");
         const timer = setTimeout(() => {
           // Trigger a refetch of the auth state
           window.location.reload();
         }, 500);
         return () => clearTimeout(timer);
+      } else {
+        console.log("[v0] Not coming from login, redirecting to login page");
       }
     }
   }, [loading, user]);

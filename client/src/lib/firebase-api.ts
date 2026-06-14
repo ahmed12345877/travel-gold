@@ -74,6 +74,7 @@ function apiBase(): string {
 async function callAuthEndpoint(path: string, idToken: string): Promise<void> {
   const url = `${apiBase()}${path}`;
   try {
+    console.log("[v0] Calling auth endpoint:", { url, idTokenLength: idToken.length });
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -81,8 +82,11 @@ async function callAuthEndpoint(path: string, idToken: string): Promise<void> {
       body: JSON.stringify({ idToken }),
     });
 
+    console.log("[v0] Auth endpoint response:", { status: res.status, ok: res.ok, url });
+    
     if (!res.ok) {
       const body = await res.json().catch(() => ({})) as { error?: string };
+      console.error("[v0] Auth endpoint error response:", body);
       throw new Error(body.error || `Request failed: ${res.status}`);
     }
   } catch (err: any) {
@@ -143,13 +147,17 @@ export async function firebaseAdminEmailLogin(email: string, password: string): 
   if (!app) throw new Error("Firebase is not configured. Set VITE_FIREBASE_API_KEY.");
 
   const auth = getAuth(app);
+  console.log("[v0] Starting Firebase admin email login for:", email);
   const credential: UserCredential = await signInWithEmailAndPassword(auth, email, password);
   const idToken = await credential.user.getIdToken();
+  console.log("[v0] Firebase ID token obtained, calling /api/auth/login endpoint");
   // نقطة نهاية الأدمن — تتحقق من الصلاحيات قبل إصدار الجلسة.
   // عند فشل التحقق نسجّل الخروج من Firebase حتى لا تبقى جلسة معلّقة بدون جلسة تطبيق صالحة.
   try {
     await callAuthEndpoint("/api/auth/login", idToken);
+    console.log("[v0] Admin email login successful");
   } catch (err) {
+    console.error("[v0] Admin email login failed:", err);
     await auth.signOut().catch(() => {});
     throw err;
   }
@@ -164,15 +172,19 @@ export async function firebaseAdminGoogleLogin(): Promise<void> {
   provider.setCustomParameters({ prompt: "select_account" });
 
   try {
+    console.log("[v0] Starting Firebase admin Google login");
     const credential: UserCredential = await signInWithPopup(auth, provider);
     const idToken = await credential.user.getIdToken();
+    console.log("[v0] Google ID token obtained for:", credential.user.email, "calling /api/auth/admin-google endpoint");
     // نقطة نهاية الأدمن عبر Google — تتحقق من الصلاحيات قبل إصدار الجلسة.
     // عند فشل التحقق نسجّل الخروج من Firebase حتى لا تبقى جلسة معلّقة بدون جلسة تطبيق صالحة.
     await callAuthEndpoint("/api/auth/admin-google", idToken);
+    console.log("[v0] Admin Google login successful");
   } catch (err: any) {
     // Only sign out if the error is not a user-cancelled popup
     // Use error.code instead of error.message for reliable popup-cancel detection
     const code = err?.code;
+    console.error("[v0] Google login error:", { code, message: err?.message });
     if (code !== 'auth/popup-closed-by-user') {
       await auth.signOut().catch(() => {});
     }

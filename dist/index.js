@@ -1522,6 +1522,13 @@ import { getAuth } from "firebase-admin/auth";
 async function resolveAdminUser(uid, email, displayName) {
   const bootstrapEmails = (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
   const isBootstrapAdmin = Boolean(email && bootstrapEmails.includes(email.toLowerCase()));
+  console.log("[v0] resolveAdminUser:", {
+    uid,
+    email,
+    displayName,
+    bootstrapEmails: bootstrapEmails.slice(0, 1).map((e) => e.substring(0, 3) + "***"),
+    isBootstrapAdmin
+  });
   const baseData = {
     uid,
     email: email ?? null,
@@ -1531,11 +1538,14 @@ async function resolveAdminUser(uid, email, displayName) {
   };
   if (isBootstrapAdmin) {
     baseData.role = "admin";
+    console.log("[v0] Bootstrap admin detected, setting role to admin");
   }
   await db.collection("users").doc(uid).set(baseData, { merge: true });
   const userDoc = await db.collection("users").doc(uid).get();
   const userData = userDoc.data();
+  console.log("[v0] Admin user resolved:", { uid, role: userData?.role, email });
   if (!userData || userData.role !== "admin") {
+    console.error("[v0] Access denied - user not admin. Role:", userData?.role);
     throw new Error("Admin access denied");
   }
   return {
@@ -1587,16 +1597,22 @@ function registerFirebaseAuthRoutes(app) {
     try {
       const { idToken } = req.body;
       if (!idToken) {
+        console.log("[v0] /api/auth/login: Missing idToken");
         return res.status(400).json({ error: "idToken is required" });
       }
+      console.log("[v0] /api/auth/login: Verifying admin ID token");
       const decoded = await getAuth().verifyIdToken(idToken, true);
+      console.log("[v0] /api/auth/login: Token verified for email:", decoded.email);
       const result = await issueSessionForAdmin(req, res, decoded.uid, decoded.email, decoded.name);
+      console.log("[v0] /api/auth/login: Admin session issued successfully");
       return res.json(result);
     } catch (err) {
       if (err?.code === "auth/id-token-revoked") {
+        console.error("[v0] /api/auth/login: Token revoked");
         return res.status(401).json({ error: "Session revoked. Please sign in again." });
       }
       const msg = err?.message || "Authentication failed";
+      console.error("[v0] /api/auth/login: Error:", msg);
       const status = msg === "Admin access denied" ? 403 : 401;
       return res.status(status).json({ error: msg });
     }
