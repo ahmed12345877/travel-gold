@@ -87,79 +87,79 @@ function AmbientParticles() {
   );
 }
 
-/* ── Fan Card (Perspective Layout matching reference image) ── */
+/* ── Card Stack — shared container perspective + click-to-focus ── */
 
-// Geometry derived from reference image:
-// - 4 cards, each ~155×285px (portrait ~1:1.84 ratio)
-// - Horizontal step between card left-edges: ~92px  → ~40% overlap
-// - rotateY: 42° → 26° → 12° → 3°  (steep fan, leftmost almost edge-on)
-// - rotateZ: 0 on all cards (no visible tilt in reference)
-// - translateZ increases right-ward so rightmost card appears "closest"
-// - No lateral translateX offset needed — left positioning handles spread
-const FAN_CONFIG = [
-  { rotateY: 42, rotateZ: 0, z:  0,  shadow: "rgba(0,0,0,0.60)" },
-  { rotateY: 26, rotateZ: 0, z: 20,  shadow: "rgba(0,0,0,0.50)" },
-  { rotateY: 12, rotateZ: 0, z: 35,  shadow: "rgba(0,0,0,0.42)" },
-  { rotateY:  3, rotateZ: 0, z: 45,  shadow: "rgba(0,0,0,0.35)" },
-];
+// Each card sits in the stack with a fixed horizontal offset.
+// The OUTER container carries the isometric angle from the spec:
+//   perspective(1200px) rotateY(-20deg) skewY(4deg)
+// Clicking a card elevates it (translateZ + resets rotateY) while
+// the others dim, giving a "bring to front" focus effect.
 
-function FanCard({
+const STACK_STEP = 88; // px between card left-edges
+
+function StackCard({
   img,
   index,
+  activeIndex,
+  onActivate,
 }: {
   img: (typeof CARD_IMAGES)[0];
   index: number;
+  activeIndex: number;
+  onActivate: (i: number) => void;
 }) {
   const [, navigate] = useLocation();
-  const [isHovered, setIsHovered] = useState(false);
-  const cfg = FAN_CONFIG[index];
+  const isActive = index === activeIndex;
+  const isOther = activeIndex !== -1 && !isActive;
 
   return (
     <motion.div
       className="absolute cursor-pointer"
       style={{
-        // Portrait card: ~1:1.84 ratio matching reference (155×285px at base)
-        width: "clamp(100px, 11.5vw, 158px)",
-        height: "clamp(184px, 21.2vw, 290px)",
-        zIndex: index + 1,
-        // Step = 92px at base → ~40% overlap between adjacent cards
-        left: `calc(${index} * clamp(62px, 7.1vw, 96px))`,
+        // Portrait 1:1.78 ratio — tall cards matching reference
+        width: 158,
+        height: 282,
+        left: index * STACK_STEP,
         top: "50%",
         transformOrigin: "center center",
+        zIndex: isActive ? 20 : index + 1,
       }}
-      // transformTemplate: static vertical-centering + perspective + depth
-      // compose with Framer Motion's animated rotateY and y each frame.
-      transformTemplate={({ rotateY, y }) =>
-        `translateY(calc(-50% + ${y})) perspective(1000px) rotateY(${rotateY}) rotateZ(${cfg.rotateZ}deg) translateZ(${cfg.z}px)`
+      // Per-card: only handle vertical centering + focus elevation.
+      // The container carries rotateY / skewY so no per-card rotation needed.
+      transformTemplate={({ y }) =>
+        `translateY(calc(-50% + ${y})) translateZ(0px)`
       }
-      initial={{ opacity: 0, rotateY: `${cfg.rotateY + 18}deg`, y: "50px" }}
-      animate={{ opacity: 1, rotateY: `${cfg.rotateY}deg`, y: "0px" }}
-      transition={{
-        duration: 1,
-        delay: 0.2 + index * 0.15,
-        ease: [0.23, 1, 0.32, 1],
+      animate={{
+        y: isActive ? "-60px" : "0px",
+        scale: isActive ? 1.06 : isOther ? 0.96 : 1,
+        opacity: isOther ? 0.55 : 1,
+        filter: isOther ? "brightness(0.6)" : "brightness(1)",
       }}
-      whileHover={{
-        rotateY: `${cfg.rotateY}deg`,
-        y: "-14px",
-        zIndex: 20,
-        transition: { duration: 0.35, ease: "easeOut" },
+      transition={{ duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
+      initial={{ opacity: 0, y: "60px" }}
+      whileInView={{ opacity: 1, y: "0px" }}
+      viewport={{ once: true }}
+      onClick={() => {
+        if (isActive) {
+          navigate(img.link);
+        } else {
+          onActivate(index);
+        }
       }}
-      onClick={() => navigate(img.link)}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       {/* Card shell */}
       <div
         className="relative w-full h-full overflow-hidden"
         style={{
-          borderRadius: "10px",
-          boxShadow: `6px 10px 32px ${cfg.shadow}, 0 2px 8px rgba(0,0,0,0.3)`,
-          border: "1px solid rgba(255,255,255,0.13)",
+          borderRadius: 12,
+          boxShadow: isActive
+            ? "0 24px 64px rgba(0,0,0,0.75), 0 0 0 1px rgba(212,168,83,0.4)"
+            : "6px 12px 36px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.10)",
+          transition: "box-shadow 0.45s ease",
         }}
       >
-        {/* Image - fixed size fills the card exactly */}
-        <div className="absolute inset-0 w-full h-full">
+        {/* Full-bleed image — object-cover preserves full resolution & ratio */}
+        <div className="absolute inset-0">
           <OptimizedImage
             src={img.src}
             alt={img.alt}
@@ -170,75 +170,95 @@ function FanCard({
           />
         </div>
 
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
+        {/* Gradient scrim — fades to black at bottom for label legibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
 
-        {/* Top gold accent line */}
+        {/* Gold accent line — top edge */}
         <div
           className="absolute top-0 left-0 right-0 h-[2px] pointer-events-none"
           style={{
-            background: "linear-gradient(90deg, transparent, #D4A853, transparent)",
-            opacity: isHovered ? 0.9 : 0.4,
-            transition: "opacity 0.4s",
-          }}
-        />
-
-        {/* Hover light sweep */}
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          style={{
             background:
-              "linear-gradient(110deg, transparent 35%, rgba(212,168,83,0.18) 50%, transparent 65%)",
+              "linear-gradient(90deg, transparent, #D4A853, transparent)",
+            opacity: isActive ? 1 : 0.35,
+            transition: "opacity 0.45s",
           }}
-          initial={{ x: "-120%" }}
-          animate={{ x: isHovered ? "220%" : "-120%" }}
-          transition={{ duration: 1, ease: "easeInOut" }}
         />
 
-        {/* Label at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 px-3 py-2.5 z-10">
+        {/* Label — glassmorphism panel at bottom */}
+        <div
+          className="absolute bottom-0 left-0 right-0 px-3 py-3 z-10"
+          style={{
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            background: "rgba(0, 0, 0, 0.38)",
+            borderTop: "1px solid rgba(255,255,255,0.08)",
+          }}
+        >
+          {/* Category — gold, uppercase, no wrapping */}
           <p
-            className="text-[var(--theme-primary)] uppercase font-medium mb-0.5"
-            style={{ fontSize: "clamp(7px, 0.9vw, 10px)", letterSpacing: "0.18em" }}
+            className="text-[var(--theme-primary)] uppercase font-semibold whitespace-nowrap overflow-hidden text-ellipsis"
+            style={{ fontSize: 9, letterSpacing: "0.20em", lineHeight: 1.4 }}
           >
             {img.sub}
           </p>
+          {/* Title — white, no wrapping */}
           <p
-            className="text-white font-bold leading-tight"
-            style={{ fontSize: "clamp(10px, 1.2vw, 14px)" }}
+            className="text-white font-bold whitespace-nowrap overflow-hidden text-ellipsis"
+            style={{ fontSize: 13, lineHeight: 1.35 }}
           >
             {img.label}
           </p>
         </div>
 
-        {/* Hover border glow */}
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          style={{ borderRadius: "10px" }}
-          animate={{
-            boxShadow: isHovered
-              ? "inset 0 0 0 1px rgba(212,168,83,0.5)"
-              : "inset 0 0 0 1px rgba(255,255,255,0.06)",
-          }}
-          transition={{ duration: 0.35 }}
-        />
+        {/* Active indicator ring */}
+        {isActive && (
+          <motion.div
+            className="absolute inset-0 pointer-events-none"
+            style={{ borderRadius: 12 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div
+              className="absolute inset-0"
+              style={{
+                borderRadius: 12,
+                boxShadow: "inset 0 0 0 1.5px rgba(212,168,83,0.65)",
+              }}
+            />
+          </motion.div>
+        )}
       </div>
     </motion.div>
   );
 }
 
-/* ── Fan Cards Container ── */
+/* ── Card Stack Container ── */
 function CinematicCardsRow() {
   const [, navigate] = useLocation();
-  // Container: 4 cards × step(96px) + card-width(158px) = 544px wide
-  // Height = card-height(290px) + hover-lift clearance(20px) = 310px
-  const containerWidth = "clamp(320px, 43vw, 544px)";
-  const containerHeight = "clamp(204px, 23.6vw, 310px)";
+  // -1 means no card is actively focused
+  const [activeIndex, setActiveIndex] = useState<number>(-1);
+
+  // Clicking outside the stack resets focus
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handleOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setActiveIndex(-1);
+      }
+    }
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, []);
+
+  // Container: 4 × 88px step + 158px card = 510px total footprint
+  // Extra 40px right padding so last card isn't clipped by container edge
+  const W = STACK_STEP * (CARD_IMAGES.length - 1) + 158 + 40;
 
   return (
     <>
-      {/* Mobile: simple 2x2 grid */}
-      <div className="grid grid-cols-2 gap-2 sm:hidden" style={{ height: "270px" }}>
+      {/* Mobile — 2x2 grid */}
+      <div className="grid grid-cols-2 gap-2 sm:hidden" style={{ height: 270 }}>
         {CARD_IMAGES.map((img, i) => (
           <div
             key={i}
@@ -254,23 +274,52 @@ function CinematicCardsRow() {
               className="w-full h-full object-cover object-center"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 px-2 py-2">
-              <p className="text-[var(--theme-primary)] text-[8px] uppercase tracking-widest font-medium">
+            <div
+              className="absolute bottom-0 left-0 right-0 px-2 py-2"
+              style={{
+                backdropFilter: "blur(8px)",
+                WebkitBackdropFilter: "blur(8px)",
+                background: "rgba(0,0,0,0.35)",
+              }}
+            >
+              <p
+                className="text-[var(--theme-primary)] uppercase font-semibold whitespace-nowrap overflow-hidden text-ellipsis"
+                style={{ fontSize: 8, letterSpacing: "0.18em" }}
+              >
                 {img.sub}
               </p>
-              <p className="text-white text-xs font-bold">{img.label}</p>
+              <p
+                className="text-white font-bold whitespace-nowrap overflow-hidden text-ellipsis"
+                style={{ fontSize: 11 }}
+              >
+                {img.label}
+              </p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Tablet+: fan / perspective layout */}
+      {/* Tablet+ — isometric container + stacked cards */}
       <div
-        className="hidden sm:block relative"
-        style={{ width: containerWidth, height: containerHeight }}
+        className="hidden sm:block"
+        style={{
+          // Isometric angle applied once to the whole group — matches spec exactly
+          transform: "perspective(1200px) rotateY(-20deg) skewY(4deg)",
+          transformOrigin: "center center",
+          width: W,
+          height: 320,
+          position: "relative",
+        }}
+        ref={containerRef}
       >
         {CARD_IMAGES.map((img, i) => (
-          <FanCard key={i} img={img} index={i} />
+          <StackCard
+            key={i}
+            img={img}
+            index={i}
+            activeIndex={activeIndex}
+            onActivate={setActiveIndex}
+          />
         ))}
       </div>
     </>
