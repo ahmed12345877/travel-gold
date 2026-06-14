@@ -12,26 +12,26 @@ import { ASSETS } from "@/config/assets";
 
 const EGYPT_IMAGE = "/images/egypt-cairo.png";
 
-// Poll /api/auth/me to verify session was set on server
-// Use exponential backoff: 100ms, 200ms, 400ms, 800ms (total max ~1.5s)
+// Poll /api/auth/me to verify session was set on server.
+// Tries immediately first, then retries with increasing delays.
 async function waitForServerSession(maxRetries = 5): Promise<boolean> {
-  const delays = [100, 200, 300, 400, 500];
+  const delays = [0, 150, 300, 500, 800];
   for (let i = 0; i < maxRetries; i++) {
-    const delayMs = delays[i] ?? 500;
-    await new Promise(r => setTimeout(r, delayMs));
+    const delayMs = delays[i] ?? 800;
+    if (delayMs > 0) {
+      await new Promise(r => setTimeout(r, delayMs));
+    }
     try {
-      const res = await fetch('/api/auth/me', {
-        credentials: 'include',
-      });
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
       if (res.ok) {
         const data = await res.json().catch(() => null);
-        if (data) return true; // Session verified with user data
+        if (data) return true;
       }
     } catch {
-      // Network error, keep retrying
+      // Network error — keep retrying
     }
   }
-  return false; // Could not verify session after retries
+  return false;
 }
 
 export default function AdminLogin() {
@@ -61,9 +61,12 @@ export default function AdminLogin() {
       await firebaseAdminEmailLogin(email, password);
       console.log("[v0] Firebase login successful, waiting for server session...");
       const sessionReady = await waitForServerSession();
-      console.log("[v0] Session ready:", sessionReady);
-      // Use hard navigate so tRPC cache is fully cleared and auth state is fresh
-      window.location.href = "/admin";
+      if (sessionReady) {
+        window.location.href = "/admin";
+      } else {
+        await firebaseSignOut().catch(() => {});
+        setStatus({ type: "error", msg: "Login succeeded but session could not be confirmed. Please try again." });
+      }
     } catch (err: any) {
       // امسح جلسة Firebase حتى لا تبقى معلّقة عند رفض الصلاحية
       await firebaseSignOut().catch(() => {});
@@ -99,9 +102,12 @@ export default function AdminLogin() {
       await firebaseAdminGoogleLogin();
       console.log("[v0] Google login successful, waiting for server session...");
       const sessionReady = await waitForServerSession();
-      console.log("[v0] Session ready:", sessionReady);
-      // Use hard navigate so tRPC cache is fully cleared and auth state is fresh
-      window.location.href = "/admin";
+      if (sessionReady) {
+        window.location.href = "/admin";
+      } else {
+        await firebaseSignOut().catch(() => {});
+        setStatus({ type: "error", msg: "Login succeeded but session could not be confirmed. Please try again." });
+      }
     } catch (err: any) {
       await firebaseSignOut().catch(() => {});
       const msg: string = err?.message || "Google sign-in failed.";

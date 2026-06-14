@@ -109,12 +109,20 @@ async function issueSessionForUser(req: Request, res: Response, uid: string, ema
 }
 
 export function registerFirebaseAuthRoutes(app: Express) {
-  // GET /api/auth/me — lightweight session check used by client to poll for cookie readiness
+  // GET /api/auth/me — read-only session check used by client to poll for cookie readiness.
+  // Uses sdk.verifySession (JWT-only, no DB/Firestore writes) to avoid write amplification
+  // when this endpoint is polled during the login flow.
   app.get("/api/auth/me", async (req: Request, res: Response) => {
     try {
-      const user = await sdk.authenticateRequest(req).catch(() => null);
-      if (user) {
-        return res.json({ id: user.id, email: user.email, name: user.name, role: user.role });
+      const rawCookie: string | undefined = (req.headers.cookie ?? "")
+        .split(";")
+        .map((c: string) => c.trim())
+        .find((c: string) => c.startsWith(`${COOKIE_NAME}=`))
+        ?.slice(COOKIE_NAME.length + 1);
+
+      const session = await sdk.verifySession(rawCookie);
+      if (session) {
+        return res.json({ openId: session.openId, name: session.name });
       }
       return res.status(401).json({ error: "Not authenticated" });
     } catch {
