@@ -18,6 +18,7 @@ export function useAuth(options?: UseAuthOptions) {
     refetchOnWindowFocus: false,
     // Add delay before first query to allow session cookie to be set
     staleTime: 0,
+    gcTime: 0, // Don't cache to ensure fresh auth state on navigate back
   });
 
   const logoutMutation = trpc.auth.logout.useMutation({

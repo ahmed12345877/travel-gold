@@ -70,8 +70,9 @@ export default function AdminLogin() {
     setStatus(null);
     try {
       await firebaseAdminGoogleLogin();
-      // Redirect after successful auth - use navigate for cleaner transition
-      // Session cookie is now set on the server, navigate will trigger useAuth to refetch
+      // Add delay to ensure session cookie is fully established before redirect
+      // Also wait for popup to properly close to avoid COOP header issues
+      await new Promise(resolve => setTimeout(resolve, 500));
       navigate("/admin");
     } catch (err: any) {
       await firebaseSignOut().catch(() => {});
