@@ -87,170 +87,183 @@ function AmbientParticles() {
   );
 }
 
-/* ── Cinematic Card with Reveal Effect ── */
-function CinematicCard({
+/* ── Fan Card (Perspective Layout matching reference image) ── */
+
+// Rotation and offset config for the 4-card fan:
+// Cards spread from left (most rotated) to right (least rotated),
+// overlapping like playing cards fanned out in 3D perspective.
+const FAN_CONFIG = [
+  { rotateY: 38, rotateZ: -4, x: 0,   z: 0,   shadow: "rgba(0,0,0,0.55)" },
+  { rotateY: 22, rotateZ: -2, x: -18, z: 10,  shadow: "rgba(0,0,0,0.50)" },
+  { rotateY: 10, rotateZ:  0, x: -36, z: 20,  shadow: "rgba(0,0,0,0.45)" },
+  { rotateY:  0, rotateZ:  2, x: -50, z: 30,  shadow: "rgba(0,0,0,0.40)" },
+];
+
+function FanCard({
   img,
   index,
-  activeIndex,
-  isMobileGrid,
 }: {
   img: (typeof CARD_IMAGES)[0];
   index: number;
-  activeIndex: number;
-  isMobileGrid?: boolean;
 }) {
   const [, navigate] = useLocation();
   const [isHovered, setIsHovered] = useState(false);
-  const isActive = index === activeIndex;
+  const cfg = FAN_CONFIG[index];
 
   return (
     <motion.div
-      className="relative overflow-hidden cursor-pointer group"
-      style={
-        isMobileGrid
-          ? { width: "100%", height: "100%" }
-          : {
-              flex: isActive ? "2.2" : "1",
-              transition: "flex 0.7s cubic-bezier(0.4, 0, 0.2, 1)",
-            }
-      }
-      initial={{ opacity: 0, y: -40, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
+      className="absolute cursor-pointer"
+      style={{
+        // card dimensions - tall portrait aspect ratio matching reference
+        width: "clamp(110px, 13vw, 190px)",
+        height: "clamp(180px, 21vw, 310px)",
+        // z-index so rightmost card is on top
+        zIndex: index + 1,
+        // fan spread: each card offset to the right
+        left: `calc(${index} * clamp(60px, 8vw, 110px))`,
+        top: "50%",
+        transformOrigin: "bottom center",
+        transform: `
+          translateY(-50%)
+          translateX(${cfg.x}px)
+          perspective(900px)
+          rotateY(${cfg.rotateY}deg)
+          rotateZ(${cfg.rotateZ}deg)
+          translateZ(${cfg.z}px)
+        `,
+      }}
+      initial={{ opacity: 0, y: 60, rotateY: cfg.rotateY + 15 }}
+      animate={{ opacity: 1, y: 0, rotateY: cfg.rotateY }}
       transition={{
-        duration: 0.9,
-        delay: 0.3 + index * 0.12,
+        duration: 1,
+        delay: 0.2 + index * 0.15,
         ease: [0.23, 1, 0.32, 1],
+      }}
+      whileHover={{
+        y: -14,
+        zIndex: 20,
+        transition: { duration: 0.35, ease: "easeOut" },
       }}
       onClick={() => navigate(img.link)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Image Container */}
-      <div className="relative w-full h-full overflow-hidden rounded-xl">
-        <motion.div
-          className="absolute inset-0"
-          animate={{ scale: isHovered ? 1.08 : 1 }}
-          transition={{ duration: 0.7, ease: "easeOut" }}
-        >
+      {/* Card shell */}
+      <div
+        className="relative w-full h-full overflow-hidden"
+        style={{
+          borderRadius: "10px",
+          boxShadow: `6px 10px 32px ${cfg.shadow}, 0 2px 8px rgba(0,0,0,0.3)`,
+          border: "1px solid rgba(255,255,255,0.13)",
+        }}
+      >
+        {/* Image - fixed size fills the card exactly */}
+        <div className="absolute inset-0 w-full h-full">
           <OptimizedImage
             src={img.src}
             alt={img.alt}
             lazy={false}
             goldShimmer
             containerClassName="absolute inset-0"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-center"
           />
-        </motion.div>
+        </div>
 
-        {/* Permanent subtle gradient at bottom */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
 
-        {/* Gold accent line at top */}
-        <motion.div
-          className="absolute top-0 left-0 right-0 h-[2px]"
+        {/* Top gold accent line */}
+        <div
+          className="absolute top-0 left-0 right-0 h-[2px] pointer-events-none"
           style={{
             background: "linear-gradient(90deg, transparent, #D4A853, transparent)",
+            opacity: isHovered ? 0.9 : 0.4,
+            transition: "opacity 0.4s",
           }}
-          animate={{
-            opacity: isActive || isHovered ? 1 : 0.3,
-          }}
-          transition={{ duration: 0.5 }}
         />
 
-        {/* Cinematic light sweep on hover */}
+        {/* Hover light sweep */}
         <motion.div
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "linear-gradient(105deg, transparent 40%, rgba(212,168,83,0.15) 50%, transparent 60%)",
+              "linear-gradient(110deg, transparent 35%, rgba(212,168,83,0.18) 50%, transparent 65%)",
           }}
-          initial={{ x: "-100%" }}
-          animate={{ x: isHovered ? "200%" : "-100%" }}
-          transition={{ duration: 1.2, ease: "easeInOut" }}
+          initial={{ x: "-120%" }}
+          animate={{ x: isHovered ? "220%" : "-120%" }}
+          transition={{ duration: 1, ease: "easeInOut" }}
         />
 
-        {/* Label - always visible at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 z-10">
-          <motion.div
-            animate={{
-              y: isActive || isHovered ? 0 : 4,
-              opacity: isActive || isHovered ? 1 : 0.7,
-            }}
-            transition={{ duration: 0.4 }}
+        {/* Label at bottom */}
+        <div className="absolute bottom-0 left-0 right-0 px-3 py-2.5 z-10">
+          <p
+            className="text-[var(--theme-primary)] uppercase font-medium mb-0.5"
+            style={{ fontSize: "clamp(7px, 0.9vw, 10px)", letterSpacing: "0.18em" }}
           >
-            <p className="text-[var(--theme-primary)] text-[9px] sm:text-[10px] md:text-xs uppercase tracking-[0.15em] sm:tracking-[0.2em] font-medium mb-0.5 sm:mb-1">
-              {img.sub}
-            </p>
-            <p className="text-white text-xs sm:text-sm md:text-base lg:text-lg font-bold tracking-wide">
-              {img.label}
-            </p>
-          </motion.div>
+            {img.sub}
+          </p>
+          <p
+            className="text-white font-bold leading-tight"
+            style={{ fontSize: "clamp(10px, 1.2vw, 14px)" }}
+          >
+            {img.label}
+          </p>
         </div>
-
-        {/* Active indicator dot */}
-        <motion.div
-          className="absolute top-2 right-2 sm:top-3 sm:right-3 w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--theme-primary)]"
-          animate={{
-            scale: isActive ? [1, 1.3, 1] : 0,
-            opacity: isActive ? 1 : 0,
-          }}
-          transition={{
-            duration: 2,
-            repeat: isActive ? Infinity : 0,
-            ease: "easeInOut",
-          }}
-        />
 
         {/* Hover border glow */}
         <motion.div
-          className="absolute inset-0 rounded-xl pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
+          style={{ borderRadius: "10px" }}
           animate={{
-            boxShadow:
-              isHovered
-                ? "inset 0 0 0 1px rgba(212,168,83,0.5), 0 0 30px rgba(212,168,83,0.15)"
-                : "inset 0 0 0 1px rgba(255,255,255,0.08), 0 0 0 rgba(0,0,0,0)",
+            boxShadow: isHovered
+              ? "inset 0 0 0 1px rgba(212,168,83,0.5)"
+              : "inset 0 0 0 1px rgba(255,255,255,0.06)",
           }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: 0.35 }}
         />
       </div>
     </motion.div>
   );
 }
 
-/* ── Cards Row with auto-cycling active state ── */
+/* ── Fan Cards Container ── */
 function CinematicCardsRow() {
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % CARD_IMAGES.length);
-    }, 3500);
-    return () => clearInterval(interval);
-  }, []);
+  // Total width needed = 4 cards × step + card width
+  const containerWidth = "clamp(340px, 52vw, 750px)";
+  const containerHeight = "clamp(200px, 25vw, 340px)";
 
   return (
     <>
-      {/* Mobile: 2x2 grid */}
-      <div className="grid grid-cols-2 gap-2 sm:hidden" style={{ height: "280px" }}>
+      {/* Mobile: simple 2x2 grid */}
+      <div className="grid grid-cols-2 gap-2 sm:hidden" style={{ height: "270px" }}>
         {CARD_IMAGES.map((img, i) => (
-          <CinematicCard
-            key={i}
-            img={img}
-            index={i}
-            activeIndex={activeIndex}
-            isMobileGrid
-          />
+          <div key={i} className="relative overflow-hidden rounded-xl">
+            <OptimizedImage
+              src={img.src}
+              alt={img.alt}
+              lazy={false}
+              goldShimmer
+              containerClassName="absolute inset-0"
+              className="w-full h-full object-cover object-center"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 px-2 py-2">
+              <p className="text-[var(--theme-primary)] text-[8px] uppercase tracking-widest font-medium">
+                {img.sub}
+              </p>
+              <p className="text-white text-xs font-bold">{img.label}</p>
+            </div>
+          </div>
         ))}
       </div>
-      {/* Tablet+: flex row with accordion effect */}
-      <div className="hidden sm:flex gap-2 md:gap-3 lg:gap-4" style={{ height: "clamp(180px, 25vw, 300px)" }}>
+
+      {/* Tablet+: fan / perspective layout */}
+      <div
+        className="hidden sm:block relative"
+        style={{ width: containerWidth, height: containerHeight }}
+      >
         {CARD_IMAGES.map((img, i) => (
-          <CinematicCard
-            key={i}
-            img={img}
-            index={i}
-            activeIndex={activeIndex}
-          />
+          <FanCard key={i} img={img} index={i} />
         ))}
       </div>
     </>
@@ -339,16 +352,11 @@ export default function HeroSection() {
       <AmbientParticles />
 
       {/* ── Content ── */}
-      <div className="container relative z-[8] flex flex-col pt-12 sm:pt-20 md:pt-24 pb-8 sm:pb-14">
-        
-        {/* ── TOP: Cinematic Cards Row ── */}
-        <motion.div style={{ y: cardsY }} className="w-full mb-4 sm:mb-8 md:mb-10">
-          <CinematicCardsRow />
-        </motion.div>
+      <div className="container relative z-[8] flex flex-col md:flex-row items-center justify-between gap-8 pt-12 sm:pt-20 md:pt-0 pb-8 sm:pb-14 min-h-screen">
 
-        {/* ── BOTTOM: Text Content - Centered & Elegant ── */}
+        {/* ── LEFT: Text Content ── */}
         <motion.div
-          className="w-full max-w-3xl mx-auto text-center px-2 sm:px-0"
+          className="w-full md:w-[46%] text-left px-2 sm:px-0 md:pl-4"
           style={{ y: textY }}
         >
           <motion.div
@@ -389,7 +397,7 @@ export default function HeroSection() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1.5 }}
-              className="text-white/45 text-xs sm:text-sm md:text-base lg:text-lg max-w-xl mx-auto font-[var(--font-body)] leading-relaxed mb-6 sm:mb-8 md:mb-10 px-2 sm:px-0"
+              className="text-white/45 text-xs sm:text-sm md:text-base lg:text-lg max-w-xl font-[var(--font-body)] leading-relaxed mb-6 sm:mb-8 md:mb-10 px-2 sm:px-0"
             >
               Experience the magic of ancient Egypt with curated luxury tours,
               Nile cruises, and unforgettable adventures designed for the
@@ -401,7 +409,7 @@ export default function HeroSection() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1.7 }}
-              className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 justify-center items-center"
+              className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 items-start"
             >
               <a
                 href="/booking"
@@ -426,6 +434,15 @@ export default function HeroSection() {
             </motion.div>
           </motion.div>
         </motion.div>
+
+        {/* ── RIGHT: Fan Cards ── */}
+        <motion.div
+          className="w-full md:w-[54%] flex items-center justify-center md:justify-end"
+          style={{ y: cardsY }}
+        >
+          <CinematicCardsRow />
+        </motion.div>
+
       </div>
 
       {/* ── Social Media Icons (bottom right) ── */}
