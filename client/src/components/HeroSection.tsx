@@ -123,24 +123,23 @@ function FanCard({
         left: `calc(${index} * clamp(60px, 8vw, 110px))`,
         top: "50%",
         transformOrigin: "bottom center",
-        transform: `
-          translateY(-50%)
-          translateX(${cfg.x}px)
-          perspective(900px)
-          rotateY(${cfg.rotateY}deg)
-          rotateZ(${cfg.rotateZ}deg)
-          translateZ(${cfg.z}px)
-        `,
       }}
-      initial={{ opacity: 0, y: 60, rotateY: cfg.rotateY + 15 }}
-      animate={{ opacity: 1, y: 0, rotateY: cfg.rotateY }}
+      // transformTemplate composes static geometry (translateY centering, translateX
+      // fan offset, perspective, rotateZ tilt, translateZ depth) with Framer Motion's
+      // per-frame animated values (rotateY, y) so neither overrides the other.
+      transformTemplate={({ rotateY, y }) =>
+        `translateY(calc(-50% + ${y})) translateX(${cfg.x}px) perspective(900px) rotateY(${rotateY}) rotateZ(${cfg.rotateZ}deg) translateZ(${cfg.z}px)`
+      }
+      initial={{ opacity: 0, rotateY: `${cfg.rotateY + 15}deg`, y: "60px" }}
+      animate={{ opacity: 1, rotateY: `${cfg.rotateY}deg`, y: "0px" }}
       transition={{
         duration: 1,
         delay: 0.2 + index * 0.15,
         ease: [0.23, 1, 0.32, 1],
       }}
       whileHover={{
-        y: -14,
+        rotateY: `${cfg.rotateY}deg`,
+        y: "-14px",
         zIndex: 20,
         transition: { duration: 0.35, ease: "easeOut" },
       }}
@@ -228,6 +227,7 @@ function FanCard({
 
 /* ── Fan Cards Container ── */
 function CinematicCardsRow() {
+  const [, navigate] = useLocation();
   // Total width needed = 4 cards × step + card width
   const containerWidth = "clamp(340px, 52vw, 750px)";
   const containerHeight = "clamp(200px, 25vw, 340px)";
@@ -237,7 +237,11 @@ function CinematicCardsRow() {
       {/* Mobile: simple 2x2 grid */}
       <div className="grid grid-cols-2 gap-2 sm:hidden" style={{ height: "270px" }}>
         {CARD_IMAGES.map((img, i) => (
-          <div key={i} className="relative overflow-hidden rounded-xl">
+          <div
+            key={i}
+            className="relative overflow-hidden rounded-xl cursor-pointer"
+            onClick={() => navigate(img.link)}
+          >
             <OptimizedImage
               src={img.src}
               alt={img.alt}
