@@ -132,6 +132,7 @@ export default function BlogAdmin() {
         category: formData.category,
         authorName: formData.author,
         tags,
+        status: formData.status,
       });
     } else {
       await createMutation.mutateAsync({
@@ -143,6 +144,7 @@ export default function BlogAdmin() {
         category: formData.category,
         authorName: formData.author,
         tags,
+        status: formData.status,
       });
     }
   };
