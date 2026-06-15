@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { router, adminProcedure } from "../_core/trpc";
-import { getDb } from "../db";
-import { destinations } from "../../drizzle/schema";
-import { eq, like, desc, asc, inArray } from "drizzle-orm";
+import { list, getById, insert, update, remove } from "../_core/firestore-db";
+
+const COL = "destinations";
 
 export const adminDestinationsRouter = router({
   /** List all destinations with pagination and filtering */
@@ -17,41 +17,38 @@ export const adminDestinationsRouter = router({
       }).optional()
     )
     .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
       const { limit = 20, offset = 0, search = "", sortBy = "name", sortOrder = "asc" } = input ?? {};
-      
-      let query: any = db.select().from(destinations);
-      
+
+      let rows = (await list(COL, {})) as any[];
+
       if (search) {
-        query = query.where(like(destinations.name, `%${search}%`));
+        const q = search.toLowerCase();
+        rows = rows.filter((d) => (d.name ?? "").toLowerCase().includes(q));
       }
-      
-      const orderColumn = 
-        sortBy === "name" ? destinations.name :
-        sortBy === "rating" ? destinations.rating :
-        sortBy === "price" ? destinations.pricePerPerson :
-        destinations.createdAt;
-      
-      query = query.orderBy(sortOrder === "desc" ? desc(orderColumn) : asc(orderColumn));
-      query = query.limit(limit).offset(offset);
-      
-      return await query;
+
+      const key =
+        sortBy === "name" ? "name" :
+        sortBy === "rating" ? "rating" :
+        sortBy === "price" ? "pricePerPerson" :
+        "createdAt";
+
+      rows.sort((a, b) => {
+        const av = a[key], bv = b[key];
+        const an = typeof av === "string" && isNaN(Number(av)) ? av : Number(av ?? 0);
+        const bn = typeof bv === "string" && isNaN(Number(bv)) ? bv : Number(bv ?? 0);
+        if (an < bn) return sortOrder === "desc" ? 1 : -1;
+        if (an > bn) return sortOrder === "desc" ? -1 : 1;
+        return 0;
+      });
+
+      return rows.slice(offset, offset + limit);
     }),
 
   /** Get single destination by ID */
   getById: adminProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
-      const result = await db
-        .select()
-        .from(destinations)
-        .where(eq(destinations.id, input.id));
-      return result[0] || null;
+      return (await getById(COL, input.id)) || null;
     }),
 
   /** Create new destination */
@@ -74,13 +71,7 @@ export const adminDestinationsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
-      const result = await db.insert(destinations).values({
-        ...input,
-        isActive: "active",
-      });
+      await insert(COL, { ...input, isActive: "active" });
       return { success: true };
     }),
 
@@ -106,15 +97,8 @@ export const adminDestinationsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
       const { id, ...data } = input;
-      
-      await db
-        .update(destinations)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(destinations.id, id));
+      await update(COL, id, data);
       return { success: true };
     }),
 
@@ -122,12 +106,7 @@ export const adminDestinationsRouter = router({
   delete: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
-      await db
-        .delete(destinations)
-        .where(eq(destinations.id, input.id));
+      await remove(COL, input.id);
       return { success: true };
     }),
 
@@ -135,12 +114,7 @@ export const adminDestinationsRouter = router({
   bulkDelete: adminProcedure
     .input(z.object({ ids: z.array(z.number()) }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
-      await db
-        .delete(destinations)
-        .where(inArray(destinations.id, input.ids));
+      for (const id of input.ids) await remove(COL, id);
       return { success: true, deleted: input.ids.length };
     }),
 
@@ -148,31 +122,19 @@ export const adminDestinationsRouter = router({
   updateStatus: adminProcedure
     .input(z.object({ id: z.number(), isActive: z.enum(["active", "inactive"]) }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
-      await db
-        .update(destinations)
-        .set({
-          isActive: input.isActive,
-          updatedAt: new Date(),
-        })
-        .where(eq(destinations.id, input.id));
+      await update(COL, input.id, { isActive: input.isActive });
       return { success: true };
     }),
 
   /** Get statistics */
   getStats: adminProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    
-    const allDestinations = await db.select().from(destinations);
-    const activeCount = allDestinations.filter((d: any) => d.isActive === "active").length;
-    const avgRating = allDestinations.length > 0 
-      ? (allDestinations.reduce((sum: number, d: any) => sum + (parseFloat(d.rating as string) || 0), 0) / allDestinations.length).toFixed(2)
+    const allDestinations = (await list(COL, {})) as any[];
+    const activeCount = allDestinations.filter((d) => d.isActive === "active").length;
+    const avgRating = allDestinations.length > 0
+      ? (allDestinations.reduce((sum, d) => sum + (parseFloat(d.rating as string) || 0), 0) / allDestinations.length).toFixed(2)
       : 0;
     const avgPrice = allDestinations.length > 0
-      ? (allDestinations.reduce((sum: number, d: any) => sum + (parseFloat(d.pricePerPerson as string) || 0), 0) / allDestinations.length).toFixed(2)
+      ? (allDestinations.reduce((sum, d) => sum + (parseFloat(d.pricePerPerson as string) || 0), 0) / allDestinations.length).toFixed(2)
       : 0;
 
     return {

@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { router, adminProcedure } from "../_core/trpc";
-import { getDb } from "../db";
-import { blogPosts } from "../../drizzle/schema";
-import { eq, like, desc, asc, inArray } from "drizzle-orm";
+import { list, getById, insert, update, remove, findOne } from "../_core/firestore-db";
+
+const COL = "blogPosts";
 
 export const adminBlogRouter = router({
   /** List all blog posts with pagination and filtering */
@@ -19,63 +19,47 @@ export const adminBlogRouter = router({
       }).optional()
     )
     .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
       const { limit = 20, offset = 0, search = "", status, category, sortBy = "createdAt", sortOrder = "desc" } = input ?? {};
-      
-      let query: any = db.select().from(blogPosts);
-      
+
+      let rows = (await list(COL, {})) as any[];
+
+      if (status) rows = rows.filter((p) => p.status === status);
+      if (category) rows = rows.filter((p) => p.category === category);
       if (search) {
-        query = query.where(like(blogPosts.title, `%${search}%`));
+        const q = search.toLowerCase();
+        rows = rows.filter((p) => (p.title ?? "").toLowerCase().includes(q));
       }
-      
-      if (status) {
-        query = query.where(eq(blogPosts.status, status));
-      }
-      
-      if (category) {
-        query = query.where(eq(blogPosts.category, category));
-      }
-      
-      const orderColumn = 
-        sortBy === "title" ? blogPosts.title :
-        sortBy === "publishedAt" ? blogPosts.publishedAt :
-        sortBy === "viewCount" ? blogPosts.viewCount :
-        blogPosts.createdAt;
-      
-      query = query.orderBy(sortOrder === "desc" ? desc(orderColumn) : asc(orderColumn));
-      query = query.limit(limit).offset(offset);
-      
-      return await query;
+
+      const key =
+        sortBy === "title" ? "title" :
+        sortBy === "publishedAt" ? "publishedAt" :
+        sortBy === "viewCount" ? "viewCount" :
+        "createdAt";
+
+      rows.sort((a, b) => {
+        const av = a[key], bv = b[key];
+        const an = typeof av === "string" && isNaN(Number(av)) ? av : Number(av ?? 0);
+        const bn = typeof bv === "string" && isNaN(Number(bv)) ? bv : Number(bv ?? 0);
+        if (an < bn) return sortOrder === "desc" ? 1 : -1;
+        if (an > bn) return sortOrder === "desc" ? -1 : 1;
+        return 0;
+      });
+
+      return rows.slice(offset, offset + limit);
     }),
 
   /** Get single blog post by ID */
   getById: adminProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
-      const result = await db
-        .select()
-        .from(blogPosts)
-        .where(eq(blogPosts.id, input.id));
-      return result[0] || null;
+      return (await getById(COL, input.id)) || null;
     }),
 
   /** Get blog post by slug */
   getBySlug: adminProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
-      const result = await db
-        .select()
-        .from(blogPosts)
-        .where(eq(blogPosts.slug, input.slug));
-      return result[0] || null;
+      return (await findOne(COL, [["slug", "==", input.slug]])) || null;
     }),
 
   /** Create new blog post */
@@ -97,14 +81,7 @@ export const adminBlogRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
-      const result = await db.insert(blogPosts).values({
-        ...input,
-        status: "draft",
-        viewCount: 0,
-      });
+      await insert(COL, { ...input, status: "draft", viewCount: 0 });
       return { success: true };
     }),
 
@@ -129,15 +106,8 @@ export const adminBlogRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
       const { id, ...data } = input;
-      
-      await db
-        .update(blogPosts)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(blogPosts.id, id));
+      await update(COL, id, data);
       return { success: true };
     }),
 
@@ -145,12 +115,7 @@ export const adminBlogRouter = router({
   delete: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
-      await db
-        .delete(blogPosts)
-        .where(eq(blogPosts.id, input.id));
+      await remove(COL, input.id);
       return { success: true };
     }),
 
@@ -158,12 +123,7 @@ export const adminBlogRouter = router({
   bulkDelete: adminProcedure
     .input(z.object({ ids: z.array(z.number()) }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
-      await db
-        .delete(blogPosts)
-        .where(inArray(blogPosts.id, input.ids));
+      for (const id of input.ids) await remove(COL, id);
       return { success: true, deleted: input.ids.length };
     }),
 
@@ -171,17 +131,7 @@ export const adminBlogRouter = router({
   publish: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
-      await db
-        .update(blogPosts)
-        .set({
-          status: "published",
-          publishedAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .where(eq(blogPosts.id, input.id));
+      await update(COL, input.id, { status: "published", publishedAt: new Date() });
       return { success: true };
     }),
 
@@ -189,28 +139,16 @@ export const adminBlogRouter = router({
   archive: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
-      await db
-        .update(blogPosts)
-        .set({
-          status: "archived",
-          updatedAt: new Date(),
-        })
-        .where(eq(blogPosts.id, input.id));
+      await update(COL, input.id, { status: "archived" });
       return { success: true };
     }),
 
   /** Get statistics */
   getStats: adminProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    
-    const allPosts = await db.select().from(blogPosts);
-    const publishedCount = allPosts.filter((p: any) => p.status === "published").length;
-    const draftCount = allPosts.filter((p: any) => p.status === "draft").length;
-    const totalViews = allPosts.reduce((sum: number, p: any) => sum + (p.viewCount || 0), 0);
+    const allPosts = (await list(COL, {})) as any[];
+    const publishedCount = allPosts.filter((p) => p.status === "published").length;
+    const draftCount = allPosts.filter((p) => p.status === "draft").length;
+    const totalViews = allPosts.reduce((sum, p) => sum + (p.viewCount || 0), 0);
     const avgViews = allPosts.length > 0 ? (totalViews / allPosts.length).toFixed(0) : 0;
 
     return {

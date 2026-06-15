@@ -1,47 +1,42 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
-import { getDb } from "../db";
 import {
-  destinations, offers, blogPosts, bookings, users, galleryItems,
-  reviews, siteSettings, contactMessages, marketingContent,
-} from "../../drizzle/schema";
-import { sql } from "drizzle-orm";
+  list,
+  insert,
+  removeAll,
+  count as countDocs,
+  getSettingValue,
+  setSettingValue,
+} from "../_core/firestore-db";
 
 /**
- * Backup Router - Real data export from database.
- * Exports actual records from all tables, not fake data.
+ * Backup Router - Real data export from Firestore.
+ * Exports actual documents from all collections, not fake data.
  */
 
-const TABLE_MAP: Record<string, { table: any; label: string }> = {
-  destinations: { table: destinations, label: "Destinations" },
-  offers: { table: offers, label: "Offers & Packages" },
-  blog: { table: blogPosts, label: "Blog Articles" },
-  bookings: { table: bookings, label: "Bookings" },
-  users: { table: users, label: "Users" },
-  gallery: { table: galleryItems, label: "Gallery" },
-  reviews: { table: reviews, label: "Reviews" },
-  settings: { table: siteSettings, label: "Settings" },
-  contacts: { table: contactMessages, label: "Contact Messages" },
-  marketing: { table: marketingContent, label: "Marketing Content" },
+const TABLE_MAP: Record<string, { collection: string; label: string }> = {
+  destinations: { collection: "destinations", label: "Destinations" },
+  offers: { collection: "offers", label: "Offers & Packages" },
+  blog: { collection: "blogPosts", label: "Blog Articles" },
+  bookings: { collection: "bookings", label: "Bookings" },
+  users: { collection: "users", label: "Users" },
+  gallery: { collection: "galleryItems", label: "Gallery" },
+  reviews: { collection: "reviews", label: "Reviews" },
+  settings: { collection: "siteSettings", label: "Settings" },
+  contacts: { collection: "contactMessages", label: "Contact Messages" },
+  marketing: { collection: "marketingContent", label: "Marketing Content" },
 };
 
 export const backupRouter = router({
   /**
-   * Get record counts for all exportable tables
+   * Get record counts for all exportable collections
    */
   getExportSections: protectedProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) return [];
-
     const sections = [];
-    for (const [id, { table, label }] of Object.entries(TABLE_MAP)) {
+    for (const [id, { collection, label }] of Object.entries(TABLE_MAP)) {
       try {
-        const [result] = await db.select({ count: sql<number>`count(*)` }).from(table);
-        sections.push({
-          id,
-          label,
-          recordCount: Number(result?.count ?? 0),
-        });
+        const recordCount = await countDocs(collection);
+        sections.push({ id, label, recordCount });
       } catch {
         sections.push({ id, label, recordCount: 0 });
       }
@@ -58,9 +53,6 @@ export const backupRouter = router({
       format: z.enum(["json", "csv"]).default("json"),
     }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-
       const exportResult: Record<string, { label: string; recordCount: number; data: any[] }> = {};
 
       for (const sectionId of input.sections) {
@@ -68,7 +60,7 @@ export const backupRouter = router({
         if (!mapping) continue;
 
         try {
-          const rows = await db.select().from(mapping.table);
+          const rows = await list(mapping.collection);
           exportResult[sectionId] = {
             label: mapping.label,
             recordCount: rows.length,
@@ -92,16 +84,14 @@ export const backupRouter = router({
     }),
 
   /**
-   * Get backup settings from DB
+   * Get backup settings from Firestore
    */
   getSettings: protectedProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) return {};
-    const results = await db.select().from(siteSettings).where(
-      sql`${siteSettings.category} = 'backup'`
-    );
+    const rows = await list("siteSettings", {
+      where: [["category", "==", "backup"]],
+    });
     const settings: Record<string, string> = {};
-    for (const row of results) {
+    for (const row of rows as any[]) {
       settings[row.settingKey] = row.settingValue ?? "";
     }
     return settings;
@@ -120,9 +110,6 @@ export const backupRouter = router({
       mode: z.enum(["merge", "replace"]).default("merge"),
     }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-
       const results: Record<string, { restored: number; skipped: number; errors: number }> = {};
 
       for (const [sectionId, section] of Object.entries(input.sections)) {
@@ -133,31 +120,24 @@ export const backupRouter = router({
         }
 
         let restored = 0;
-        let skipped = 0;
+        const skipped = 0;
         let errors = 0;
 
         try {
-          // In replace mode, delete existing records first
+          // In replace mode, delete existing documents first
           if (input.mode === "replace") {
-            await db.delete(mapping.table);
+            await removeAll(mapping.collection);
           }
 
-          // Insert records one by one to handle duplicates gracefully
+          // Insert documents one by one
           for (const row of section.data) {
             try {
-              // Remove auto-generated fields that might conflict
               const cleanRow = { ...row };
-              delete cleanRow.id; // Let DB auto-generate IDs
-              
-              await db.insert(mapping.table).values(cleanRow);
+              delete cleanRow.id; // Let the data layer auto-generate ids
+              await insert(mapping.collection, cleanRow);
               restored++;
-            } catch (e: any) {
-              // Duplicate key or constraint violation - skip
-              if (e?.code === 'ER_DUP_ENTRY' || e?.message?.includes('Duplicate')) {
-                skipped++;
-              } else {
-                errors++;
-              }
+            } catch {
+              errors++;
             }
           }
         } catch {
@@ -189,26 +169,8 @@ export const backupRouter = router({
       settings: z.record(z.string(), z.string()),
     }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-
       for (const [key, value] of Object.entries(input.settings)) {
-        const existing = await db.select().from(siteSettings).where(
-          sql`${siteSettings.category} = 'backup' AND ${siteSettings.settingKey} = ${key}`
-        ).limit(1);
-
-        if (existing.length > 0) {
-          await db.update(siteSettings)
-            .set({ settingValue: value, updatedBy: ctx.user.id })
-            .where(sql`${siteSettings.id} = ${existing[0].id}`);
-        } else {
-          await db.insert(siteSettings).values({
-            category: "backup",
-            settingKey: key,
-            settingValue: value,
-            updatedBy: ctx.user.id,
-          });
-        }
+        await setSettingValue("backup", key, value, ctx.user.id);
       }
       return { success: true };
     }),

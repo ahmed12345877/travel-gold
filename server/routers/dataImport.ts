@@ -1,9 +1,6 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
-import { getDb } from "../db";
-import {
-  destinations, offers, blogPosts, reviews, galleryItems, contactMessages,
-} from "../../drizzle/schema";
+import { insert } from "../_core/firestore-db";
 
 /**
  * Data Import Router - import records from EXTERNAL tools (spreadsheets, other
@@ -31,7 +28,7 @@ interface ImportTable {
   id: string;
   label: string;
   description: string;
-  table: any;
+  collection: string;
   fields: ImportField[];
 }
 
@@ -42,7 +39,7 @@ const IMPORT_TABLES: ImportTable[] = [
     id: "destinations",
     label: "Destinations",
     description: "Travel destinations and tour packages",
-    table: destinations,
+    collection: "destinations",
     fields: [
       { key: "name", label: "Name", type: "string", required: true },
       { key: "location", label: "Location", type: "string", required: true },
@@ -64,7 +61,7 @@ const IMPORT_TABLES: ImportTable[] = [
     id: "offers",
     label: "Offers & Packages",
     description: "Promotional offers and discounts",
-    table: offers,
+    collection: "offers",
     fields: [
       { key: "title", label: "Title", type: "string", required: true },
       { key: "description", label: "Description", type: "string" },
@@ -85,7 +82,7 @@ const IMPORT_TABLES: ImportTable[] = [
     id: "blog",
     label: "Blog Articles",
     description: "Blog posts and articles",
-    table: blogPosts,
+    collection: "blogPosts",
     fields: [
       { key: "slug", label: "Slug", type: "string", required: true, hint: "Unique URL slug" },
       { key: "title", label: "Title", type: "string", required: true },
@@ -104,7 +101,7 @@ const IMPORT_TABLES: ImportTable[] = [
     id: "reviews",
     label: "Reviews",
     description: "Customer reviews and ratings",
-    table: reviews,
+    collection: "reviews",
     fields: [
       { key: "guestName", label: "Guest Name", type: "string" },
       { key: "tripName", label: "Trip Name", type: "string", required: true },
@@ -119,7 +116,7 @@ const IMPORT_TABLES: ImportTable[] = [
     id: "gallery",
     label: "Gallery",
     description: "Gallery images",
-    table: galleryItems,
+    collection: "gallery_items",
     fields: [
       { key: "imageUrl", label: "Image URL", type: "string", required: true },
       { key: "title", label: "Title", type: "string", required: true },
@@ -135,7 +132,7 @@ const IMPORT_TABLES: ImportTable[] = [
     id: "contacts",
     label: "Contact Messages",
     description: "Contact form submissions / leads",
-    table: contactMessages,
+    collection: "contactMessages",
     fields: [
       { key: "name", label: "Name", type: "string", required: true },
       { key: "email", label: "Email", type: "string", required: true },
@@ -274,9 +271,6 @@ export const dataImportRouter = router({
       skipInvalid: z.boolean().default(true),
     }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-
       const target = getTable(input.tableId);
       if (!target) throw new Error(`Unknown import table: ${input.tableId}`);
 
@@ -312,16 +306,11 @@ export const dataImportRouter = router({
         }
 
         try {
-          await db.insert(target.table).values(record as any);
+          await insert(target.collection, record as Record<string, any>);
           imported++;
         } catch (e: any) {
-          if (e?.code === "ER_DUP_ENTRY" || e?.message?.toLowerCase().includes("duplicate")) {
-            skipped++;
-            errors.push({ row: i + 1, message: "Duplicate record skipped" });
-          } else {
-            failed++;
-            errors.push({ row: i + 1, message: e?.message || "Insert failed" });
-          }
+          failed++;
+          errors.push({ row: i + 1, message: e?.message || "Insert failed" });
         }
       }
 

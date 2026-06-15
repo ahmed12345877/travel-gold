@@ -10,11 +10,9 @@ import {
   getUserStats,
   getUserBookings,
   getOrCreateAICredits,
-  getDb,
   updateUserProfile,
 } from "../db";
-import { eq, sql } from "drizzle-orm";
-import { reviews } from "../../drizzle/schema";
+import { count } from "../_core/firestore-db";
 
 // Admin-only middleware
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -140,16 +138,9 @@ export const usersRouter = router({
     }
 
     try {
-      const db = await getDb();
-      if (db) {
-        const userReviews = await db
-          .select({ count: sql<number>`count(*)` })
-          .from(reviews)
-          .where(eq(reviews.userId, userId));
-        reviewsCount = userReviews[0]?.count ?? 0;
-      }
+      reviewsCount = await count("reviews", [["userId", "==", userId]]);
     } catch {
-      // reviews table might not exist yet
+      // reviews collection might not exist yet
     }
 
     try {
