@@ -19,47 +19,71 @@ export const adminBlogRouter = router({
       }).optional()
     )
     .query(async ({ input }) => {
-      const { limit = 20, offset = 0, search = "", status, category, sortBy = "createdAt", sortOrder = "desc" } = input ?? {};
+      try {
+        const { limit = 20, offset = 0, search = "", status, category, sortBy = "createdAt", sortOrder = "desc" } = input ?? {};
 
-      let rows = (await list(COL, {})) as any[];
+        let rows = (await list(COL, {})) as any[];
 
-      if (status) rows = rows.filter((p) => p.status === status);
-      if (category) rows = rows.filter((p) => p.category === category);
-      if (search) {
-        const q = search.toLowerCase();
-        rows = rows.filter((p) => (p.title ?? "").toLowerCase().includes(q));
+        if (status) rows = rows.filter((p) => p.status === status);
+        if (category) rows = rows.filter((p) => p.category === category);
+        if (search) {
+          const q = search.toLowerCase();
+          rows = rows.filter((p) => (p.title ?? "").toLowerCase().includes(q));
+        }
+
+        const key =
+          sortBy === "title" ? "title" :
+          sortBy === "publishedAt" ? "publishedAt" :
+          sortBy === "viewCount" ? "viewCount" :
+          "createdAt";
+
+        rows.sort((a, b) => {
+          const av = a[key], bv = b[key];
+          const an = typeof av === "string" && isNaN(Number(av)) ? av : Number(av ?? 0);
+          const bn = typeof bv === "string" && isNaN(Number(bv)) ? bv : Number(bv ?? 0);
+          if (an < bn) return sortOrder === "desc" ? 1 : -1;
+          if (an > bn) return sortOrder === "desc" ? -1 : 1;
+          return 0;
+        });
+
+        return rows.slice(offset, offset + limit);
+      } catch (error) {
+        console.error("[adminBlog.list] database error:", {
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        });
+        throw error;
       }
-
-      const key =
-        sortBy === "title" ? "title" :
-        sortBy === "publishedAt" ? "publishedAt" :
-        sortBy === "viewCount" ? "viewCount" :
-        "createdAt";
-
-      rows.sort((a, b) => {
-        const av = a[key], bv = b[key];
-        const an = typeof av === "string" && isNaN(Number(av)) ? av : Number(av ?? 0);
-        const bn = typeof bv === "string" && isNaN(Number(bv)) ? bv : Number(bv ?? 0);
-        if (an < bn) return sortOrder === "desc" ? 1 : -1;
-        if (an > bn) return sortOrder === "desc" ? -1 : 1;
-        return 0;
-      });
-
-      return rows.slice(offset, offset + limit);
     }),
 
   /** Get single blog post by ID */
   getById: adminProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      return (await getById(COL, input.id)) || null;
+      try {
+        return (await getById(COL, input.id)) || null;
+      } catch (error) {
+        console.error("[adminBlog.getById] database error:", {
+          error: error instanceof Error ? error.message : String(error),
+          id: input.id,
+        });
+        throw error;
+      }
     }),
 
   /** Get blog post by slug */
   getBySlug: adminProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ input }) => {
-      return (await findOne(COL, [["slug", "==", input.slug]])) || null;
+      try {
+        return (await findOne(COL, [["slug", "==", input.slug]])) || null;
+      } catch (error) {
+        console.error("[adminBlog.getBySlug] database error:", {
+          error: error instanceof Error ? error.message : String(error),
+          slug: input.slug,
+        });
+        throw error;
+      }
     }),
 
   /** Create new blog post */
@@ -81,14 +105,22 @@ export const adminBlogRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const now = new Date().toISOString();
-      await insert(COL, { 
-        ...input, 
-        status: "draft", 
-        viewCount: 0,
-        createdAt: now,
-      });
-      return { success: true };
+      try {
+        const now = new Date().toISOString();
+        const result = await insert(COL, { 
+          ...input, 
+          status: "draft", 
+          viewCount: 0,
+          createdAt: now,
+        });
+        return { success: true, id: result.id };
+      } catch (error) {
+        console.error("[adminBlog.create] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          slug: input.slug,
+        });
+        throw error;
+      }
     }),
 
   /** Update blog post */
@@ -112,58 +144,105 @@ export const adminBlogRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const { id, ...data } = input;
-      await update(COL, id, data);
-      return { success: true };
+      try {
+        const { id, ...data } = input;
+        await update(COL, id, data);
+        return { success: true };
+      } catch (error) {
+        console.error("[adminBlog.update] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          id: input.id,
+        });
+        throw error;
+      }
     }),
 
   /** Delete blog post */
   delete: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      await remove(COL, input.id);
-      return { success: true };
+      try {
+        await remove(COL, input.id);
+        return { success: true };
+      } catch (error) {
+        console.error("[adminBlog.delete] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          id: input.id,
+        });
+        throw error;
+      }
     }),
 
   /** Bulk delete blog posts */
   bulkDelete: adminProcedure
     .input(z.object({ ids: z.array(z.number()) }))
     .mutation(async ({ input }) => {
-      for (const id of input.ids) await remove(COL, id);
-      return { success: true, deleted: input.ids.length };
+      try {
+        for (const id of input.ids) await remove(COL, id);
+        return { success: true, deleted: input.ids.length };
+      } catch (error) {
+        console.error("[adminBlog.bulkDelete] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          count: input.ids.length,
+        });
+        throw error;
+      }
     }),
 
   /** Publish blog post */
   publish: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      await update(COL, input.id, { status: "published", publishedAt: new Date().toISOString() });
-      return { success: true };
+      try {
+        await update(COL, input.id, { status: "published", publishedAt: new Date().toISOString() });
+        return { success: true };
+      } catch (error) {
+        console.error("[adminBlog.publish] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          id: input.id,
+        });
+        throw error;
+      }
     }),
 
   /** Archive blog post */
   archive: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      await update(COL, input.id, { status: "archived" });
-      return { success: true };
+      try {
+        await update(COL, input.id, { status: "archived" });
+        return { success: true };
+      } catch (error) {
+        console.error("[adminBlog.archive] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          id: input.id,
+        });
+        throw error;
+      }
     }),
 
   /** Get statistics */
   getStats: adminProcedure.query(async () => {
-    const allPosts = (await list(COL, {})) as any[];
-    const publishedCount = allPosts.filter((p) => p.status === "published").length;
-    const draftCount = allPosts.filter((p) => p.status === "draft").length;
-    const totalViews = allPosts.reduce((sum, p) => sum + (p.viewCount || 0), 0);
-    const avgViews = allPosts.length > 0 ? (totalViews / allPosts.length).toFixed(0) : 0;
+    try {
+      const allPosts = (await list(COL, {})) as any[];
+      const publishedCount = allPosts.filter((p) => p.status === "published").length;
+      const draftCount = allPosts.filter((p) => p.status === "draft").length;
+      const totalViews = allPosts.reduce((sum, p) => sum + (p.viewCount || 0), 0);
+      const avgViews = allPosts.length > 0 ? (totalViews / allPosts.length).toFixed(0) : 0;
 
-    return {
-      total: allPosts.length,
-      published: publishedCount,
-      draft: draftCount,
-      archived: allPosts.length - publishedCount - draftCount,
-      totalViews,
-      avgViews: parseInt(avgViews as string),
-    };
+      return {
+        total: allPosts.length,
+        published: publishedCount,
+        draft: draftCount,
+        archived: allPosts.length - publishedCount - draftCount,
+        totalViews,
+        avgViews: parseInt(avgViews as string),
+      };
+    } catch (error) {
+      console.error("[adminBlog.getStats] query error:", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
   }),
 });

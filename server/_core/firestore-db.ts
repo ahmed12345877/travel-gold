@@ -53,16 +53,24 @@ export async function insert<T extends Record<string, any>>(
   collection: string,
   data: T,
 ): Promise<T & { id: number }> {
-  const id = typeof data.id === "number" ? data.id : await nextId(collection);
-  const now = new Date();
-  const record = {
-    ...data,
-    id,
-    createdAt: data.createdAt ?? now,
-    updatedAt: now,
-  } as T & { id: number };
-  await db.collection(collection).doc(String(id)).set(record);
-  return record;
+  try {
+    const id = typeof data.id === "number" ? data.id : await nextId(collection);
+    const now = new Date();
+    const record = {
+      ...data,
+      id,
+      createdAt: data.createdAt ?? now,
+      updatedAt: now,
+    } as T & { id: number };
+    await db.collection(collection).doc(String(id)).set(record);
+    return record;
+  } catch (error) {
+    console.error(`[firestore] insert() failed for collection="${collection}":`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    throw error;
+  }
 }
 
 /** Get a single document by numeric id. */
@@ -70,8 +78,16 @@ export async function getById<T = Record<string, any>>(
   collection: string,
   id: number,
 ): Promise<T | null> {
-  const snap = await db.collection(collection).doc(String(id)).get();
-  return snap.exists ? (snap.data() as T) : null;
+  try {
+    const snap = await db.collection(collection).doc(String(id)).get();
+    return snap.exists ? (snap.data() as T) : null;
+  } catch (error) {
+    console.error(`[firestore] getById() failed for collection="${collection}" id="${id}":`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    throw error;
+  }
 }
 
 /** Update a document by numeric id (merge). Returns the updated doc. */
@@ -80,17 +96,33 @@ export async function update<T = Record<string, any>>(
   id: number,
   data: Record<string, any>,
 ): Promise<T | null> {
-  const ref = db.collection(collection).doc(String(id));
-  const existing = await ref.get();
-  if (!existing.exists) return null;
-  await ref.set({ ...data, updatedAt: new Date() }, { merge: true });
-  const updated = await ref.get();
-  return (updated.data() as T) ?? null;
+  try {
+    const ref = db.collection(collection).doc(String(id));
+    const existing = await ref.get();
+    if (!existing.exists) return null;
+    await ref.set({ ...data, updatedAt: new Date() }, { merge: true });
+    const updated = await ref.get();
+    return (updated.data() as T) ?? null;
+  } catch (error) {
+    console.error(`[firestore] update() failed for collection="${collection}" id="${id}":`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    throw error;
+  }
 }
 
 /** Delete a document by numeric id. */
 export async function remove(collection: string, id: number): Promise<void> {
-  await db.collection(collection).doc(String(id)).delete();
+  try {
+    await db.collection(collection).doc(String(id)).delete();
+  } catch (error) {
+    console.error(`[firestore] remove() failed for collection="${collection}" id="${id}":`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    throw error;
+  }
 }
 
 /** Delete every document in a collection (used by backup "replace" restore). */
@@ -111,27 +143,36 @@ export async function list<T = Record<string, any>>(
   collection: string,
   options: ListOptions = {},
 ): Promise<T[]> {
-  let query: Query | CollectionReference = db.collection(collection);
+  try {
+    let query: Query | CollectionReference = db.collection(collection);
 
-  if (options.where) {
-    for (const [field, op, value] of options.where) {
-      query = query.where(field, op, value);
+    if (options.where) {
+      for (const [field, op, value] of options.where) {
+        query = query.where(field, op, value);
+      }
     }
-  }
-  if (options.orderBy) {
-    for (const [field, dir] of options.orderBy) {
-      query = query.orderBy(field, dir);
+    if (options.orderBy) {
+      for (const [field, dir] of options.orderBy) {
+        query = query.orderBy(field, dir);
+      }
     }
-  }
-  if (typeof options.offset === "number") {
-    query = query.offset(options.offset);
-  }
-  if (typeof options.limit === "number") {
-    query = query.limit(options.limit);
-  }
+    if (typeof options.offset === "number") {
+      query = query.offset(options.offset);
+    }
+    if (typeof options.limit === "number") {
+      query = query.limit(options.limit);
+    }
 
-  const snap = await query.get();
-  return snap.docs.map((d) => d.data() as T);
+    const snap = await query.get();
+    return snap.docs.map((d) => d.data() as T);
+  } catch (error) {
+    console.error(`[firestore] list() failed for collection="${collection}":`, {
+      error: error instanceof Error ? error.message : String(error),
+      options,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    throw error;
+  }
 }
 
 /** Count documents in a collection (optionally filtered). */
@@ -139,14 +180,22 @@ export async function count(
   collection: string,
   where?: WhereTuple[],
 ): Promise<number> {
-  let query: Query | CollectionReference = db.collection(collection);
-  if (where) {
-    for (const [field, op, value] of where) {
-      query = query.where(field, op, value);
+  try {
+    let query: Query | CollectionReference = db.collection(collection);
+    if (where) {
+      for (const [field, op, value] of where) {
+        query = query.where(field, op, value);
+      }
     }
+    const snap = await query.count().get();
+    return snap.data().count;
+  } catch (error) {
+    console.error(`[firestore] count() failed for collection="${collection}":`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    throw error;
   }
-  const snap = await query.count().get();
-  return snap.data().count;
 }
 
 /** Find the first document matching a set of equality/where conditions. */
@@ -154,12 +203,20 @@ export async function findOne<T = Record<string, any>>(
   collection: string,
   where: WhereTuple[],
 ): Promise<T | null> {
-  let query: Query | CollectionReference = db.collection(collection);
-  for (const [field, op, value] of where) {
-    query = query.where(field, op, value);
+  try {
+    let query: Query | CollectionReference = db.collection(collection);
+    for (const [field, op, value] of where) {
+      query = query.where(field, op, value);
+    }
+    const snap = await query.limit(1).get();
+    return snap.empty ? null : (snap.docs[0].data() as T);
+  } catch (error) {
+    console.error(`[firestore] findOne() failed for collection="${collection}":`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    throw error;
   }
-  const snap = await query.limit(1).get();
-  return snap.empty ? null : (snap.docs[0].data() as T);
 }
 
 /* ── Settings helpers (category + key composite identity) ── */

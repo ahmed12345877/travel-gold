@@ -35,12 +35,24 @@ export const blogRouter = router({
     .query(async ({ input }) => {
       const { limit = 10, offset = 0, category } = input ?? {};
       try {
+        let posts;
         if (category) {
-          return await getBlogPostsByCategory(category, limit, offset);
+          posts = await getBlogPostsByCategory(category, limit, offset);
+        } else {
+          posts = await getPublishedBlogPosts(limit, offset);
         }
-        return await getPublishedBlogPosts(limit, offset);
+        
+        // Validate and normalize posts
+        return posts.map(post => ({
+          ...post,
+          publishedAt: post.publishedAt ? new Date(post.publishedAt).toISOString() : null,
+        }));
       } catch (err) {
-        console.error("[blog.list] database error:", err);
+        console.error("[blog.list] database error:", {
+          error: err instanceof Error ? err.message : String(err),
+          stack: err instanceof Error ? err.stack : undefined,
+          input,
+        });
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to fetch blog posts",
@@ -52,16 +64,33 @@ export const blogRouter = router({
   getBySlug: publicProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ input }) => {
-      const post = await getBlogPostBySlug(input.slug);
-      if (!post) {
+      try {
+        const post = await getBlogPostBySlug(input.slug);
+        if (!post) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Blog post not found",
+          });
+        }
+        // Increment view count (fire and forget)
+        incrementBlogViewCount(post.id).catch((err) => {
+          console.warn("[blog.getBySlug] Failed to increment view count:", err);
+        });
+        return {
+          ...post,
+          publishedAt: post.publishedAt ? new Date(post.publishedAt).toISOString() : null,
+        };
+      } catch (err) {
+        if (err instanceof TRPCError) throw err;
+        console.error("[blog.getBySlug] database error:", {
+          error: err instanceof Error ? err.message : String(err),
+          slug: input.slug,
+        });
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Blog post not found",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch blog post",
         });
       }
-      // Increment view count (fire and forget)
-      incrementBlogViewCount(post.id).catch(() => {});
-      return post;
     }),
 
   // Admin: List all posts (including drafts)
@@ -96,12 +125,23 @@ export const blogRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      return createBlogPost({
-        ...input,
-        authorId: ctx.user.id,
-        authorName: ctx.user.name || "VANIR GROUP",
-        publishedAt: input.status === "published" ? new Date() : undefined,
-      });
+      try {
+        return await createBlogPost({
+          ...input,
+          authorId: ctx.user.id,
+          authorName: ctx.user.name || "VANIR GROUP",
+          publishedAt: input.status === "published" ? new Date().toISOString() : undefined,
+        });
+      } catch (err) {
+        console.error("[blog.create] mutation error:", {
+          error: err instanceof Error ? err.message : String(err),
+          input: { ...input, content: "[omitted]" },
+        });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create blog post",
+        });
+      }
     }),
 
   // Admin: Update blog post
@@ -124,17 +164,32 @@ export const blogRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const { id, ...data } = input;
-      const updated = await updateBlogPost(id, {
-        ...data,
-        publishedAt: data.status === "published" ? new Date() : undefined,
-      });
-      if (!updated) {
+      try {
+        const { id, ...data } = input;
+        const updated = await updateBlogPost(id, {
+          ...data,
+          publishedAt: data.status === "published" ? new Date().toISOString() : undefined,
+        });
+        if (!updated) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Blog post not found",
+          });
+        }
+        return {
+          ...updated,
+          publishedAt: updated.publishedAt ? new Date(updated.publishedAt).toISOString() : null,
+        };
+      } catch (err) {
+        if (err instanceof TRPCError) throw err;
+        console.error("[blog.update] mutation error:", {
+          error: err instanceof Error ? err.message : String(err),
+          postId: input.id,
+        });
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Blog post not found",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update blog post",
         });
       }
-      return updated;
     }),
 });
