@@ -10,8 +10,9 @@ import { useRef, useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
 import OptimizedImage from "./OptimizedImage";
 import { ASSETS } from "@/config/assets";
+import { trpc } from "@/lib/trpc";
 
-const CARD_IMAGES = [
+const CARD_IMAGES_FALLBACK = [
   {
     src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Cruise-Generic-EqH5djLblFD3QfzRSnq56AE3g7hAIu.png",
     alt: "Luxury Cruise Experience - Relax and Enjoy",
@@ -172,18 +173,18 @@ function FanCard({
 }
 
 /* ── Fan Cards Container ── */
-function CinematicCardsRow() {
+function CinematicCardsRow({ cardImages }: { cardImages: typeof CARD_IMAGES_FALLBACK }) {
   const [, navigate] = useLocation();
 
   // Total footprint: 4 cards × step(82) + card-width(170) = 416px
-  const W = (CARD_IMAGES.length - 1) * STEP + CARD_W + 30; // 30px right breathing room
+  const W = (cardImages.length - 1) * STEP + CARD_W + 30; // 30px right breathing room
   const H = CARD_H + 30; // 30px for hover lift clearance
 
   return (
     <>
       {/* Mobile — 2x2 grid */}
       <div className="grid grid-cols-2 gap-2 sm:hidden" style={{ height: 270 }}>
-        {CARD_IMAGES.map((img, i) => (
+        {cardImages.map((img, i) => (
           <div
             key={i}
             className="relative overflow-hidden rounded-xl cursor-pointer"
@@ -206,7 +207,7 @@ function CinematicCardsRow() {
         className="hidden sm:block relative"
         style={{ width: W, height: H }}
       >
-        {CARD_IMAGES.map((img, i) => (
+        {cardImages.map((img, i) => (
           <FanCard key={i} img={img} index={i} />
         ))}
       </div>
@@ -247,7 +248,7 @@ function RotatingWord() {
 
 /* ── Main Hero ── */
 export default function HeroSection() {
-  const sectionRef = useRef<HTMLElement>(null);
+  const sectionRef = useRef<HTMLSection>(null);
   const [videoError, setVideoError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -259,6 +260,27 @@ export default function HeroSection() {
   const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
   const cardsY = useTransform(scrollYProgress, [0, 1], ["0%", "10%"]);
   const textY = useTransform(scrollYProgress, [0, 1], ["0%", "25%"]);
+
+  // Fetch hero images from database
+  const { data: savedImagesJson } = trpc.siteSettings.get.useQuery(
+    { category: "hero", key: "hero_images" },
+    { staleTime: 5 * 60 * 1000 }
+  );
+
+  // Parse saved images or use fallback
+  const cardImages = useMemo(() => {
+    if (!savedImagesJson) return CARD_IMAGES_FALLBACK;
+    try {
+      const parsed = JSON.parse(savedImagesJson);
+      // Validate it's an array with required fields
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].src) {
+        return parsed;
+      }
+    } catch (e) {
+      console.warn("[v0] Failed to parse hero images:", e);
+    }
+    return CARD_IMAGES_FALLBACK;
+  }, [savedImagesJson]);
 
   return (
     <section
@@ -374,7 +396,7 @@ export default function HeroSection() {
           className="w-full md:w-[54%] flex items-center justify-center md:justify-end"
           style={{ y: cardsY }}
         >
-          <CinematicCardsRow />
+          <CinematicCardsRow cardImages={cardImages} />
         </motion.div>
 
       </div>
