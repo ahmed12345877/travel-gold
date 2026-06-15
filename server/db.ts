@@ -1,711 +1,590 @@
-import { eq, desc, asc, and, gte, lte, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import {
-  InsertUser, users,
-  InsertBooking, bookings,
-  InsertReview, reviews,
-  InsertOffer, offers,
-  InsertContactMessage, contactMessages,
-  InsertFileUpload, fileUploads,
-  InsertGalleryItem, galleryItems,
-  InsertGalleryVideo, galleryVideos,
+/**
+ * Data access layer — now backed entirely by Firestore.
+ *
+ * All admin tools use these helpers (or the generic firestore-db layer). The
+ * function signatures are unchanged from the previous Postgres implementation,
+ * so every router that imports them keeps working without edits.
+ *
+ * Types are still imported (type-only) from drizzle/schema for shape parity.
+ *
+ * The `users` collection is keyed by Firebase UID and managed by the auth layer
+ * (sdk.ts / authExpressRouter.ts). It may not carry a numeric `id`, so the user
+ * helpers below back-fill one lazily for admin UI compatibility.
+ */
+import type {
+  User,
+  InsertUser,
+  InsertBooking,
+  InsertReview,
+  InsertOffer,
+  InsertContactMessage,
+  InsertFileUpload,
+  InsertGalleryItem,
+  InsertGalleryVideo,
+  InsertAISubscription,
+  InsertAICredit,
+  InsertAIUsage,
+  InsertAITransaction,
+  AISubscription,
+  AICredit,
+  AIUsage,
+  AITransaction,
+  InsertBlogPost,
 } from "../drizzle/schema";
-import { ENV } from './_core/env.js';
+import { ENV } from "./_core/env.js";
+import { db as firestore } from "./_core/firebaseAdmin";
+import {
+  insert,
+  getById,
+  update,
+  remove,
+  list,
+  count,
+  findOne,
+} from "./_core/firestore-db";
 
-let _db: ReturnType<typeof drizzle> | null = null;
-let _client: ReturnType<typeof postgres> | null = null;
+// Collection names. Gallery uses the same collections as the (already working)
+// gallery router so there is a single source of truth.
+const COL = {
+  users: "users",
+  bookings: "bookings",
+  reviews: "reviews",
+  offers: "offers",
+  contactMessages: "contactMessages",
+  fileUploads: "fileUploads",
+  galleryItems: "gallery_items",
+  galleryVideos: "gallery_videos",
+  aiSubscriptions: "aiSubscriptions",
+  aiCredits: "aiCredits",
+  aiUsage: "aiUsage",
+  aiTransactions: "aiTransactions",
+  blogPosts: "blogPosts",
+} as const;
 
 /**
- * Resolve the Postgres connection string.
- * Prefer Supabase's pooled connection (POSTGRES_URL, IPv4, pgbouncer on :6543)
- * because the direct connection (DATABASE_URL -> db.*.supabase.co:5432) is
- * IPv6-only and unreachable from serverless / sandboxed runtimes.
+ * Kept for backward compatibility. The Firestore layer doesn't need a
+ * connection handle, so this simply resolves to the Firestore instance.
  */
-function getConnectionString(): string | undefined {
-  return (
-    process.env.POSTGRES_URL ||
-    process.env.DATABASE_URL ||
-    process.env.POSTGRES_URL_NON_POOLING
-  );
-}
-
 export async function getDb() {
-  if (!_db) {
-    const connectionString = getConnectionString();
-    if (!connectionString) return null;
-    try {
-      _client = postgres(connectionString, {
-        prepare: false,
-        max: 5,
-        idle_timeout: 20,
-        connect_timeout: 15,
-      });
-      _db = drizzle(_client);
-    } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
-    }
-  }
-  return _db;
+  return firestore;
 }
 
 // ============ USER HELPERS ============
+// Users live in a UID-keyed collection managed by auth. These helpers operate
+// on that collection and ensure a numeric `id` exists for admin UI use.
+
+async function ensureNumericUserId(
+  docRef: FirebaseFirestore.DocumentReference,
+  data: FirebaseFirestore.DocumentData,
+): Promise<number> {
+  if (typeof data.id === "number") return data.id;
+  // Allocate a numeric id from the shared counter and persist it.
+  const counterRef = firestore.collection("_counters").doc(COL.users);
+  const id = await firestore.runTransaction(async (tx) => {
+    const snap = await tx.get(counterRef);
+    const current = (snap.exists ? (snap.data()?.value as number) : 0) || 0;
+    const value = current + 1;
+    tx.set(counterRef, { value }, { merge: true });
+    return value;
+  });
+  await docRef.set({ id }, { merge: true });
+  return id;
+}
 
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) {
     throw new Error("User openId is required for upsert");
   }
+  // Find an existing user doc by openId.
+  const existingSnap = await firestore
+    .collection(COL.users)
+    .where("openId", "==", user.openId)
+    .limit(1)
+    .get();
 
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
-  }
+  const now = new Date();
+  const data: Record<string, unknown> = { openId: user.openId, lastSignedIn: now };
+  if (user.name !== undefined) data.name = user.name ?? null;
+  if (user.email !== undefined) data.email = user.email ?? null;
+  if (user.loginMethod !== undefined) data.loginMethod = user.loginMethod ?? null;
+  if (user.lastSignedIn !== undefined) data.lastSignedIn = user.lastSignedIn;
+  if (user.role !== undefined) data.role = user.role;
+  else if (user.openId === ENV.ownerOpenId) data.role = "admin";
 
-  try {
-    const values: InsertUser = {
-      openId: user.openId,
-    };
-    const updateSet: Record<string, unknown> = {};
-
-    const textFields = ["name", "email", "loginMethod"] as const;
-    type TextField = (typeof textFields)[number];
-
-    const assignNullable = (field: TextField) => {
-      const value = user[field];
-      if (value === undefined) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
-
-    textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
-    if (user.role !== undefined) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
-    }
-
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
-
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values).onConflictDoUpdate({
-      target: users.openId,
-      set: updateSet,
+  if (!existingSnap.empty) {
+    await existingSnap.docs[0].ref.set(data, { merge: true });
+  } else {
+    const counterRef = firestore.collection("_counters").doc(COL.users);
+    const id = await firestore.runTransaction(async (tx) => {
+      const snap = await tx.get(counterRef);
+      const current = (snap.exists ? (snap.data()?.value as number) : 0) || 0;
+      const value = current + 1;
+      tx.set(counterRef, { value }, { merge: true });
+      return value;
     });
-  } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
-    throw error;
+    await firestore.collection(COL.users).doc(user.openId).set({
+      ...data,
+      id,
+      role: data.role ?? "user",
+      createdAt: now,
+    });
   }
 }
 
-export async function getUserByOpenId(openId: string) {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
-
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+export async function getUserByOpenId(openId: string): Promise<User | undefined> {
+  const snap = await firestore
+    .collection(COL.users)
+    .where("openId", "==", openId)
+    .limit(1)
+    .get();
+  if (snap.empty) return undefined;
+  const doc = snap.docs[0];
+  await ensureNumericUserId(doc.ref, doc.data());
+  return doc.data() as User;
 }
 
 // ============ BOOKING HELPERS ============
 
 export async function createBooking(booking: InsertBooking) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db.insert(bookings).values(booking).returning();
-  return result[0];
+  return insert(COL.bookings, booking as Record<string, any>);
 }
 
 export async function getBookingById(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1);
-  return result[0] ?? null;
+  return getById(COL.bookings, id);
 }
 
 export async function getBookingByConfirmationCode(code: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db.select().from(bookings).where(eq(bookings.confirmationCode, code)).limit(1);
-  return result[0] ?? null;
+  return findOne(COL.bookings, [["confirmationCode", "==", code]]);
 }
 
 export async function getUserBookings(userId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return db.select().from(bookings).where(eq(bookings.userId, userId)).orderBy(desc(bookings.createdAt));
+  return list(COL.bookings, {
+    where: [["userId", "==", userId]],
+    orderBy: [["createdAt", "desc"]],
+  });
 }
 
-export async function updateBookingStatus(id: number, status: "pending" | "confirmed" | "cancelled" | "completed") {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  await db.update(bookings).set({ status }).where(eq(bookings.id, id));
+export async function updateBookingStatus(
+  id: number,
+  status: "pending" | "confirmed" | "cancelled" | "completed",
+) {
+  await update(COL.bookings, id, { status });
   return getBookingById(id);
 }
 
-export async function updateBookingPaymentStatus(id: number, paymentStatus: "pending" | "paid" | "failed" | "refunded") {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  await db.update(bookings).set({ paymentStatus }).where(eq(bookings.id, id));
+export async function updateBookingPaymentStatus(
+  id: number,
+  paymentStatus: "pending" | "paid" | "failed" | "refunded",
+) {
+  await update(COL.bookings, id, { paymentStatus });
   return getBookingById(id);
 }
 
 export async function getAllBookings(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return db.select().from(bookings).orderBy(desc(bookings.createdAt)).limit(limit).offset(offset);
+  return list(COL.bookings, {
+    orderBy: [["createdAt", "desc"]],
+    limit,
+    offset,
+  });
 }
 
 // ============ REVIEW HELPERS ============
 
 export async function createReview(review: InsertReview) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db.insert(reviews).values(review).returning();
-  return result[0];
+  return insert(COL.reviews, review as Record<string, any>);
 }
 
 export async function getApprovedReviews(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return db.select().from(reviews)
-    .where(eq(reviews.isApproved, "approved"))
-    .orderBy(desc(reviews.createdAt))
-    .limit(limit)
-    .offset(offset);
+  return list(COL.reviews, {
+    where: [["isApproved", "==", "approved"]],
+    orderBy: [["createdAt", "desc"]],
+    limit,
+    offset,
+  });
 }
 
 export async function getAllReviews(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return db.select().from(reviews)
-    .orderBy(desc(reviews.createdAt))
-    .limit(limit)
-    .offset(offset);
+  return list(COL.reviews, {
+    orderBy: [["createdAt", "desc"]],
+    limit,
+    offset,
+  });
 }
 
 export async function getReviewById(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db.select().from(reviews).where(eq(reviews.id, id)).limit(1);
-  return result[0] ?? null;
+  return getById(COL.reviews, id);
 }
 
-export async function updateReviewApproval(id: number, isApproved: "pending" | "approved" | "rejected") {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  await db.update(reviews).set({ isApproved }).where(eq(reviews.id, id));
+export async function updateReviewApproval(
+  id: number,
+  isApproved: "pending" | "approved" | "rejected",
+) {
+  await update(COL.reviews, id, { isApproved });
   return getReviewById(id);
 }
 
 export async function addAdminReply(id: number, adminReply: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  await db.update(reviews).set({ adminReply, adminReplyAt: new Date() }).where(eq(reviews.id, id));
+  await update(COL.reviews, id, { adminReply, adminReplyAt: new Date() });
   return getReviewById(id);
 }
 
 export async function incrementHelpfulCount(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  await db.update(reviews).set({ helpfulCount: sql`${reviews.helpfulCount} + 1` }).where(eq(reviews.id, id));
+  const review = (await getReviewById(id)) as any;
+  const current = Number(review?.helpfulCount ?? 0);
+  await update(COL.reviews, id, { helpfulCount: current + 1 });
   return getReviewById(id);
 }
 
 export async function getReviewStats() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const allApproved = await db.select().from(reviews).where(eq(reviews.isApproved, "approved"));
+  const allApproved = (await list(COL.reviews, {
+    where: [["isApproved", "==", "approved"]],
+  })) as any[];
   const total = allApproved.length;
-  if (total === 0) return { total: 0, average: 0, distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } };
-
-  const sum = allApproved.reduce((acc, r) => acc + r.rating, 0);
+  if (total === 0) {
+    return { total: 0, average: 0, distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } };
+  }
+  const sum = allApproved.reduce((acc, r) => acc + (r.rating ?? 0), 0);
   const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-  allApproved.forEach(r => {
-    if (r.rating >= 1 && r.rating <= 5) distribution[r.rating as 1|2|3|4|5]++;
+  allApproved.forEach((r) => {
+    if (r.rating >= 1 && r.rating <= 5) distribution[r.rating as 1 | 2 | 3 | 4 | 5]++;
   });
-
   return { total, average: Math.round((sum / total) * 10) / 10, distribution };
 }
 
 // ============ OFFER HELPERS ============
 
 export async function createOffer(offer: InsertOffer) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db.insert(offers).values(offer).returning();
-  return result[0];
+  return insert(COL.offers, offer as Record<string, any>);
 }
 
 export async function getActiveOffers() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
+  // Firestore allows range filters on only one field, so filter by isActive in
+  // the query and apply the date window in memory.
   const now = Date.now();
-  return db.select().from(offers)
-    .where(and(
-      eq(offers.isActive, "active"),
-      lte(offers.startDate, now),
-      gte(offers.endDate, now),
-    ))
-    .orderBy(asc(offers.endDate));
+  const active = (await list(COL.offers, {
+    where: [["isActive", "==", "active"]],
+  })) as any[];
+  return active
+    .filter((o) => Number(o.startDate ?? 0) <= now && Number(o.endDate ?? 0) >= now)
+    .sort((a, b) => Number(a.endDate ?? 0) - Number(b.endDate ?? 0));
 }
 
 export async function getAllOffers(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return db.select().from(offers).orderBy(desc(offers.createdAt)).limit(limit).offset(offset);
+  return list(COL.offers, {
+    orderBy: [["createdAt", "desc"]],
+    limit,
+    offset,
+  });
 }
 
 export async function getOfferByPromoCode(promoCode: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db.select().from(offers).where(eq(offers.promoCode, promoCode)).limit(1);
-  return result[0] ?? null;
+  return findOne(COL.offers, [["promoCode", "==", promoCode]]);
 }
 
 export async function updateOffer(id: number, data: Partial<InsertOffer>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  await db.update(offers).set(data).where(eq(offers.id, id));
-  const rows = await db.select().from(offers).where(eq(offers.id, id)).limit(1);
-  return rows[0];
+  return update(COL.offers, id, data as Record<string, any>);
 }
 
 // ============ CONTACT MESSAGE HELPERS ============
 
 export async function createContactMessage(message: InsertContactMessage) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db.insert(contactMessages).values(message).returning();
-  return result[0];
+  return insert(COL.contactMessages, message as Record<string, any>);
 }
 
 export async function getAllContactMessages(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return db.select().from(contactMessages).orderBy(desc(contactMessages.createdAt)).limit(limit).offset(offset);
+  return list(COL.contactMessages, {
+    orderBy: [["createdAt", "desc"]],
+    limit,
+    offset,
+  });
 }
 
-export async function updateContactMessageStatus(id: number, status: "new" | "read" | "replied" | "archived") {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  await db.update(contactMessages).set({ status }).where(eq(contactMessages.id, id));
+export async function updateContactMessageStatus(
+  id: number,
+  status: "new" | "read" | "replied" | "archived",
+) {
+  await update(COL.contactMessages, id, { status });
 }
 
 // ============ FILE UPLOAD HELPERS ============
 
 export async function createFileUpload(file: InsertFileUpload) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db.insert(fileUploads).values(file).returning();
-  return result[0];
+  return insert(COL.fileUploads, file as Record<string, any>);
 }
 
 export async function getUserFiles(userId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return db.select().from(fileUploads).where(eq(fileUploads.userId, userId)).orderBy(desc(fileUploads.createdAt));
+  return list(COL.fileUploads, {
+    where: [["userId", "==", userId]],
+    orderBy: [["createdAt", "desc"]],
+  });
 }
 
 // ============ GALLERY ITEM HELPERS ============
 
 export async function createGalleryItem(item: InsertGalleryItem) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db.insert(galleryItems).values(item).returning();
-  return result[0];
+  return insert(COL.galleryItems, item as Record<string, any>);
 }
 
 export async function getVisibleGalleryItems() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return db.select().from(galleryItems)
-    .where(eq(galleryItems.isVisible, "visible"))
-    .orderBy(asc(galleryItems.sortOrder), desc(galleryItems.createdAt));
+  const items = (await list(COL.galleryItems, {
+    where: [["isVisible", "==", "visible"]],
+  })) as any[];
+  return items.sort(
+    (a, b) =>
+      Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0) ||
+      Number(b.createdAt ?? 0) - Number(a.createdAt ?? 0),
+  );
 }
 
 export async function getAllGalleryItems(limit = 100, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return db.select().from(galleryItems)
-    .orderBy(asc(galleryItems.sortOrder), desc(galleryItems.createdAt))
-    .limit(limit).offset(offset);
+  const items = (await list(COL.galleryItems, {})) as any[];
+  return items
+    .sort((a, b) => Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0))
+    .slice(offset, offset + limit);
 }
 
 export async function getGalleryItemById(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db.select().from(galleryItems).where(eq(galleryItems.id, id)).limit(1);
-  return result[0] ?? null;
+  return getById(COL.galleryItems, id);
 }
 
 export async function updateGalleryItem(id: number, data: Partial<InsertGalleryItem>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  await db.update(galleryItems).set(data).where(eq(galleryItems.id, id));
-  return getGalleryItemById(id);
+  return update(COL.galleryItems, id, data as Record<string, any>);
 }
 
 export async function deleteGalleryItem(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  await db.delete(galleryItems).where(eq(galleryItems.id, id));
+  await remove(COL.galleryItems, id);
 }
 
 // ============ GALLERY VIDEO HELPERS ============
 
 export async function createGalleryVideo(video: InsertGalleryVideo) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db.insert(galleryVideos).values(video).returning();
-  return result[0];
+  return insert(COL.galleryVideos, video as Record<string, any>);
 }
 
 export async function getVisibleGalleryVideos() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return db.select().from(galleryVideos)
-    .where(eq(galleryVideos.isVisible, "visible"))
-    .orderBy(asc(galleryVideos.sortOrder), desc(galleryVideos.createdAt));
+  const videos = (await list(COL.galleryVideos, {
+    where: [["isVisible", "==", "visible"]],
+  })) as any[];
+  return videos.sort(
+    (a, b) =>
+      Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0) ||
+      Number(b.createdAt ?? 0) - Number(a.createdAt ?? 0),
+  );
 }
 
 export async function getAllGalleryVideos(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return db.select().from(galleryVideos)
-    .orderBy(asc(galleryVideos.sortOrder), desc(galleryVideos.createdAt))
-    .limit(limit).offset(offset);
+  const videos = (await list(COL.galleryVideos, {})) as any[];
+  return videos
+    .sort((a, b) => Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0))
+    .slice(offset, offset + limit);
 }
 
 export async function getGalleryVideoById(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db.select().from(galleryVideos).where(eq(galleryVideos.id, id)).limit(1);
-  return result[0] ?? null;
+  return getById(COL.galleryVideos, id);
 }
 
 export async function updateGalleryVideo(id: number, data: Partial<InsertGalleryVideo>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  await db.update(galleryVideos).set(data).where(eq(galleryVideos.id, id));
-  return getGalleryVideoById(id);
+  return update(COL.galleryVideos, id, data as Record<string, any>);
 }
 
 export async function deleteGalleryVideo(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  await db.delete(galleryVideos).where(eq(galleryVideos.id, id));
+  await remove(COL.galleryVideos, id);
 }
-
 
 // ============ AI STUDIO HELPERS ============
 
-import {
-  InsertAISubscription, aiSubscriptions,
-  InsertAICredit, aiCredits,
-  InsertAIUsage, aiUsage,
-  InsertAITransaction, aiTransactions,
-  AISubscription, AICredit, AIUsage, AITransaction,
-} from "../drizzle/schema";
-
 export async function getOrCreateAISubscription(userId: number): Promise<AISubscription> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  let subscription = await db.select().from(aiSubscriptions).where(eq(aiSubscriptions.userId, userId)).limit(1);
-
-  if (subscription.length === 0) {
-    const result = await db.insert(aiSubscriptions).values({
-      userId,
-      plan: "free",
-      status: "active",
-      startDate: Date.now(),
-    } as InsertAISubscription).returning();
-
-    subscription = result;
-  }
-
-  return subscription[0];
+  const existing = (await findOne(COL.aiSubscriptions, [["userId", "==", userId]])) as
+    | AISubscription
+    | null;
+  if (existing) return existing;
+  const created = await insert(COL.aiSubscriptions, {
+    userId,
+    plan: "free",
+    status: "active",
+    startDate: Date.now(),
+  } as unknown as Record<string, any>);
+  return created as unknown as AISubscription;
 }
 
-export async function updateAISubscription(userId: number, plan: "free" | "pro" | "enterprise", stripeSubscriptionId?: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  await db.update(aiSubscriptions)
-    .set({
-      plan,
-      status: "active",
-      renewalDate: Date.now() + 30 * 24 * 60 * 60 * 1000,
-      ...(stripeSubscriptionId && { stripeSubscriptionId }),
-    })
-    .where(eq(aiSubscriptions.userId, userId));
-
+export async function updateAISubscription(
+  userId: number,
+  plan: "free" | "pro" | "enterprise",
+  stripeSubscriptionId?: string,
+) {
+  const sub = (await getOrCreateAISubscription(userId)) as any;
+  await update(COL.aiSubscriptions, sub.id, {
+    plan,
+    status: "active",
+    renewalDate: Date.now() + 30 * 24 * 60 * 60 * 1000,
+    ...(stripeSubscriptionId && { stripeSubscriptionId }),
+  });
   return getOrCreateAISubscription(userId);
 }
 
 export async function getOrCreateAICredits(userId: number): Promise<AICredit> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  let credits = await db.select().from(aiCredits).where(eq(aiCredits.userId, userId)).limit(1);
-
-  if (credits.length === 0) {
-    const result = await db.insert(aiCredits).values({
-      userId,
-      balance: "5",
-      totalUsed: "0",
-    } as InsertAICredit).returning();
-
-    credits = result;
-  }
-
-  return credits[0];
+  const existing = (await findOne(COL.aiCredits, [["userId", "==", userId]])) as
+    | AICredit
+    | null;
+  if (existing) return existing;
+  const created = await insert(COL.aiCredits, {
+    userId,
+    balance: "5",
+    totalUsed: "0",
+  } as unknown as Record<string, any>);
+  return created as unknown as AICredit;
 }
 
-export async function addAICredits(userId: number, amount: number, reason: "purchase" | "monthly_allowance" | "bonus") {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const credits = await getOrCreateAICredits(userId);
+export async function addAICredits(
+  userId: number,
+  amount: number,
+  reason: "purchase" | "monthly_allowance" | "bonus",
+) {
+  const credits = (await getOrCreateAICredits(userId)) as any;
   const newBalance = parseFloat(credits.balance.toString()) + amount;
-
-  await db.update(aiCredits)
-    .set({ balance: newBalance.toString() })
-    .where(eq(aiCredits.userId, userId));
-
-  await db.insert(aiTransactions).values({
+  await update(COL.aiCredits, credits.id, { balance: newBalance.toString() });
+  await insert(COL.aiTransactions, {
     userId,
-    type: reason === "purchase" ? "purchase" : reason === "monthly_allowance" ? "monthly_allowance" : "bonus",
+    type:
+      reason === "purchase"
+        ? "purchase"
+        : reason === "monthly_allowance"
+        ? "monthly_allowance"
+        : "bonus",
     amount: amount.toString(),
     status: "completed",
-  } as InsertAITransaction);
-
+  } as unknown as Record<string, any>);
   return getOrCreateAICredits(userId);
 }
 
 export async function deductAICredits(userId: number, amount: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const credits = await getOrCreateAICredits(userId);
+  const credits = (await getOrCreateAICredits(userId)) as any;
   const currentBalance = parseFloat(credits.balance.toString());
-
   if (currentBalance < amount) {
     throw new Error("Insufficient credits");
   }
-
   const newBalance = currentBalance - amount;
   const newTotalUsed = parseFloat(credits.totalUsed.toString()) + amount;
-
-  await db.update(aiCredits)
-    .set({
-      balance: newBalance.toString(),
-      totalUsed: newTotalUsed.toString(),
-    })
-    .where(eq(aiCredits.userId, userId));
-
+  await update(COL.aiCredits, credits.id, {
+    balance: newBalance.toString(),
+    totalUsed: newTotalUsed.toString(),
+  });
   return getOrCreateAICredits(userId);
 }
 
 export async function createAIUsage(usage: InsertAIUsage) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db.insert(aiUsage).values(usage).returning();
-  return result[0];
+  return insert(COL.aiUsage, usage as Record<string, any>);
 }
 
 export async function getUserAIUsage(userId: number, limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return db.select().from(aiUsage)
-    .where(eq(aiUsage.userId, userId))
-    .orderBy(desc(aiUsage.createdAt))
-    .limit(limit)
-    .offset(offset);
+  return list(COL.aiUsage, {
+    where: [["userId", "==", userId]],
+    orderBy: [["createdAt", "desc"]],
+    limit,
+    offset,
+  });
 }
 
-export async function updateAIUsageStatus(id: number, status: "pending" | "completed" | "failed", resultUrl?: string, errorMessage?: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  await db.update(aiUsage)
-    .set({
-      status,
-      ...(resultUrl && { resultUrl }),
-      ...(errorMessage && { errorMessage }),
-    })
-    .where(eq(aiUsage.id, id));
-
-  const rows = await db.select().from(aiUsage).where(eq(aiUsage.id, id)).limit(1);
-  return rows[0];
+export async function updateAIUsageStatus(
+  id: number,
+  status: "pending" | "completed" | "failed",
+  resultUrl?: string,
+  errorMessage?: string,
+) {
+  return update(COL.aiUsage, id, {
+    status,
+    ...(resultUrl && { resultUrl }),
+    ...(errorMessage && { errorMessage }),
+  });
 }
 
 export async function getAIUsageStats(userId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const usage = await db.select().from(aiUsage).where(eq(aiUsage.userId, userId));
-
+  const usage = (await list(COL.aiUsage, {
+    where: [["userId", "==", userId]],
+  })) as any[];
   return {
     totalGenerations: usage.length,
     byType: {
-      image: usage.filter(u => u.type === "image").length,
-      video: usage.filter(u => u.type === "video").length,
-      edit: usage.filter(u => u.type === "edit").length,
+      image: usage.filter((u) => u.type === "image").length,
+      video: usage.filter((u) => u.type === "video").length,
+      edit: usage.filter((u) => u.type === "edit").length,
     },
-    totalCost: usage.reduce((sum, u) => sum + parseFloat(u.creditsCost.toString()), 0),
+    totalCost: usage.reduce((sum, u) => sum + parseFloat((u.creditsCost ?? 0).toString()), 0),
   };
 }
 
-
 // ============ USER MANAGEMENT HELPERS (Admin) ============
 
-export async function getAllUsers(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+/** Fetch all users, back-filling a numeric id for any doc that lacks one. */
+async function listUsersRaw(): Promise<any[]> {
+  const snap = await firestore.collection(COL.users).get();
+  const out: any[] = [];
+  for (const doc of snap.docs) {
+    const data = doc.data();
+    if (typeof data.id !== "number") {
+      data.id = await ensureNumericUserId(doc.ref, data);
+    }
+    out.push(data);
+  }
+  return out;
+}
 
-  const result = await db
-    .select()
-    .from(users)
-    .orderBy(desc(users.createdAt))
-    .limit(limit)
-    .offset(offset);
-  return result;
+export async function getAllUsers(limit = 50, offset = 0) {
+  const all = await listUsersRaw();
+  all.sort((a, b) => Number(b.createdAt ?? 0) - Number(a.createdAt ?? 0));
+  return all.slice(offset, offset + limit);
 }
 
 export async function getUsersCount() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(users);
-  return result[0]?.count ?? 0;
+  return count(COL.users);
 }
 
 export async function getUserById(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, id))
-    .limit(1);
-  return result[0] ?? null;
+  const all = await listUsersRaw();
+  return all.find((u) => u.id === id) ?? null;
 }
 
 export async function updateUserRole(id: number, role: "user" | "admin") {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  await db
-    .update(users)
-    .set({ role })
-    .where(eq(users.id, id));
-
+  const snap = await firestore.collection(COL.users).where("id", "==", id).limit(1).get();
+  if (snap.empty) {
+    // id may not be back-filled yet; resolve via full scan.
+    const all = await listUsersRaw();
+    const target = all.find((u) => u.id === id);
+    if (!target) return null;
+    await firestore.collection(COL.users).doc(target.openId).set({ role }, { merge: true });
+    return getUserById(id);
+  }
+  await snap.docs[0].ref.set({ role }, { merge: true });
   return getUserById(id);
 }
 
 export async function searchUsers(query: string, limit = 20) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db
-    .select()
-    .from(users)
-    .where(
-      sql`${users.name} ILIKE ${`%${query}%`} OR ${users.email} ILIKE ${`%${query}%`} OR ${users.openId} ILIKE ${`%${query}%`}`
+  const q = query.toLowerCase();
+  const all = await listUsersRaw();
+  return all
+    .filter(
+      (u) =>
+        (u.name ?? "").toLowerCase().includes(q) ||
+        (u.email ?? "").toLowerCase().includes(q) ||
+        (u.openId ?? "").toLowerCase().includes(q),
     )
-    .orderBy(desc(users.createdAt))
-    .limit(limit);
-  return result;
+    .sort((a, b) => Number(b.createdAt ?? 0) - Number(a.createdAt ?? 0))
+    .slice(0, limit);
 }
 
 export async function getUserStats() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const totalUsers = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(users);
-
-  const adminUsers = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(users)
-    .where(eq(users.role, "admin"));
-
-  const recentUsers = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(users)
-    .where(gte(users.createdAt, sql`NOW() - INTERVAL '30 days'`));
-
-  const todayUsers = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(users)
-    .where(gte(users.createdAt, sql`CURRENT_DATE`));
-
+  const all = await listUsersRaw();
+  const now = Date.now();
+  const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const todayMs = startOfToday.getTime();
+  const toMs = (v: any) => (v ? new Date(v).getTime() : 0);
   return {
-    total: totalUsers[0]?.count ?? 0,
-    admins: adminUsers[0]?.count ?? 0,
-    recentSignups: recentUsers[0]?.count ?? 0,
-    todaySignups: todayUsers[0]?.count ?? 0,
+    total: all.length,
+    admins: all.filter((u) => u.role === "admin").length,
+    recentSignups: all.filter((u) => toMs(u.createdAt) >= thirtyDaysAgo).length,
+    todaySignups: all.filter((u) => toMs(u.createdAt) >= todayMs).length,
   };
 }
 
@@ -713,91 +592,69 @@ export async function getUserStats() {
 
 export async function updateUserProfile(
   id: number,
-  data: { name?: string; phone?: string | null; avatarUrl?: string | null }
+  data: { name?: string; phone?: string | null; avatarUrl?: string | null },
 ) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
   const updateSet: Record<string, unknown> = {};
   if (data.name !== undefined) updateSet.name = data.name;
   if (data.phone !== undefined) updateSet.phone = data.phone;
   if (data.avatarUrl !== undefined) updateSet.avatarUrl = data.avatarUrl;
-
   if (Object.keys(updateSet).length === 0) {
     return getUserById(id);
   }
-
-  await db.update(users).set(updateSet).where(eq(users.id, id));
+  const snap = await firestore.collection(COL.users).where("id", "==", id).limit(1).get();
+  if (!snap.empty) {
+    await snap.docs[0].ref.set(updateSet, { merge: true });
+  }
   return getUserById(id);
 }
 
-
 // ============ BLOG POST HELPERS ============
 
-import { blogPosts, InsertBlogPost } from "../drizzle/schema";
-
 export async function getPublishedBlogPosts(limit = 10, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return db.select().from(blogPosts)
-    .where(eq(blogPosts.status, "published"))
-    .orderBy(desc(blogPosts.publishedAt))
-    .limit(limit)
-    .offset(offset);
+  return list(COL.blogPosts, {
+    where: [["status", "==", "published"]],
+    orderBy: [["publishedAt", "desc"]],
+    limit,
+    offset,
+  });
 }
 
 export async function getBlogPostBySlug(slug: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db.select().from(blogPosts).where(eq(blogPosts.slug, slug)).limit(1);
-  return result[0] ?? null;
+  return findOne(COL.blogPosts, [["slug", "==", slug]]);
 }
 
 export async function getBlogPostsByCategory(category: string, limit = 10, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return db.select().from(blogPosts)
-    .where(and(eq(blogPosts.status, "published"), eq(blogPosts.category, category)))
-    .orderBy(desc(blogPosts.publishedAt))
-    .limit(limit)
-    .offset(offset);
+  const posts = (await list(COL.blogPosts, {
+    where: [
+      ["status", "==", "published"],
+      ["category", "==", category],
+    ],
+    limit: limit + offset + 50,
+  })) as any[];
+  return posts
+    .sort((a, b) => Number(b.publishedAt ?? 0) - Number(a.publishedAt ?? 0))
+    .slice(offset, offset + limit);
 }
 
 export async function createBlogPost(post: InsertBlogPost) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db.insert(blogPosts).values(post).returning();
-  return result[0];
+  return insert(COL.blogPosts, post as Record<string, any>);
 }
 
 export async function updateBlogPost(id: number, data: Partial<InsertBlogPost>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  await db.update(blogPosts).set(data).where(eq(blogPosts.id, id));
-  const rows = await db.select().from(blogPosts).where(eq(blogPosts.id, id)).limit(1);
-  return rows[0] ?? null;
+  return update(COL.blogPosts, id, data as Record<string, any>);
 }
 
 export async function getAllBlogPosts(limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return db.select().from(blogPosts)
-    .orderBy(desc(blogPosts.createdAt))
-    .limit(limit)
-    .offset(offset);
+  return list(COL.blogPosts, {
+    orderBy: [["createdAt", "desc"]],
+    limit,
+    offset,
+  });
 }
 
 export async function incrementBlogViewCount(id: number) {
-  const db = await getDb();
-  if (!db) return;
-
-  await db.update(blogPosts)
-    .set({ viewCount: sql`${blogPosts.viewCount} + 1` })
-    .where(eq(blogPosts.id, id));
+  const post = (await getById(COL.blogPosts, id)) as any;
+  if (!post) return;
+  const current = Number(post.viewCount ?? 0);
+  await update(COL.blogPosts, id, { viewCount: current + 1 });
 }

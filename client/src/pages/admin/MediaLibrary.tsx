@@ -40,6 +40,15 @@ const fileToBase64 = (file: File): Promise<string> =>
     reader.readAsDataURL(file);
   });
 
+/* Safely format a value as YYYY-MM-DD. Returns '' for missing/invalid dates
+   instead of throwing "RangeError: Invalid time value". */
+const safeDateString = (value: unknown): string => {
+  if (value === null || value === undefined || value === "") return "";
+  const date = new Date(value as string | number | Date);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().split("T")[0];
+};
+
 /* ─── Main Component ─── */
 export default function MediaLibrary() {
   const [media, setMedia] = useState<MediaItem[]>([]);
@@ -58,7 +67,7 @@ export default function MediaLibrary() {
         type: 'image' as const,
         size: 'Unknown',
         dimensions: '',
-        uploadedAt: item.createdAt ? new Date(item.createdAt).toISOString().split('T')[0] : '',
+        uploadedAt: safeDateString(item.createdAt),
         folder: item.category || 'General',
         tags: [],
       }));

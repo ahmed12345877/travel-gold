@@ -10,10 +10,8 @@ import {
   addAdminReply,
   incrementHelpfulCount,
   getReviewStats,
-  getDb,
 } from "../db";
-import { eq, desc } from "drizzle-orm";
-import { reviews } from "../../drizzle/schema";
+import { list } from "../_core/firestore-db";
 
 export const reviewsRouter = router({
   /** List approved reviews (public) */
@@ -67,13 +65,10 @@ export const reviewsRouter = router({
 
   /** Get current user's reviews */
   myReviews: protectedProcedure.query(async ({ ctx }) => {
-    const db = await getDb();
-    if (!db) return [];
-    return db
-      .select()
-      .from(reviews)
-      .where(eq(reviews.userId, ctx.user.id))
-      .orderBy(desc(reviews.createdAt));
+    return list("reviews", {
+      where: [["userId", "==", ctx.user.id]],
+      orderBy: [["createdAt", "desc"]],
+    });
   }),
 
   /** Mark review as helpful (public) */

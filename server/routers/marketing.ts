@@ -5,9 +5,11 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { invokeLLM } from "../_core/llm";
-import { getDb } from "../db";
-import { marketingContent, marketingCalendar, marketingTemplates } from "../../drizzle/schema";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { list, getById, insert, update, remove, findOne } from "../_core/firestore-db";
+
+const CONTENT = "marketingContent";
+const CALENDAR = "marketingCalendar";
+const TEMPLATES = "marketingTemplates";
 
 // ─── System Prompts for Different Content Types ───
 
@@ -73,9 +75,6 @@ export const marketingRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-
       // Build the system prompt
       let systemPrompt = SYSTEM_PROMPTS[input.type] || SYSTEM_PROMPTS.social_media;
 
@@ -106,12 +105,7 @@ export const marketingRouter = router({
 
       // If using a template, fetch and include it
       if (input.templateId) {
-        const [template] = await db
-          .select()
-          .from(marketingTemplates)
-          .where(eq(marketingTemplates.id, input.templateId))
-          .limit(1);
-
+        const template = (await getById(TEMPLATES, input.templateId)) as any;
         if (template?.systemPrompt) {
           systemPrompt += `\n\nTemplate context: ${template.systemPrompt}`;
         }
@@ -175,23 +169,21 @@ export const marketingRouter = router({
         };
       }
 
-      // Save to database
-      const [saved] = await db
-        .insert(marketingContent)
-        .values({
-          userId: ctx.user.id,
-          type: input.type,
-          platform: input.platform || null,
-          title: parsed.title,
-          content: parsed.content,
-          prompt: input.prompt,
-          language: input.language,
-          tone: input.tone,
-          destination: input.destination || null,
-          hashtags: parsed.hashtags,
-          creditsCost: "1",
-        })
-        .returning({ id: marketingContent.id });
+      // Save to Firestore
+      const saved = await insert(CONTENT, {
+        userId: ctx.user.id,
+        type: input.type,
+        platform: input.platform || null,
+        title: parsed.title,
+        content: parsed.content,
+        prompt: input.prompt,
+        language: input.language,
+        tone: input.tone,
+        destination: input.destination || null,
+        hashtags: parsed.hashtags,
+        isFavorite: "no",
+        creditsCost: "1",
+      });
 
       return {
         id: saved.id,
@@ -216,30 +208,14 @@ export const marketingRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-      const conditions = [eq(marketingContent.userId, ctx.user.id)];
-      if (input.type) {
-        conditions.push(eq(marketingContent.type, input.type));
-      }
-
-      const items = await db
-        .select()
-        .from(marketingContent)
-        .where(and(...conditions))
-        .orderBy(desc(marketingContent.createdAt))
-        .limit(input.limit)
-        .offset(input.offset);
-
-      const [countResult] = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(marketingContent)
-        .where(and(...conditions));
-
-      return {
-        items,
-        total: countResult?.count || 0,
-      };
+      let rows = (await list(CONTENT, {
+        where: [["userId", "==", ctx.user.id]],
+      })) as any[];
+      if (input.type) rows = rows.filter((r) => r.type === input.type);
+      rows.sort((a, b) => Number(b.createdAt ?? 0) - Number(a.createdAt ?? 0));
+      const total = rows.length;
+      const items = rows.slice(input.offset, input.offset + input.limit);
+      return { items, total };
     }),
 
   /**
@@ -248,22 +224,11 @@ export const marketingRouter = router({
   toggleFavorite: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-      const [item] = await db
-        .select()
-        .from(marketingContent)
-        .where(and(eq(marketingContent.id, input.id), eq(marketingContent.userId, ctx.user.id)))
-        .limit(1);
-
-      if (!item) throw new TRPCError({ code: "NOT_FOUND" });
+      const item = (await getById(CONTENT, input.id)) as any;
+      if (!item || item.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
 
       const newStatus = item.isFavorite === "yes" ? "no" : "yes";
-      await db
-        .update(marketingContent)
-        .set({ isFavorite: newStatus })
-        .where(eq(marketingContent.id, input.id));
-
+      await update(CONTENT, input.id, { isFavorite: newStatus });
       return { isFavorite: newStatus };
     }),
 
@@ -273,17 +238,9 @@ export const marketingRouter = router({
   deleteContent: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-      const [item] = await db
-        .select()
-        .from(marketingContent)
-        .where(and(eq(marketingContent.id, input.id), eq(marketingContent.userId, ctx.user.id)))
-        .limit(1);
-
-      if (!item) throw new TRPCError({ code: "NOT_FOUND" });
-
-      await db.delete(marketingContent).where(eq(marketingContent.id, input.id));
+      const item = (await getById(CONTENT, input.id)) as any;
+      if (!item || item.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+      await remove(CONTENT, input.id);
       return { success: true };
     }),
 
@@ -300,22 +257,13 @@ export const marketingRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-      const conditions = [eq(marketingCalendar.userId, ctx.user.id)];
-
-      if (input.startDate) {
-        conditions.push(sql`${marketingCalendar.scheduledDate} >= ${input.startDate}`);
-      }
-      if (input.endDate) {
-        conditions.push(sql`${marketingCalendar.scheduledDate} <= ${input.endDate}`);
-      }
-
-      return db
-        .select()
-        .from(marketingCalendar)
-        .where(and(...conditions))
-        .orderBy(marketingCalendar.scheduledDate);
+      let rows = (await list(CALENDAR, {
+        where: [["userId", "==", ctx.user.id]],
+      })) as any[];
+      if (input.startDate) rows = rows.filter((r) => Number(r.scheduledDate ?? 0) >= input.startDate!);
+      if (input.endDate) rows = rows.filter((r) => Number(r.scheduledDate ?? 0) <= input.endDate!);
+      rows.sort((a, b) => Number(a.scheduledDate ?? 0) - Number(b.scheduledDate ?? 0));
+      return rows;
     }),
 
   /**
@@ -334,22 +282,16 @@ export const marketingRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-      const [entry] = await db
-        .insert(marketingCalendar)
-        .values({
-          userId: ctx.user.id,
-          contentId: input.contentId || null,
-          title: input.title,
-          description: input.description || null,
-          platform: input.platform || null,
-          scheduledDate: input.scheduledDate,
-          status: input.status,
-          colorTag: input.colorTag,
-        })
-        .returning({ id: marketingCalendar.id });
-
+      const entry = await insert(CALENDAR, {
+        userId: ctx.user.id,
+        contentId: input.contentId || null,
+        title: input.title,
+        description: input.description || null,
+        platform: input.platform || null,
+        scheduledDate: input.scheduledDate,
+        status: input.status,
+        colorTag: input.colorTag,
+      });
       return { id: entry.id };
     }),
 
@@ -368,17 +310,9 @@ export const marketingRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
       const { id, ...updates } = input;
-
-      const [item] = await db
-        .select()
-        .from(marketingCalendar)
-        .where(and(eq(marketingCalendar.id, id), eq(marketingCalendar.userId, ctx.user.id)))
-        .limit(1);
-
-      if (!item) throw new TRPCError({ code: "NOT_FOUND" });
+      const item = (await getById(CALENDAR, id)) as any;
+      if (!item || item.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
 
       const cleanUpdates: Record<string, unknown> = {};
       if (updates.title !== undefined) cleanUpdates.title = updates.title;
@@ -388,12 +322,8 @@ export const marketingRouter = router({
       if (updates.colorTag !== undefined) cleanUpdates.colorTag = updates.colorTag;
 
       if (Object.keys(cleanUpdates).length > 0) {
-        await db
-          .update(marketingCalendar)
-          .set(cleanUpdates)
-          .where(eq(marketingCalendar.id, id));
+        await update(CALENDAR, id, cleanUpdates);
       }
-
       return { success: true };
     }),
 
@@ -403,17 +333,9 @@ export const marketingRouter = router({
   deleteCalendarEntry: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-      const [item] = await db
-        .select()
-        .from(marketingCalendar)
-        .where(and(eq(marketingCalendar.id, input.id), eq(marketingCalendar.userId, ctx.user.id)))
-        .limit(1);
-
-      if (!item) throw new TRPCError({ code: "NOT_FOUND" });
-
-      await db.delete(marketingCalendar).where(eq(marketingCalendar.id, input.id));
+      const item = (await getById(CALENDAR, input.id)) as any;
+      if (!item || item.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+      await remove(CALENDAR, input.id);
       return { success: true };
     }),
 
@@ -429,59 +351,29 @@ export const marketingRouter = router({
       })
     )
     .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-      const conditions = [];
-      if (input.type) {
-        conditions.push(eq(marketingTemplates.type, input.type));
-      }
-
-      return db
-        .select()
-        .from(marketingTemplates)
-        .where(conditions.length > 0 ? and(...conditions) : undefined)
-        .orderBy(marketingTemplates.sortOrder);
+      let rows = (await list(TEMPLATES, {})) as any[];
+      if (input.type) rows = rows.filter((t) => t.type === input.type);
+      rows.sort((a, b) => Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0));
+      return rows;
     }),
 
   /**
    * Get content generation stats
    */
   getStats: protectedProcedure.query(async ({ ctx }) => {
-    const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-
-    const [totalContent] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(marketingContent)
-      .where(eq(marketingContent.userId, ctx.user.id));
-
-    const [socialCount] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(marketingContent)
-      .where(and(eq(marketingContent.userId, ctx.user.id), eq(marketingContent.type, "social_media")));
-
-    const [emailCount] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(marketingContent)
-      .where(and(eq(marketingContent.userId, ctx.user.id), eq(marketingContent.type, "email")));
-
-    const [blogCount] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(marketingContent)
-      .where(and(eq(marketingContent.userId, ctx.user.id), eq(marketingContent.type, "blog_seo")));
-
-    const [calendarCount] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(marketingCalendar)
-      .where(eq(marketingCalendar.userId, ctx.user.id));
+    const content = (await list(CONTENT, {
+      where: [["userId", "==", ctx.user.id]],
+    })) as any[];
+    const calendar = (await list(CALENDAR, {
+      where: [["userId", "==", ctx.user.id]],
+    })) as any[];
 
     return {
-      totalContent: totalContent?.count || 0,
-      socialMedia: socialCount?.count || 0,
-      emails: emailCount?.count || 0,
-      blogPosts: blogCount?.count || 0,
-      calendarEntries: calendarCount?.count || 0,
+      totalContent: content.length,
+      socialMedia: content.filter((c) => c.type === "social_media").length,
+      emails: content.filter((c) => c.type === "email").length,
+      blogPosts: content.filter((c) => c.type === "blog_seo").length,
+      calendarEntries: calendar.length,
     };
   }),
 });

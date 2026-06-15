@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { router, adminProcedure } from "../_core/trpc";
-import { getDb } from "../db";
-import { offers } from "../../drizzle/schema";
-import { eq, like, desc, asc, inArray } from "drizzle-orm";
+import { list, getById, insert, update, remove } from "../_core/firestore-db";
+
+const COL = "offers";
 
 export const adminOffersRouter = router({
   /** List all offers with pagination and filtering */
@@ -18,45 +18,39 @@ export const adminOffersRouter = router({
       }).optional()
     )
     .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
       const { limit = 20, offset = 0, search = "", status, sortBy = "createdAt", sortOrder = "desc" } = input ?? {};
-      
-      let query: any = db.select().from(offers);
-      
+
+      let rows = (await list(COL, {})) as any[];
+
+      if (status) rows = rows.filter((o) => o.isActive === status);
       if (search) {
-        query = query.where(like(offers.title, `%${search}%`));
+        const q = search.toLowerCase();
+        rows = rows.filter((o) => (o.title ?? "").toLowerCase().includes(q));
       }
-      
-      if (status) {
-        query = query.where(eq(offers.isActive, status));
-      }
-      
-      const orderColumn = 
-        sortBy === "title" ? offers.title :
-        sortBy === "discount" ? offers.discountValue :
-        sortBy === "startDate" ? offers.startDate :
-        offers.createdAt;
-      
-      query = query.orderBy(sortOrder === "desc" ? desc(orderColumn) : asc(orderColumn));
-      query = query.limit(limit).offset(offset);
-      
-      return await query;
+
+      const key =
+        sortBy === "title" ? "title" :
+        sortBy === "discount" ? "discountValue" :
+        sortBy === "startDate" ? "startDate" :
+        "createdAt";
+
+      rows.sort((a, b) => {
+        const av = a[key], bv = b[key];
+        const an = typeof av === "string" && isNaN(Number(av)) ? av : Number(av ?? 0);
+        const bn = typeof bv === "string" && isNaN(Number(bv)) ? bv : Number(bv ?? 0);
+        if (an < bn) return sortOrder === "desc" ? 1 : -1;
+        if (an > bn) return sortOrder === "desc" ? -1 : 1;
+        return 0;
+      });
+
+      return rows.slice(offset, offset + limit);
     }),
 
   /** Get single offer by ID */
   getById: adminProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
-      const result = await db
-        .select()
-        .from(offers)
-        .where(eq(offers.id, input.id));
-      return result[0] || null;
+      return (await getById(COL, input.id)) || null;
     }),
 
   /** Create new offer */
@@ -79,14 +73,7 @@ export const adminOffersRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
-      const result = await db.insert(offers).values({
-        ...input,
-        isActive: "active",
-        bookedSpots: 0,
-      });
+      await insert(COL, { ...input, isActive: "active", bookedSpots: 0 });
       return { success: true };
     }),
 
@@ -112,15 +99,8 @@ export const adminOffersRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
       const { id, ...data } = input;
-      
-      await db
-        .update(offers)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(offers.id, id));
+      await update(COL, id, data);
       return { success: true };
     }),
 
@@ -128,12 +108,7 @@ export const adminOffersRouter = router({
   delete: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
-      await db
-        .delete(offers)
-        .where(eq(offers.id, input.id));
+      await remove(COL, input.id);
       return { success: true };
     }),
 
@@ -141,12 +116,7 @@ export const adminOffersRouter = router({
   bulkDelete: adminProcedure
     .input(z.object({ ids: z.array(z.number()) }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
-      await db
-        .delete(offers)
-        .where(inArray(offers.id, input.ids));
+      for (const id of input.ids) await remove(COL, id);
       return { success: true, deleted: input.ids.length };
     }),
 
@@ -154,27 +124,18 @@ export const adminOffersRouter = router({
   updateStatus: adminProcedure
     .input(z.object({ id: z.number(), isActive: z.enum(["active", "inactive", "expired"]) }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      
-      await db
-        .update(offers)
-        .set({
-          isActive: input.isActive,
-          updatedAt: new Date(),
-        })
-        .where(eq(offers.id, input.id));
+      await update(COL, input.id, { isActive: input.isActive });
       return { success: true };
     }),
 
   /** Get statistics */
   getStats: adminProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    
-    const allOffers = await db.select().from(offers);
-    const activeCount = allOffers.filter((o: any) => o.isActive === "active").length;
-    const totalDiscount = allOffers.reduce((sum: number, o: any) => sum + (parseFloat(o.discountValue as string) || 0), 0);
+    const allOffers = (await list(COL, {})) as any[];
+    const activeCount = allOffers.filter((o) => o.isActive === "active").length;
+    const totalDiscount = allOffers.reduce(
+      (sum, o) => sum + (parseFloat(o.discountValue as string) || 0),
+      0,
+    );
     const avgDiscount = allOffers.length > 0 ? (totalDiscount / allOffers.length).toFixed(2) : 0;
 
     return {
