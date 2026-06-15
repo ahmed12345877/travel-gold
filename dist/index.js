@@ -207,290 +207,12 @@ var ONE_YEAR_MS = 1e3 * 60 * 60 * 24 * 365;
 var UNAUTHED_ERR_MSG = "Please login (10001)";
 var NOT_ADMIN_ERR_MSG = "You do not have required permission (10002)";
 
-// server/db.ts
-import { eq, desc, asc, and, gte, lte, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-
-// drizzle/schema.ts
-import { serial, pgTable, text, timestamp, varchar, bigint, decimal, json, integer } from "drizzle-orm/pg-core";
-var users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  openId: varchar("openId", { length: 64 }).notNull().unique(),
-  name: text("name"),
-  email: varchar("email", { length: 320 }),
-  phone: varchar("phone", { length: 32 }),
-  loginMethod: varchar("loginMethod", { length: 64 }),
-  avatarUrl: text("avatarUrl"),
-  role: text("role").$type().default("user").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
-  lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull()
-});
-var bookings = pgTable("bookings", {
-  id: serial("id").primaryKey(),
-  userId: integer("userId").references(() => users.id),
-  guestName: varchar("guestName", { length: 255 }),
-  guestEmail: varchar("guestEmail", { length: 320 }),
-  guestPhone: varchar("guestPhone", { length: 32 }),
-  packageName: varchar("packageName", { length: 255 }).notNull(),
-  packageCategory: varchar("packageCategory", { length: 100 }),
-  destination: varchar("destination", { length: 255 }),
-  checkInDate: bigint("checkInDate", { mode: "number" }),
-  checkOutDate: bigint("checkOutDate", { mode: "number" }),
-  adults: integer("adults").default(1),
-  children: integer("children").default(0),
-  roomType: varchar("roomType", { length: 100 }),
-  totalPrice: decimal("totalPrice", { precision: 10, scale: 2 }),
-  currency: varchar("currency", { length: 10 }).default("USD"),
-  paymentMethod: text("paymentMethod").$type(),
-  paymentStatus: text("paymentStatus").$type().default("pending").notNull(),
-  promoCode: varchar("promoCode", { length: 50 }),
-  discountAmount: decimal("discountAmount", { precision: 10, scale: 2 }),
-  specialRequests: text("specialRequests"),
-  billingAddress: json("billingAddress"),
-  status: text("status").$type().default("pending").notNull(),
-  confirmationCode: varchar("confirmationCode", { length: 20 }).unique(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull()
-});
-var reviews = pgTable("reviews", {
-  id: serial("id").primaryKey(),
-  userId: integer("userId").references(() => users.id),
-  guestName: varchar("guestName", { length: 255 }),
-  guestAvatarUrl: text("guestAvatarUrl"),
-  tripName: varchar("tripName", { length: 255 }).notNull(),
-  destination: varchar("destination", { length: 255 }),
-  rating: integer("rating").notNull(),
-  title: varchar("title", { length: 500 }),
-  content: text("content").notNull(),
-  photoUrls: json("photoUrls"),
-  travelDate: bigint("travelDate", { mode: "number" }),
-  adminReply: text("adminReply"),
-  adminReplyAt: timestamp("adminReplyAt"),
-  isApproved: text("isApproved").$type().default("pending").notNull(),
-  helpfulCount: integer("helpfulCount").default(0),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull()
-});
-var offers = pgTable("offers", {
-  id: serial("id").primaryKey(),
-  title: varchar("title", { length: 255 }).notNull(),
-  description: text("description"),
-  discountType: text("discountType").$type().notNull(),
-  discountValue: decimal("discountValue", { precision: 10, scale: 2 }).notNull(),
-  promoCode: varchar("promoCode", { length: 50 }).unique(),
-  startDate: bigint("startDate", { mode: "number" }).notNull(),
-  endDate: bigint("endDate", { mode: "number" }).notNull(),
-  category: varchar("category", { length: 100 }),
-  destination: varchar("destination", { length: 255 }),
-  imageUrl: text("imageUrl"),
-  totalSpots: integer("totalSpots"),
-  bookedSpots: integer("bookedSpots").default(0),
-  isActive: text("isActive").$type().default("active").notNull(),
-  badgeText: varchar("badgeText", { length: 50 }),
-  badgeColor: varchar("badgeColor", { length: 20 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull()
-});
-var contactMessages = pgTable("contact_messages", {
-  id: serial("id").primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
-  email: varchar("email", { length: 320 }).notNull(),
-  phone: varchar("phone", { length: 32 }),
-  subject: varchar("subject", { length: 500 }),
-  message: text("message").notNull(),
-  status: text("status").$type().default("new").notNull(),
-  adminNotes: text("adminNotes"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull()
-});
-var fileUploads = pgTable("file_uploads", {
-  id: serial("id").primaryKey(),
-  userId: integer("userId").references(() => users.id),
-  fileKey: varchar("fileKey", { length: 500 }).notNull(),
-  url: text("url").notNull(),
-  filename: varchar("filename", { length: 255 }).notNull(),
-  mimeType: varchar("mimeType", { length: 100 }),
-  fileSize: integer("fileSize"),
-  purpose: varchar("purpose", { length: 50 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull()
-});
-var galleryItems = pgTable("gallery_items", {
-  id: serial("id").primaryKey(),
-  imageUrl: text("imageUrl").notNull(),
-  title: varchar("title", { length: 255 }).notNull(),
-  titleAr: varchar("titleAr", { length: 255 }),
-  description: text("description"),
-  descriptionAr: text("descriptionAr"),
-  category: varchar("category", { length: 100 }).notNull(),
-  categoryAr: varchar("categoryAr", { length: 100 }),
-  location: varchar("location", { length: 255 }),
-  locationAr: varchar("locationAr", { length: 255 }),
-  featured: text("featured").$type().default("no").notNull(),
-  aspect: text("aspect").$type().default("landscape").notNull(),
-  sortOrder: integer("sortOrder").default(0),
-  isvisible: text("isvisible").$type().default("visible").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull()
-});
-var galleryVideos = pgTable("gallery_videos", {
-  id: serial("id").primaryKey(),
-  thumbnailUrl: text("thumbnailUrl").notNull(),
-  title: varchar("title", { length: 255 }).notNull(),
-  titleAr: varchar("titleAr", { length: 255 }),
-  youtubeId: varchar("youtubeId", { length: 20 }).notNull(),
-  duration: varchar("duration", { length: 20 }),
-  views: varchar("views", { length: 20 }),
-  sortOrder: integer("sortOrder").default(0),
-  isVisible: text("isVisible").$type().default("visible").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull()
-});
-var aiSubscriptions = pgTable("ai_subscriptions", {
-  id: serial("id").primaryKey(),
-  userId: integer("userId").references(() => users.id).notNull(),
-  plan: text("plan").$type().default("free").notNull(),
-  monthlyPrice: decimal("monthlyPrice", { precision: 10, scale: 2 }).default("0"),
-  status: text("status").$type().default("active").notNull(),
-  stripeSubscriptionId: varchar("stripeSubscriptionId", { length: 255 }),
-  startDate: bigint("startDate", { mode: "number" }).notNull(),
-  renewalDate: bigint("renewalDate", { mode: "number" }),
-  cancelledAt: timestamp("cancelledAt"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull()
-});
-var aiCredits = pgTable("ai_credits", {
-  id: serial("id").primaryKey(),
-  userId: integer("userId").references(() => users.id).notNull().unique(),
-  balance: decimal("balance", { precision: 12, scale: 2 }).default("0").notNull(),
-  totalUsed: decimal("totalUsed", { precision: 12, scale: 2 }).default("0").notNull(),
-  lastResetDate: bigint("lastResetDate", { mode: "number" }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull()
-});
-var aiUsage = pgTable("ai_usage", {
-  id: serial("id").primaryKey(),
-  userId: integer("userId").references(() => users.id).notNull(),
-  type: text("type").$type().notNull(),
-  model: varchar("model", { length: 100 }).notNull(),
-  prompt: text("prompt").notNull(),
-  resultUrl: text("resultUrl"),
-  resultKey: varchar("resultKey", { length: 500 }),
-  creditsCost: decimal("creditsCost", { precision: 10, scale: 2 }).notNull(),
-  imageSize: varchar("imageSize", { length: 50 }),
-  videoDuration: integer("videoDuration"),
-  status: text("status").$type().default("pending").notNull(),
-  errorMessage: text("errorMessage"),
-  createdAt: timestamp("createdAt").defaultNow().notNull()
-});
-var aiTransactions = pgTable("ai_transactions", {
-  id: serial("id").primaryKey(),
-  userId: integer("userId").references(() => users.id).notNull(),
-  type: text("type").$type().notNull(),
-  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
-  stripePaymentId: varchar("stripePaymentId", { length: 255 }),
-  paymentMethod: varchar("paymentMethod", { length: 50 }),
-  status: text("status").$type().default("pending").notNull(),
-  description: text("description"),
-  createdAt: timestamp("createdAt").defaultNow().notNull()
-});
-var blogPosts = pgTable("blog_posts", {
-  id: serial("id").primaryKey(),
-  slug: varchar("slug", { length: 255 }).notNull().unique(),
-  title: varchar("title", { length: 500 }).notNull(),
-  excerpt: text("excerpt").notNull(),
-  content: text("content").notNull(),
-  metaTitle: varchar("metaTitle", { length: 70 }),
-  metaDescription: varchar("metaDescription", { length: 160 }),
-  metaKeywords: varchar("metaKeywords", { length: 500 }),
-  coverImageUrl: text("coverImageUrl"),
-  category: varchar("category", { length: 100 }),
-  tags: json("tags"),
-  authorId: integer("authorId").references(() => users.id),
-  authorName: varchar("authorName", { length: 255 }).default("VANIR GROUP"),
-  status: text("status").$type().default("draft").notNull(),
-  publishedAt: timestamp("publishedAt"),
-  viewCount: integer("viewCount").default(0),
-  readingTime: integer("readingTime").default(5),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull()
-});
-var marketingContent = pgTable("marketing_content", {
-  id: serial("id").primaryKey(),
-  userId: integer("userId").references(() => users.id).notNull(),
-  type: text("type").$type().notNull(),
-  platform: varchar("platform", { length: 50 }),
-  title: varchar("title", { length: 500 }),
-  content: text("content").notNull(),
-  prompt: text("prompt").notNull(),
-  language: varchar("language", { length: 10 }).default("en"),
-  tone: varchar("tone", { length: 50 }),
-  destination: varchar("destination", { length: 255 }),
-  hashtags: json("hashtags"),
-  creditsCost: decimal("creditsCost", { precision: 10, scale: 2 }).default("1"),
-  isFavorite: text("isFavorite").$type().default("no").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull()
-});
-var marketingCalendar = pgTable("marketing_calendar", {
-  id: serial("id").primaryKey(),
-  userId: integer("userId").references(() => users.id).notNull(),
-  contentId: integer("contentId").references(() => marketingContent.id),
-  title: varchar("title", { length: 500 }).notNull(),
-  description: text("description"),
-  platform: varchar("platform", { length: 50 }),
-  scheduledDate: bigint("scheduledDate", { mode: "number" }).notNull(),
-  status: text("status").$type().default("draft").notNull(),
-  colorTag: varchar("colorTag", { length: 20 }).default("#D4A853"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull()
-});
-var marketingTemplates = pgTable("marketing_templates", {
-  id: serial("id").primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"),
-  type: text("type").$type().notNull(),
-  platform: varchar("platform", { length: 50 }),
-  templateContent: text("templateContent").notNull(),
-  systemPrompt: text("systemPrompt"),
-  category: varchar("category", { length: 100 }),
-  icon: varchar("icon", { length: 50 }),
-  isBuiltIn: text("isBuiltIn").$type().default("no").notNull(),
-  sortOrder: integer("sortOrder").default(0),
-  createdAt: timestamp("createdAt").defaultNow().notNull()
-});
-var destinations = pgTable("destinations", {
-  id: serial("id").primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"),
-  location: varchar("location", { length: 255 }).notNull(),
-  pricePerPerson: decimal("pricePerPerson", { precision: 10, scale: 2 }).default("0"),
-  rating: decimal("rating", { precision: 3, scale: 2 }).default("5"),
-  imageUrl: text("imageUrl"),
-  highlights: text("highlights"),
-  bestTimeToVisit: varchar("bestTimeToVisit", { length: 255 }),
-  duration: varchar("duration", { length: 100 }),
-  difficulty: text("difficulty").$type(),
-  groupSize: varchar("groupSize", { length: 100 }),
-  inclusions: text("inclusions"),
-  exclusions: text("exclusions"),
-  isActive: text("isActive").$type().default("active").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull()
-});
-var siteSettings = pgTable("site_settings", {
-  id: serial("id").primaryKey(),
-  category: varchar("category", { length: 50 }).notNull(),
-  settingKey: varchar("setting_key", { length: 100 }).notNull(),
-  settingValue: text("setting_value"),
-  updatedBy: integer("updated_by").references(() => users.id),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull()
-});
-
 // server/_core/env.ts
 var ENV = {
-  appId: process.env.VITE_APP_ID ?? "",
+  // VITE_APP_ID is the Manus OAuth app id (unused in the Firebase auth flow).
+  // Fall back to VITE_FIREBASE_APP_ID so the signed session always carries a
+  // stable, non-empty app identifier in production.
+  appId: process.env.VITE_APP_ID ?? process.env.VITE_FIREBASE_APP_ID ?? "",
   cookieSecret: process.env.JWT_SECRET ?? "",
   databaseUrl: process.env.DATABASE_URL ?? "",
   oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
@@ -505,482 +227,6 @@ var ENV = {
   /** SHA-256 hex hash of the admin password */
   adminPasswordHash: process.env.ADMIN_PASSWORD_HASH ?? ""
 };
-
-// server/db.ts
-var _db = null;
-var _client = null;
-function getConnectionString() {
-  return process.env.POSTGRES_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL_NON_POOLING;
-}
-async function getDb() {
-  if (!_db) {
-    const connectionString = getConnectionString();
-    if (!connectionString) return null;
-    try {
-      _client = postgres(connectionString, {
-        prepare: false,
-        max: 5,
-        idle_timeout: 20,
-        connect_timeout: 15
-      });
-      _db = drizzle(_client);
-    } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
-    }
-  }
-  return _db;
-}
-async function upsertUser(user) {
-  if (!user.openId) {
-    throw new Error("User openId is required for upsert");
-  }
-  const db2 = await getDb();
-  if (!db2) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
-  }
-  try {
-    const values = {
-      openId: user.openId
-    };
-    const updateSet = {};
-    const textFields = ["name", "email", "loginMethod"];
-    const assignNullable = (field) => {
-      const value = user[field];
-      if (value === void 0) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
-    textFields.forEach(assignNullable);
-    if (user.lastSignedIn !== void 0) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
-    if (user.role !== void 0) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = "admin";
-      updateSet.role = "admin";
-    }
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = /* @__PURE__ */ new Date();
-    }
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = /* @__PURE__ */ new Date();
-    }
-    await db2.insert(users).values(values).onConflictDoUpdate({
-      target: users.openId,
-      set: updateSet
-    });
-  } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
-    throw error;
-  }
-}
-async function getUserByOpenId(openId) {
-  const db2 = await getDb();
-  if (!db2) {
-    console.warn("[Database] Cannot get user: database not available");
-    return void 0;
-  }
-  const result = await db2.select().from(users).where(eq(users.openId, openId)).limit(1);
-  return result.length > 0 ? result[0] : void 0;
-}
-async function createBooking(booking) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const result = await db2.insert(bookings).values(booking).returning();
-  return result[0];
-}
-async function getBookingById(id) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const result = await db2.select().from(bookings).where(eq(bookings.id, id)).limit(1);
-  return result[0] ?? null;
-}
-async function getBookingByConfirmationCode(code) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const result = await db2.select().from(bookings).where(eq(bookings.confirmationCode, code)).limit(1);
-  return result[0] ?? null;
-}
-async function getUserBookings(userId) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  return db2.select().from(bookings).where(eq(bookings.userId, userId)).orderBy(desc(bookings.createdAt));
-}
-async function updateBookingStatus(id, status) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  await db2.update(bookings).set({ status }).where(eq(bookings.id, id));
-  return getBookingById(id);
-}
-async function updateBookingPaymentStatus(id, paymentStatus) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  await db2.update(bookings).set({ paymentStatus }).where(eq(bookings.id, id));
-  return getBookingById(id);
-}
-async function getAllBookings(limit = 50, offset = 0) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  return db2.select().from(bookings).orderBy(desc(bookings.createdAt)).limit(limit).offset(offset);
-}
-async function createReview(review) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const result = await db2.insert(reviews).values(review).returning();
-  return result[0];
-}
-async function getApprovedReviews(limit = 50, offset = 0) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  return db2.select().from(reviews).where(eq(reviews.isApproved, "approved")).orderBy(desc(reviews.createdAt)).limit(limit).offset(offset);
-}
-async function getAllReviews(limit = 50, offset = 0) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  return db2.select().from(reviews).orderBy(desc(reviews.createdAt)).limit(limit).offset(offset);
-}
-async function getReviewById(id) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const result = await db2.select().from(reviews).where(eq(reviews.id, id)).limit(1);
-  return result[0] ?? null;
-}
-async function updateReviewApproval(id, isApproved) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  await db2.update(reviews).set({ isApproved }).where(eq(reviews.id, id));
-  return getReviewById(id);
-}
-async function addAdminReply(id, adminReply) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  await db2.update(reviews).set({ adminReply, adminReplyAt: /* @__PURE__ */ new Date() }).where(eq(reviews.id, id));
-  return getReviewById(id);
-}
-async function incrementHelpfulCount(id) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  await db2.update(reviews).set({ helpfulCount: sql`${reviews.helpfulCount} + 1` }).where(eq(reviews.id, id));
-  return getReviewById(id);
-}
-async function getReviewStats() {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const allApproved = await db2.select().from(reviews).where(eq(reviews.isApproved, "approved"));
-  const total = allApproved.length;
-  if (total === 0) return { total: 0, average: 0, distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } };
-  const sum = allApproved.reduce((acc, r) => acc + r.rating, 0);
-  const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-  allApproved.forEach((r) => {
-    if (r.rating >= 1 && r.rating <= 5) distribution[r.rating]++;
-  });
-  return { total, average: Math.round(sum / total * 10) / 10, distribution };
-}
-async function createOffer(offer) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const result = await db2.insert(offers).values(offer).returning();
-  return result[0];
-}
-async function getActiveOffers() {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const now = Date.now();
-  return db2.select().from(offers).where(and(
-    eq(offers.isActive, "active"),
-    lte(offers.startDate, now),
-    gte(offers.endDate, now)
-  )).orderBy(asc(offers.endDate));
-}
-async function getAllOffers(limit = 50, offset = 0) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  return db2.select().from(offers).orderBy(desc(offers.createdAt)).limit(limit).offset(offset);
-}
-async function getOfferByPromoCode(promoCode) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const result = await db2.select().from(offers).where(eq(offers.promoCode, promoCode)).limit(1);
-  return result[0] ?? null;
-}
-async function updateOffer(id, data) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  await db2.update(offers).set(data).where(eq(offers.id, id));
-  const rows = await db2.select().from(offers).where(eq(offers.id, id)).limit(1);
-  return rows[0];
-}
-async function createContactMessage(message) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const result = await db2.insert(contactMessages).values(message).returning();
-  return result[0];
-}
-async function getAllContactMessages(limit = 50, offset = 0) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  return db2.select().from(contactMessages).orderBy(desc(contactMessages.createdAt)).limit(limit).offset(offset);
-}
-async function updateContactMessageStatus(id, status) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  await db2.update(contactMessages).set({ status }).where(eq(contactMessages.id, id));
-}
-async function createFileUpload(file) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const result = await db2.insert(fileUploads).values(file).returning();
-  return result[0];
-}
-async function getUserFiles(userId) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  return db2.select().from(fileUploads).where(eq(fileUploads.userId, userId)).orderBy(desc(fileUploads.createdAt));
-}
-async function getOrCreateAISubscription(userId) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  let subscription = await db2.select().from(aiSubscriptions).where(eq(aiSubscriptions.userId, userId)).limit(1);
-  if (subscription.length === 0) {
-    const result = await db2.insert(aiSubscriptions).values({
-      userId,
-      plan: "free",
-      status: "active",
-      startDate: Date.now()
-    }).returning();
-    subscription = result;
-  }
-  return subscription[0];
-}
-async function updateAISubscription(userId, plan, stripeSubscriptionId) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  await db2.update(aiSubscriptions).set({
-    plan,
-    status: "active",
-    renewalDate: Date.now() + 30 * 24 * 60 * 60 * 1e3,
-    ...stripeSubscriptionId && { stripeSubscriptionId }
-  }).where(eq(aiSubscriptions.userId, userId));
-  return getOrCreateAISubscription(userId);
-}
-async function getOrCreateAICredits(userId) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  let credits = await db2.select().from(aiCredits).where(eq(aiCredits.userId, userId)).limit(1);
-  if (credits.length === 0) {
-    const result = await db2.insert(aiCredits).values({
-      userId,
-      balance: "5",
-      totalUsed: "0"
-    }).returning();
-    credits = result;
-  }
-  return credits[0];
-}
-async function addAICredits(userId, amount, reason) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const credits = await getOrCreateAICredits(userId);
-  const newBalance = parseFloat(credits.balance.toString()) + amount;
-  await db2.update(aiCredits).set({ balance: newBalance.toString() }).where(eq(aiCredits.userId, userId));
-  await db2.insert(aiTransactions).values({
-    userId,
-    type: reason === "purchase" ? "purchase" : reason === "monthly_allowance" ? "monthly_allowance" : "bonus",
-    amount: amount.toString(),
-    status: "completed"
-  });
-  return getOrCreateAICredits(userId);
-}
-async function deductAICredits(userId, amount) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const credits = await getOrCreateAICredits(userId);
-  const currentBalance = parseFloat(credits.balance.toString());
-  if (currentBalance < amount) {
-    throw new Error("Insufficient credits");
-  }
-  const newBalance = currentBalance - amount;
-  const newTotalUsed = parseFloat(credits.totalUsed.toString()) + amount;
-  await db2.update(aiCredits).set({
-    balance: newBalance.toString(),
-    totalUsed: newTotalUsed.toString()
-  }).where(eq(aiCredits.userId, userId));
-  return getOrCreateAICredits(userId);
-}
-async function createAIUsage(usage) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const result = await db2.insert(aiUsage).values(usage).returning();
-  return result[0];
-}
-async function getUserAIUsage(userId, limit = 50, offset = 0) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  return db2.select().from(aiUsage).where(eq(aiUsage.userId, userId)).orderBy(desc(aiUsage.createdAt)).limit(limit).offset(offset);
-}
-async function updateAIUsageStatus(id, status, resultUrl, errorMessage) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  await db2.update(aiUsage).set({
-    status,
-    ...resultUrl && { resultUrl },
-    ...errorMessage && { errorMessage }
-  }).where(eq(aiUsage.id, id));
-  const rows = await db2.select().from(aiUsage).where(eq(aiUsage.id, id)).limit(1);
-  return rows[0];
-}
-async function getAIUsageStats(userId) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const usage = await db2.select().from(aiUsage).where(eq(aiUsage.userId, userId));
-  return {
-    totalGenerations: usage.length,
-    byType: {
-      image: usage.filter((u) => u.type === "image").length,
-      video: usage.filter((u) => u.type === "video").length,
-      edit: usage.filter((u) => u.type === "edit").length
-    },
-    totalCost: usage.reduce((sum, u) => sum + parseFloat(u.creditsCost.toString()), 0)
-  };
-}
-async function getAllUsers(limit = 50, offset = 0) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const result = await db2.select().from(users).orderBy(desc(users.createdAt)).limit(limit).offset(offset);
-  return result;
-}
-async function getUsersCount() {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const result = await db2.select({ count: sql`count(*)` }).from(users);
-  return result[0]?.count ?? 0;
-}
-async function getUserById(id) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const result = await db2.select().from(users).where(eq(users.id, id)).limit(1);
-  return result[0] ?? null;
-}
-async function updateUserRole(id, role) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  await db2.update(users).set({ role }).where(eq(users.id, id));
-  return getUserById(id);
-}
-async function searchUsers(query, limit = 20) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const result = await db2.select().from(users).where(
-    sql`${users.name} ILIKE ${`%${query}%`} OR ${users.email} ILIKE ${`%${query}%`} OR ${users.openId} ILIKE ${`%${query}%`}`
-  ).orderBy(desc(users.createdAt)).limit(limit);
-  return result;
-}
-async function getUserStats() {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const totalUsers = await db2.select({ count: sql`count(*)` }).from(users);
-  const adminUsers = await db2.select({ count: sql`count(*)` }).from(users).where(eq(users.role, "admin"));
-  const recentUsers = await db2.select({ count: sql`count(*)` }).from(users).where(gte(users.createdAt, sql`NOW() - INTERVAL '30 days'`));
-  const todayUsers = await db2.select({ count: sql`count(*)` }).from(users).where(gte(users.createdAt, sql`CURRENT_DATE`));
-  return {
-    total: totalUsers[0]?.count ?? 0,
-    admins: adminUsers[0]?.count ?? 0,
-    recentSignups: recentUsers[0]?.count ?? 0,
-    todaySignups: todayUsers[0]?.count ?? 0
-  };
-}
-async function updateUserProfile(id, data) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const updateSet = {};
-  if (data.name !== void 0) updateSet.name = data.name;
-  if (data.phone !== void 0) updateSet.phone = data.phone;
-  if (data.avatarUrl !== void 0) updateSet.avatarUrl = data.avatarUrl;
-  if (Object.keys(updateSet).length === 0) {
-    return getUserById(id);
-  }
-  await db2.update(users).set(updateSet).where(eq(users.id, id));
-  return getUserById(id);
-}
-async function getPublishedBlogPosts(limit = 10, offset = 0) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  return db2.select().from(blogPosts).where(eq(blogPosts.status, "published")).orderBy(desc(blogPosts.publishedAt)).limit(limit).offset(offset);
-}
-async function getBlogPostBySlug(slug) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const result = await db2.select().from(blogPosts).where(eq(blogPosts.slug, slug)).limit(1);
-  return result[0] ?? null;
-}
-async function getBlogPostsByCategory(category, limit = 10, offset = 0) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  return db2.select().from(blogPosts).where(and(eq(blogPosts.status, "published"), eq(blogPosts.category, category))).orderBy(desc(blogPosts.publishedAt)).limit(limit).offset(offset);
-}
-async function createBlogPost(post) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  const result = await db2.insert(blogPosts).values(post).returning();
-  return result[0];
-}
-async function updateBlogPost(id, data) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  await db2.update(blogPosts).set(data).where(eq(blogPosts.id, id));
-  const rows = await db2.select().from(blogPosts).where(eq(blogPosts.id, id)).limit(1);
-  return rows[0] ?? null;
-}
-async function getAllBlogPosts(limit = 50, offset = 0) {
-  const db2 = await getDb();
-  if (!db2) throw new Error("Database not available");
-  return db2.select().from(blogPosts).orderBy(desc(blogPosts.createdAt)).limit(limit).offset(offset);
-}
-async function incrementBlogViewCount(id) {
-  const db2 = await getDb();
-  if (!db2) return;
-  await db2.update(blogPosts).set({ viewCount: sql`${blogPosts.viewCount} + 1` }).where(eq(blogPosts.id, id));
-}
-
-// server/_core/cookies.ts
-function isSecureRequest(req) {
-  if (req.protocol === "https") return true;
-  const forwardedProto = req.headers["x-forwarded-proto"];
-  if (!forwardedProto) return false;
-  const protoList = Array.isArray(forwardedProto) ? forwardedProto : forwardedProto.split(",");
-  return protoList.some((proto) => proto.trim().toLowerCase() === "https");
-}
-function getSessionCookieOptions(req) {
-  const secure = isSecureRequest(req);
-  return {
-    httpOnly: true,
-    path: "/",
-    // SameSite=None requires Secure=true; fall back to Lax on plain HTTP (local dev)
-    sameSite: secure ? "none" : "lax",
-    secure
-  };
-}
-
-// shared/_core/errors.ts
-var HttpError = class extends Error {
-  constructor(statusCode, message) {
-    super(message);
-    this.statusCode = statusCode;
-    this.name = "HttpError";
-  }
-};
-var ForbiddenError = (msg) => new HttpError(403, msg);
-
-// server/_core/sdk.ts
-import axios from "axios";
-import { parse as parseCookieHeader } from "cookie";
-import { SignJWT, jwtVerify } from "jose";
 
 // server/_core/firebaseAdmin.ts
 import { initializeApp, cert, getApps } from "firebase-admin/app";
@@ -1033,7 +279,609 @@ if (!getApps().length) {
 }
 var db = getFirestore();
 
+// server/_core/firestore-db.ts
+async function nextId(collection) {
+  const counterRef = db.collection("_counters").doc(collection);
+  const next = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(counterRef);
+    const current = (snap.exists ? snap.data()?.value : 0) || 0;
+    const value = current + 1;
+    tx.set(counterRef, { value }, { merge: true });
+    return value;
+  });
+  return next;
+}
+async function insert(collection, data) {
+  try {
+    const id = typeof data.id === "number" ? data.id : await nextId(collection);
+    const now = /* @__PURE__ */ new Date();
+    const record = {
+      ...data,
+      id,
+      createdAt: data.createdAt ?? now,
+      updatedAt: now
+    };
+    await db.collection(collection).doc(String(id)).set(record);
+    return record;
+  } catch (error) {
+    console.error(`[firestore] insert() failed for collection="${collection}":`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : void 0
+    });
+    throw error;
+  }
+}
+async function getById(collection, id) {
+  try {
+    const snap = await db.collection(collection).doc(String(id)).get();
+    return snap.exists ? snap.data() : null;
+  } catch (error) {
+    console.error(`[firestore] getById() failed for collection="${collection}" id="${id}":`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : void 0
+    });
+    throw error;
+  }
+}
+async function update(collection, id, data) {
+  try {
+    const ref = db.collection(collection).doc(String(id));
+    const existing = await ref.get();
+    if (!existing.exists) return null;
+    await ref.set({ ...data, updatedAt: /* @__PURE__ */ new Date() }, { merge: true });
+    const updated = await ref.get();
+    return updated.data() ?? null;
+  } catch (error) {
+    console.error(`[firestore] update() failed for collection="${collection}" id="${id}":`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : void 0
+    });
+    throw error;
+  }
+}
+async function remove(collection, id) {
+  try {
+    await db.collection(collection).doc(String(id)).delete();
+  } catch (error) {
+    console.error(`[firestore] remove() failed for collection="${collection}" id="${id}":`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : void 0
+    });
+    throw error;
+  }
+}
+async function removeAll(collection) {
+  const snap = await db.collection(collection).get();
+  const batchSize = 400;
+  for (let i = 0; i < snap.docs.length; i += batchSize) {
+    const batch = db.batch();
+    for (const doc of snap.docs.slice(i, i + batchSize)) {
+      batch.delete(doc.ref);
+    }
+    await batch.commit();
+  }
+}
+async function list(collection, options = {}) {
+  try {
+    let query = db.collection(collection);
+    if (options.where) {
+      for (const [field, op, value] of options.where) {
+        query = query.where(field, op, value);
+      }
+    }
+    if (options.orderBy) {
+      for (const [field, dir] of options.orderBy) {
+        query = query.orderBy(field, dir);
+      }
+    }
+    if (typeof options.offset === "number") {
+      query = query.offset(options.offset);
+    }
+    if (typeof options.limit === "number") {
+      query = query.limit(options.limit);
+    }
+    const snap = await query.get();
+    return snap.docs.map((d) => d.data());
+  } catch (error) {
+    console.error(`[firestore] list() failed for collection="${collection}":`, {
+      error: error instanceof Error ? error.message : String(error),
+      options,
+      stack: error instanceof Error ? error.stack : void 0
+    });
+    throw error;
+  }
+}
+async function count(collection, where) {
+  try {
+    let query = db.collection(collection);
+    if (where) {
+      for (const [field, op, value] of where) {
+        query = query.where(field, op, value);
+      }
+    }
+    const snap = await query.count().get();
+    return snap.data().count;
+  } catch (error) {
+    console.error(`[firestore] count() failed for collection="${collection}":`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : void 0
+    });
+    throw error;
+  }
+}
+async function findOne(collection, where) {
+  try {
+    let query = db.collection(collection);
+    for (const [field, op, value] of where) {
+      query = query.where(field, op, value);
+    }
+    const snap = await query.limit(1).get();
+    return snap.empty ? null : snap.docs[0].data();
+  } catch (error) {
+    console.error(`[firestore] findOne() failed for collection="${collection}":`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : void 0
+    });
+    throw error;
+  }
+}
+var SETTINGS_COL = "siteSettings";
+async function getSettingValue(category, key) {
+  const docId = `${category}__${key}`;
+  const snap = await db.collection(SETTINGS_COL).doc(docId).get();
+  return snap.exists ? snap.data()?.settingValue ?? null : null;
+}
+async function setSettingValue(category, key, value, updatedBy) {
+  const docId = `${category}__${key}`;
+  const ref = db.collection(SETTINGS_COL).doc(docId);
+  const existing = await ref.get();
+  if (!existing.exists) {
+    const id = await nextId(SETTINGS_COL);
+    await ref.set({
+      id,
+      category,
+      settingKey: key,
+      settingValue: value,
+      updatedBy: updatedBy ?? null,
+      createdAt: /* @__PURE__ */ new Date(),
+      updatedAt: /* @__PURE__ */ new Date()
+    });
+  } else {
+    await ref.set(
+      { settingValue: value, updatedBy: updatedBy ?? null, updatedAt: /* @__PURE__ */ new Date() },
+      { merge: true }
+    );
+  }
+}
+
+// server/db.ts
+var COL = {
+  users: "users",
+  bookings: "bookings",
+  reviews: "reviews",
+  offers: "offers",
+  contactMessages: "contactMessages",
+  fileUploads: "fileUploads",
+  galleryItems: "gallery_items",
+  galleryVideos: "gallery_videos",
+  aiSubscriptions: "aiSubscriptions",
+  aiCredits: "aiCredits",
+  aiUsage: "aiUsage",
+  aiTransactions: "aiTransactions",
+  blogPosts: "blogPosts"
+};
+async function ensureNumericUserId(docRef, data) {
+  if (typeof data.id === "number") return data.id;
+  const counterRef = db.collection("_counters").doc(COL.users);
+  const id = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(counterRef);
+    const current = (snap.exists ? snap.data()?.value : 0) || 0;
+    const value = current + 1;
+    tx.set(counterRef, { value }, { merge: true });
+    return value;
+  });
+  await docRef.set({ id }, { merge: true });
+  return id;
+}
+async function upsertUser(user) {
+  if (!user.openId) {
+    throw new Error("User openId is required for upsert");
+  }
+  const existingSnap = await db.collection(COL.users).where("openId", "==", user.openId).limit(1).get();
+  const now = /* @__PURE__ */ new Date();
+  const data = { openId: user.openId, lastSignedIn: now };
+  if (user.name !== void 0) data.name = user.name ?? null;
+  if (user.email !== void 0) data.email = user.email ?? null;
+  if (user.loginMethod !== void 0) data.loginMethod = user.loginMethod ?? null;
+  if (user.lastSignedIn !== void 0) data.lastSignedIn = user.lastSignedIn;
+  if (user.role !== void 0) data.role = user.role;
+  else if (user.openId === ENV.ownerOpenId) data.role = "admin";
+  if (!existingSnap.empty) {
+    await existingSnap.docs[0].ref.set(data, { merge: true });
+  } else {
+    const counterRef = db.collection("_counters").doc(COL.users);
+    const id = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(counterRef);
+      const current = (snap.exists ? snap.data()?.value : 0) || 0;
+      const value = current + 1;
+      tx.set(counterRef, { value }, { merge: true });
+      return value;
+    });
+    await db.collection(COL.users).doc(user.openId).set({
+      ...data,
+      id,
+      role: data.role ?? "user",
+      createdAt: now
+    });
+  }
+}
+async function getUserByOpenId(openId) {
+  const snap = await db.collection(COL.users).where("openId", "==", openId).limit(1).get();
+  if (snap.empty) return void 0;
+  const doc = snap.docs[0];
+  await ensureNumericUserId(doc.ref, doc.data());
+  return doc.data();
+}
+async function createBooking(booking) {
+  return insert(COL.bookings, booking);
+}
+async function getBookingById(id) {
+  return getById(COL.bookings, id);
+}
+async function getBookingByConfirmationCode(code) {
+  return findOne(COL.bookings, [["confirmationCode", "==", code]]);
+}
+async function getUserBookings(userId) {
+  return list(COL.bookings, {
+    where: [["userId", "==", userId]],
+    orderBy: [["createdAt", "desc"]]
+  });
+}
+async function updateBookingStatus(id, status) {
+  await update(COL.bookings, id, { status });
+  return getBookingById(id);
+}
+async function updateBookingPaymentStatus(id, paymentStatus) {
+  await update(COL.bookings, id, { paymentStatus });
+  return getBookingById(id);
+}
+async function getAllBookings(limit = 50, offset = 0) {
+  return list(COL.bookings, {
+    orderBy: [["createdAt", "desc"]],
+    limit,
+    offset
+  });
+}
+async function createReview(review) {
+  return insert(COL.reviews, review);
+}
+async function getApprovedReviews(limit = 50, offset = 0) {
+  return list(COL.reviews, {
+    where: [["isApproved", "==", "approved"]],
+    orderBy: [["createdAt", "desc"]],
+    limit,
+    offset
+  });
+}
+async function getAllReviews(limit = 50, offset = 0) {
+  return list(COL.reviews, {
+    orderBy: [["createdAt", "desc"]],
+    limit,
+    offset
+  });
+}
+async function getReviewById(id) {
+  return getById(COL.reviews, id);
+}
+async function updateReviewApproval(id, isApproved) {
+  await update(COL.reviews, id, { isApproved });
+  return getReviewById(id);
+}
+async function addAdminReply(id, adminReply) {
+  await update(COL.reviews, id, { adminReply, adminReplyAt: /* @__PURE__ */ new Date() });
+  return getReviewById(id);
+}
+async function incrementHelpfulCount(id) {
+  const review = await getReviewById(id);
+  const current = Number(review?.helpfulCount ?? 0);
+  await update(COL.reviews, id, { helpfulCount: current + 1 });
+  return getReviewById(id);
+}
+async function getReviewStats() {
+  const allApproved = await list(COL.reviews, {
+    where: [["isApproved", "==", "approved"]]
+  });
+  const total = allApproved.length;
+  if (total === 0) {
+    return { total: 0, average: 0, distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } };
+  }
+  const sum = allApproved.reduce((acc, r) => acc + (r.rating ?? 0), 0);
+  const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  allApproved.forEach((r) => {
+    if (r.rating >= 1 && r.rating <= 5) distribution[r.rating]++;
+  });
+  return { total, average: Math.round(sum / total * 10) / 10, distribution };
+}
+async function createOffer(offer) {
+  return insert(COL.offers, offer);
+}
+async function getActiveOffers() {
+  const now = Date.now();
+  const active = await list(COL.offers, {
+    where: [["isActive", "==", "active"]]
+  });
+  return active.filter((o) => Number(o.startDate ?? 0) <= now && Number(o.endDate ?? 0) >= now).sort((a, b) => Number(a.endDate ?? 0) - Number(b.endDate ?? 0));
+}
+async function getAllOffers(limit = 50, offset = 0) {
+  return list(COL.offers, {
+    orderBy: [["createdAt", "desc"]],
+    limit,
+    offset
+  });
+}
+async function getOfferByPromoCode(promoCode) {
+  return findOne(COL.offers, [["promoCode", "==", promoCode]]);
+}
+async function updateOffer(id, data) {
+  return update(COL.offers, id, data);
+}
+async function createContactMessage(message) {
+  return insert(COL.contactMessages, message);
+}
+async function getAllContactMessages(limit = 50, offset = 0) {
+  return list(COL.contactMessages, {
+    orderBy: [["createdAt", "desc"]],
+    limit,
+    offset
+  });
+}
+async function updateContactMessageStatus(id, status) {
+  await update(COL.contactMessages, id, { status });
+}
+async function createFileUpload(file) {
+  return insert(COL.fileUploads, file);
+}
+async function getUserFiles(userId) {
+  return list(COL.fileUploads, {
+    where: [["userId", "==", userId]],
+    orderBy: [["createdAt", "desc"]]
+  });
+}
+async function getOrCreateAISubscription(userId) {
+  const existing = await findOne(COL.aiSubscriptions, [["userId", "==", userId]]);
+  if (existing) return existing;
+  const created = await insert(COL.aiSubscriptions, {
+    userId,
+    plan: "free",
+    status: "active",
+    startDate: Date.now()
+  });
+  return created;
+}
+async function updateAISubscription(userId, plan, stripeSubscriptionId) {
+  const sub = await getOrCreateAISubscription(userId);
+  await update(COL.aiSubscriptions, sub.id, {
+    plan,
+    status: "active",
+    renewalDate: Date.now() + 30 * 24 * 60 * 60 * 1e3,
+    ...stripeSubscriptionId && { stripeSubscriptionId }
+  });
+  return getOrCreateAISubscription(userId);
+}
+async function getOrCreateAICredits(userId) {
+  const existing = await findOne(COL.aiCredits, [["userId", "==", userId]]);
+  if (existing) return existing;
+  const created = await insert(COL.aiCredits, {
+    userId,
+    balance: "5",
+    totalUsed: "0"
+  });
+  return created;
+}
+async function addAICredits(userId, amount, reason) {
+  const credits = await getOrCreateAICredits(userId);
+  const newBalance = parseFloat(credits.balance.toString()) + amount;
+  await update(COL.aiCredits, credits.id, { balance: newBalance.toString() });
+  await insert(COL.aiTransactions, {
+    userId,
+    type: reason === "purchase" ? "purchase" : reason === "monthly_allowance" ? "monthly_allowance" : "bonus",
+    amount: amount.toString(),
+    status: "completed"
+  });
+  return getOrCreateAICredits(userId);
+}
+async function deductAICredits(userId, amount) {
+  const credits = await getOrCreateAICredits(userId);
+  const currentBalance = parseFloat(credits.balance.toString());
+  if (currentBalance < amount) {
+    throw new Error("Insufficient credits");
+  }
+  const newBalance = currentBalance - amount;
+  const newTotalUsed = parseFloat(credits.totalUsed.toString()) + amount;
+  await update(COL.aiCredits, credits.id, {
+    balance: newBalance.toString(),
+    totalUsed: newTotalUsed.toString()
+  });
+  return getOrCreateAICredits(userId);
+}
+async function createAIUsage(usage) {
+  return insert(COL.aiUsage, usage);
+}
+async function getUserAIUsage(userId, limit = 50, offset = 0) {
+  return list(COL.aiUsage, {
+    where: [["userId", "==", userId]],
+    orderBy: [["createdAt", "desc"]],
+    limit,
+    offset
+  });
+}
+async function updateAIUsageStatus(id, status, resultUrl, errorMessage) {
+  return update(COL.aiUsage, id, {
+    status,
+    ...resultUrl && { resultUrl },
+    ...errorMessage && { errorMessage }
+  });
+}
+async function getAIUsageStats(userId) {
+  const usage = await list(COL.aiUsage, {
+    where: [["userId", "==", userId]]
+  });
+  return {
+    totalGenerations: usage.length,
+    byType: {
+      image: usage.filter((u) => u.type === "image").length,
+      video: usage.filter((u) => u.type === "video").length,
+      edit: usage.filter((u) => u.type === "edit").length
+    },
+    totalCost: usage.reduce((sum, u) => sum + parseFloat((u.creditsCost ?? 0).toString()), 0)
+  };
+}
+async function listUsersRaw() {
+  const snap = await db.collection(COL.users).get();
+  const out = [];
+  for (const doc of snap.docs) {
+    const data = doc.data();
+    if (typeof data.id !== "number") {
+      data.id = await ensureNumericUserId(doc.ref, data);
+    }
+    out.push(data);
+  }
+  return out;
+}
+async function getAllUsers(limit = 50, offset = 0) {
+  const all = await listUsersRaw();
+  all.sort((a, b) => Number(b.createdAt ?? 0) - Number(a.createdAt ?? 0));
+  return all.slice(offset, offset + limit);
+}
+async function getUsersCount() {
+  return count(COL.users);
+}
+async function getUserById(id) {
+  const all = await listUsersRaw();
+  return all.find((u) => u.id === id) ?? null;
+}
+async function updateUserRole(id, role) {
+  const snap = await db.collection(COL.users).where("id", "==", id).limit(1).get();
+  if (snap.empty) {
+    const all = await listUsersRaw();
+    const target = all.find((u) => u.id === id);
+    if (!target) return null;
+    await db.collection(COL.users).doc(target.openId).set({ role }, { merge: true });
+    return getUserById(id);
+  }
+  await snap.docs[0].ref.set({ role }, { merge: true });
+  return getUserById(id);
+}
+async function searchUsers(query, limit = 20) {
+  const q = query.toLowerCase();
+  const all = await listUsersRaw();
+  return all.filter(
+    (u) => (u.name ?? "").toLowerCase().includes(q) || (u.email ?? "").toLowerCase().includes(q) || (u.openId ?? "").toLowerCase().includes(q)
+  ).sort((a, b) => Number(b.createdAt ?? 0) - Number(a.createdAt ?? 0)).slice(0, limit);
+}
+async function getUserStats() {
+  const all = await listUsersRaw();
+  const now = Date.now();
+  const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1e3;
+  const startOfToday = /* @__PURE__ */ new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const todayMs = startOfToday.getTime();
+  const toMs = (v) => v ? new Date(v).getTime() : 0;
+  return {
+    total: all.length,
+    admins: all.filter((u) => u.role === "admin").length,
+    recentSignups: all.filter((u) => toMs(u.createdAt) >= thirtyDaysAgo).length,
+    todaySignups: all.filter((u) => toMs(u.createdAt) >= todayMs).length
+  };
+}
+async function updateUserProfile(id, data) {
+  const updateSet = {};
+  if (data.name !== void 0) updateSet.name = data.name;
+  if (data.phone !== void 0) updateSet.phone = data.phone;
+  if (data.avatarUrl !== void 0) updateSet.avatarUrl = data.avatarUrl;
+  if (Object.keys(updateSet).length === 0) {
+    return getUserById(id);
+  }
+  const snap = await db.collection(COL.users).where("id", "==", id).limit(1).get();
+  if (!snap.empty) {
+    await snap.docs[0].ref.set(updateSet, { merge: true });
+  }
+  return getUserById(id);
+}
+async function getPublishedBlogPosts(limit = 10, offset = 0) {
+  return list(COL.blogPosts, {
+    where: [["status", "==", "published"]],
+    orderBy: [["publishedAt", "desc"]],
+    limit,
+    offset
+  });
+}
+async function getBlogPostBySlug(slug) {
+  return findOne(COL.blogPosts, [["slug", "==", slug]]);
+}
+async function getBlogPostsByCategory(category, limit = 10, offset = 0) {
+  const posts = await list(COL.blogPosts, {
+    where: [
+      ["status", "==", "published"],
+      ["category", "==", category]
+    ],
+    limit: limit + offset + 50
+  });
+  return posts.sort((a, b) => Number(b.publishedAt ?? 0) - Number(a.publishedAt ?? 0)).slice(offset, offset + limit);
+}
+async function createBlogPost(post) {
+  return insert(COL.blogPosts, post);
+}
+async function updateBlogPost(id, data) {
+  return update(COL.blogPosts, id, data);
+}
+async function getAllBlogPosts(limit = 50, offset = 0) {
+  return list(COL.blogPosts, {
+    orderBy: [["createdAt", "desc"]],
+    limit,
+    offset
+  });
+}
+async function incrementBlogViewCount(id) {
+  const post = await getById(COL.blogPosts, id);
+  if (!post) return;
+  const current = Number(post.viewCount ?? 0);
+  await update(COL.blogPosts, id, { viewCount: current + 1 });
+}
+
+// server/_core/cookies.ts
+function isSecureRequest(req) {
+  if (req.protocol === "https") return true;
+  const forwardedProto = req.headers["x-forwarded-proto"];
+  if (!forwardedProto) return false;
+  const protoList = Array.isArray(forwardedProto) ? forwardedProto : forwardedProto.split(",");
+  return protoList.some((proto) => proto.trim().toLowerCase() === "https");
+}
+function getSessionCookieOptions(req) {
+  const secure = isSecureRequest(req);
+  return {
+    httpOnly: true,
+    path: "/",
+    // SameSite=None requires Secure=true; fall back to Lax on plain HTTP (local dev)
+    sameSite: secure ? "none" : "lax",
+    secure
+  };
+}
+
+// shared/_core/errors.ts
+var HttpError = class extends Error {
+  constructor(statusCode, message) {
+    super(message);
+    this.statusCode = statusCode;
+    this.name = "HttpError";
+  }
+};
+var ForbiddenError = (msg) => new HttpError(403, msg);
+
 // server/_core/sdk.ts
+import axios from "axios";
+import { parse as parseCookieHeader } from "cookie";
+import { SignJWT, jwtVerify } from "jose";
 var isNonEmptyString = (value) => typeof value === "string" && value.length > 0;
 var EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
 var GET_USER_INFO_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfo`;
@@ -1191,14 +1039,14 @@ var SDKServer = class {
         algorithms: ["HS256"]
       });
       const { openId, appId, name } = payload;
-      if (!isNonEmptyString(openId) || !isNonEmptyString(appId) || !isNonEmptyString(name)) {
-        console.warn("[Auth] Session payload missing required fields");
+      if (!isNonEmptyString(openId)) {
+        console.warn("[Auth] Session payload missing openId");
         return null;
       }
       return {
         openId,
-        appId,
-        name
+        appId: isNonEmptyString(appId) ? appId : "",
+        name: isNonEmptyString(name) ? name : ""
       };
     } catch (error) {
       console.warn("[Auth] Session verification failed", String(error));
@@ -1256,19 +1104,17 @@ var SDKServer = class {
         throw ForbiddenError("Firebase user not found");
       }
       const userData = userDoc.data();
-      if (userData.role !== "admin") {
-        throw ForbiddenError("Admin access denied");
-      }
+      const userRole = userData.role ?? "user";
       await db.collection("users").doc(uid).set({ lastSignedIn: now }, { merge: true });
       return {
         id: 0,
         openId: sessionUserId,
-        name: session.name || userData.name || "Admin",
+        name: session.name || userData.name || null,
         email: userData.email ?? null,
         phone: null,
         loginMethod: "firebase",
         avatarUrl: null,
-        role: "admin",
+        role: userRole,
         createdAt: now,
         updatedAt: now,
         lastSignedIn: now
@@ -1593,6 +1439,18 @@ async function issueSessionForUser(req, res, uid, email, displayName) {
   return { success: true, email: email || null, name: displayName || null };
 }
 function registerFirebaseAuthRoutes(app) {
+  app.get("/api/auth/me", async (req, res) => {
+    try {
+      const rawCookie = (req.headers.cookie ?? "").split(";").map((c) => c.trim()).find((c) => c.startsWith(`${COOKIE_NAME}=`))?.slice(COOKIE_NAME.length + 1);
+      const session = await sdk.verifySession(rawCookie);
+      if (session) {
+        return res.json({ openId: session.openId, name: session.name });
+      }
+      return res.status(401).json({ error: "Not authenticated" });
+    } catch {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+  });
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { idToken } = req.body;
@@ -1882,7 +1740,6 @@ var bookingsRouter = router({
 
 // server/routers/reviews.ts
 import { z as z3 } from "zod";
-import { eq as eq2, desc as desc2 } from "drizzle-orm";
 var reviewsRouter = router({
   /** List approved reviews (public) */
   list: publicProcedure.input(
@@ -1925,9 +1782,10 @@ var reviewsRouter = router({
   }),
   /** Get current user's reviews */
   myReviews: protectedProcedure.query(async ({ ctx }) => {
-    const db2 = await getDb();
-    if (!db2) return [];
-    return db2.select().from(reviews).where(eq2(reviews.userId, ctx.user.id)).orderBy(desc2(reviews.createdAt));
+    return list("reviews", {
+      where: [["userId", "==", ctx.user.id]],
+      orderBy: [["createdAt", "desc"]]
+    });
   }),
   /** Mark review as helpful (public) */
   markHelpful: publicProcedure.input(z3.object({ id: z3.number() })).mutation(async ({ input }) => {
@@ -2114,8 +1972,8 @@ async function storagePut2(relKey, data, contentType = "application/octet-stream
   let fileBuffer;
   if (typeof data === "string") {
     fileBuffer = Buffer.from(data, "utf-8");
-  } else if (ArrayBuffer.isView(data) || data instanceof Uint8Array) {
-    fileBuffer = Buffer.from(data);
+  } else if (ArrayBuffer.isView(data)) {
+    fileBuffer = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
   } else {
     fileBuffer = data;
   }
@@ -2365,9 +2223,9 @@ async function generateImageWithDALLE(options) {
     throw new Error("No image data returned from OpenAI API");
   }
   const buffer = Buffer.from(imageData.b64_json, "base64");
-  const timestamp2 = Date.now();
+  const timestamp = Date.now();
   const randomSuffix = Math.random().toString(36).substring(2, 8);
-  const s3Key = `ai-generated/${timestamp2}-${randomSuffix}.png`;
+  const s3Key = `ai-generated/${timestamp}-${randomSuffix}.png`;
   const { url } = await storagePut2(s3Key, buffer, "image/png");
   return {
     url,
@@ -2453,10 +2311,10 @@ async function generateImageWithGemini(options) {
     );
   }
   const ext = mimeType.includes("jpeg") || mimeType.includes("jpg") ? "jpg" : "png";
-  const timestamp2 = Date.now();
+  const timestamp = Date.now();
   const randomSuffix = Math.random().toString(36).substring(2, 8);
   const modelPrefix = modelId.replace(/-/g, "");
-  const s3Key = `ai-generated/${modelPrefix}-${timestamp2}-${randomSuffix}.${ext}`;
+  const s3Key = `ai-generated/${modelPrefix}-${timestamp}-${randomSuffix}.${ext}`;
   const { url } = await storagePut2(s3Key, imageBuffer, mimeType);
   return {
     url,
@@ -2719,7 +2577,6 @@ var aiStudioRouter = router({
 // server/routers/users.ts
 import { z as z9 } from "zod";
 import { TRPCError as TRPCError3 } from "@trpc/server";
-import { eq as eq3, sql as sql2 } from "drizzle-orm";
 var adminProcedure2 = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") {
     throw new TRPCError3({
@@ -2822,11 +2679,7 @@ var usersRouter = router({
     } catch {
     }
     try {
-      const db2 = await getDb();
-      if (db2) {
-        const userReviews = await db2.select({ count: sql2`count(*)` }).from(reviews).where(eq3(reviews.userId, userId));
-        reviewsCount = userReviews[0]?.count ?? 0;
-      }
+      reviewsCount = await count("reviews", [["userId", "==", userId]]);
     } catch {
     }
     try {
@@ -2865,12 +2718,22 @@ var blogRouter = router({
   ).query(async ({ input }) => {
     const { limit = 10, offset = 0, category } = input ?? {};
     try {
+      let posts;
       if (category) {
-        return await getBlogPostsByCategory(category, limit, offset);
+        posts = await getBlogPostsByCategory(category, limit, offset);
+      } else {
+        posts = await getPublishedBlogPosts(limit, offset);
       }
-      return await getPublishedBlogPosts(limit, offset);
+      return posts.map((post) => ({
+        ...post,
+        publishedAt: post.publishedAt ? new Date(post.publishedAt).toISOString() : null
+      }));
     } catch (err) {
-      console.error("[blog.list] database error:", err);
+      console.error("[blog.list] database error:", {
+        error: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : void 0,
+        input
+      });
       throw new TRPCError4({
         code: "INTERNAL_SERVER_ERROR",
         message: "Failed to fetch blog posts"
@@ -2879,16 +2742,32 @@ var blogRouter = router({
   }),
   // Public: Get single post by slug
   getBySlug: publicProcedure.input(z10.object({ slug: z10.string() })).query(async ({ input }) => {
-    const post = await getBlogPostBySlug(input.slug);
-    if (!post) {
+    try {
+      const post = await getBlogPostBySlug(input.slug);
+      if (!post) {
+        throw new TRPCError4({
+          code: "NOT_FOUND",
+          message: "Blog post not found"
+        });
+      }
+      incrementBlogViewCount(post.id).catch((err) => {
+        console.warn("[blog.getBySlug] Failed to increment view count:", err);
+      });
+      return {
+        ...post,
+        publishedAt: post.publishedAt ? new Date(post.publishedAt).toISOString() : null
+      };
+    } catch (err) {
+      if (err instanceof TRPCError4) throw err;
+      console.error("[blog.getBySlug] database error:", {
+        error: err instanceof Error ? err.message : String(err),
+        slug: input.slug
+      });
       throw new TRPCError4({
-        code: "NOT_FOUND",
-        message: "Blog post not found"
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch blog post"
       });
     }
-    incrementBlogViewCount(post.id).catch(() => {
-    });
-    return post;
   }),
   // Admin: List all posts (including drafts)
   adminList: adminProcedure3.input(
@@ -2917,12 +2796,23 @@ var blogRouter = router({
       readingTime: z10.number().min(1).max(60).optional()
     })
   ).mutation(async ({ ctx, input }) => {
-    return createBlogPost({
-      ...input,
-      authorId: ctx.user.id,
-      authorName: ctx.user.name || "VANIR GROUP",
-      publishedAt: input.status === "published" ? /* @__PURE__ */ new Date() : void 0
-    });
+    try {
+      return await createBlogPost({
+        ...input,
+        authorId: ctx.user.id,
+        authorName: ctx.user.name || "VANIR GROUP",
+        publishedAt: input.status === "published" ? (/* @__PURE__ */ new Date()).toISOString() : void 0
+      });
+    } catch (err) {
+      console.error("[blog.create] mutation error:", {
+        error: err instanceof Error ? err.message : String(err),
+        input: { ...input, content: "[omitted]" }
+      });
+      throw new TRPCError4({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to create blog post"
+      });
+    }
   }),
   // Admin: Update blog post
   update: adminProcedure3.input(
@@ -2942,18 +2832,33 @@ var blogRouter = router({
       readingTime: z10.number().min(1).max(60).optional()
     })
   ).mutation(async ({ input }) => {
-    const { id, ...data } = input;
-    const updated = await updateBlogPost(id, {
-      ...data,
-      publishedAt: data.status === "published" ? /* @__PURE__ */ new Date() : void 0
-    });
-    if (!updated) {
+    try {
+      const { id, ...data } = input;
+      const updated = await updateBlogPost(id, {
+        ...data,
+        publishedAt: data.status === "published" ? (/* @__PURE__ */ new Date()).toISOString() : void 0
+      });
+      if (!updated) {
+        throw new TRPCError4({
+          code: "NOT_FOUND",
+          message: "Blog post not found"
+        });
+      }
+      return {
+        ...updated,
+        publishedAt: updated.publishedAt ? new Date(updated.publishedAt).toISOString() : null
+      };
+    } catch (err) {
+      if (err instanceof TRPCError4) throw err;
+      console.error("[blog.update] mutation error:", {
+        error: err instanceof Error ? err.message : String(err),
+        postId: input.id
+      });
       throw new TRPCError4({
-        code: "NOT_FOUND",
-        message: "Blog post not found"
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to update blog post"
       });
     }
-    return updated;
   })
 });
 
@@ -3124,7 +3029,9 @@ async function invokeLLM(params) {
 }
 
 // server/routers/marketing.ts
-import { eq as eq4, desc as desc3, and as and2, sql as sql3 } from "drizzle-orm";
+var CONTENT = "marketingContent";
+var CALENDAR = "marketingCalendar";
+var TEMPLATES = "marketingTemplates";
 var SYSTEM_PROMPTS = {
   social_media: `You are an expert tourism social media content creator for VANIR GROUP, a luxury Egyptian travel company. 
 Create engaging, platform-optimized social media posts that highlight Egypt's ancient wonders, luxury experiences, and cultural richness.
@@ -3179,8 +3086,6 @@ var marketingRouter = router({
       templateId: z11.number().optional()
     })
   ).mutation(async ({ ctx, input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
     let systemPrompt = SYSTEM_PROMPTS[input.type] || SYSTEM_PROMPTS.social_media;
     const toneInstruction = TONE_INSTRUCTIONS[input.tone] || TONE_INSTRUCTIONS.luxurious;
     systemPrompt += `
@@ -3215,7 +3120,7 @@ Target platform: ${input.platform}. Optimize content format and length for this 
 Focus destination: ${input.destination}. Include specific details about this destination.`;
     }
     if (input.templateId) {
-      const [template] = await db2.select().from(marketingTemplates).where(eq4(marketingTemplates.id, input.templateId)).limit(1);
+      const template = await getById(TEMPLATES, input.templateId);
       if (template?.systemPrompt) {
         systemPrompt += `
 
@@ -3278,7 +3183,7 @@ ${template.templateContent}`;
         metadata: { wordCount: 0, readingTime: 0, seoScore: 0 }
       };
     }
-    const [saved] = await db2.insert(marketingContent).values({
+    const saved = await insert(CONTENT, {
       userId: ctx.user.id,
       type: input.type,
       platform: input.platform || null,
@@ -3289,8 +3194,9 @@ ${template.templateContent}`;
       tone: input.tone,
       destination: input.destination || null,
       hashtags: parsed.hashtags,
+      isFavorite: "no",
       creditsCost: "1"
-    }).returning({ id: marketingContent.id });
+    });
     return {
       id: saved.id,
       title: parsed.title,
@@ -3311,40 +3217,32 @@ ${template.templateContent}`;
       offset: z11.number().min(0).default(0)
     })
   ).query(async ({ ctx, input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    const conditions = [eq4(marketingContent.userId, ctx.user.id)];
-    if (input.type) {
-      conditions.push(eq4(marketingContent.type, input.type));
-    }
-    const items = await db2.select().from(marketingContent).where(and2(...conditions)).orderBy(desc3(marketingContent.createdAt)).limit(input.limit).offset(input.offset);
-    const [countResult] = await db2.select({ count: sql3`count(*)` }).from(marketingContent).where(and2(...conditions));
-    return {
-      items,
-      total: countResult?.count || 0
-    };
+    let rows = await list(CONTENT, {
+      where: [["userId", "==", ctx.user.id]]
+    });
+    if (input.type) rows = rows.filter((r) => r.type === input.type);
+    rows.sort((a, b) => Number(b.createdAt ?? 0) - Number(a.createdAt ?? 0));
+    const total = rows.length;
+    const items = rows.slice(input.offset, input.offset + input.limit);
+    return { items, total };
   }),
   /**
    * Toggle favorite status
    */
   toggleFavorite: protectedProcedure.input(z11.object({ id: z11.number() })).mutation(async ({ ctx, input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    const [item] = await db2.select().from(marketingContent).where(and2(eq4(marketingContent.id, input.id), eq4(marketingContent.userId, ctx.user.id))).limit(1);
-    if (!item) throw new TRPCError5({ code: "NOT_FOUND" });
+    const item = await getById(CONTENT, input.id);
+    if (!item || item.userId !== ctx.user.id) throw new TRPCError5({ code: "NOT_FOUND" });
     const newStatus = item.isFavorite === "yes" ? "no" : "yes";
-    await db2.update(marketingContent).set({ isFavorite: newStatus }).where(eq4(marketingContent.id, input.id));
+    await update(CONTENT, input.id, { isFavorite: newStatus });
     return { isFavorite: newStatus };
   }),
   /**
    * Delete content
    */
   deleteContent: protectedProcedure.input(z11.object({ id: z11.number() })).mutation(async ({ ctx, input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    const [item] = await db2.select().from(marketingContent).where(and2(eq4(marketingContent.id, input.id), eq4(marketingContent.userId, ctx.user.id))).limit(1);
-    if (!item) throw new TRPCError5({ code: "NOT_FOUND" });
-    await db2.delete(marketingContent).where(eq4(marketingContent.id, input.id));
+    const item = await getById(CONTENT, input.id);
+    if (!item || item.userId !== ctx.user.id) throw new TRPCError5({ code: "NOT_FOUND" });
+    await remove(CONTENT, input.id);
     return { success: true };
   }),
   // ─── Calendar ───
@@ -3357,16 +3255,13 @@ ${template.templateContent}`;
       endDate: z11.number().optional()
     })
   ).query(async ({ ctx, input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    const conditions = [eq4(marketingCalendar.userId, ctx.user.id)];
-    if (input.startDate) {
-      conditions.push(sql3`${marketingCalendar.scheduledDate} >= ${input.startDate}`);
-    }
-    if (input.endDate) {
-      conditions.push(sql3`${marketingCalendar.scheduledDate} <= ${input.endDate}`);
-    }
-    return db2.select().from(marketingCalendar).where(and2(...conditions)).orderBy(marketingCalendar.scheduledDate);
+    let rows = await list(CALENDAR, {
+      where: [["userId", "==", ctx.user.id]]
+    });
+    if (input.startDate) rows = rows.filter((r) => Number(r.scheduledDate ?? 0) >= input.startDate);
+    if (input.endDate) rows = rows.filter((r) => Number(r.scheduledDate ?? 0) <= input.endDate);
+    rows.sort((a, b) => Number(a.scheduledDate ?? 0) - Number(b.scheduledDate ?? 0));
+    return rows;
   }),
   /**
    * Add calendar entry
@@ -3382,9 +3277,7 @@ ${template.templateContent}`;
       colorTag: z11.string().default("#D4A853")
     })
   ).mutation(async ({ ctx, input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    const [entry] = await db2.insert(marketingCalendar).values({
+    const entry = await insert(CALENDAR, {
       userId: ctx.user.id,
       contentId: input.contentId || null,
       title: input.title,
@@ -3393,7 +3286,7 @@ ${template.templateContent}`;
       scheduledDate: input.scheduledDate,
       status: input.status,
       colorTag: input.colorTag
-    }).returning({ id: marketingCalendar.id });
+    });
     return { id: entry.id };
   }),
   /**
@@ -3409,11 +3302,9 @@ ${template.templateContent}`;
       colorTag: z11.string().optional()
     })
   ).mutation(async ({ ctx, input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
     const { id, ...updates } = input;
-    const [item] = await db2.select().from(marketingCalendar).where(and2(eq4(marketingCalendar.id, id), eq4(marketingCalendar.userId, ctx.user.id))).limit(1);
-    if (!item) throw new TRPCError5({ code: "NOT_FOUND" });
+    const item = await getById(CALENDAR, id);
+    if (!item || item.userId !== ctx.user.id) throw new TRPCError5({ code: "NOT_FOUND" });
     const cleanUpdates = {};
     if (updates.title !== void 0) cleanUpdates.title = updates.title;
     if (updates.description !== void 0) cleanUpdates.description = updates.description;
@@ -3421,7 +3312,7 @@ ${template.templateContent}`;
     if (updates.status !== void 0) cleanUpdates.status = updates.status;
     if (updates.colorTag !== void 0) cleanUpdates.colorTag = updates.colorTag;
     if (Object.keys(cleanUpdates).length > 0) {
-      await db2.update(marketingCalendar).set(cleanUpdates).where(eq4(marketingCalendar.id, id));
+      await update(CALENDAR, id, cleanUpdates);
     }
     return { success: true };
   }),
@@ -3429,11 +3320,9 @@ ${template.templateContent}`;
    * Delete calendar entry
    */
   deleteCalendarEntry: protectedProcedure.input(z11.object({ id: z11.number() })).mutation(async ({ ctx, input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    const [item] = await db2.select().from(marketingCalendar).where(and2(eq4(marketingCalendar.id, input.id), eq4(marketingCalendar.userId, ctx.user.id))).limit(1);
-    if (!item) throw new TRPCError5({ code: "NOT_FOUND" });
-    await db2.delete(marketingCalendar).where(eq4(marketingCalendar.id, input.id));
+    const item = await getById(CALENDAR, input.id);
+    if (!item || item.userId !== ctx.user.id) throw new TRPCError5({ code: "NOT_FOUND" });
+    await remove(CALENDAR, input.id);
     return { success: true };
   }),
   // ─── Templates ───
@@ -3445,39 +3334,34 @@ ${template.templateContent}`;
       type: z11.enum(["social_media", "email", "trip_description", "blog_seo", "ad_copy"]).optional()
     })
   ).query(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    const conditions = [];
-    if (input.type) {
-      conditions.push(eq4(marketingTemplates.type, input.type));
-    }
-    return db2.select().from(marketingTemplates).where(conditions.length > 0 ? and2(...conditions) : void 0).orderBy(marketingTemplates.sortOrder);
+    let rows = await list(TEMPLATES, {});
+    if (input.type) rows = rows.filter((t2) => t2.type === input.type);
+    rows.sort((a, b) => Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0));
+    return rows;
   }),
   /**
    * Get content generation stats
    */
   getStats: protectedProcedure.query(async ({ ctx }) => {
-    const db2 = await getDb();
-    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    if (!db2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-    const [totalContent] = await db2.select({ count: sql3`count(*)` }).from(marketingContent).where(eq4(marketingContent.userId, ctx.user.id));
-    const [socialCount] = await db2.select({ count: sql3`count(*)` }).from(marketingContent).where(and2(eq4(marketingContent.userId, ctx.user.id), eq4(marketingContent.type, "social_media")));
-    const [emailCount] = await db2.select({ count: sql3`count(*)` }).from(marketingContent).where(and2(eq4(marketingContent.userId, ctx.user.id), eq4(marketingContent.type, "email")));
-    const [blogCount] = await db2.select({ count: sql3`count(*)` }).from(marketingContent).where(and2(eq4(marketingContent.userId, ctx.user.id), eq4(marketingContent.type, "blog_seo")));
-    const [calendarCount] = await db2.select({ count: sql3`count(*)` }).from(marketingCalendar).where(eq4(marketingCalendar.userId, ctx.user.id));
+    const content = await list(CONTENT, {
+      where: [["userId", "==", ctx.user.id]]
+    });
+    const calendar = await list(CALENDAR, {
+      where: [["userId", "==", ctx.user.id]]
+    });
     return {
-      totalContent: totalContent?.count || 0,
-      socialMedia: socialCount?.count || 0,
-      emails: emailCount?.count || 0,
-      blogPosts: blogCount?.count || 0,
-      calendarEntries: calendarCount?.count || 0
+      totalContent: content.length,
+      socialMedia: content.filter((c) => c.type === "social_media").length,
+      emails: content.filter((c) => c.type === "email").length,
+      blogPosts: content.filter((c) => c.type === "blog_seo").length,
+      calendarEntries: calendar.length
     };
   })
 });
 
 // server/routers/admin.destinations.ts
 import { z as z12 } from "zod";
-import { eq as eq5, like, desc as desc4, asc as asc2, inArray } from "drizzle-orm";
+var COL2 = "destinations";
 var adminDestinationsRouter = router({
   /** List all destinations with pagination and filtering */
   list: adminProcedure.input(
@@ -3489,24 +3373,26 @@ var adminDestinationsRouter = router({
       sortOrder: z12.enum(["asc", "desc"]).default("asc")
     }).optional()
   ).query(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
     const { limit = 20, offset = 0, search = "", sortBy = "name", sortOrder = "asc" } = input ?? {};
-    let query = db2.select().from(destinations);
+    let rows = await list(COL2, {});
     if (search) {
-      query = query.where(like(destinations.name, `%${search}%`));
+      const q = search.toLowerCase();
+      rows = rows.filter((d) => (d.name ?? "").toLowerCase().includes(q));
     }
-    const orderColumn = sortBy === "name" ? destinations.name : sortBy === "rating" ? destinations.rating : sortBy === "price" ? destinations.pricePerPerson : destinations.createdAt;
-    query = query.orderBy(sortOrder === "desc" ? desc4(orderColumn) : asc2(orderColumn));
-    query = query.limit(limit).offset(offset);
-    return await query;
+    const key = sortBy === "name" ? "name" : sortBy === "rating" ? "rating" : sortBy === "price" ? "pricePerPerson" : "createdAt";
+    rows.sort((a, b) => {
+      const av = a[key], bv = b[key];
+      const an = typeof av === "string" && isNaN(Number(av)) ? av : Number(av ?? 0);
+      const bn = typeof bv === "string" && isNaN(Number(bv)) ? bv : Number(bv ?? 0);
+      if (an < bn) return sortOrder === "desc" ? 1 : -1;
+      if (an > bn) return sortOrder === "desc" ? -1 : 1;
+      return 0;
+    });
+    return rows.slice(offset, offset + limit);
   }),
   /** Get single destination by ID */
   getById: adminProcedure.input(z12.object({ id: z12.number() })).query(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    const result = await db2.select().from(destinations).where(eq5(destinations.id, input.id));
-    return result[0] || null;
+    return await getById(COL2, input.id) || null;
   }),
   /** Create new destination */
   create: adminProcedure.input(
@@ -3526,12 +3412,7 @@ var adminDestinationsRouter = router({
       exclusions: z12.string().optional()
     })
   ).mutation(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    const result = await db2.insert(destinations).values({
-      ...input,
-      isActive: "active"
-    });
+    await insert(COL2, { ...input, isActive: "active" });
     return { success: true };
   }),
   /** Update destination */
@@ -3554,41 +3435,28 @@ var adminDestinationsRouter = router({
       isActive: z12.enum(["active", "inactive"]).optional()
     })
   ).mutation(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
     const { id, ...data } = input;
-    await db2.update(destinations).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq5(destinations.id, id));
+    await update(COL2, id, data);
     return { success: true };
   }),
   /** Delete destination */
   delete: adminProcedure.input(z12.object({ id: z12.number() })).mutation(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    await db2.delete(destinations).where(eq5(destinations.id, input.id));
+    await remove(COL2, input.id);
     return { success: true };
   }),
   /** Bulk delete destinations */
   bulkDelete: adminProcedure.input(z12.object({ ids: z12.array(z12.number()) })).mutation(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    await db2.delete(destinations).where(inArray(destinations.id, input.ids));
+    for (const id of input.ids) await remove(COL2, id);
     return { success: true, deleted: input.ids.length };
   }),
   /** Update destination status (active/inactive) */
   updateStatus: adminProcedure.input(z12.object({ id: z12.number(), isActive: z12.enum(["active", "inactive"]) })).mutation(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    await db2.update(destinations).set({
-      isActive: input.isActive,
-      updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq5(destinations.id, input.id));
+    await update(COL2, input.id, { isActive: input.isActive });
     return { success: true };
   }),
   /** Get statistics */
   getStats: adminProcedure.query(async () => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    const allDestinations = await db2.select().from(destinations);
+    const allDestinations = await list(COL2, {});
     const activeCount = allDestinations.filter((d) => d.isActive === "active").length;
     const avgRating = allDestinations.length > 0 ? (allDestinations.reduce((sum, d) => sum + (parseFloat(d.rating) || 0), 0) / allDestinations.length).toFixed(2) : 0;
     const avgPrice = allDestinations.length > 0 ? (allDestinations.reduce((sum, d) => sum + (parseFloat(d.pricePerPerson) || 0), 0) / allDestinations.length).toFixed(2) : 0;
@@ -3604,7 +3472,7 @@ var adminDestinationsRouter = router({
 
 // server/routers/admin.offers.ts
 import { z as z13 } from "zod";
-import { eq as eq6, like as like2, desc as desc5, asc as asc3, inArray as inArray2 } from "drizzle-orm";
+var COL3 = "offers";
 var adminOffersRouter = router({
   /** List all offers with pagination and filtering */
   list: adminProcedure.input(
@@ -3617,27 +3485,27 @@ var adminOffersRouter = router({
       sortOrder: z13.enum(["asc", "desc"]).default("desc")
     }).optional()
   ).query(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
     const { limit = 20, offset = 0, search = "", status, sortBy = "createdAt", sortOrder = "desc" } = input ?? {};
-    let query = db2.select().from(offers);
+    let rows = await list(COL3, {});
+    if (status) rows = rows.filter((o) => o.isActive === status);
     if (search) {
-      query = query.where(like2(offers.title, `%${search}%`));
+      const q = search.toLowerCase();
+      rows = rows.filter((o) => (o.title ?? "").toLowerCase().includes(q));
     }
-    if (status) {
-      query = query.where(eq6(offers.isActive, status));
-    }
-    const orderColumn = sortBy === "title" ? offers.title : sortBy === "discount" ? offers.discountValue : sortBy === "startDate" ? offers.startDate : offers.createdAt;
-    query = query.orderBy(sortOrder === "desc" ? desc5(orderColumn) : asc3(orderColumn));
-    query = query.limit(limit).offset(offset);
-    return await query;
+    const key = sortBy === "title" ? "title" : sortBy === "discount" ? "discountValue" : sortBy === "startDate" ? "startDate" : "createdAt";
+    rows.sort((a, b) => {
+      const av = a[key], bv = b[key];
+      const an = typeof av === "string" && isNaN(Number(av)) ? av : Number(av ?? 0);
+      const bn = typeof bv === "string" && isNaN(Number(bv)) ? bv : Number(bv ?? 0);
+      if (an < bn) return sortOrder === "desc" ? 1 : -1;
+      if (an > bn) return sortOrder === "desc" ? -1 : 1;
+      return 0;
+    });
+    return rows.slice(offset, offset + limit);
   }),
   /** Get single offer by ID */
   getById: adminProcedure.input(z13.object({ id: z13.number() })).query(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    const result = await db2.select().from(offers).where(eq6(offers.id, input.id));
-    return result[0] || null;
+    return await getById(COL3, input.id) || null;
   }),
   /** Create new offer */
   create: adminProcedure.input(
@@ -3657,13 +3525,7 @@ var adminOffersRouter = router({
       badgeColor: z13.string().optional()
     })
   ).mutation(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    const result = await db2.insert(offers).values({
-      ...input,
-      isActive: "active",
-      bookedSpots: 0
-    });
+    await insert(COL3, { ...input, isActive: "active", bookedSpots: 0 });
     return { success: true };
   }),
   /** Update offer */
@@ -3686,43 +3548,33 @@ var adminOffersRouter = router({
       isActive: z13.enum(["active", "inactive", "expired"]).optional()
     })
   ).mutation(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
     const { id, ...data } = input;
-    await db2.update(offers).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq6(offers.id, id));
+    await update(COL3, id, data);
     return { success: true };
   }),
   /** Delete offer */
   delete: adminProcedure.input(z13.object({ id: z13.number() })).mutation(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    await db2.delete(offers).where(eq6(offers.id, input.id));
+    await remove(COL3, input.id);
     return { success: true };
   }),
   /** Bulk delete offers */
   bulkDelete: adminProcedure.input(z13.object({ ids: z13.array(z13.number()) })).mutation(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    await db2.delete(offers).where(inArray2(offers.id, input.ids));
+    for (const id of input.ids) await remove(COL3, id);
     return { success: true, deleted: input.ids.length };
   }),
   /** Update offer status */
   updateStatus: adminProcedure.input(z13.object({ id: z13.number(), isActive: z13.enum(["active", "inactive", "expired"]) })).mutation(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    await db2.update(offers).set({
-      isActive: input.isActive,
-      updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq6(offers.id, input.id));
+    await update(COL3, input.id, { isActive: input.isActive });
     return { success: true };
   }),
   /** Get statistics */
   getStats: adminProcedure.query(async () => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    const allOffers = await db2.select().from(offers);
+    const allOffers = await list(COL3, {});
     const activeCount = allOffers.filter((o) => o.isActive === "active").length;
-    const totalDiscount = allOffers.reduce((sum, o) => sum + (parseFloat(o.discountValue) || 0), 0);
+    const totalDiscount = allOffers.reduce(
+      (sum, o) => sum + (parseFloat(o.discountValue) || 0),
+      0
+    );
     const avgDiscount = allOffers.length > 0 ? (totalDiscount / allOffers.length).toFixed(2) : 0;
     return {
       total: allOffers.length,
@@ -3735,7 +3587,7 @@ var adminOffersRouter = router({
 
 // server/routers/admin.blog.ts
 import { z as z14 } from "zod";
-import { eq as eq7, like as like3, desc as desc6, asc as asc4, inArray as inArray3 } from "drizzle-orm";
+var COL4 = "blogPosts";
 var adminBlogRouter = router({
   /** List all blog posts with pagination and filtering */
   list: adminProcedure.input(
@@ -3749,37 +3601,56 @@ var adminBlogRouter = router({
       sortOrder: z14.enum(["asc", "desc"]).default("desc")
     }).optional()
   ).query(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    const { limit = 20, offset = 0, search = "", status, category, sortBy = "createdAt", sortOrder = "desc" } = input ?? {};
-    let query = db2.select().from(blogPosts);
-    if (search) {
-      query = query.where(like3(blogPosts.title, `%${search}%`));
+    try {
+      const { limit = 20, offset = 0, search = "", status, category, sortBy = "createdAt", sortOrder = "desc" } = input ?? {};
+      let rows = await list(COL4, {});
+      if (status) rows = rows.filter((p) => p.status === status);
+      if (category) rows = rows.filter((p) => p.category === category);
+      if (search) {
+        const q = search.toLowerCase();
+        rows = rows.filter((p) => (p.title ?? "").toLowerCase().includes(q));
+      }
+      const key = sortBy === "title" ? "title" : sortBy === "publishedAt" ? "publishedAt" : sortBy === "viewCount" ? "viewCount" : "createdAt";
+      rows.sort((a, b) => {
+        const av = a[key], bv = b[key];
+        const an = typeof av === "string" && isNaN(Number(av)) ? av : Number(av ?? 0);
+        const bn = typeof bv === "string" && isNaN(Number(bv)) ? bv : Number(bv ?? 0);
+        if (an < bn) return sortOrder === "desc" ? 1 : -1;
+        if (an > bn) return sortOrder === "desc" ? -1 : 1;
+        return 0;
+      });
+      return rows.slice(offset, offset + limit);
+    } catch (error) {
+      console.error("[adminBlog.list] database error:", {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : void 0
+      });
+      throw error;
     }
-    if (status) {
-      query = query.where(eq7(blogPosts.status, status));
-    }
-    if (category) {
-      query = query.where(eq7(blogPosts.category, category));
-    }
-    const orderColumn = sortBy === "title" ? blogPosts.title : sortBy === "publishedAt" ? blogPosts.publishedAt : sortBy === "viewCount" ? blogPosts.viewCount : blogPosts.createdAt;
-    query = query.orderBy(sortOrder === "desc" ? desc6(orderColumn) : asc4(orderColumn));
-    query = query.limit(limit).offset(offset);
-    return await query;
   }),
   /** Get single blog post by ID */
   getById: adminProcedure.input(z14.object({ id: z14.number() })).query(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    const result = await db2.select().from(blogPosts).where(eq7(blogPosts.id, input.id));
-    return result[0] || null;
+    try {
+      return await getById(COL4, input.id) || null;
+    } catch (error) {
+      console.error("[adminBlog.getById] database error:", {
+        error: error instanceof Error ? error.message : String(error),
+        id: input.id
+      });
+      throw error;
+    }
   }),
   /** Get blog post by slug */
   getBySlug: adminProcedure.input(z14.object({ slug: z14.string() })).query(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    const result = await db2.select().from(blogPosts).where(eq7(blogPosts.slug, input.slug));
-    return result[0] || null;
+    try {
+      return await findOne(COL4, [["slug", "==", input.slug]]) || null;
+    } catch (error) {
+      console.error("[adminBlog.getBySlug] database error:", {
+        error: error instanceof Error ? error.message : String(error),
+        slug: input.slug
+      });
+      throw error;
+    }
   }),
   /** Create new blog post */
   create: adminProcedure.input(
@@ -3798,14 +3669,22 @@ var adminBlogRouter = router({
       readingTime: z14.number().optional()
     })
   ).mutation(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    const result = await db2.insert(blogPosts).values({
-      ...input,
-      status: "draft",
-      viewCount: 0
-    });
-    return { success: true };
+    try {
+      const now = (/* @__PURE__ */ new Date()).toISOString();
+      const result = await insert(COL4, {
+        ...input,
+        status: "draft",
+        viewCount: 0,
+        createdAt: now
+      });
+      return { success: true, id: result.id };
+    } catch (error) {
+      console.error("[adminBlog.create] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        slug: input.slug
+      });
+      throw error;
+    }
   }),
   /** Update blog post */
   update: adminProcedure.input(
@@ -3826,64 +3705,92 @@ var adminBlogRouter = router({
       status: z14.enum(["draft", "published", "archived"]).optional()
     })
   ).mutation(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    const { id, ...data } = input;
-    await db2.update(blogPosts).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq7(blogPosts.id, id));
-    return { success: true };
+    try {
+      const { id, ...data } = input;
+      await update(COL4, id, data);
+      return { success: true };
+    } catch (error) {
+      console.error("[adminBlog.update] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        id: input.id
+      });
+      throw error;
+    }
   }),
   /** Delete blog post */
   delete: adminProcedure.input(z14.object({ id: z14.number() })).mutation(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    await db2.delete(blogPosts).where(eq7(blogPosts.id, input.id));
-    return { success: true };
+    try {
+      await remove(COL4, input.id);
+      return { success: true };
+    } catch (error) {
+      console.error("[adminBlog.delete] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        id: input.id
+      });
+      throw error;
+    }
   }),
   /** Bulk delete blog posts */
   bulkDelete: adminProcedure.input(z14.object({ ids: z14.array(z14.number()) })).mutation(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    await db2.delete(blogPosts).where(inArray3(blogPosts.id, input.ids));
-    return { success: true, deleted: input.ids.length };
+    try {
+      for (const id of input.ids) await remove(COL4, id);
+      return { success: true, deleted: input.ids.length };
+    } catch (error) {
+      console.error("[adminBlog.bulkDelete] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        count: input.ids.length
+      });
+      throw error;
+    }
   }),
   /** Publish blog post */
   publish: adminProcedure.input(z14.object({ id: z14.number() })).mutation(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    await db2.update(blogPosts).set({
-      status: "published",
-      publishedAt: /* @__PURE__ */ new Date(),
-      updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq7(blogPosts.id, input.id));
-    return { success: true };
+    try {
+      await update(COL4, input.id, { status: "published", publishedAt: (/* @__PURE__ */ new Date()).toISOString() });
+      return { success: true };
+    } catch (error) {
+      console.error("[adminBlog.publish] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        id: input.id
+      });
+      throw error;
+    }
   }),
   /** Archive blog post */
   archive: adminProcedure.input(z14.object({ id: z14.number() })).mutation(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    await db2.update(blogPosts).set({
-      status: "archived",
-      updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq7(blogPosts.id, input.id));
-    return { success: true };
+    try {
+      await update(COL4, input.id, { status: "archived" });
+      return { success: true };
+    } catch (error) {
+      console.error("[adminBlog.archive] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        id: input.id
+      });
+      throw error;
+    }
   }),
   /** Get statistics */
   getStats: adminProcedure.query(async () => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    const allPosts = await db2.select().from(blogPosts);
-    const publishedCount = allPosts.filter((p) => p.status === "published").length;
-    const draftCount = allPosts.filter((p) => p.status === "draft").length;
-    const totalViews = allPosts.reduce((sum, p) => sum + (p.viewCount || 0), 0);
-    const avgViews = allPosts.length > 0 ? (totalViews / allPosts.length).toFixed(0) : 0;
-    return {
-      total: allPosts.length,
-      published: publishedCount,
-      draft: draftCount,
-      archived: allPosts.length - publishedCount - draftCount,
-      totalViews,
-      avgViews: parseInt(avgViews)
-    };
+    try {
+      const allPosts = await list(COL4, {});
+      const publishedCount = allPosts.filter((p) => p.status === "published").length;
+      const draftCount = allPosts.filter((p) => p.status === "draft").length;
+      const totalViews = allPosts.reduce((sum, p) => sum + (p.viewCount || 0), 0);
+      const avgViews = allPosts.length > 0 ? (totalViews / allPosts.length).toFixed(0) : 0;
+      return {
+        total: allPosts.length,
+        published: publishedCount,
+        draft: draftCount,
+        archived: allPosts.length - publishedCount - draftCount,
+        totalViews,
+        avgViews: parseInt(avgViews)
+      };
+    } catch (error) {
+      console.error("[adminBlog.getStats] query error:", {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
   })
 });
 
@@ -4312,11 +4219,11 @@ var ALL_TASK_TYPES = [
     ]
   }
 ];
-function buildMessageContent(text2, attachments) {
-  if (!attachments || attachments.length === 0) return text2;
+function buildMessageContent(text, attachments) {
+  if (!attachments || attachments.length === 0) return text;
   const parts = [];
-  if (text2) {
-    parts.push({ type: "text", text: text2 });
+  if (text) {
+    parts.push({ type: "text", text });
   }
   for (const att of attachments) {
     if (att.mimeType.startsWith("image/")) {
@@ -4336,7 +4243,7 @@ function buildMessageContent(text2, attachments) {
       });
     }
   }
-  return parts.length === 1 && parts[0].type === "text" ? text2 : parts;
+  return parts.length === 1 && parts[0].type === "text" ? text : parts;
 }
 var allTaskTypeIds = ALL_TASK_TYPES.map((t2) => t2.id);
 var taskTypeEnum = z15.enum([
@@ -4462,63 +4369,43 @@ Please respond in ${input.language === "ar" ? "Arabic" : "English"}.`;
 
 // server/routers/siteSettings.ts
 import { z as z16 } from "zod";
-import { eq as eq8, and as and3 } from "drizzle-orm";
 var siteSettingsRouter = router({
   /**
    * Get theme settings (public - no auth required for visitors)
    */
   getTheme: publicProcedure.query(async () => {
-    const db2 = await getDb();
-    if (!db2) return null;
-    const results = await db2.select().from(siteSettings).where(eq8(siteSettings.category, "theme"));
-    if (!results.length) return null;
+    const rows = await list("siteSettings", {
+      where: [["category", "==", "theme"]]
+    });
+    if (!rows.length) return null;
     const settings = {};
-    for (const row of results) {
-      settings[row.settingKey] = row.settingValue ?? "";
-    }
+    for (const row of rows) settings[row.settingKey] = row.settingValue ?? "";
     return settings;
   }),
   /**
    * Get a single setting by category + key
    */
-  get: protectedProcedure.input(z16.object({
-    category: z16.string(),
-    key: z16.string()
-  })).query(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) return null;
-    const [result] = await db2.select().from(siteSettings).where(
-      and3(
-        eq8(siteSettings.category, input.category),
-        eq8(siteSettings.settingKey, input.key)
-      )
-    ).limit(1);
-    return result?.settingValue ?? null;
+  get: protectedProcedure.input(z16.object({ category: z16.string(), key: z16.string() })).query(async ({ input }) => {
+    return getSettingValue(input.category, input.key);
   }),
   /**
    * Get all settings for a category
    */
-  getByCategory: protectedProcedure.input(z16.object({
-    category: z16.string()
-  })).query(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) return {};
-    const results = await db2.select().from(siteSettings).where(eq8(siteSettings.category, input.category));
+  getByCategory: protectedProcedure.input(z16.object({ category: z16.string() })).query(async ({ input }) => {
+    const rows = await list("siteSettings", {
+      where: [["category", "==", input.category]]
+    });
     const settings = {};
-    for (const row of results) {
-      settings[row.settingKey] = row.settingValue ?? "";
-    }
+    for (const row of rows) settings[row.settingKey] = row.settingValue ?? "";
     return settings;
   }),
   /**
    * Get all settings across all categories
    */
   getAll: protectedProcedure.query(async () => {
-    const db2 = await getDb();
-    if (!db2) return {};
-    const results = await db2.select().from(siteSettings);
+    const rows = await list("siteSettings", {});
     const grouped = {};
-    for (const row of results) {
+    for (const row of rows) {
       if (!grouped[row.category]) grouped[row.category] = {};
       grouped[row.category][row.settingKey] = row.settingValue ?? "";
     }
@@ -4527,111 +4414,57 @@ var siteSettingsRouter = router({
   /**
    * Set a single setting (upsert)
    */
-  set: protectedProcedure.input(z16.object({
-    category: z16.string(),
-    key: z16.string(),
-    value: z16.string()
-  })).mutation(async ({ input, ctx }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    const [existing] = await db2.select().from(siteSettings).where(
-      and3(
-        eq8(siteSettings.category, input.category),
-        eq8(siteSettings.settingKey, input.key)
-      )
-    ).limit(1);
-    if (existing) {
-      await db2.update(siteSettings).set({ settingValue: input.value, updatedBy: ctx.user.id }).where(eq8(siteSettings.id, existing.id));
-    } else {
-      await db2.insert(siteSettings).values({
-        category: input.category,
-        settingKey: input.key,
-        settingValue: input.value,
-        updatedBy: ctx.user.id
-      });
-    }
+  set: adminProcedure.input(z16.object({ category: z16.string(), key: z16.string(), value: z16.string() })).mutation(async ({ input, ctx }) => {
+    await setSettingValue(input.category, input.key, input.value, ctx.user.id);
     return { success: true };
   }),
   /**
    * Set multiple settings at once (batch upsert)
    */
-  setMany: protectedProcedure.input(z16.object({
+  setMany: adminProcedure.input(z16.object({
     category: z16.string(),
     settings: z16.record(z16.string(), z16.string())
   })).mutation(async ({ input, ctx }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
     const entries = Object.entries(input.settings);
     for (const [key, value] of entries) {
-      const [existing] = await db2.select().from(siteSettings).where(
-        and3(
-          eq8(siteSettings.category, input.category),
-          eq8(siteSettings.settingKey, key)
-        )
-      ).limit(1);
-      if (existing) {
-        await db2.update(siteSettings).set({ settingValue: value, updatedBy: ctx.user.id }).where(eq8(siteSettings.id, existing.id));
-      } else {
-        await db2.insert(siteSettings).values({
-          category: input.category,
-          settingKey: key,
-          settingValue: value,
-          updatedBy: ctx.user.id
-        });
-      }
+      await setSettingValue(input.category, key, value, ctx.user.id);
     }
     return { success: true, count: entries.length };
   }),
   /**
    * Delete a setting
    */
-  delete: protectedProcedure.input(z16.object({
-    category: z16.string(),
-    key: z16.string()
-  })).mutation(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
-    await db2.delete(siteSettings).where(
-      and3(
-        eq8(siteSettings.category, input.category),
-        eq8(siteSettings.settingKey, input.key)
-      )
-    );
+  delete: adminProcedure.input(z16.object({ category: z16.string(), key: z16.string() })).mutation(async ({ input }) => {
+    const docId = `${input.category}__${input.key}`;
+    await db.collection("siteSettings").doc(docId).delete();
     return { success: true };
   })
 });
 
 // server/routers/backup.ts
 import { z as z17 } from "zod";
-import { sql as sql4 } from "drizzle-orm";
 var TABLE_MAP = {
-  destinations: { table: destinations, label: "Destinations" },
-  offers: { table: offers, label: "Offers & Packages" },
-  blog: { table: blogPosts, label: "Blog Articles" },
-  bookings: { table: bookings, label: "Bookings" },
-  users: { table: users, label: "Users" },
-  gallery: { table: galleryItems, label: "Gallery" },
-  reviews: { table: reviews, label: "Reviews" },
-  settings: { table: siteSettings, label: "Settings" },
-  contacts: { table: contactMessages, label: "Contact Messages" },
-  marketing: { table: marketingContent, label: "Marketing Content" }
+  destinations: { collection: "destinations", label: "Destinations" },
+  offers: { collection: "offers", label: "Offers & Packages" },
+  blog: { collection: "blogPosts", label: "Blog Articles" },
+  bookings: { collection: "bookings", label: "Bookings" },
+  users: { collection: "users", label: "Users" },
+  gallery: { collection: "galleryItems", label: "Gallery" },
+  reviews: { collection: "reviews", label: "Reviews" },
+  settings: { collection: "siteSettings", label: "Settings" },
+  contacts: { collection: "contactMessages", label: "Contact Messages" },
+  marketing: { collection: "marketingContent", label: "Marketing Content" }
 };
 var backupRouter = router({
   /**
-   * Get record counts for all exportable tables
+   * Get record counts for all exportable collections
    */
-  getExportSections: protectedProcedure.query(async () => {
-    const db2 = await getDb();
-    if (!db2) return [];
+  getExportSections: adminProcedure.query(async () => {
     const sections = [];
-    for (const [id, { table, label }] of Object.entries(TABLE_MAP)) {
+    for (const [id, { collection, label }] of Object.entries(TABLE_MAP)) {
       try {
-        const [result] = await db2.select({ count: sql4`count(*)` }).from(table);
-        sections.push({
-          id,
-          label,
-          recordCount: Number(result?.count ?? 0)
-        });
+        const recordCount = await count(collection);
+        sections.push({ id, label, recordCount });
       } catch {
         sections.push({ id, label, recordCount: 0 });
       }
@@ -4641,18 +4474,16 @@ var backupRouter = router({
   /**
    * Export selected sections as JSON data
    */
-  exportData: protectedProcedure.input(z17.object({
+  exportData: adminProcedure.input(z17.object({
     sections: z17.array(z17.string()),
     format: z17.enum(["json", "csv"]).default("json")
   })).mutation(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
     const exportResult = {};
     for (const sectionId of input.sections) {
       const mapping = TABLE_MAP[sectionId];
       if (!mapping) continue;
       try {
-        const rows = await db2.select().from(mapping.table);
+        const rows = await list(mapping.collection);
         exportResult[sectionId] = {
           label: mapping.label,
           recordCount: rows.length,
@@ -4674,16 +4505,14 @@ var backupRouter = router({
     };
   }),
   /**
-   * Get backup settings from DB
+   * Get backup settings from Firestore
    */
-  getSettings: protectedProcedure.query(async () => {
-    const db2 = await getDb();
-    if (!db2) return {};
-    const results = await db2.select().from(siteSettings).where(
-      sql4`${siteSettings.category} = 'backup'`
-    );
+  getSettings: adminProcedure.query(async () => {
+    const rows = await list("siteSettings", {
+      where: [["category", "==", "backup"]]
+    });
     const settings = {};
-    for (const row of results) {
+    for (const row of rows) {
       settings[row.settingKey] = row.settingValue ?? "";
     }
     return settings;
@@ -4691,7 +4520,7 @@ var backupRouter = router({
   /**
    * Restore data from backup file
    */
-  restoreData: protectedProcedure.input(z17.object({
+  restoreData: adminProcedure.input(z17.object({
     sections: z17.record(z17.string(), z17.object({
       label: z17.string(),
       recordCount: z17.number(),
@@ -4699,8 +4528,6 @@ var backupRouter = router({
     })),
     mode: z17.enum(["merge", "replace"]).default("merge")
   })).mutation(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
     const results = {};
     for (const [sectionId, section] of Object.entries(input.sections)) {
       const mapping = TABLE_MAP[sectionId];
@@ -4709,24 +4536,20 @@ var backupRouter = router({
         continue;
       }
       let restored = 0;
-      let skipped = 0;
+      const skipped = 0;
       let errors = 0;
       try {
         if (input.mode === "replace") {
-          await db2.delete(mapping.table);
+          await removeAll(mapping.collection);
         }
         for (const row of section.data) {
           try {
             const cleanRow = { ...row };
             delete cleanRow.id;
-            await db2.insert(mapping.table).values(cleanRow);
+            await insert(mapping.collection, cleanRow);
             restored++;
-          } catch (e) {
-            if (e?.code === "ER_DUP_ENTRY" || e?.message?.includes("Duplicate")) {
-              skipped++;
-            } else {
-              errors++;
-            }
+          } catch {
+            errors++;
           }
         }
       } catch {
@@ -4749,25 +4572,11 @@ var backupRouter = router({
   /**
    * Save backup settings
    */
-  saveSettings: protectedProcedure.input(z17.object({
+  saveSettings: adminProcedure.input(z17.object({
     settings: z17.record(z17.string(), z17.string())
   })).mutation(async ({ input, ctx }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
     for (const [key, value] of Object.entries(input.settings)) {
-      const existing = await db2.select().from(siteSettings).where(
-        sql4`${siteSettings.category} = 'backup' AND ${siteSettings.settingKey} = ${key}`
-      ).limit(1);
-      if (existing.length > 0) {
-        await db2.update(siteSettings).set({ settingValue: value, updatedBy: ctx.user.id }).where(sql4`${siteSettings.id} = ${existing[0].id}`);
-      } else {
-        await db2.insert(siteSettings).values({
-          category: "backup",
-          settingKey: key,
-          settingValue: value,
-          updatedBy: ctx.user.id
-        });
-      }
+      await setSettingValue("backup", key, value, ctx.user.id);
     }
     return { success: true };
   })
@@ -4780,7 +4589,7 @@ var IMPORT_TABLES = [
     id: "destinations",
     label: "Destinations",
     description: "Travel destinations and tour packages",
-    table: destinations,
+    collection: "destinations",
     fields: [
       { key: "name", label: "Name", type: "string", required: true },
       { key: "location", label: "Location", type: "string", required: true },
@@ -4802,7 +4611,7 @@ var IMPORT_TABLES = [
     id: "offers",
     label: "Offers & Packages",
     description: "Promotional offers and discounts",
-    table: offers,
+    collection: "offers",
     fields: [
       { key: "title", label: "Title", type: "string", required: true },
       { key: "description", label: "Description", type: "string" },
@@ -4823,7 +4632,7 @@ var IMPORT_TABLES = [
     id: "blog",
     label: "Blog Articles",
     description: "Blog posts and articles",
-    table: blogPosts,
+    collection: "blogPosts",
     fields: [
       { key: "slug", label: "Slug", type: "string", required: true, hint: "Unique URL slug" },
       { key: "title", label: "Title", type: "string", required: true },
@@ -4842,7 +4651,7 @@ var IMPORT_TABLES = [
     id: "reviews",
     label: "Reviews",
     description: "Customer reviews and ratings",
-    table: reviews,
+    collection: "reviews",
     fields: [
       { key: "guestName", label: "Guest Name", type: "string" },
       { key: "tripName", label: "Trip Name", type: "string", required: true },
@@ -4857,7 +4666,7 @@ var IMPORT_TABLES = [
     id: "gallery",
     label: "Gallery",
     description: "Gallery images",
-    table: galleryItems,
+    collection: "gallery_items",
     fields: [
       { key: "imageUrl", label: "Image URL", type: "string", required: true },
       { key: "title", label: "Title", type: "string", required: true },
@@ -4873,7 +4682,7 @@ var IMPORT_TABLES = [
     id: "contacts",
     label: "Contact Messages",
     description: "Contact form submissions / leads",
-    table: contactMessages,
+    collection: "contactMessages",
     fields: [
       { key: "name", label: "Name", type: "string", required: true },
       { key: "email", label: "Email", type: "string", required: true },
@@ -4938,7 +4747,7 @@ var dataImportRouter = router({
    * Return the list of importable tables with their field definitions so the
    * client can render a column-mapping UI.
    */
-  getImportableTables: protectedProcedure.query(() => {
+  getImportableTables: adminProcedure.query(() => {
     return IMPORT_TABLES.map((t2) => ({
       id: t2.id,
       label: t2.label,
@@ -4957,7 +4766,7 @@ var dataImportRouter = router({
    * Validate (dry run) a batch of mapped rows without writing to the DB.
    * Returns per-row errors so the admin can fix the source file first.
    */
-  validateImport: protectedProcedure.input(z18.object({
+  validateImport: adminProcedure.input(z18.object({
     tableId: z18.string(),
     rows: z18.array(z18.record(z18.string(), z18.any()))
   })).mutation(({ input }) => {
@@ -4983,13 +4792,11 @@ var dataImportRouter = router({
    * Import mapped rows into the target table. Each row is coerced/validated;
    * invalid rows are skipped (with reasons) and valid rows inserted.
    */
-  importRecords: protectedProcedure.input(z18.object({
+  importRecords: adminProcedure.input(z18.object({
     tableId: z18.string(),
     rows: z18.array(z18.record(z18.string(), z18.any())),
     skipInvalid: z18.boolean().default(true)
   })).mutation(async ({ input }) => {
-    const db2 = await getDb();
-    if (!db2) throw new Error("Database not available");
     const target = getTable(input.tableId);
     if (!target) throw new Error(`Unknown import table: ${input.tableId}`);
     let imported = 0;
@@ -5020,16 +4827,11 @@ var dataImportRouter = router({
         }
       }
       try {
-        await db2.insert(target.table).values(record);
+        await insert(target.collection, record);
         imported++;
       } catch (e) {
-        if (e?.code === "ER_DUP_ENTRY" || e?.message?.toLowerCase().includes("duplicate")) {
-          skipped++;
-          errors.push({ row: i + 1, message: "Duplicate record skipped" });
-        } else {
-          failed++;
-          errors.push({ row: i + 1, message: e?.message || "Insert failed" });
-        }
+        failed++;
+        errors.push({ row: i + 1, message: e?.message || "Insert failed" });
       }
     }
     return {
@@ -5170,18 +4972,53 @@ async function createContext(opts) {
   if (bearer) {
     try {
       const decoded = await getAuth2().verifyIdToken(bearer);
-      const openId = `firebase:${decoded.uid}`;
+      const uid = decoded.uid;
+      const openId = `firebase:${uid}`;
+      const now = /* @__PURE__ */ new Date();
       const name = decoded.name || (decoded.email ? decoded.email.split("@")[0] : null) || null;
-      await upsertUser({
-        openId,
-        name,
-        email: decoded.email ?? null,
-        loginMethod: "firebase",
-        lastSignedIn: /* @__PURE__ */ new Date()
-      }).catch(() => {
-      });
-      const found = await getUserByOpenId(openId);
-      if (found) user = found;
+      const userRef = db.collection("users").doc(uid);
+      const snap = await userRef.get();
+      if (snap.exists) {
+        const data = snap.data();
+        await userRef.set({ lastSignedIn: now }, { merge: true });
+        user = {
+          id: data.id ?? 0,
+          openId,
+          name: data.name ?? name,
+          email: data.email ?? decoded.email ?? null,
+          phone: null,
+          loginMethod: "firebase",
+          avatarUrl: data.avatarUrl ?? null,
+          role: data.role ?? "user",
+          createdAt: now,
+          updatedAt: now,
+          lastSignedIn: now
+        };
+      } else {
+        const role = openId === ENV.ownerOpenId ? "admin" : "user";
+        await userRef.set({
+          openId,
+          name,
+          email: decoded.email ?? null,
+          loginMethod: "firebase",
+          role,
+          createdAt: now,
+          lastSignedIn: now
+        });
+        user = {
+          id: 0,
+          openId,
+          name,
+          email: decoded.email ?? null,
+          phone: null,
+          loginMethod: "firebase",
+          avatarUrl: null,
+          role,
+          createdAt: now,
+          updatedAt: now,
+          lastSignedIn: now
+        };
+      }
     } catch {
     }
   }

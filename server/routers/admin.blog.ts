@@ -2,6 +2,7 @@ import { z } from "zod";
 import { router, adminProcedure } from "../_core/trpc";
 import { list, getById, insert, update, remove, findOne } from "../_core/firestore-db";
 
+// Admin Blog Router - Production Fix v2 (June 15, 2026 - Force Rebuild)
 const COL = "blogPosts";
 
 export const adminBlogRouter = router({
