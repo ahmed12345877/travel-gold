@@ -1,7 +1,9 @@
 import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
-import type { Bucket } from "firebase-admin/storage";
+
+// Bucket type is not exported in this firebase-admin version; derive it.
+type Bucket = ReturnType<ReturnType<typeof getStorage>["bucket"]>;
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs";

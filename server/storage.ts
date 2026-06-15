@@ -43,8 +43,8 @@ export async function storagePut(
   let fileBuffer: Buffer;
   if (typeof data === 'string') {
     fileBuffer = Buffer.from(data, 'utf-8');
-  } else if (ArrayBuffer.isView(data) || data instanceof Uint8Array) {
-    fileBuffer = Buffer.from(data as Uint8Array);
+  } else if (ArrayBuffer.isView(data)) {
+    fileBuffer = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
   } else {
     fileBuffer = data as Buffer;
   }

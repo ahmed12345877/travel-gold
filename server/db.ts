@@ -12,6 +12,7 @@
  * helpers below back-fill one lazily for admin UI compatibility.
  */
 import type {
+  User,
   InsertUser,
   InsertBooking,
   InsertReview,
@@ -130,16 +131,16 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   }
 }
 
-export async function getUserByOpenId(openId: string) {
+export async function getUserByOpenId(openId: string): Promise<User | undefined> {
   const snap = await firestore
     .collection(COL.users)
     .where("openId", "==", openId)
     .limit(1)
     .get();
   if (snap.empty) return undefined;
-  const data = snap.data ? snap.docs[0].data() : snap.docs[0].data();
-  await ensureNumericUserId(snap.docs[0].ref, data);
-  return snap.docs[0].data();
+  const doc = snap.docs[0];
+  await ensureNumericUserId(doc.ref, doc.data());
+  return doc.data() as User;
 }
 
 // ============ BOOKING HELPERS ============
