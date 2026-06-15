@@ -24,12 +24,12 @@ export default function BlogAdmin() {
     status: "draft" as "published" | "draft" | "archived",
   });
 
-  const { data: articles, isLoading, refetch } = trpc.admin.blog.list.useQuery({
+  const { data: articles, isLoading, refetch } = trpc.adminBlog.list.useQuery({
     search,
     limit: 20,
   });
 
-  const createMutation = trpc.admin.blog.create.useMutation({
+  const createMutation = trpc.adminBlog.create.useMutation({
     onSuccess: () => {
       alert("تم إنشاء المقالة بنجاح");
       refetch();
@@ -51,7 +51,7 @@ export default function BlogAdmin() {
     },
   });
 
-  const updateMutation = trpc.admin.blog.update.useMutation({
+  const updateMutation = trpc.adminBlog.update.useMutation({
     onSuccess: () => {
       alert("تم تحديث المقالة بنجاح");
       refetch();
@@ -63,7 +63,7 @@ export default function BlogAdmin() {
     },
   });
 
-  const deleteMutation = trpc.admin.blog.delete.useMutation({
+  const deleteMutation = trpc.adminBlog.delete.useMutation({
     onSuccess: () => {
       alert("تم حذف المقالة بنجاح");
       refetch();
@@ -73,7 +73,7 @@ export default function BlogAdmin() {
     },
   });
 
-  const publishMutation = trpc.admin.blog.publish.useMutation({
+  const publishMutation = trpc.adminBlog.publish.useMutation({
     onSuccess: () => {
       alert("تم نشر المقالة بنجاح");
       refetch();
@@ -83,7 +83,7 @@ export default function BlogAdmin() {
     },
   });
 
-  const archiveMutation = trpc.admin.blog.archive.useMutation({
+  const archiveMutation = trpc.adminBlog.archive.useMutation({
     onSuccess: () => {
       alert("تم أرشفة المقالة بنجاح");
       refetch();
@@ -138,9 +138,19 @@ export default function BlogAdmin() {
       .replace(/-+/g, "-");
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("ar-EG");
+  const formatDate = (dateValue: any) => {
+    if (!dateValue) return "-";
+    try {
+      const date = typeof dateValue === "string" ? new Date(dateValue) : new Date(dateValue);
+      if (isNaN(date.getTime())) return "-";
+      return date.toLocaleDateString("ar-EG", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return "-";
+    }
   };
 
   return (

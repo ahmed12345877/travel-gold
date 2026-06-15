@@ -81,7 +81,13 @@ export const adminBlogRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      await insert(COL, { ...input, status: "draft", viewCount: 0 });
+      const now = new Date().toISOString();
+      await insert(COL, { 
+        ...input, 
+        status: "draft", 
+        viewCount: 0,
+        createdAt: now,
+      });
       return { success: true };
     }),
 
@@ -131,7 +137,7 @@ export const adminBlogRouter = router({
   publish: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      await update(COL, input.id, { status: "published", publishedAt: new Date() });
+      await update(COL, input.id, { status: "published", publishedAt: new Date().toISOString() });
       return { success: true };
     }),
 
