@@ -2,6 +2,8 @@ import type { CreateExpressContextOptions } from "@trpc/server/adapters/express"
 import type { User } from "../../drizzle/schema";
 import { sdk } from "./sdk";
 import * as db from "../db";
+import { db as firestoreDb } from "./firebaseAdmin";
+import { ENV } from "./env";
 
 import { getAuth } from "firebase-admin/auth";
 
@@ -42,27 +44,68 @@ export async function createContext(
 ): Promise<TrpcContext> {
   let user: User | null = null;
 
-  // 1) Verify Firebase ID token from Authorization header
+  // 1) Verify Firebase ID token from Authorization header.
+  // IMPORTANT: Firebase user docs are keyed by the raw uid (users/<uid>) by the
+  // auth layer (sdk.ts). We MUST read/write that same document here so the role
+  // (e.g. "admin") is read correctly. Using the openId field would target a
+  // different doc and silently demote admins to "user".
   const bearer = getBearerToken(opts.req);
   if (bearer) {
     try {
       const decoded = await getAuth().verifyIdToken(bearer);
-      const openId = `firebase:${decoded.uid}`;
+      const uid = decoded.uid;
+      const openId = `firebase:${uid}`;
+      const now = new Date();
       const name =
         decoded.name ||
         (decoded.email ? decoded.email.split("@")[0] : null) ||
         null;
 
-      await db.upsertUser({
-        openId,
-        name,
-        email: decoded.email ?? null,
-        loginMethod: "firebase",
-        lastSignedIn: new Date(),
-      }).catch(() => {});
+      const userRef = firestoreDb.collection("users").doc(uid);
+      const snap = await userRef.get();
 
-      const found = await db.getUserByOpenId(openId);
-      if (found) user = found;
+      if (snap.exists) {
+        const data = snap.data()!;
+        await userRef.set({ lastSignedIn: now }, { merge: true });
+        user = {
+          id: (data.id as number) ?? 0,
+          openId,
+          name: (data.name as string) ?? name,
+          email: (data.email as string) ?? decoded.email ?? null,
+          phone: null,
+          loginMethod: "firebase",
+          avatarUrl: (data.avatarUrl as string) ?? null,
+          role: ((data.role as string) ?? "user") as User["role"],
+          createdAt: now,
+          updatedAt: now,
+          lastSignedIn: now,
+        } as User;
+      } else {
+        // First time we see this Firebase user — create the doc keyed by uid.
+        const role = openId === ENV.ownerOpenId ? "admin" : "user";
+        await userRef.set({
+          openId,
+          name,
+          email: decoded.email ?? null,
+          loginMethod: "firebase",
+          role,
+          createdAt: now,
+          lastSignedIn: now,
+        });
+        user = {
+          id: 0,
+          openId,
+          name,
+          email: decoded.email ?? null,
+          phone: null,
+          loginMethod: "firebase",
+          avatarUrl: null,
+          role: role as User["role"],
+          createdAt: now,
+          updatedAt: now,
+          lastSignedIn: now,
+        } as User;
+      }
     } catch {
       // Invalid or expired Firebase token — fall through to session cookie
     }

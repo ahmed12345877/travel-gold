@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { protectedProcedure, publicProcedure } from "../_core/trpc";
+import { protectedProcedure, publicProcedure, adminProcedure } from "../_core/trpc";
 import { router } from "../_core/trpc";
 import { list, getSettingValue, setSettingValue, firestore } from "../_core/firestore-db";
 
@@ -61,7 +61,7 @@ export const siteSettingsRouter = router({
   /**
    * Set a single setting (upsert)
    */
-  set: protectedProcedure
+  set: adminProcedure
     .input(z.object({ category: z.string(), key: z.string(), value: z.string() }))
     .mutation(async ({ input, ctx }) => {
       await setSettingValue(input.category, input.key, input.value, ctx.user.id);
@@ -71,7 +71,7 @@ export const siteSettingsRouter = router({
   /**
    * Set multiple settings at once (batch upsert)
    */
-  setMany: protectedProcedure
+  setMany: adminProcedure
     .input(z.object({
       category: z.string(),
       settings: z.record(z.string(), z.string()),
@@ -87,7 +87,7 @@ export const siteSettingsRouter = router({
   /**
    * Delete a setting
    */
-  delete: protectedProcedure
+  delete: adminProcedure
     .input(z.object({ category: z.string(), key: z.string() }))
     .mutation(async ({ input }) => {
       const docId = `${input.category}__${input.key}`;
