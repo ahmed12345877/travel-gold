@@ -24,12 +24,19 @@ export default function BlogAdmin() {
     status: "draft" as "published" | "draft" | "archived",
   });
 
-  const { data: articles, isLoading, refetch } = trpc.admin.blog.list.useQuery({
+  const { data: articles, isLoading, refetch } = trpc.adminBlog.list.useQuery({
     search,
     limit: 20,
   });
 
-  const createMutation = trpc.admin.blog.create.useMutation({
+  const handleErrorMessage = (error: unknown): string => {
+    if (error instanceof Error) {
+      return error.message;
+    }
+    return "حدث خطأ أثناء العملية. يرجى المحاولة مجددًا.";
+  };
+
+  const createMutation = trpc.adminBlog.create.useMutation({
     onSuccess: () => {
       alert("تم إنشاء المقالة بنجاح");
       refetch();
@@ -46,50 +53,60 @@ export default function BlogAdmin() {
         status: "draft",
       });
     },
-    onError: (error: any) => {
-      alert("خطأ: " + error.message);
+    onError: (error: unknown) => {
+      const message = handleErrorMessage(error);
+      console.error("[createMutation] Error:", error);
+      alert("خطأ: " + message);
     },
   });
 
-  const updateMutation = trpc.admin.blog.update.useMutation({
+  const updateMutation = trpc.adminBlog.update.useMutation({
     onSuccess: () => {
       alert("تم تحديث المقالة بنجاح");
       refetch();
       setIsOpen(false);
       setEditingId(null);
     },
-    onError: (error: any) => {
-      alert("خطأ: " + error.message);
+    onError: (error: unknown) => {
+      const message = handleErrorMessage(error);
+      console.error("[updateMutation] Error:", error);
+      alert("خطأ: " + message);
     },
   });
 
-  const deleteMutation = trpc.admin.blog.delete.useMutation({
+  const deleteMutation = trpc.adminBlog.delete.useMutation({
     onSuccess: () => {
       alert("تم حذف المقالة بنجاح");
       refetch();
     },
-    onError: (error: any) => {
-      alert("خطأ: " + error.message);
+    onError: (error: unknown) => {
+      const message = handleErrorMessage(error);
+      console.error("[deleteMutation] Error:", error);
+      alert("خطأ: " + message);
     },
   });
 
-  const publishMutation = trpc.admin.blog.publish.useMutation({
+  const publishMutation = trpc.adminBlog.publish.useMutation({
     onSuccess: () => {
       alert("تم نشر المقالة بنجاح");
       refetch();
     },
-    onError: (error: any) => {
-      alert("خطأ: " + error.message);
+    onError: (error: unknown) => {
+      const message = handleErrorMessage(error);
+      console.error("[publishMutation] Error:", error);
+      alert("خطأ: " + message);
     },
   });
 
-  const archiveMutation = trpc.admin.blog.archive.useMutation({
+  const archiveMutation = trpc.adminBlog.archive.useMutation({
     onSuccess: () => {
       alert("تم أرشفة المقالة بنجاح");
       refetch();
     },
-    onError: (error: any) => {
-      alert("خطأ: " + error.message);
+    onError: (error: unknown) => {
+      const message = handleErrorMessage(error);
+      console.error("[archiveMutation] Error:", error);
+      alert("خطأ: " + message);
     },
   });
 
