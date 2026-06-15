@@ -24,12 +24,12 @@ export default function BlogAdmin() {
     status: "draft" as "published" | "draft" | "archived",
   });
 
-  const { data: articles, isLoading, refetch } = trpc.adminBlog.list.useQuery({
+  const { data: articles, isLoading, refetch } = trpc.admin.blog.list.useQuery({
     search,
     limit: 20,
   });
 
-  const createMutation = trpc.adminBlog.create.useMutation({
+  const createMutation = trpc.admin.blog.create.useMutation({
     onSuccess: () => {
       alert("تم إنشاء المقالة بنجاح");
       refetch();
@@ -51,7 +51,7 @@ export default function BlogAdmin() {
     },
   });
 
-  const updateMutation = trpc.adminBlog.update.useMutation({
+  const updateMutation = trpc.admin.blog.update.useMutation({
     onSuccess: () => {
       alert("تم تحديث المقالة بنجاح");
       refetch();
@@ -63,7 +63,7 @@ export default function BlogAdmin() {
     },
   });
 
-  const deleteMutation = trpc.adminBlog.delete.useMutation({
+  const deleteMutation = trpc.admin.blog.delete.useMutation({
     onSuccess: () => {
       alert("تم حذف المقالة بنجاح");
       refetch();
@@ -73,7 +73,7 @@ export default function BlogAdmin() {
     },
   });
 
-  const publishMutation = trpc.adminBlog.publish.useMutation({
+  const publishMutation = trpc.admin.blog.publish.useMutation({
     onSuccess: () => {
       alert("تم نشر المقالة بنجاح");
       refetch();
@@ -83,7 +83,7 @@ export default function BlogAdmin() {
     },
   });
 
-  const archiveMutation = trpc.adminBlog.archive.useMutation({
+  const archiveMutation = trpc.admin.blog.archive.useMutation({
     onSuccess: () => {
       alert("تم أرشفة المقالة بنجاح");
       refetch();
