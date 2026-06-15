@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { protectedProcedure, router } from "../_core/trpc";
+import { adminProcedure, router } from "../_core/trpc";
 import { insert } from "../_core/firestore-db";
 
 /**
@@ -213,7 +213,7 @@ export const dataImportRouter = router({
    * Return the list of importable tables with their field definitions so the
    * client can render a column-mapping UI.
    */
-  getImportableTables: protectedProcedure.query(() => {
+  getImportableTables: adminProcedure.query(() => {
     return IMPORT_TABLES.map((t) => ({
       id: t.id,
       label: t.label,
@@ -233,7 +233,7 @@ export const dataImportRouter = router({
    * Validate (dry run) a batch of mapped rows without writing to the DB.
    * Returns per-row errors so the admin can fix the source file first.
    */
-  validateImport: protectedProcedure
+  validateImport: adminProcedure
     .input(z.object({
       tableId: z.string(),
       rows: z.array(z.record(z.string(), z.any())),
@@ -264,7 +264,7 @@ export const dataImportRouter = router({
    * Import mapped rows into the target table. Each row is coerced/validated;
    * invalid rows are skipped (with reasons) and valid rows inserted.
    */
-  importRecords: protectedProcedure
+  importRecords: adminProcedure
     .input(z.object({
       tableId: z.string(),
       rows: z.array(z.record(z.string(), z.any())),

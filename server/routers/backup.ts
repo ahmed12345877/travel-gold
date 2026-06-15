@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { protectedProcedure, router } from "../_core/trpc";
+import { adminProcedure, router } from "../_core/trpc";
 import {
   list,
   insert,
@@ -31,7 +31,7 @@ export const backupRouter = router({
   /**
    * Get record counts for all exportable collections
    */
-  getExportSections: protectedProcedure.query(async () => {
+  getExportSections: adminProcedure.query(async () => {
     const sections = [];
     for (const [id, { collection, label }] of Object.entries(TABLE_MAP)) {
       try {
@@ -47,7 +47,7 @@ export const backupRouter = router({
   /**
    * Export selected sections as JSON data
    */
-  exportData: protectedProcedure
+  exportData: adminProcedure
     .input(z.object({
       sections: z.array(z.string()),
       format: z.enum(["json", "csv"]).default("json"),
@@ -86,7 +86,7 @@ export const backupRouter = router({
   /**
    * Get backup settings from Firestore
    */
-  getSettings: protectedProcedure.query(async () => {
+  getSettings: adminProcedure.query(async () => {
     const rows = await list("siteSettings", {
       where: [["category", "==", "backup"]],
     });
@@ -100,7 +100,7 @@ export const backupRouter = router({
   /**
    * Restore data from backup file
    */
-  restoreData: protectedProcedure
+  restoreData: adminProcedure
     .input(z.object({
       sections: z.record(z.string(), z.object({
         label: z.string(),
@@ -164,7 +164,7 @@ export const backupRouter = router({
   /**
    * Save backup settings
    */
-  saveSettings: protectedProcedure
+  saveSettings: adminProcedure
     .input(z.object({
       settings: z.record(z.string(), z.string()),
     }))
