@@ -1,0 +1,46 @@
+# 🔍 Firebase Storage Configuration - Issue Analysis & Solution
+
+## المشكلة
+الصور تُحفظ محلياً في `/uploads/gallery/` بدلاً من Firebase Cloud Storage، مما يسبب اختفاء الصور عند إعادة تشغيل التطبيق على Firebase App Hosting.
+
+## السبب الجذري
+- ✅ الكود موجود بالفعل ويدعم Firebase Storage
+- ❌ لكن `FIREBASE_SERVICE_ACCOUNT_JSON` غير مُفعّل
+- ❌ النظام يسقط (Fallback) للتخزين المحلي الـ Ephemeral
+
+## الحل
+تفعيل Firebase Storage بشكل صحيح من خلال:
+
+### 1️⃣ إضافة متغيرات البيئة
+```
+FIREBASE_SERVICE_ACCOUNT_JSON = [ملف JSON من Firebase Console]
+FIREBASE_STORAGE_BUCKET = gen-lang-client-0364375301.appspot.com
+```
+
+### 2️⃣ تفعيل APIs
+- Google Cloud Storage API
+
+### 3️⃣ إضافة IAM Permissions
+- Storage Object Creator
+- Storage Object Viewer
+
+### 4️⃣ التحقق
+- رفع صورة
+- التحقق من Firebase Console Storage
+- إعادة تشغيل التطبيق والتأكد من بقاء الصورة
+
+## الملفات المُنشأة
+1. **FIREBASE_STORAGE_FIX.md** - شرح مفصل للمشكلة والحل
+2. **FIREBASE_STORAGE_FIX_DETAILED.md** - تفاصيل تقنية وأكواد
+3. **FIREBASE_STORAGE_FLOW.md** - رسوم بيانية لتدفق النظام
+4. **.env.firebase.example** - مثال على متغيرات البيئة
+5. **check-firebase-storage.sh** - script للتحقق من الإعدادات
+6. **README_FIREBASE_STORAGE.md** - ملخص شامل
+
+## الحالة الحالية
+✅ الكود جاهز للاستخدام - يحتاج فقط لتفعيل متغيرات البيئة
+
+## المراجع
+- Firebase Console: https://console.firebase.google.com
+- Google Cloud Console: https://console.cloud.google.com
+- Firebase Storage Docs: https://firebase.google.com/docs/storage
