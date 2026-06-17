@@ -105,10 +105,18 @@ export function initializeFirebaseAdmin(): admin.app.App {
   cachedStorageBucket = storageBucket
 
   // Initialize Firebase Admin with the service account credentials
-  firebaseAppInstance = admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount as any),
-    storageBucket: storageBucket,
-  })
+  try {
+    firebaseAppInstance = admin.initializeApp({
+      credential: admin.cert(serviceAccount as any),
+      storageBucket: storageBucket,
+    })
+  } catch (initError) {
+    const errorMsg = initError instanceof Error ? initError.message : String(initError)
+    console.error('[Firebase Admin] Failed to initialize Firebase Admin:', errorMsg)
+    console.error('[Firebase Admin] Service account keys:', Object.keys(serviceAccount))
+    console.error('[Firebase Admin] Service account project_id:', serviceAccount.project_id)
+    throw initError
+  }
 
   console.log(`[Firebase Admin] Successfully initialized Firebase Admin SDK with bucket: ${storageBucket}`)
   return firebaseAppInstance
