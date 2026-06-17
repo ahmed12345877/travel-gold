@@ -71,8 +71,17 @@ export const adminDestinationsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      await insert(COL, { ...input, isActive: "active" });
-      return { success: true };
+      try {
+        const result = await insert(COL, { ...input, isActive: "active" });
+        console.log(`[adminDestinations.create] created destination: id=${result.id}, name=${input.name}`);
+        return { success: true, id: result.id };
+      } catch (error) {
+        console.error("[adminDestinations.create] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          name: input.name,
+        });
+        throw error;
+      }
     }),
 
   /** Update destination */
@@ -97,52 +106,95 @@ export const adminDestinationsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const { id, ...data } = input;
-      await update(COL, id, data);
-      return { success: true };
+      try {
+        const { id, ...data } = input;
+        await update(COL, id, data);
+        console.log(`[adminDestinations.update] updated destination: id=${id}`);
+        return { success: true };
+      } catch (error) {
+        console.error("[adminDestinations.update] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          id: input.id,
+        });
+        throw error;
+      }
     }),
 
   /** Delete destination */
   delete: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      await remove(COL, input.id);
-      return { success: true };
+      try {
+        await remove(COL, input.id);
+        console.log(`[adminDestinations.delete] deleted destination: id=${input.id}`);
+        return { success: true };
+      } catch (error) {
+        console.error("[adminDestinations.delete] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          id: input.id,
+        });
+        throw error;
+      }
     }),
 
   /** Bulk delete destinations */
   bulkDelete: adminProcedure
     .input(z.object({ ids: z.array(z.number()) }))
     .mutation(async ({ input }) => {
-      for (const id of input.ids) await remove(COL, id);
-      return { success: true, deleted: input.ids.length };
+      try {
+        for (const id of input.ids) await remove(COL, id);
+        console.log(`[adminDestinations.bulkDelete] deleted ${input.ids.length} destinations`);
+        return { success: true, deleted: input.ids.length };
+      } catch (error) {
+        console.error("[adminDestinations.bulkDelete] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          count: input.ids.length,
+        });
+        throw error;
+      }
     }),
 
   /** Update destination status (active/inactive) */
   updateStatus: adminProcedure
     .input(z.object({ id: z.number(), isActive: z.enum(["active", "inactive"]) }))
     .mutation(async ({ input }) => {
-      await update(COL, input.id, { isActive: input.isActive });
-      return { success: true };
+      try {
+        await update(COL, input.id, { isActive: input.isActive });
+        console.log(`[adminDestinations.updateStatus] updated status: id=${input.id}, status=${input.isActive}`);
+        return { success: true };
+      } catch (error) {
+        console.error("[adminDestinations.updateStatus] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          id: input.id,
+        });
+        throw error;
+      }
     }),
 
   /** Get statistics */
   getStats: adminProcedure.query(async () => {
-    const allDestinations = (await list(COL, {})) as any[];
-    const activeCount = allDestinations.filter((d) => d.isActive === "active").length;
-    const avgRating = allDestinations.length > 0
-      ? (allDestinations.reduce((sum, d) => sum + (parseFloat(d.rating as string) || 0), 0) / allDestinations.length).toFixed(2)
-      : 0;
-    const avgPrice = allDestinations.length > 0
-      ? (allDestinations.reduce((sum, d) => sum + (parseFloat(d.pricePerPerson as string) || 0), 0) / allDestinations.length).toFixed(2)
-      : 0;
+    try {
+      const allDestinations = (await list(COL, {})) as any[];
+      const activeCount = allDestinations.filter((d) => d.isActive === "active").length;
+      const avgRating = allDestinations.length > 0
+        ? (allDestinations.reduce((sum, d) => sum + (parseFloat(d.rating as string) || 0), 0) / allDestinations.length).toFixed(2)
+        : 0;
+      const avgPrice = allDestinations.length > 0
+        ? (allDestinations.reduce((sum, d) => sum + (parseFloat(d.pricePerPerson as string) || 0), 0) / allDestinations.length).toFixed(2)
+        : 0;
 
-    return {
-      total: allDestinations.length,
-      active: activeCount,
-      inactive: allDestinations.length - activeCount,
-      avgRating: parseFloat(avgRating as string),
-      avgPrice: parseFloat(avgPrice as string),
-    };
+      return {
+        total: allDestinations.length,
+        active: activeCount,
+        inactive: allDestinations.length - activeCount,
+        avgRating: parseFloat(avgRating as string),
+        avgPrice: parseFloat(avgPrice as string),
+      };
+    } catch (error) {
+      console.error("[adminDestinations.getStats] query error:", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
   }),
 });

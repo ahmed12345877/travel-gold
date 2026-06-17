@@ -23,20 +23,48 @@ export const reviewsRouter = router({
       }).optional()
     )
     .query(async ({ input }) => {
-      const { limit = 50, offset = 0 } = input ?? {};
-      return getApprovedReviews(limit, offset);
+      try {
+        const { limit = 50, offset = 0 } = input ?? {};
+        const reviews = await getApprovedReviews(limit, offset);
+        console.log(`[reviews.list] retrieved ${reviews.length} approved reviews`);
+        return reviews;
+      } catch (error) {
+        console.error("[reviews.list] query error:", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
     }),
 
   /** Get review stats (public) */
   stats: publicProcedure.query(async () => {
-    return getReviewStats();
+    try {
+      const stats = await getReviewStats();
+      console.log("[reviews.stats] retrieved review statistics");
+      return stats;
+    } catch (error) {
+      console.error("[reviews.stats] query error:", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
   }),
 
   /** Get single review by ID (public) */
   getById: publicProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      return getReviewById(input.id);
+      try {
+        const review = await getReviewById(input.id);
+        console.log(`[reviews.getById] retrieved review: id=${input.id}`);
+        return review;
+      } catch (error) {
+        console.error("[reviews.getById] query error:", {
+          error: error instanceof Error ? error.message : String(error),
+          id: input.id,
+        });
+        throw error;
+      }
     }),
 
   /** Create a new review (public - guests can review too) */
@@ -55,27 +83,57 @@ export const reviewsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      return createReview({
-        ...input,
-        userId: ctx.user?.id ?? null,
-        isApproved: "pending",
-        helpfulCount: 0,
-      });
+      try {
+        const review = await createReview({
+          ...input,
+          userId: ctx.user?.id ?? null,
+          isApproved: "pending",
+          helpfulCount: 0,
+        });
+        console.log(`[reviews.create] created review: tripName=${input.tripName}, rating=${input.rating}`);
+        return review;
+      } catch (error) {
+        console.error("[reviews.create] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          tripName: input.tripName,
+        });
+        throw error;
+      }
     }),
 
   /** Get current user's reviews */
   myReviews: protectedProcedure.query(async ({ ctx }) => {
-    return list("reviews", {
-      where: [["userId", "==", ctx.user.id]],
-      orderBy: [["createdAt", "desc"]],
-    });
+    try {
+      const reviews = await list("reviews", {
+        where: [["userId", "==", ctx.user.id]],
+        orderBy: [["createdAt", "desc"]],
+      });
+      console.log(`[reviews.myReviews] retrieved ${reviews.length} reviews for user: ${ctx.user.id}`);
+      return reviews;
+    } catch (error) {
+      console.error("[reviews.myReviews] query error:", {
+        error: error instanceof Error ? error.message : String(error),
+        userId: ctx.user.id,
+      });
+      throw error;
+    }
   }),
 
   /** Mark review as helpful (public) */
   markHelpful: publicProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      return incrementHelpfulCount(input.id);
+      try {
+        const result = await incrementHelpfulCount(input.id);
+        console.log(`[reviews.markHelpful] marked review as helpful: id=${input.id}`);
+        return result;
+      } catch (error) {
+        console.error("[reviews.markHelpful] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          id: input.id,
+        });
+        throw error;
+      }
     }),
 
   /** List all reviews including pending (admin only) */
@@ -87,8 +145,17 @@ export const reviewsRouter = router({
       }).optional()
     )
     .query(async ({ input }) => {
-      const { limit = 50, offset = 0 } = input ?? {};
-      return getAllReviews(limit, offset);
+      try {
+        const { limit = 50, offset = 0 } = input ?? {};
+        const reviews = await getAllReviews(limit, offset);
+        console.log(`[reviews.listAll] retrieved ${reviews.length} reviews (including pending)`);
+        return reviews;
+      } catch (error) {
+        console.error("[reviews.listAll] query error:", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
     }),
 
   /** Approve or reject a review (admin only) */
@@ -100,7 +167,17 @@ export const reviewsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      return updateReviewApproval(input.id, input.isApproved);
+      try {
+        const result = await updateReviewApproval(input.id, input.isApproved);
+        console.log(`[reviews.moderate] updated review approval: id=${input.id}, status=${input.isApproved}`);
+        return result;
+      } catch (error) {
+        console.error("[reviews.moderate] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          id: input.id,
+        });
+        throw error;
+      }
     }),
 
   /** Add admin reply to a review (admin only) */
@@ -112,6 +189,16 @@ export const reviewsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      return addAdminReply(input.id, input.adminReply);
+      try {
+        const result = await addAdminReply(input.id, input.adminReply);
+        console.log(`[reviews.reply] added admin reply to review: id=${input.id}`);
+        return result;
+      } catch (error) {
+        console.error("[reviews.reply] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          id: input.id,
+        });
+        throw error;
+      }
     }),
 });

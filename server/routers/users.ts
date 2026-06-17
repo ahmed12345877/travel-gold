@@ -35,31 +35,48 @@ export const usersRouter = router({
       }).optional()
     )
     .query(async ({ input }) => {
-      const { limit = 50, offset = 0 } = input ?? {};
-      const [usersList, total] = await Promise.all([
-        getAllUsers(limit, offset),
-        getUsersCount(),
-      ]);
-      return {
-        users: usersList,
-        total,
-        limit,
-        offset,
-      };
+      try {
+        const { limit = 50, offset = 0 } = input ?? {};
+        const [usersList, total] = await Promise.all([
+          getAllUsers(limit, offset),
+          getUsersCount(),
+        ]);
+        console.log(`[users.list] retrieved ${usersList.length} users out of ${total} total`);
+        return {
+          users: usersList,
+          total,
+          limit,
+          offset,
+        };
+      } catch (error) {
+        console.error("[users.list] query error:", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
     }),
 
   // Get single user by ID (admin only)
   getById: adminProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      const user = await getUserById(input.id);
-      if (!user) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
+      try {
+        const user = await getUserById(input.id);
+        if (!user) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User not found",
+          });
+        }
+        console.log(`[users.getById] retrieved user: id=${input.id}`);
+        return user;
+      } catch (error) {
+        console.error("[users.getById] query error:", {
+          error: error instanceof Error ? error.message : String(error),
+          id: input.id,
         });
+        throw error;
       }
-      return user;
     }),
 
   // Update user role (admin only)
@@ -71,14 +88,24 @@ export const usersRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const user = await updateUserRole(input.id, input.role);
-      if (!user) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
+      try {
+        const user = await updateUserRole(input.id, input.role);
+        if (!user) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User not found",
+          });
+        }
+        console.log(`[users.updateRole] updated user: id=${input.id}, role=${input.role}`);
+        return user;
+      } catch (error) {
+        console.error("[users.updateRole] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          id: input.id,
+          role: input.role,
         });
+        throw error;
       }
-      return user;
     }),
 
   // Search users (admin only)
@@ -90,17 +117,44 @@ export const usersRouter = router({
       })
     )
     .query(async ({ input }) => {
-      return searchUsers(input.query, input.limit);
+      try {
+        const results = await searchUsers(input.query, input.limit);
+        console.log(`[users.search] found ${results.length} users matching: ${input.query}`);
+        return results;
+      } catch (error) {
+        console.error("[users.search] query error:", {
+          error: error instanceof Error ? error.message : String(error),
+          query: input.query,
+        });
+        throw error;
+      }
     }),
 
   // Get user statistics (admin only)
   stats: adminProcedure.query(async () => {
-    return getUserStats();
+    try {
+      const stats = await getUserStats();
+      console.log("[users.stats] retrieved user statistics");
+      return stats;
+    } catch (error) {
+      console.error("[users.stats] query error:", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
   }),
 
   // Get current user profile
   profile: protectedProcedure.query(async ({ ctx }) => {
-    return ctx.user;
+    try {
+      console.log(`[users.profile] retrieved profile for user: ${ctx.user.id}`);
+      return ctx.user;
+    } catch (error) {
+      console.error("[users.profile] query error:", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
   }),
 
   // Update current user profile
@@ -113,14 +167,23 @@ export const usersRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const updated = await updateUserProfile(ctx.user.id, input);
-      if (!updated) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
+      try {
+        const updated = await updateUserProfile(ctx.user.id, input);
+        if (!updated) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User not found",
+          });
+        }
+        console.log(`[users.updateProfile] updated profile for user: ${ctx.user.id}`);
+        return updated;
+      } catch (error) {
+        console.error("[users.updateProfile] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          userId: ctx.user.id,
         });
+        throw error;
       }
-      return updated;
     }),
 
   // Get profile stats for current user (bookings count, reviews count, AI credits)
@@ -131,29 +194,39 @@ export const usersRouter = router({
     let aiCreditsBalance = 0;
 
     try {
-      const userBookings = await getUserBookings(userId);
-      bookingsCount = userBookings.length;
-    } catch {
-      // bookings table might not exist yet
-    }
+      try {
+        const userBookings = await getUserBookings(userId);
+        bookingsCount = userBookings.length;
+      } catch {
+        // bookings table might not exist yet
+      }
 
-    try {
-      reviewsCount = await count("reviews", [["userId", "==", userId]]);
-    } catch {
-      // reviews collection might not exist yet
-    }
+      try {
+        reviewsCount = await count("reviews", [["userId", "==", userId]]);
+      } catch {
+        // reviews collection might not exist yet
+      }
 
-    try {
-      const credits = await getOrCreateAICredits(userId);
-      aiCreditsBalance = parseFloat(credits.balance.toString());
-    } catch {
-      // AI credits table might not exist yet
-    }
+      try {
+        const credits = await getOrCreateAICredits(userId);
+        aiCreditsBalance = parseFloat(credits.balance.toString());
+      } catch {
+        // AI credits table might not exist yet
+      }
 
-    return {
-      bookings: bookingsCount,
-      reviews: reviewsCount,
-      aiCredits: aiCreditsBalance,
-    };
+      console.log(`[users.profileStats] retrieved stats for user: ${userId}, bookings=${bookingsCount}, reviews=${reviewsCount}`);
+
+      return {
+        bookings: bookingsCount,
+        reviews: reviewsCount,
+        aiCredits: aiCreditsBalance,
+      };
+    } catch (error) {
+      console.error("[users.profileStats] query error:", {
+        error: error instanceof Error ? error.message : String(error),
+        userId,
+      });
+      throw error;
+    }
   }),
 });

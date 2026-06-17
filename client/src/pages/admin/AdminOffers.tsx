@@ -358,11 +358,11 @@ export default function AdminOffers() {
   const [editingOffer, setEditingOffer] = useState<any>(null);
 
   const utils = trpc.useUtils();
-  const { data: offers, isLoading } = trpc.offers.listAll.useQuery({ limit: 100, offset: 0 });
+  const { data: offers, isLoading } = trpc.adminOffers.list.useQuery({ limit: 100, offset: 0 });
 
-  const createMutation = trpc.offers.create.useMutation({
+  const createMutation = trpc.adminOffers.create.useMutation({
     onSuccess: () => {
-      utils.offers.listAll.invalidate();
+      utils.adminOffers.list.invalidate();
       setShowModal(false);
       setEditingOffer(null);
       toast.success("Offer created successfully");
@@ -370,9 +370,9 @@ export default function AdminOffers() {
     onError: (err) => toast.error(err.message),
   });
 
-  const updateMutation = trpc.offers.update.useMutation({
+  const updateMutation = trpc.adminOffers.update.useMutation({
     onSuccess: () => {
-      utils.offers.listAll.invalidate();
+      utils.adminOffers.list.invalidate();
       setShowModal(false);
       setEditingOffer(null);
       toast.success("Offer updated successfully");

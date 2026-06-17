@@ -73,8 +73,17 @@ export const adminOffersRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      await insert(COL, { ...input, isActive: "active", bookedSpots: 0 });
-      return { success: true };
+      try {
+        const result = await insert(COL, { ...input, isActive: "active", bookedSpots: 0 });
+        console.log(`[adminOffers.create] created offer: id=${result.id}, title=${input.title}`);
+        return { success: true, id: result.id };
+      } catch (error) {
+        console.error("[adminOffers.create] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          title: input.title,
+        });
+        throw error;
+      }
     }),
 
   /** Update offer */
@@ -99,50 +108,93 @@ export const adminOffersRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const { id, ...data } = input;
-      await update(COL, id, data);
-      return { success: true };
+      try {
+        const { id, ...data } = input;
+        await update(COL, id, data);
+        console.log(`[adminOffers.update] updated offer: id=${id}`);
+        return { success: true };
+      } catch (error) {
+        console.error("[adminOffers.update] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          id: input.id,
+        });
+        throw error;
+      }
     }),
 
   /** Delete offer */
   delete: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      await remove(COL, input.id);
-      return { success: true };
+      try {
+        await remove(COL, input.id);
+        console.log(`[adminOffers.delete] deleted offer: id=${input.id}`);
+        return { success: true };
+      } catch (error) {
+        console.error("[adminOffers.delete] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          id: input.id,
+        });
+        throw error;
+      }
     }),
 
   /** Bulk delete offers */
   bulkDelete: adminProcedure
     .input(z.object({ ids: z.array(z.number()) }))
     .mutation(async ({ input }) => {
-      for (const id of input.ids) await remove(COL, id);
-      return { success: true, deleted: input.ids.length };
+      try {
+        for (const id of input.ids) await remove(COL, id);
+        console.log(`[adminOffers.bulkDelete] deleted ${input.ids.length} offers`);
+        return { success: true, deleted: input.ids.length };
+      } catch (error) {
+        console.error("[adminOffers.bulkDelete] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          count: input.ids.length,
+        });
+        throw error;
+      }
     }),
 
   /** Update offer status */
   updateStatus: adminProcedure
     .input(z.object({ id: z.number(), isActive: z.enum(["active", "inactive", "expired"]) }))
     .mutation(async ({ input }) => {
-      await update(COL, input.id, { isActive: input.isActive });
-      return { success: true };
+      try {
+        await update(COL, input.id, { isActive: input.isActive });
+        console.log(`[adminOffers.updateStatus] updated status: id=${input.id}, status=${input.isActive}`);
+        return { success: true };
+      } catch (error) {
+        console.error("[adminOffers.updateStatus] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          id: input.id,
+        });
+        throw error;
+      }
     }),
 
   /** Get statistics */
   getStats: adminProcedure.query(async () => {
-    const allOffers = (await list(COL, {})) as any[];
-    const activeCount = allOffers.filter((o) => o.isActive === "active").length;
-    const totalDiscount = allOffers.reduce(
-      (sum, o) => sum + (parseFloat(o.discountValue as string) || 0),
-      0,
-    );
-    const avgDiscount = allOffers.length > 0 ? (totalDiscount / allOffers.length).toFixed(2) : 0;
+    try {
+      const allOffers = (await list(COL, {})) as any[];
+      const activeCount = allOffers.filter((o) => o.isActive === "active").length;
+      const totalDiscount = allOffers.reduce(
+        (sum, o) => sum + (parseFloat(o.discountValue as string) || 0),
+        0,
+      );
+      const avgDiscount = allOffers.length > 0 ? (totalDiscount / allOffers.length).toFixed(2) : 0;
 
-    return {
-      total: allOffers.length,
-      active: activeCount,
-      inactive: allOffers.length - activeCount,
-      avgDiscount: parseFloat(avgDiscount as string),
-    };
+      return {
+        total: allOffers.length,
+        active: activeCount,
+        inactive: allOffers.length - activeCount,
+        avgDiscount: parseFloat(avgDiscount as string),
+      };
+    } catch (error) {
+      console.error("[adminOffers.getStats] query error:", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
   }),
 });
