@@ -485,12 +485,20 @@ export default function AdminGallery() {
             if (editingImage) {
               updateImageMut.mutate({ id: editingImage.id, ...data });
             } else {
+              // Create new image - data should include imageUrl from upload
               createImageMut.mutate(data);
             }
           }}
           onUpload={async (fileData, filename, mimeType) => {
-            const result = await uploadImageMut.mutateAsync({ fileData, filename, mimeType });
-            return result.url;
+            try {
+              const result = await uploadImageMut.mutateAsync({ fileData, filename, mimeType });
+              console.log("[v0] Image uploaded successfully:", result.url);
+              return result.url;
+            } catch (err) {
+              console.error("[v0] Image upload failed:", err);
+              toast.error("فشل رفع الصورة");
+              throw err;
+            }
           }}
           isSubmitting={createImageMut.isPending || updateImageMut.isPending}
           isUploading={uploadImageMut.isPending}
