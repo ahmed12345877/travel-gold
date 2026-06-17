@@ -106,7 +106,7 @@ export function initializeFirebaseAdmin(): admin.app.App {
 
   // Initialize Firebase Admin with the service account credentials
   firebaseAppInstance = admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount as any),
+    credential: admin.cert(serviceAccount as any),
     storageBucket: storageBucket,
   })
 
