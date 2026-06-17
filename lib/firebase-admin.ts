@@ -1,4 +1,5 @@
 import admin from 'firebase-admin'
+import { getStorage } from 'firebase-admin/storage'
 
 // Global variable to store initialized Firebase app (idempotent pattern)
 let firebaseAppInstance: admin.app.App | null = null
@@ -153,7 +154,7 @@ export function getFirebaseStorage() {
   // Use cached bucket name if available
   if (cachedStorageBucket) {
     console.log(`[Firebase Admin] Using cached storage bucket: ${cachedStorageBucket}`)
-    return admin.storage(app).bucket(cachedStorageBucket)
+    return getStorage(app).bucket(cachedStorageBucket)
   }
 
   // Fallback: derive from service account (should already be cached after init)
@@ -184,5 +185,5 @@ export function getFirebaseStorage() {
   cachedStorageBucket = bucketName
   
   console.log(`[Firebase Admin] Caching and using storage bucket: ${bucketName}`)
-  return admin.storage(app).bucket(bucketName)
+  return getStorage(app).bucket(bucketName)
 }
