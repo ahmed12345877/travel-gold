@@ -50,7 +50,7 @@ interface GalleryItemDisplay {
 const staticGalleryItems: GalleryItemDisplay[] = [
   {
     id: 1,
-    src: "/manus-storage/1ea6c9b2f3fbdac06639a33dc44d9b8f180d000265ecbd5278a892c0a3f64c88_74b6d5bc.avif",
+    src: "/storage/1ea6c9b2f3fbdac06639a33dc44d9b8f180d000265ecbd5278a892c0a3f64c88_74b6d5bc.avif",
     title: "Egyptian Luxury Experience",
     titleAr: "تجربة الفخامة المصرية",
     description: "Discover the elegance and grandeur of Egypt's most luxurious destinations.",
@@ -64,7 +64,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 2,
-    src: "/manus-storage/2a20e5d22b1f9142308a09e9f4cb42317410d08e8879e0bff6ffd3abc5d2505f_1a37c6fc.avif",
+    src: "/storage/2a20e5d22b1f9142308a09e9f4cb42317410d08e8879e0bff6ffd3abc5d2505f_1a37c6fc.avif",
     title: "Desert Wonders",
     titleAr: "عجائب الصحراء",
     description: "Experience the breathtaking beauty of Egypt's golden deserts.",
@@ -77,7 +77,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 3,
-    src: "/manus-storage/4e1cb98ca898778f5ed91703cde6555b77a4eade317b8319000e649c76b31b33_576f4203.avif",
+    src: "/storage/4e1cb98ca898778f5ed91703cde6555b77a4eade317b8319000e649c76b31b33_576f4203.avif",
     title: "Ancient Temples",
     titleAr: "المعابد القديمة",
     description: "Explore the mystical temples of ancient Egypt.",
@@ -90,7 +90,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 4,
-    src: "/manus-storage/23effebbb46bb1c3053c1c50c5c196c88106b6b3fb5ef857f31d117fc0ff40fa_1ca89850.avif",
+    src: "/storage/23effebbb46bb1c3053c1c50c5c196c88106b6b3fb5ef857f31d117fc0ff40fa_1ca89850.avif",
     title: "Nile River Journey",
     titleAr: "رحلة النيل",
     description: "Cruise along the legendary Nile River.",
@@ -103,7 +103,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 5,
-    src: "/manus-storage/16e3e9a8129f6bf15ad6346a1a029be61ede9f61fee6c5ae02095dbb4ba69f53_be86cd87.avif",
+    src: "/storage/16e3e9a8129f6bf15ad6346a1a029be61ede9f61fee6c5ae02095dbb4ba69f53_be86cd87.avif",
     title: "Red Sea Paradise",
     titleAr: "جنة البحر الأحمر",
     description: "Relax in the stunning Red Sea resorts.",
@@ -116,7 +116,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 6,
-    src: "/manus-storage/79ab804dad1d1a907e2154b70a7e6815975ec29a5ced1bb8f059b496eff79d92_e17519cf.avif",
+    src: "/storage/79ab804dad1d1a907e2154b70a7e6815975ec29a5ced1bb8f059b496eff79d92_e17519cf.avif",
     title: "Cultural Heritage",
     titleAr: "التراث الثقافي",
     description: "Immerse yourself in Egypt's rich cultural heritage.",
@@ -129,7 +129,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 7,
-    src: "/manus-storage/334c3d7b0e48e3c65f3f396980e59b5e968fc733a6d44dc508b992d557ccb152_dbd5cd44.avif",
+    src: "/storage/334c3d7b0e48e3c65f3f396980e59b5e968fc733a6d44dc508b992d557ccb152_dbd5cd44.avif",
     title: "Luxurious Accommodations",
     titleAr: "الإقامة الفاخرة",
     description: "Stay in world-class luxury hotels and resorts.",
@@ -142,7 +142,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 8,
-    src: "/manus-storage/427a029c72e5a784c085660517b1b1e106a13e9de9aaedb405de04f5bb002d43_53077433.avif",
+    src: "/storage/427a029c72e5a784c085660517b1b1e106a13e9de9aaedb405de04f5bb002d43_53077433.avif",
     title: "Gourmet Dining",
     titleAr: "تناول الطعام الفاخر",
     description: "Savor world-class cuisine at our partner restaurants.",
@@ -155,7 +155,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 9,
-    src: "/manus-storage/5838fb3241475fc3ed3b06bf68fa7d6b9864d42e9a69b98287bc624bbf158a10_fbd3bec1.avif",
+    src: "/storage/5838fb3241475fc3ed3b06bf68fa7d6b9864d42e9a69b98287bc624bbf158a10_fbd3bec1.avif",
     title: "Adventure Activities",
     titleAr: "أنشطة المغامرة",
     description: "Experience thrilling adventure activities.",
@@ -168,7 +168,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 10,
-    src: "/manus-storage/114d5c2734eacb724d334228b20026638cf11d61a5501cfdd4b64b1b570b790b_8393755e.avif",
+    src: "/storage/114d5c2734eacb724d334228b20026638cf11d61a5501cfdd4b64b1b570b790b_8393755e.avif",
     title: "Sunset Views",
     titleAr: "إطلالات الغروب",
     description: "Witness stunning sunsets across Egypt.",
@@ -181,7 +181,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 11,
-    src: "/manus-storage/39043104353552d2da37ea4e7192557d84e866382cb9cbec7c9784435c0bdfb0_5d6bf99e.avif",
+    src: "/storage/39043104353552d2da37ea4e7192557d84e866382cb9cbec7c9784435c0bdfb0_5d6bf99e.avif",
     title: "Spa & Wellness",
     titleAr: "المنتجع الصحي والعافية",
     description: "Rejuvenate at our premium spa facilities.",
@@ -194,7 +194,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 12,
-    src: "/manus-storage/42085e9bc1244f37455aef01a3ecd187e2a17e92fec5225b858e78a3526f0f9f_b5bd747a.avif",
+    src: "/storage/42085e9bc1244f37455aef01a3ecd187e2a17e92fec5225b858e78a3526f0f9f_b5bd747a.avif",
     title: "Water Sports",
     titleAr: "الرياضات المائية",
     description: "Enjoy exciting water sports activities.",
@@ -207,7 +207,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 13,
-    src: "/manus-storage/0f1a032b90fd47616b5f88d4eb206a6a65088744b3ce1a4ca13f516a4d5e307f_35754279.avif",
+    src: "/storage/0f1a032b90fd47616b5f88d4eb206a6a65088744b3ce1a4ca13f516a4d5e307f_35754279.avif",
     title: "Local Markets",
     titleAr: "الأسواق المحلية",
     description: "Explore vibrant local markets and bazaars.",
@@ -220,7 +220,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 14,
-    src: "/manus-storage/a06194ca69639b218e5a9675022f61872dd5a0676915ae79fdc82d34aaef4ec5_c888ea47.avif",
+    src: "/storage/a06194ca69639b218e5a9675022f61872dd5a0676915ae79fdc82d34aaef4ec5_c888ea47.avif",
     title: "Guided Tours",
     titleAr: "الجولات الموجهة",
     description: "Expert-led tours of Egypt's most iconic sites.",
@@ -233,7 +233,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 15,
-    src: "/manus-storage/a931665964fd7f33fab594af19918fe68b6b580da76e05b41de6c643447dc99a_30b156b3.avif",
+    src: "/storage/a931665964fd7f33fab594af19918fe68b6b580da76e05b41de6c643447dc99a_30b156b3.avif",
     title: "Sunset Cruises",
     titleAr: "رحلات الغروب",
     description: "Romantic sunset cruises on the Nile.",
@@ -246,7 +246,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 16,
-    src: "/manus-storage/b8fc3158789d8f4e81448b1404ff40237dcc35b2b40db8d867bfac25bbb981ef_9960a96f.avif",
+    src: "/storage/b8fc3158789d8f4e81448b1404ff40237dcc35b2b40db8d867bfac25bbb981ef_9960a96f.avif",
     title: "Photography Tours",
     titleAr: "جولات التصوير",
     description: "Capture Egypt's beauty through professional photography.",
@@ -259,7 +259,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 17,
-    src: "/manus-storage/bb85a7ef13d263dff024bc44a3562189ebf58ed1409dc4e5104e95de901f0057_70085c99.avif",
+    src: "/storage/bb85a7ef13d263dff024bc44a3562189ebf58ed1409dc4e5104e95de901f0057_70085c99.avif",
     title: "Camel Trekking",
     titleAr: "رحلات الجمال",
     description: "Traditional camel trekking through the desert.",
@@ -272,7 +272,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 18,
-    src: "/manus-storage/c16784ac39d36174416402849bd6885a0c3b79c240f9e3b00e89182ef6b7e94e_648f43fd.avif",
+    src: "/storage/c16784ac39d36174416402849bd6885a0c3b79c240f9e3b00e89182ef6b7e94e_648f43fd.avif",
     title: "Night Tours",
     titleAr: "الجولات الليلية",
     description: "Experience Egypt's attractions under the stars.",
@@ -285,7 +285,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 19,
-    src: "/manus-storage/caaad7993f980e71d43390bf0080790caf10bdb7487c6784080b03bfe6c3bca8_3fde7674.avif",
+    src: "/storage/caaad7993f980e71d43390bf0080790caf10bdb7487c6784080b03bfe6c3bca8_3fde7674.avif",
     title: "Scuba Diving",
     titleAr: "الغوص",
     description: "Explore underwater wonders in the Red Sea.",
@@ -298,7 +298,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 20,
-    src: "/manus-storage/cd1ae1f2f560f76988054d7707002c47c545b0491bb24f11d3c929308a1dabde_d2ea925c.avif",
+    src: "/storage/cd1ae1f2f560f76988054d7707002c47c545b0491bb24f11d3c929308a1dabde_d2ea925c.avif",
     title: "Family Packages",
     titleAr: "حزم العائلة",
     description: "Perfect vacation packages for families.",
@@ -311,7 +311,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 21,
-    src: "/manus-storage/cfb71acd3efc73c1a74774927261b72755462b84df21dfb632b814f9f8a854ce_56bb9262.avif",
+    src: "/storage/cfb71acd3efc73c1a74774927261b72755462b84df21dfb632b814f9f8a854ce_56bb9262.avif",
     title: "Honeymoon Suites",
     titleAr: "أجنحة شهر العسل",
     description: "Romantic honeymoon packages in luxury resorts.",
@@ -324,7 +324,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 22,
-    src: "/manus-storage/d466a55d36bfae2cc697d72dae1eb5b80df751017130e7097247c09664b96255_ec0fcf43.avif",
+    src: "/storage/d466a55d36bfae2cc697d72dae1eb5b80df751017130e7097247c09664b96255_ec0fcf43.avif",
     title: "Stargazing",
     titleAr: "مراقبة النجوم",
     description: "Gaze at the stars in Egypt's clear desert skies.",
@@ -337,7 +337,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 23,
-    src: "/manus-storage/d9225c2581c744a38c23d87e8a4ce4a1deeab84eb909954522ca553ae4571ad4_c8d28a30.avif",
+    src: "/storage/d9225c2581c744a38c23d87e8a4ce4a1deeab84eb909954522ca553ae4571ad4_c8d28a30.avif",
     title: "Sunrise Hikes",
     titleAr: "رحلات الشروق",
     description: "Hike to scenic viewpoints for stunning sunrises.",
@@ -350,7 +350,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 24,
-    src: "/manus-storage/dd3d2890de4ecffd47057f095d6ad6f8335cafe5cf4528cf32fe34592dda2a59_13b4a4f7.avif",
+    src: "/storage/dd3d2890de4ecffd47057f095d6ad6f8335cafe5cf4528cf32fe34592dda2a59_13b4a4f7.avif",
     title: "Oasis Exploration",
     titleAr: "استكشاف الواحات",
     description: "Discover hidden oases in the Egyptian desert.",
@@ -363,7 +363,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 25,
-    src: "/manus-storage/de0cbe1715f594a2d26ffba679c1dc6de7c5a5b48a6aa71071b9cbbbc8cb2b2b_20fa4c9f.avif",
+    src: "/storage/de0cbe1715f594a2d26ffba679c1dc6de7c5a5b48a6aa71071b9cbbbc8cb2b2b_20fa4c9f.avif",
     title: "Museum Tours",
     titleAr: "جولات المتاحف",
     description: "Guided tours through Egypt's world-class museums.",
@@ -376,7 +376,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 26,
-    src: "/manus-storage/e2a977724245a4cf0e4b7a0f07424cf202288df85c4bc033cd3b10fdb9cfe861_3bef8e2a.avif",
+    src: "/storage/e2a977724245a4cf0e4b7a0f07424cf202288df85c4bc033cd3b10fdb9cfe861_3bef8e2a.avif",
     title: "Private Yacht",
     titleAr: "اليخت الخاص",
     description: "Exclusive private yacht experiences.",
@@ -389,7 +389,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 27,
-    src: "/manus-storage/f68765a1c4232c38adf3c395861aa911f246359f840a1efb386ef2c41510e7a0_f7165f1f.avif",
+    src: "/storage/f68765a1c4232c38adf3c395861aa911f246359f840a1efb386ef2c41510e7a0_f7165f1f.avif",
     title: "Desert Camping",
     titleAr: "التخييم في الصحراء",
     description: "Authentic desert camping experiences.",
@@ -402,7 +402,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 28,
-    src: "/manus-storage/f7bf2f13dd2a85f17cd30c5fe4f01e95f5a887952b00a2d4e2f5064651d6b4e2_698a03fa.avif",
+    src: "/storage/f7bf2f13dd2a85f17cd30c5fe4f01e95f5a887952b00a2d4e2f5064651d6b4e2_698a03fa.avif",
     title: "Felucca Sailing",
     titleAr: "الإبحار بالفلوكة",
     description: "Traditional felucca sailing on the Nile.",
@@ -415,7 +415,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 29,
-    src: "/manus-storage/fe28b0881bedead8115627b1d3827a867b843e9d5ed6a7883681e9195b1a3094_1677e3d7.avif",
+    src: "/storage/fe28b0881bedead8115627b1d3827a867b843e9d5ed6a7883681e9195b1a3094_1677e3d7.avif",
     title: "Cooking Classes",
     titleAr: "دروس الطهي",
     description: "Learn authentic Egyptian cuisine.",
@@ -428,7 +428,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 30,
-    src: "/manus-storage/5dc72516632d67da21dc90ae345277beca1fca40a485d8562749b3f54c00ffa5_ccb1a73b.avif",
+    src: "/storage/5dc72516632d67da21dc90ae345277beca1fca40a485d8562749b3f54c00ffa5_ccb1a73b.avif",
     title: "Balloon Rides",
     titleAr: "رحلات البالون",
     description: "Hot air balloon rides over the Valley of the Kings.",
@@ -441,7 +441,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 31,
-    src: "/manus-storage/7d781c52387cc689c4b056baf4a57bed40d95cec0f5ad5cb998176cc18d76daa_51926cd4.avif",
+    src: "/storage/7d781c52387cc689c4b056baf4a57bed40d95cec0f5ad5cb998176cc18d76daa_51926cd4.avif",
     title: "Luxury Spa",
     titleAr: "منتجع صحي فاخر",
     description: "World-class spa treatments and wellness.",
@@ -454,7 +454,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 32,
-    src: "/manus-storage/59e8b742517b3fe5e797de38898a48e419d9ce8af3572a3291b6fa82556876cf_7733ff97.avif",
+    src: "/storage/59e8b742517b3fe5e797de38898a48e419d9ce8af3572a3291b6fa82556876cf_7733ff97.avif",
     title: "Golf Courses",
     titleAr: "ملاعب الجولف",
     description: "Championship golf courses in Egypt.",
@@ -467,7 +467,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 33,
-    src: "/manus-storage/6419d5be1ff80_5f544c56.avif",
+    src: "/storage/6419d5be1ff80_5f544c56.avif",
     title: "Luxury Shopping",
     titleAr: "التسوق الفاخر",
     description: "Exclusive shopping experiences.",
@@ -480,7 +480,7 @@ const staticGalleryItems: GalleryItemDisplay[] = [
   },
   {
     id: 34,
-    src: "/manus-storage/16e3e9a8129f6bf15ad6346a1a029be61ede9f61fee6c5ae02095dbb4ba69f53_be86cd87.avif",
+    src: "/storage/16e3e9a8129f6bf15ad6346a1a029be61ede9f61fee6c5ae02095dbb4ba69f53_be86cd87.avif",
     title: "Premium Events",
     titleAr: "الفعاليات الممتازة",
     description: "Exclusive event hosting and celebrations.",

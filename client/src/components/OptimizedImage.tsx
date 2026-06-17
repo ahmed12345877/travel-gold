@@ -65,7 +65,7 @@ export default function OptimizedImage({
   const [showImage, setShowImage] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Normalize any legacy "/manus-storage/" paths to the API proxy which uses Supabase when configured.
+  // Normalize any legacy "/storage/" paths to the API proxy which uses Supabase when configured.
   // But leave external URLs (http/https) unchanged
   useEffect(() => {
     if (typeof src === "string") {
@@ -73,9 +73,9 @@ export default function OptimizedImage({
       if (src.startsWith("http://") || src.startsWith("https://")) {
         setCurrentSrc(src);
         triedApiFallbackRef.current = true; // external URLs don't need fallback
-      } else if (src.startsWith("/manus-storage/")) {
+      } else if (src.startsWith("/storage/")) {
         // Legacy local paths get converted to API route
-        setCurrentSrc(src.replace(/^\/manus-storage\//, "/api/manus-storage/"));
+        setCurrentSrc(src.replace(/^\/storage\//, "/api/storage/"));
         triedApiFallbackRef.current = false; // may need fallback if API route fails
       } else {
         // Other local paths (e.g., public/)
@@ -130,18 +130,18 @@ export default function OptimizedImage({
   const handleError = () => {
     // If the image is using the legacy built-in storage proxy path and failed,
     // try falling back to the API route variant which can leverage Supabase
-    // signed URLs when configured: /api/manus-storage/<key>
+    // signed URLs when configured: /api/storage/<key>
     try {
       const url = new URL(currentSrc, window.location.origin);
       const localPath = url.pathname;
-      const isManusProxy = localPath.startsWith("/manus-storage/");
-      if (isManusProxy && !triedApiFallbackRef.current) {
-        const key = localPath.replace(/^\/manus-storage\//, "");
+      const isStorageProxy = localPath.startsWith("/storage/");
+      if (isStorageProxy && !triedApiFallbackRef.current) {
+        const key = localPath.replace(/^\/storage\//, "");
         triedApiFallbackRef.current = true;
         setHasError(false);
         setIsLoaded(false);
         setShowImage(false);
-        setCurrentSrc(`/api/manus-storage/${key}`);
+        setCurrentSrc(`/api/storage/${key}`);
         return;
       }
     } catch {

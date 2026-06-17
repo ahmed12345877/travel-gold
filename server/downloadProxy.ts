@@ -44,7 +44,8 @@ export function registerDownloadProxy(app: Express) {
         "s3.us-east-1.amazonaws.com",
         ".s3.amazonaws.com",
         "cloudfront.net",
-        "manus-storage",
+        "storage.googleapis.com",
+        "supabase.co",
       ];
 
       let isAllowed = false;
@@ -61,8 +62,8 @@ export function registerDownloadProxy(app: Express) {
       }
 
       if (!isAllowed) {
-        const s3Patterns = ["vanir", "ai-generated", "manus"];
-        isAllowed = s3Patterns.some((pattern) =>
+        const cdnPatterns = ["vanir", "ai-generated", "storage"];
+        isAllowed = cdnPatterns.some((pattern) =>
           imageUrl.toLowerCase().includes(pattern)
         );
       }
