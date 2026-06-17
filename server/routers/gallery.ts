@@ -12,19 +12,51 @@ export const galleryRouter = router({
   // ─── Public Endpoints ───
 
   listVisible: publicProcedure.query(async () => {
-    const snap = await db.collection(ITEMS_COL)
-      .where("isVisible", "==", "visible")
-      .orderBy("sortOrder", "asc")
-      .get();
-    return snap.docs.map((d) => d.data());
+    try {
+      // Try the indexed query first
+      const snap = await db.collection(ITEMS_COL)
+        .where("isVisible", "==", "visible")
+        .orderBy("sortOrder", "asc")
+        .get();
+      console.log(`[Gallery] listVisible: Found ${snap.docs.length} items (with index)`);
+      return snap.docs.map((d) => ({...d.data(), id: d.id}));
+    } catch (indexErr) {
+      console.warn('[Gallery] listVisible: Index query failed, falling back to client-side filter', (indexErr as Error).message);
+      // Fallback: get all items and filter client-side
+      const snap = await db.collection(ITEMS_COL)
+        .orderBy("createdAt", "desc")
+        .get();
+      const filtered = snap.docs
+        .map((d) => ({...d.data(), id: d.id}))
+        .filter((item: any) => item.isVisible === "visible")
+        .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
+      console.log(`[Gallery] listVisible: Found ${filtered.length} items (fallback)`);
+      return filtered;
+    }
   }),
 
   listVisibleVideos: publicProcedure.query(async () => {
-    const snap = await db.collection(VIDEOS_COL)
-      .where("isVisible", "==", "visible")
-      .orderBy("sortOrder", "asc")
-      .get();
-    return snap.docs.map((d) => d.data());
+    try {
+      // Try the indexed query first
+      const snap = await db.collection(VIDEOS_COL)
+        .where("isVisible", "==", "visible")
+        .orderBy("sortOrder", "asc")
+        .get();
+      console.log(`[Gallery] listVisibleVideos: Found ${snap.docs.length} items (with index)`);
+      return snap.docs.map((d) => ({...d.data(), id: d.id}));
+    } catch (indexErr) {
+      console.warn('[Gallery] listVisibleVideos: Index query failed, falling back to client-side filter', (indexErr as Error).message);
+      // Fallback: get all items and filter client-side
+      const snap = await db.collection(VIDEOS_COL)
+        .orderBy("createdAt", "desc")
+        .get();
+      const filtered = snap.docs
+        .map((d) => ({...d.data(), id: d.id}))
+        .filter((item: any) => item.isVisible === "visible")
+        .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
+      console.log(`[Gallery] listVisibleVideos: Found ${filtered.length} items (fallback)`);
+      return filtered;
+    }
   }),
 
   // ─── Admin Endpoints: Gallery Items ───
@@ -43,7 +75,7 @@ export const galleryRouter = router({
         .offset(offset)
         .limit(limit)
         .get();
-      return snap.docs.map((d) => d.data());
+      return snap.docs.map((d) => ({ ...d.data(), _docId: d.id }));
     }),
 
   create: adminProcedure
@@ -71,8 +103,9 @@ export const galleryRouter = router({
         isVisible: "visible",
         createdAt: new Date(),
       };
-      await db.collection(ITEMS_COL).add(item);
-      return item;
+      const docRef = await db.collection(ITEMS_COL).add(item);
+      console.log(`[Gallery] Created new item: id=${id}, docId=${docRef.id}`);
+      return { ...item, _docId: docRef.id };
     }),
 
   update: adminProcedure
@@ -98,9 +131,11 @@ export const galleryRouter = router({
       const { id, ...data } = input;
       const snap = await db.collection(ITEMS_COL).where("id", "==", id).limit(1).get();
       if (snap.empty) throw new Error("Gallery item not found");
-      await snap.docs[0].ref.set(data, { merge: true });
-      const updated = (await snap.docs[0].ref.get()).data();
-      return updated;
+      const docRef = snap.docs[0].ref;
+      await docRef.set(data, { merge: true });
+      const updated = (await docRef.get()).data();
+      console.log(`[Gallery] Updated item: id=${id}, docId=${docRef.id}`);
+      return { ...updated, _docId: docRef.id };
     }),
 
   delete: adminProcedure
@@ -149,7 +184,7 @@ export const galleryRouter = router({
         .offset(offset)
         .limit(limit)
         .get();
-      return snap.docs.map((d) => d.data());
+      return snap.docs.map((d) => ({ ...d.data(), _docId: d.id }));
     }),
 
   createVideo: adminProcedure
@@ -172,8 +207,9 @@ export const galleryRouter = router({
         isVisible: "visible",
         createdAt: new Date(),
       };
-      await db.collection(VIDEOS_COL).add(video);
-      return video;
+      const docRef = await db.collection(VIDEOS_COL).add(video);
+      console.log(`[Gallery] Created new video: id=${id}, docId=${docRef.id}`);
+      return { ...video, _docId: docRef.id };
     }),
 
   updateVideo: adminProcedure
@@ -194,9 +230,11 @@ export const galleryRouter = router({
       const { id, ...data } = input;
       const snap = await db.collection(VIDEOS_COL).where("id", "==", id).limit(1).get();
       if (snap.empty) throw new Error("Gallery video not found");
-      await snap.docs[0].ref.set(data, { merge: true });
-      const updated = (await snap.docs[0].ref.get()).data();
-      return updated;
+      const docRef = snap.docs[0].ref;
+      await docRef.set(data, { merge: true });
+      const updated = (await docRef.get()).data();
+      console.log(`[Gallery] Updated video: id=${id}, docId=${docRef.id}`);
+      return { ...updated, _docId: docRef.id };
     }),
 
   deleteVideo: adminProcedure
