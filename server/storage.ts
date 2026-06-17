@@ -1,31 +1,14 @@
 // Preconfigured storage helpers for Manus WebDev templates
-// Uses Firebase Storage (primary) or local filesystem fallback
+// Uses Firebase Storage only (no local fallback)
 
-import fs from 'fs';
-import path from 'path';
-import { ENV } from './_core/env';
 import { storagePut as firebaseStoragePut, storageDelete as firebaseStorageDelete } from '../lib/firebase-storage';
-
-const DIRNAME = typeof __dirname !== 'undefined'
-  ? __dirname
-  : new URL('.', import.meta.url).pathname;
-
-// Resolve the project-root public/uploads directory regardless of CWD
-const LOCAL_UPLOADS_DIR = path.resolve(DIRNAME, '..', 'public', 'uploads');
-
-function ensureLocalDir(filePath: string) {
-  const dir = path.dirname(filePath);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-}
 
 function normalizeKey(relKey: string): string {
   return relKey.replace(/^\/+/, "");
 }
 
 /**
- * Uploads a file to storage (Firebase Storage primary, local fallback)
+ * Uploads a file to storage (Firebase Storage only)
  * 
  * @param relKey - Relative path for the file
  * @param data - File data as Buffer, Uint8Array, or string
@@ -49,26 +32,21 @@ export async function storagePut(
     fileBuffer = data as Buffer;
   }
 
-  // Try Firebase Storage first if configured
+  // Upload to Firebase Storage (no fallback - let errors propagate)
   try {
-    console.log(`[Storage] Attempting Firebase Storage upload for: ${key}`);
+    console.log(`[Storage] Uploading to Firebase Storage: ${key}`);
     const result = await firebaseStoragePut(key, fileBuffer, contentType);
     console.log(`[Storage] Firebase Storage upload successful for: ${key}`);
     return { key, url: result.url };
   } catch (firebaseErr) {
-    console.warn(`[Storage] Firebase Storage failed for ${key}, falling back to local filesystem:`, firebaseErr);
+    const errorMessage = firebaseErr instanceof Error ? firebaseErr.message : String(firebaseErr);
+    console.error(`[Storage] Firebase Storage upload FAILED for ${key}:`, errorMessage);
+    throw new Error(`Failed to upload file to Firebase Storage: ${errorMessage}`);
   }
-
-  // Local filesystem fallback
-  console.log(`[Storage] Using local filesystem fallback for: ${key}`);
-  const localPath = path.join(LOCAL_UPLOADS_DIR, key);
-  ensureLocalDir(localPath);
-  fs.writeFileSync(localPath, fileBuffer);
-  return { key, url: `/uploads/${key}` };
 }
 
 /**
- * Gets a file from storage
+ * Gets a file from storage (Firebase Storage only)
  * 
  * @param relKey - Relative path for the file
  * @returns Object with key and URL
@@ -76,23 +54,21 @@ export async function storagePut(
 export async function storageGet(relKey: string): Promise<{ key: string; url: string; }> {
   const key = normalizeKey(relKey);
 
-  // Try Firebase Storage first if configured
+  // Get URL from Firebase Storage (no fallback - let errors propagate)
   try {
-    console.log(`[Storage] Attempting Firebase Storage URL generation for: ${key}`);
+    console.log(`[Storage] Getting Firebase Storage URL for: ${key}`);
     const result = await import('../lib/firebase-storage').then(m => m.getStorageUrl(key));
     console.log(`[Storage] Firebase Storage URL generated for: ${key}`);
     return { key, url: result };
   } catch (firebaseErr) {
-    console.warn(`[Storage] Firebase Storage failed for ${key}, falling back to local URL:`, firebaseErr);
+    const errorMessage = firebaseErr instanceof Error ? firebaseErr.message : String(firebaseErr);
+    console.error(`[Storage] Firebase Storage URL generation FAILED for ${key}:`, errorMessage);
+    throw new Error(`Failed to get file URL from Firebase Storage: ${errorMessage}`);
   }
-
-  // Local filesystem fallback — return static URL
-  console.log(`[Storage] Using local filesystem fallback URL for: ${key}`);
-  return { key, url: `/uploads/${key}` };
 }
 
 /**
- * Deletes a file from storage
+ * Deletes a file from storage (Firebase Storage only)
  * 
  * @param relKey - Relative path for the file
  * @returns true if deletion successful
@@ -100,26 +76,15 @@ export async function storageGet(relKey: string): Promise<{ key: string; url: st
 export async function storageDelete(relKey: string): Promise<boolean> {
   const key = normalizeKey(relKey);
 
-  // Try Firebase Storage first if configured
+  // Delete from Firebase Storage (no fallback - let errors propagate)
   try {
-    console.log(`[Storage] Attempting Firebase Storage delete for: ${key}`);
+    console.log(`[Storage] Deleting from Firebase Storage: ${key}`);
     await firebaseStorageDelete(key);
     console.log(`[Storage] Firebase Storage delete successful for: ${key}`);
     return true;
   } catch (firebaseErr) {
-    console.warn(`[Storage] Firebase Storage delete failed for ${key}, falling back to local filesystem:`, firebaseErr);
-  }
-
-  // Local filesystem fallback
-  console.log(`[Storage] Using local filesystem fallback for delete: ${key}`);
-  const localPath = path.join(LOCAL_UPLOADS_DIR, key);
-  try {
-    if (fs.existsSync(localPath)) {
-      fs.unlinkSync(localPath);
-    }
-    return true;
-  } catch (err) {
-    console.error(`[Storage] Local filesystem delete failed for ${key}:`, err);
-    return false;
+    const errorMessage = firebaseErr instanceof Error ? firebaseErr.message : String(firebaseErr);
+    console.error(`[Storage] Firebase Storage delete FAILED for ${key}:`, errorMessage);
+    throw new Error(`Failed to delete file from Firebase Storage: ${errorMessage}`);
   }
 }
