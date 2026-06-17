@@ -65,22 +65,33 @@ export default function OptimizedImage({
   const [showImage, setShowImage] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Normalize any legacy "/manus-storage/" paths to the API proxy which uses Supabase when configured.
-  // But leave external URLs (http/https) unchanged
+  // Normalize URLs: external URLs pass through, local paths get API proxy
   useEffect(() => {
     if (typeof src === "string") {
-      // If it's an external URL (http/https), use it directly
-      if (src.startsWith("http://") || src.startsWith("https://")) {
-        setCurrentSrc(src);
-        triedApiFallbackRef.current = true; // external URLs don't need fallback
-      } else if (src.startsWith("/manus-storage/")) {
-        // Legacy local paths get converted to API route
-        setCurrentSrc(src.replace(/^\/manus-storage\//, "/api/manus-storage/"));
-        triedApiFallbackRef.current = false; // may need fallback if API route fails
-      } else {
-        // Other local paths (e.g., public/)
-        setCurrentSrc(src);
-        triedApiFallbackRef.current = false;
+      try {
+        // Try parsing as absolute URL (including protocol-relative URLs)
+        const url = new URL(src, typeof window !== "undefined" ? window.location.origin : "http://localhost");
+        
+        // If it's an absolute URL to a different origin or protocol, use directly
+        if (url.hostname !== new URL(typeof window !== "undefined" ? window.location.href : "http://localhost").hostname) {
+          setCurrentSrc(src);
+          triedApiFallbackRef.current = true; // external URLs don't need fallback
+        } else {
+          // Same origin - may need API proxy
+          setCurrentSrc(src);
+          triedApiFallbackRef.current = false;
+        }
+      } catch {
+        // Not a valid absolute URL - treat as local path
+        if (src.startsWith("/storage/")) {
+          // Legacy local paths get converted to API route
+          setCurrentSrc(src.replace(/^\/storage\//, "/api/storage/"));
+          triedApiFallbackRef.current = false;
+        } else {
+          // Other local paths (e.g., public/, relative paths)
+          setCurrentSrc(src);
+          triedApiFallbackRef.current = false;
+        }
       }
     } else {
       setCurrentSrc(src);
@@ -130,18 +141,18 @@ export default function OptimizedImage({
   const handleError = () => {
     // If the image is using the legacy built-in storage proxy path and failed,
     // try falling back to the API route variant which can leverage Supabase
-    // signed URLs when configured: /api/manus-storage/<key>
+    // signed URLs when configured: /api/storage/<key>
     try {
       const url = new URL(currentSrc, window.location.origin);
       const localPath = url.pathname;
-      const isManusProxy = localPath.startsWith("/manus-storage/");
-      if (isManusProxy && !triedApiFallbackRef.current) {
-        const key = localPath.replace(/^\/manus-storage\//, "");
+      const isStorageProxy = localPath.startsWith("/storage/");
+      if (isStorageProxy && !triedApiFallbackRef.current) {
+        const key = localPath.replace(/^\/storage\//, "");
         triedApiFallbackRef.current = true;
         setHasError(false);
         setIsLoaded(false);
         setShowImage(false);
-        setCurrentSrc(`/api/manus-storage/${key}`);
+        setCurrentSrc(`/api/storage/${key}`);
         return;
       }
     } catch {

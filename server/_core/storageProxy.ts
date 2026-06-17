@@ -1,10 +1,10 @@
 import type { Express, Request, Response } from "express";
 import { getServerSupabase } from "./supabase";
 
-// Serve legacy /manus-storage/* by issuing Supabase signed redirects only.
-// No Manus/Forge backend is used.
+// Serve legacy /api/storage/* by issuing Supabase signed redirects only.
+// No backend storage proxy is used - Supabase handles all storage operations.
 export function registerStorageProxy(app: Express) {
-  app.get("/manus-storage/*", async (req: Request, res: Response) => {
+  app.get("/api/storage/*", async (req: Request, res: Response) => {
     const key = (req.params as Record<string, string>)[0];
     if (!key) return void res.status(400).send("Missing storage key");
 

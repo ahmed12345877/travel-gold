@@ -38,33 +38,26 @@ export function registerDownloadProxy(app: Express) {
         return;
       }
 
-      // Validate URL - only allow S3/CDN URLs for security
+      // Validate URL - only allow trusted S3/CDN URLs for security (SSRF prevention)
       const allowedDomains = [
         "s3.amazonaws.com",
         "s3.us-east-1.amazonaws.com",
-        ".s3.amazonaws.com",
         "cloudfront.net",
-        "manus-storage",
+        "storage.googleapis.com",
+        "supabase.co",
       ];
 
       let isAllowed = false;
+      let parsedUrl: URL;
       try {
-        const parsedUrl = new URL(imageUrl);
-        isAllowed = allowedDomains.some(
-          (domain) =>
-            parsedUrl.hostname.endsWith(domain) ||
-            parsedUrl.hostname.includes(domain)
+        parsedUrl = new URL(imageUrl);
+        // Strict hostname matching: domain must end with one of the allowed domains
+        isAllowed = allowedDomains.some((domain) =>
+          parsedUrl.hostname.endsWith(domain)
         );
       } catch {
         res.status(400).json({ error: "Invalid URL format" });
         return;
-      }
-
-      if (!isAllowed) {
-        const s3Patterns = ["vanir", "ai-generated", "manus"];
-        isAllowed = s3Patterns.some((pattern) =>
-          imageUrl.toLowerCase().includes(pattern)
-        );
       }
 
       if (!isAllowed) {
