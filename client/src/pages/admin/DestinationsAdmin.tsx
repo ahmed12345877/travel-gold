@@ -28,12 +28,12 @@ export default function DestinationsAdmin() {
     exclusions: "",
   });
 
-  const { data: destinations, isLoading, refetch } = trpc.admin.destinations.list.useQuery({
+  const { data: destinations, isLoading, refetch } = trpc.adminDestinations.list.useQuery({
     search,
     limit: 20,
   });
 
-  const createMutation = trpc.admin.destinations.create.useMutation({
+  const createMutation = trpc.adminDestinations.create.useMutation({
     onSuccess: () => {
       alert("تم إنشاء الوجهة بنجاح");
       refetch();
@@ -59,7 +59,7 @@ export default function DestinationsAdmin() {
     },
   });
 
-  const updateMutation = trpc.admin.destinations.update.useMutation({
+  const updateMutation = trpc.adminDestinations.update.useMutation({
     onSuccess: () => {
       alert("تم تحديث الوجهة بنجاح");
       refetch();
@@ -71,7 +71,7 @@ export default function DestinationsAdmin() {
     },
   });
 
-  const deleteMutation = trpc.admin.destinations.delete.useMutation({
+  const deleteMutation = trpc.adminDestinations.delete.useMutation({
     onSuccess: () => {
       alert("تم حذف الوجهة بنجاح");
       refetch();

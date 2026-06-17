@@ -572,7 +572,9 @@ export default function Gallery() {
     staleTime: 1000 * 60 * 5, // 5 minutes
   }) as any;
 
-  const galleryItems = dbGalleryItems.length > 0 ? dbGalleryItems : staticGalleryItems;
+  console.log("[Gallery] Fetched items:", dbGalleryItems);
+
+  const galleryItems = dbGalleryItems && dbGalleryItems.length > 0 ? dbGalleryItems : staticGalleryItems;
 
   // Extract unique categories
   const categories = useMemo(() => {
@@ -610,7 +612,7 @@ export default function Gallery() {
   const navigateImage = useCallback(
     (direction: "next" | "prev") => {
       if (!selectedImage) return;
-      const currentIndex = filteredItems.findIndex((item: any) => item.id === selectedImage.id);
+      const currentIndex = filteredItems.findIndex((item: any) => item._docId === selectedImage._docId);
       const newIndex = direction === "next" ? currentIndex + 1 : currentIndex - 1;
       if (newIndex >= 0 && newIndex < filteredItems.length) {
         setSelectedImage(filteredItems[newIndex]);

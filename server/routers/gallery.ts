@@ -19,7 +19,11 @@ export const galleryRouter = router({
         .orderBy("sortOrder", "asc")
         .get();
       console.log(`[Gallery] listVisible: Found ${snap.docs.length} items (with index)`);
-      return snap.docs.map((d) => ({...d.data(), id: d.id}));
+      return snap.docs.map((d) => {
+        const data = d.data();
+        console.log(`[Gallery] Item data:`, { id: data.id, imageUrl: data.imageUrl, title: data.title });
+        return { ...data, _docId: d.id };
+      });
     } catch (indexErr) {
       console.warn('[Gallery] listVisible: Index query failed, falling back to client-side filter', (indexErr as Error).message);
       // Fallback: get all items and filter client-side
@@ -27,7 +31,10 @@ export const galleryRouter = router({
         .orderBy("createdAt", "desc")
         .get();
       const filtered = snap.docs
-        .map((d) => ({...d.data(), id: d.id}))
+        .map((d) => {
+          const data = d.data();
+          return { ...data, _docId: d.id };
+        })
         .filter((item: any) => item.isVisible === "visible")
         .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
       console.log(`[Gallery] listVisible: Found ${filtered.length} items (fallback)`);
@@ -43,7 +50,10 @@ export const galleryRouter = router({
         .orderBy("sortOrder", "asc")
         .get();
       console.log(`[Gallery] listVisibleVideos: Found ${snap.docs.length} items (with index)`);
-      return snap.docs.map((d) => ({...d.data(), id: d.id}));
+      return snap.docs.map((d) => {
+        const data = d.data();
+        return { ...data, _docId: d.id };
+      });
     } catch (indexErr) {
       console.warn('[Gallery] listVisibleVideos: Index query failed, falling back to client-side filter', (indexErr as Error).message);
       // Fallback: get all items and filter client-side
@@ -51,7 +61,10 @@ export const galleryRouter = router({
         .orderBy("createdAt", "desc")
         .get();
       const filtered = snap.docs
-        .map((d) => ({...d.data(), id: d.id}))
+        .map((d) => {
+          const data = d.data();
+          return { ...data, _docId: d.id };
+        })
         .filter((item: any) => item.isVisible === "visible")
         .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
       console.log(`[Gallery] listVisibleVideos: Found ${filtered.length} items (fallback)`);
@@ -96,16 +109,15 @@ export const galleryRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const id = Date.now();
-      const item = {
+      const docRef = await db.collection(ITEMS_COL).add({
         ...input,
-        id,
         isVisible: "visible",
         createdAt: new Date(),
-      };
-      const docRef = await db.collection(ITEMS_COL).add(item);
-      console.log(`[Gallery] Created new item: id=${id}, docId=${docRef.id}`);
-      return { ...item, _docId: docRef.id };
+      });
+      const doc = await docRef.get();
+      const data = doc.data();
+      console.log(`[Gallery] Created new item: docId=${docRef.id}, imageUrl=${input.imageUrl}`);
+      return { ...data, _docId: docRef.id };
     }),
 
   update: adminProcedure
@@ -129,21 +141,44 @@ export const galleryRouter = router({
     )
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
-      const snap = await db.collection(ITEMS_COL).where("id", "==", id).limit(1).get();
-      if (snap.empty) throw new Error("Gallery item not found");
-      const docRef = snap.docs[0].ref;
+      // Search by Firebase document ID (which is _docId)
+      const snap = await db.collection(ITEMS_COL).limit(1000).get();
+      let found = false;
+      let docRef: any = null;
+      
+      for (const doc of snap.docs) {
+        const docData = doc.data();
+        if (docData._docId === id || doc.id === id) {
+          docRef = doc.ref;
+          found = true;
+          break;
+        }
+      }
+      
+      if (!found) {
+        throw new Error(`Gallery item not found: ${id}`);
+      }
+      
       await docRef.set(data, { merge: true });
       const updated = (await docRef.get()).data();
-      console.log(`[Gallery] Updated item: id=${id}, docId=${docRef.id}`);
+      console.log(`[Gallery] Updated item: docId=${docRef.id}`);
       return { ...updated, _docId: docRef.id };
     }),
 
   delete: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const snap = await db.collection(ITEMS_COL).where("id", "==", input.id).limit(1).get();
-      if (!snap.empty) await snap.docs[0].ref.delete();
-      return { success: true };
+      // Search through all documents to find the one with matching _docId or Firebase doc ID
+      const snap = await db.collection(ITEMS_COL).limit(1000).get();
+      for (const doc of snap.docs) {
+        const docData = doc.data();
+        if (docData._docId === input.id || doc.id === input.id) {
+          await doc.ref.delete();
+          console.log(`[Gallery] Deleted item: docId=${doc.id}`);
+          return { success: true };
+        }
+      }
+      throw new Error(`Gallery item not found: ${input.id}`);
     }),
 
   uploadImage: adminProcedure
@@ -200,16 +235,15 @@ export const galleryRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const id = Date.now();
-      const video = {
+      const docRef = await db.collection(VIDEOS_COL).add({
         ...input,
-        id,
         isVisible: "visible",
         createdAt: new Date(),
-      };
-      const docRef = await db.collection(VIDEOS_COL).add(video);
-      console.log(`[Gallery] Created new video: id=${id}, docId=${docRef.id}`);
-      return { ...video, _docId: docRef.id };
+      });
+      const doc = await docRef.get();
+      const data = doc.data();
+      console.log(`[Gallery] Created new video: docId=${docRef.id}, youtubeId=${input.youtubeId}`);
+      return { ...data, _docId: docRef.id };
     }),
 
   updateVideo: adminProcedure
@@ -228,20 +262,43 @@ export const galleryRouter = router({
     )
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
-      const snap = await db.collection(VIDEOS_COL).where("id", "==", id).limit(1).get();
-      if (snap.empty) throw new Error("Gallery video not found");
-      const docRef = snap.docs[0].ref;
+      // Search by Firebase document ID
+      const snap = await db.collection(VIDEOS_COL).limit(1000).get();
+      let found = false;
+      let docRef: any = null;
+      
+      for (const doc of snap.docs) {
+        const docData = doc.data();
+        if (docData._docId === id || doc.id === id) {
+          docRef = doc.ref;
+          found = true;
+          break;
+        }
+      }
+      
+      if (!found) {
+        throw new Error(`Gallery video not found: ${id}`);
+      }
+      
       await docRef.set(data, { merge: true });
       const updated = (await docRef.get()).data();
-      console.log(`[Gallery] Updated video: id=${id}, docId=${docRef.id}`);
+      console.log(`[Gallery] Updated video: docId=${docRef.id}`);
       return { ...updated, _docId: docRef.id };
     }),
 
   deleteVideo: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const snap = await db.collection(VIDEOS_COL).where("id", "==", input.id).limit(1).get();
-      if (!snap.empty) await snap.docs[0].ref.delete();
-      return { success: true };
+      // Search through all documents to find the one with matching _docId or Firebase doc ID
+      const snap = await db.collection(VIDEOS_COL).limit(1000).get();
+      for (const doc of snap.docs) {
+        const docData = doc.data();
+        if (docData._docId === input.id || doc.id === input.id) {
+          await doc.ref.delete();
+          console.log(`[Gallery] Deleted video: docId=${doc.id}`);
+          return { success: true };
+        }
+      }
+      throw new Error(`Gallery video not found: ${input.id}`);
     }),
 });
