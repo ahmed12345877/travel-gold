@@ -43,6 +43,10 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 export function createApp() {
   const app = express();
   
+  console.log("[Server] Initializing Express app...");
+  console.log("[Server] NODE_ENV:", process.env.NODE_ENV);
+  console.log("[Server] SUPABASE_STORAGE_BUCKET:", process.env.SUPABASE_STORAGE_BUCKET ? "configured" : "NOT configured");
+  
   // Enable CORS for all origins in development, restrict in production.
   // In production, CORS_ORIGINS (comma-separated) overrides the default allowlist
   // so Render-hosted frontends can be added without a code change.
@@ -77,21 +81,56 @@ app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // Serve locally-uploaded files (fallback when Supabase is not configured)
   app.use("/uploads", express.static(path.resolve(DIRNAME, "..", "public", "uploads")));
+  
+  console.log("[Server] Registering routes...");
   registerStorageProxy(app);
+  console.log("[Server] ✓ /api/storage/* route registered");
+  
   registerDownloadProxy(app);
+  console.log("[Server] ✓ Download proxy registered");
+  
   registerOAuthRoutes(app);
+  console.log("[Server] ✓ OAuth routes registered");
+  
   registerFirebaseAuthRoutes(app);
+  console.log("[Server] ✓ Firebase auth routes registered");
+  
   app.use(
     "/api/trpc",
     createExpressMiddleware({ router: appRouter, createContext })
   );
+  console.log("[Server] ✓ tRPC middleware registered at /api/trpc");
+  
+  // Health check and diagnostics endpoint
+  app.get("/api/health", (req, res) => {
+    const health = {
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      env: {
+        nodeEnv: process.env.NODE_ENV,
+        vercel: process.env.VERCEL === "1" ? "yes" : "no",
+        supabaseConfigured: Boolean(process.env.SUPABASE_STORAGE_BUCKET),
+        firebaseConfigured: Boolean(process.env.VITE_FIREBASE_PROJECT_ID),
+      },
+      routes: {
+        trpc: "/api/trpc",
+        storage: "/api/storage/*",
+        auth: "/api/auth/*",
+        oauth: "/api/oauth/*",
+      },
+    };
+    res.json(health);
+  });
+  
+  console.log("[Server] ✓ Health check endpoint registered at /api/health");
+  
   return app;
 }
 
 export async function startServer() {
+  console.log("[Server] Starting server initialization...");
   const app = createApp();
   const server = createServer(app);
-
 
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
@@ -103,11 +142,15 @@ export async function startServer() {
     const preferredPort = parseInt(process.env.PORT || "3000");
     const port = await findAvailablePort(preferredPort);
     if (port !== preferredPort) {
-      console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+      console.log(`[Server] Port ${preferredPort} is busy, using port ${port} instead`);
     }
     server.listen(port, () => {
-      console.log(`Server running on http://localhost:${port}/`);
+      console.log(`[Server] ✓ Server running on http://localhost:${port}/`);
+      console.log(`[Server] ✓ tRPC API available at http://localhost:${port}/api/trpc`);
+      console.log(`[Server] ✓ Storage proxy available at http://localhost:${port}/api/storage/*`);
     });
+  } else {
+    console.log("[Server] Running on Vercel (no listen call)");
   }
 
   return app;
