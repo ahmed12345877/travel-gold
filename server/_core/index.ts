@@ -77,6 +77,7 @@ app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // Serve locally-uploaded files (fallback when Supabase is not configured)
   app.use("/uploads", express.static(path.resolve(DIRNAME, "..", "public", "uploads")));
+  
   registerStorageProxy(app);
   registerDownloadProxy(app);
   registerOAuthRoutes(app);
@@ -85,13 +86,13 @@ app.use(express.json({ limit: "50mb" }));
     "/api/trpc",
     createExpressMiddleware({ router: appRouter, createContext })
   );
+  
   return app;
 }
 
 export async function startServer() {
   const app = createApp();
   const server = createServer(app);
-
 
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);

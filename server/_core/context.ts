@@ -106,7 +106,10 @@ export async function createContext(
           lastSignedIn: now,
         } as User;
       }
-    } catch {
+    } catch (err) {
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[context] Firebase token verification failed");
+      }
       // Invalid or expired Firebase token — fall through to session cookie
     }
   }
@@ -115,7 +118,10 @@ export async function createContext(
   if (!user) {
     try {
       user = await sdk.authenticateRequest(opts.req as any);
-    } catch {
+    } catch (err) {
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[context] Session auth failed");
+      }
       user = null;
     }
   }

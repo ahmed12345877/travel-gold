@@ -6,10 +6,14 @@ import { getServerSupabase } from "./supabase";
 export function registerStorageProxy(app: Express) {
   app.get("/api/storage/*", async (req: Request, res: Response) => {
     const key = (req.params as Record<string, string>)[0];
-    if (!key) return void res.status(400).send("Missing storage key");
+    
+    if (!key) {
+      return void res.status(400).json({ error: "Missing storage key" });
+    }
 
     const supabase = getServerSupabase();
     const bucket = process.env.SUPABASE_STORAGE_BUCKET;
+    
     if (!supabase || !bucket) {
       return void res.status(404).send("Storage not configured");
     }
@@ -19,19 +23,24 @@ export function registerStorageProxy(app: Express) {
       const { data, error } = await supabase.storage
         .from(bucket)
         .createSignedUrl(key, ttl);
+      
       if (!error && data?.signedUrl) {
         res.set("Cache-Control", "no-store");
         return void res.redirect(307, data.signedUrl);
       }
+      
       // Fallback to public URL if bucket is public
       const { data: pub } = supabase.storage.from(bucket).getPublicUrl(key);
-      if (pub.publicUrl) {
+      if (pub && pub.publicUrl) {
         res.set("Cache-Control", "no-store");
         return void res.redirect(307, pub.publicUrl);
       }
+      
       return void res.status(404).send("Image not found");
     } catch (err) {
-      console.error("[StorageProxy] supabase error:", err);
+      if (process.env.NODE_ENV === "development") {
+        console.error("[StorageProxy] Error:", err instanceof Error ? err.message : String(err));
+      }
       return void res.status(502).send("Storage proxy error");
     }
   });
