@@ -44,10 +44,26 @@ export function useAuth(options?: UseAuthOptions) {
   }, [logoutMutation, utils]);
 
   const state = useMemo(() => {
-    localStorage.setItem(
-      "vanir-runtime-user-info",
-      JSON.stringify(meQuery.data)
-    );
+    // Migration: move from old "manus-runtime-user-info" key to new "vanir-runtime-user-info"
+    const oldKey = "manus-runtime-user-info";
+    const newKey = "vanir-runtime-user-info";
+    try {
+      const oldData = localStorage.getItem(oldKey);
+      if (oldData && !localStorage.getItem(newKey)) {
+        localStorage.setItem(newKey, oldData);
+        localStorage.removeItem(oldKey);
+      }
+    } catch {
+      // ignore localStorage errors (privacy mode, quota, etc)
+    }
+    
+    // Store current user data
+    try {
+      localStorage.setItem(newKey, JSON.stringify(meQuery.data));
+    } catch {
+      // ignore localStorage errors
+    }
+    
     return {
       user: meQuery.data ?? null,
       loading: meQuery.isLoading || logoutMutation.isPending,

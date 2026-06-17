@@ -65,22 +65,33 @@ export default function OptimizedImage({
   const [showImage, setShowImage] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Normalize any legacy "/storage/" paths to the API proxy which uses Supabase when configured.
-  // But leave external URLs (http/https) unchanged
+  // Normalize URLs: external URLs pass through, local paths get API proxy
   useEffect(() => {
     if (typeof src === "string") {
-      // If it's an external URL (http/https), use it directly
-      if (src.startsWith("http://") || src.startsWith("https://")) {
-        setCurrentSrc(src);
-        triedApiFallbackRef.current = true; // external URLs don't need fallback
-      } else if (src.startsWith("/storage/")) {
-        // Legacy local paths get converted to API route
-        setCurrentSrc(src.replace(/^\/storage\//, "/api/storage/"));
-        triedApiFallbackRef.current = false; // may need fallback if API route fails
-      } else {
-        // Other local paths (e.g., public/)
-        setCurrentSrc(src);
-        triedApiFallbackRef.current = false;
+      try {
+        // Try parsing as absolute URL (including protocol-relative URLs)
+        const url = new URL(src, typeof window !== "undefined" ? window.location.origin : "http://localhost");
+        
+        // If it's an absolute URL to a different origin or protocol, use directly
+        if (url.hostname !== new URL(typeof window !== "undefined" ? window.location.href : "http://localhost").hostname) {
+          setCurrentSrc(src);
+          triedApiFallbackRef.current = true; // external URLs don't need fallback
+        } else {
+          // Same origin - may need API proxy
+          setCurrentSrc(src);
+          triedApiFallbackRef.current = false;
+        }
+      } catch {
+        // Not a valid absolute URL - treat as local path
+        if (src.startsWith("/storage/")) {
+          // Legacy local paths get converted to API route
+          setCurrentSrc(src.replace(/^\/storage\//, "/api/storage/"));
+          triedApiFallbackRef.current = false;
+        } else {
+          // Other local paths (e.g., public/, relative paths)
+          setCurrentSrc(src);
+          triedApiFallbackRef.current = false;
+        }
       }
     } else {
       setCurrentSrc(src);
