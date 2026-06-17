@@ -75,6 +75,16 @@ export function initializeFirebaseAdmin(): admin.app.App {
     return firebaseAppInstance
   }
 
+  // Check if Firebase app is already initialized (e.g., by other code or module reloads)
+  try {
+    const existingApp = admin.getApp()
+    console.log('[Firebase Admin] Firebase app already initialized, using existing instance')
+    firebaseAppInstance = existingApp
+    return existingApp
+  } catch (err) {
+    // App not initialized yet, proceed with initialization
+  }
+
   // Validate that the service account JSON is provided
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
   if (!serviceAccountJson) {
