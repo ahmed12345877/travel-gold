@@ -66,10 +66,22 @@ export default function OptimizedImage({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Normalize any legacy "/manus-storage/" paths to the API proxy which uses Supabase when configured.
+  // But leave external URLs (http/https) unchanged
   useEffect(() => {
-    if (typeof src === "string" && src.startsWith("/manus-storage/")) {
-      setCurrentSrc(src.replace(/^\/manus-storage\//, "/api/manus-storage/"));
-      triedApiFallbackRef.current = true; // we've already switched to API form
+    if (typeof src === "string") {
+      // If it's an external URL (http/https), use it directly
+      if (src.startsWith("http://") || src.startsWith("https://")) {
+        setCurrentSrc(src);
+        triedApiFallbackRef.current = true; // external URLs don't need fallback
+      } else if (src.startsWith("/manus-storage/")) {
+        // Legacy local paths get converted to API route
+        setCurrentSrc(src.replace(/^\/manus-storage\//, "/api/manus-storage/"));
+        triedApiFallbackRef.current = false; // may need fallback if API route fails
+      } else {
+        // Other local paths (e.g., public/)
+        setCurrentSrc(src);
+        triedApiFallbackRef.current = false;
+      }
     } else {
       setCurrentSrc(src);
       triedApiFallbackRef.current = false;
