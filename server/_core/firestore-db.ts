@@ -4,11 +4,6 @@ import type {
   CollectionReference,
 } from "firebase-admin/firestore";
 
-// Ensure Firebase is initialized before using the db
-if (!db) {
-  throw new Error("[firestore-db] Firebase Firestore was not initialized. Check firebaseAdmin.ts initialization.");
-}
-
 /**
  * Generic Firestore data access layer.
  *

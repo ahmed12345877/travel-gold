@@ -7,24 +7,15 @@ export function registerStorageProxy(app: Express) {
   app.get("/api/storage/*", async (req: Request, res: Response) => {
     const key = (req.params as Record<string, string>)[0];
     
-    console.log("[StorageProxy] Request for key:", key);
-    
     if (!key) {
-      console.warn("[StorageProxy] Missing storage key in request");
       return void res.status(400).json({ error: "Missing storage key" });
     }
 
     const supabase = getServerSupabase();
     const bucket = process.env.SUPABASE_STORAGE_BUCKET;
     
-    if (!supabase) {
-      console.error("[StorageProxy] Supabase client not initialized");
-      return void res.status(503).json({ error: "Storage service unavailable" });
-    }
-    
-    if (!bucket) {
-      console.error("[StorageProxy] SUPABASE_STORAGE_BUCKET not configured");
-      return void res.status(503).json({ error: "Storage bucket not configured" });
+    if (!supabase || !bucket) {
+      return void res.status(404).send("Storage not configured");
     }
 
     try {
@@ -32,13 +23,6 @@ export function registerStorageProxy(app: Express) {
       const { data, error } = await supabase.storage
         .from(bucket)
         .createSignedUrl(key, ttl);
-      
-      if (error) {
-        console.warn("[StorageProxy] Failed to create signed URL:", {
-          key,
-          error: error.message,
-        });
-      }
       
       if (!error && data?.signedUrl) {
         res.set("Cache-Control", "no-store");
@@ -52,15 +36,12 @@ export function registerStorageProxy(app: Express) {
         return void res.redirect(307, pub.publicUrl);
       }
       
-      console.warn("[StorageProxy] Image not found:", key);
-      return void res.status(404).json({ error: "Image not found", key });
+      return void res.status(404).send("Image not found");
     } catch (err) {
-      console.error("[StorageProxy] Unexpected error:", {
-        error: err instanceof Error ? err.message : String(err),
-        stack: err instanceof Error ? err.stack : undefined,
-        key,
-      });
-      return void res.status(502).json({ error: "Storage proxy error" });
+      if (process.env.NODE_ENV === "development") {
+        console.error("[StorageProxy] Error:", err instanceof Error ? err.message : String(err));
+      }
+      return void res.status(502).send("Storage proxy error");
     }
   });
 }

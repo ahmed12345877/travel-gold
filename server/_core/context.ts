@@ -107,9 +107,9 @@ export async function createContext(
         } as User;
       }
     } catch (err) {
-      console.debug("[context] Firebase token verification failed:", {
-        error: err instanceof Error ? err.message : String(err),
-      });
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[context] Firebase token verification failed");
+      }
       // Invalid or expired Firebase token — fall through to session cookie
     }
   }
@@ -119,9 +119,9 @@ export async function createContext(
     try {
       user = await sdk.authenticateRequest(opts.req as any);
     } catch (err) {
-      console.debug("[context] Session auth failed:", {
-        error: err instanceof Error ? err.message : String(err),
-      });
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[context] Session auth failed");
+      }
       user = null;
     }
   }
