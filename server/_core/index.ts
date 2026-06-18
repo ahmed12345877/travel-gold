@@ -8,6 +8,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { registerDownloadProxy } from "../downloadProxy";
+import { registerVideoProxy } from "../videoProxy";
 import { registerFirebaseAuthRoutes } from "../authExpressRouter";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
@@ -80,6 +81,7 @@ app.use(express.json({ limit: "50mb" }));
   
   registerStorageProxy(app);
   registerDownloadProxy(app);
+  registerVideoProxy(app);
   registerOAuthRoutes(app);
   registerFirebaseAuthRoutes(app);
   app.use(

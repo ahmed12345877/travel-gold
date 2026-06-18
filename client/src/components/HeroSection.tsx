@@ -282,15 +282,7 @@ export default function HeroSection() {
     return CARD_IMAGES_FALLBACK;
   }, [savedImagesJson]);
 
-  // Ensure video plays
-  useEffect(() => {
-    if (videoRef.current && !videoError) {
-      videoRef.current.play().catch((err) => {
-        console.warn("[v0] Video playback error:", err);
-        setVideoError(true);
-      });
-    }
-  }, [videoError]);
+
 
   return (
     <section
@@ -309,13 +301,9 @@ export default function HeroSection() {
             playsInline={true}
             preload="metadata"
             onError={(e) => {
-              console.error("[v0] Video error:", e.currentTarget.error?.code, e.currentTarget.error?.message);
+              console.warn("[v0] Video error:", e.currentTarget.error?.code);
               setVideoError(true);
             }}
-            onLoadStart={() => console.log("[v0] Video loading from:", ASSETS.HERO_VIDEO)}
-            onLoadedMetadata={() => console.log("[v0] Video metadata loaded")}
-            onCanPlay={() => console.log("[v0] Video can play")}
-            onPlay={() => console.log("[v0] Video started playing")}
             className="absolute inset-0 w-full h-full object-cover object-center"
             style={{ minHeight: "100vh", display: "block" }}
             crossOrigin="anonymous"
