@@ -10,6 +10,7 @@ var __export = (target, all) => {
 
 // lib/firebase-admin.ts
 import admin from "firebase-admin";
+import { getStorage as getStorage2 } from "firebase-admin/storage";
 function validateServiceAccount(serviceAccount) {
   const requiredFields = ["project_id", "client_email", "private_key"];
   const missingFields = requiredFields.filter((field) => !serviceAccount[field]);
@@ -38,6 +39,13 @@ function initializeFirebaseAdmin() {
   if (firebaseAppInstance) {
     return firebaseAppInstance;
   }
+  try {
+    const existingApp = admin.getApp();
+    console.log("[Firebase Admin] Firebase app already initialized, using existing instance");
+    firebaseAppInstance = existingApp;
+    return existingApp;
+  } catch (err) {
+  }
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (!serviceAccountJson) {
     throw new Error(
@@ -57,7 +65,7 @@ function initializeFirebaseAdmin() {
   const storageBucket = getStorageBucketName(serviceAccount);
   cachedStorageBucket = storageBucket;
   firebaseAppInstance = admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+    credential: admin.cert(serviceAccount),
     storageBucket
   });
   console.log(`[Firebase Admin] Successfully initialized Firebase Admin SDK with bucket: ${storageBucket}`);
@@ -73,7 +81,7 @@ function getFirebaseStorage() {
   const app = getFirebaseApp();
   if (cachedStorageBucket) {
     console.log(`[Firebase Admin] Using cached storage bucket: ${cachedStorageBucket}`);
-    return admin.storage(app).bucket(cachedStorageBucket);
+    return getStorage2(app).bucket(cachedStorageBucket);
   }
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (!serviceAccountJson) {
@@ -94,7 +102,7 @@ function getFirebaseStorage() {
   const bucketName = getStorageBucketName(serviceAccount);
   cachedStorageBucket = bucketName;
   console.log(`[Firebase Admin] Caching and using storage bucket: ${bucketName}`);
-  return admin.storage(app).bucket(bucketName);
+  return getStorage2(app).bucket(bucketName);
 }
 var firebaseAppInstance, cachedStorageBucket;
 var init_firebase_admin = __esm({
@@ -147,7 +155,7 @@ __export(vite_config_exports, {
 import { jsxLocPlugin } from "@builder.io/vite-plugin-jsx-loc";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import path3 from "node:path";
+import path2 from "node:path";
 import { defineConfig } from "vite";
 var PROJECT_ROOT, plugins, vite_config_default;
 var init_vite_config = __esm({
@@ -160,16 +168,16 @@ var init_vite_config = __esm({
       plugins,
       resolve: {
         alias: {
-          "@": path3.resolve(import.meta.dirname, "client", "src"),
-          "@shared": path3.resolve(import.meta.dirname, "shared"),
-          "@assets": path3.resolve(import.meta.dirname, "attached_assets")
+          "@": path2.resolve(import.meta.dirname, "client", "src"),
+          "@shared": path2.resolve(import.meta.dirname, "shared"),
+          "@assets": path2.resolve(import.meta.dirname, "attached_assets")
         }
       },
-      envDir: path3.resolve(import.meta.dirname),
-      root: path3.resolve(import.meta.dirname, "client"),
-      publicDir: path3.resolve(import.meta.dirname, "client", "public"),
+      envDir: path2.resolve(import.meta.dirname),
+      root: path2.resolve(import.meta.dirname, "client"),
+      publicDir: path2.resolve(import.meta.dirname, "client", "public"),
       build: {
-        outDir: path3.resolve(import.meta.dirname, "dist/public"),
+        outDir: path2.resolve(import.meta.dirname, "dist/public"),
         emptyOutDir: true,
         rollupOptions: {
           output: {
@@ -197,7 +205,7 @@ import "dotenv/config";
 import express2 from "express";
 import { createServer } from "http";
 import net from "net";
-import path5 from "path";
+import path4 from "path";
 import cors from "cors";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 
@@ -1242,9 +1250,11 @@ function getServerSupabase() {
 
 // server/_core/storageProxy.ts
 function registerStorageProxy(app) {
-  app.get("/manus-storage/*", async (req, res) => {
+  app.get("/api/storage/*", async (req, res) => {
     const key = req.params[0];
-    if (!key) return void res.status(400).send("Missing storage key");
+    if (!key) {
+      return void res.status(400).json({ error: "Missing storage key" });
+    }
     const supabase = getServerSupabase();
     const bucket = process.env.SUPABASE_STORAGE_BUCKET;
     if (!supabase || !bucket) {
@@ -1258,13 +1268,15 @@ function registerStorageProxy(app) {
         return void res.redirect(307, data.signedUrl);
       }
       const { data: pub } = supabase.storage.from(bucket).getPublicUrl(key);
-      if (pub.publicUrl) {
+      if (pub && pub.publicUrl) {
         res.set("Cache-Control", "no-store");
         return void res.redirect(307, pub.publicUrl);
       }
       return void res.status(404).send("Image not found");
     } catch (err) {
-      console.error("[StorageProxy] supabase error:", err);
+      if (process.env.NODE_ENV === "development") {
+        console.error("[StorageProxy] Error:", err instanceof Error ? err.message : String(err));
+      }
       return void res.status(502).send("Storage proxy error");
     }
   });
@@ -1297,25 +1309,20 @@ function registerDownloadProxy(app) {
       const allowedDomains = [
         "s3.amazonaws.com",
         "s3.us-east-1.amazonaws.com",
-        ".s3.amazonaws.com",
         "cloudfront.net",
-        "manus-storage"
+        "storage.googleapis.com",
+        "supabase.co"
       ];
       let isAllowed = false;
+      let parsedUrl;
       try {
-        const parsedUrl = new URL(imageUrl);
+        parsedUrl = new URL(imageUrl);
         isAllowed = allowedDomains.some(
-          (domain) => parsedUrl.hostname.endsWith(domain) || parsedUrl.hostname.includes(domain)
+          (domain) => parsedUrl.hostname.endsWith(domain)
         );
       } catch {
         res.status(400).json({ error: "Invalid URL format" });
         return;
-      }
-      if (!isAllowed) {
-        const s3Patterns = ["vanir", "ai-generated", "manus"];
-        isAllowed = s3Patterns.some(
-          (pattern) => imageUrl.toLowerCase().includes(pattern)
-        );
       }
       if (!isAllowed) {
         res.status(403).json({ error: "URL domain not allowed for download" });
@@ -1680,33 +1687,72 @@ var bookingsRouter = router({
       guestPhone: z2.string().optional()
     })
   ).mutation(async ({ ctx, input }) => {
-    const confirmationCode = `VNR-${nanoid(8).toUpperCase()}`;
-    const booking = await createBooking({
-      ...input,
-      userId: ctx.user?.id ?? null,
-      confirmationCode,
-      status: "pending",
-      paymentStatus: "pending"
-    });
-    await notifyOwner({
-      title: "\u062D\u062C\u0632 \u062C\u062F\u064A\u062F - New Booking",
-      content: `\u062D\u062C\u0632 \u062C\u062F\u064A\u062F: ${input.packageName}
+    try {
+      const confirmationCode = `VNR-${nanoid(8).toUpperCase()}`;
+      const booking = await createBooking({
+        ...input,
+        userId: ctx.user?.id ?? null,
+        confirmationCode,
+        status: "pending",
+        paymentStatus: "pending"
+      });
+      console.log(`[bookings.create] created booking: confirmationCode=${confirmationCode}, packageName=${input.packageName}`);
+      await notifyOwner({
+        title: "\u062D\u062C\u0632 \u062C\u062F\u064A\u062F - New Booking",
+        content: `\u062D\u062C\u0632 \u062C\u062F\u064A\u062F: ${input.packageName}
 \u0627\u0644\u0639\u0645\u064A\u0644: ${input.guestName || ctx.user?.name || "\u0645\u062C\u0647\u0648\u0644"}
 \u0631\u0645\u0632 \u0627\u0644\u062A\u0623\u0643\u064A\u062F: ${confirmationCode}`
-    });
-    return booking;
+      });
+      return booking;
+    } catch (error) {
+      console.error("[bookings.create] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        packageName: input.packageName
+      });
+      throw error;
+    }
   }),
   /** Get booking by ID */
   getById: publicProcedure.input(z2.object({ id: z2.number() })).query(async ({ input }) => {
-    return getBookingById(input.id);
+    try {
+      const booking = await getBookingById(input.id);
+      console.log(`[bookings.getById] retrieved booking: id=${input.id}`);
+      return booking;
+    } catch (error) {
+      console.error("[bookings.getById] query error:", {
+        error: error instanceof Error ? error.message : String(error),
+        id: input.id
+      });
+      throw error;
+    }
   }),
   /** Get booking by confirmation code */
   getByCode: publicProcedure.input(z2.object({ code: z2.string() })).query(async ({ input }) => {
-    return getBookingByConfirmationCode(input.code);
+    try {
+      const booking = await getBookingByConfirmationCode(input.code);
+      console.log(`[bookings.getByCode] retrieved booking: code=${input.code}`);
+      return booking;
+    } catch (error) {
+      console.error("[bookings.getByCode] query error:", {
+        error: error instanceof Error ? error.message : String(error),
+        code: input.code
+      });
+      throw error;
+    }
   }),
   /** Get current user's bookings */
   myBookings: protectedProcedure.query(async ({ ctx }) => {
-    return getUserBookings(ctx.user.id);
+    try {
+      const bookings = await getUserBookings(ctx.user.id);
+      console.log(`[bookings.myBookings] retrieved ${bookings.length} bookings for user: ${ctx.user.id}`);
+      return bookings;
+    } catch (error) {
+      console.error("[bookings.myBookings] query error:", {
+        error: error instanceof Error ? error.message : String(error),
+        userId: ctx.user.id
+      });
+      throw error;
+    }
   }),
   /** Update booking status (admin only) */
   updateStatus: adminProcedure.input(
@@ -1715,7 +1761,18 @@ var bookingsRouter = router({
       status: z2.enum(["pending", "confirmed", "cancelled", "completed"])
     })
   ).mutation(async ({ input }) => {
-    return updateBookingStatus(input.id, input.status);
+    try {
+      const result = await updateBookingStatus(input.id, input.status);
+      console.log(`[bookings.updateStatus] updated booking: id=${input.id}, status=${input.status}`);
+      return result;
+    } catch (error) {
+      console.error("[bookings.updateStatus] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        id: input.id,
+        status: input.status
+      });
+      throw error;
+    }
   }),
   /** Update payment status (admin only) */
   updatePaymentStatus: adminProcedure.input(
@@ -1724,7 +1781,18 @@ var bookingsRouter = router({
       paymentStatus: z2.enum(["pending", "paid", "failed", "refunded"])
     })
   ).mutation(async ({ input }) => {
-    return updateBookingPaymentStatus(input.id, input.paymentStatus);
+    try {
+      const result = await updateBookingPaymentStatus(input.id, input.paymentStatus);
+      console.log(`[bookings.updatePaymentStatus] updated booking: id=${input.id}, paymentStatus=${input.paymentStatus}`);
+      return result;
+    } catch (error) {
+      console.error("[bookings.updatePaymentStatus] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        id: input.id,
+        paymentStatus: input.paymentStatus
+      });
+      throw error;
+    }
   }),
   /** List all bookings (admin only) */
   listAll: adminProcedure.input(
@@ -1733,8 +1801,17 @@ var bookingsRouter = router({
       offset: z2.number().min(0).default(0)
     }).optional()
   ).query(async ({ input }) => {
-    const { limit = 50, offset = 0 } = input ?? {};
-    return getAllBookings(limit, offset);
+    try {
+      const { limit = 50, offset = 0 } = input ?? {};
+      const bookings = await getAllBookings(limit, offset);
+      console.log(`[bookings.listAll] retrieved ${bookings.length} bookings`);
+      return bookings;
+    } catch (error) {
+      console.error("[bookings.listAll] query error:", {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
   })
 });
 
@@ -1748,16 +1825,44 @@ var reviewsRouter = router({
       offset: z3.number().min(0).default(0)
     }).optional()
   ).query(async ({ input }) => {
-    const { limit = 50, offset = 0 } = input ?? {};
-    return getApprovedReviews(limit, offset);
+    try {
+      const { limit = 50, offset = 0 } = input ?? {};
+      const reviews = await getApprovedReviews(limit, offset);
+      console.log(`[reviews.list] retrieved ${reviews.length} approved reviews`);
+      return reviews;
+    } catch (error) {
+      console.error("[reviews.list] query error:", {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
   }),
   /** Get review stats (public) */
   stats: publicProcedure.query(async () => {
-    return getReviewStats();
+    try {
+      const stats = await getReviewStats();
+      console.log("[reviews.stats] retrieved review statistics");
+      return stats;
+    } catch (error) {
+      console.error("[reviews.stats] query error:", {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
   }),
   /** Get single review by ID (public) */
   getById: publicProcedure.input(z3.object({ id: z3.number() })).query(async ({ input }) => {
-    return getReviewById(input.id);
+    try {
+      const review = await getReviewById(input.id);
+      console.log(`[reviews.getById] retrieved review: id=${input.id}`);
+      return review;
+    } catch (error) {
+      console.error("[reviews.getById] query error:", {
+        error: error instanceof Error ? error.message : String(error),
+        id: input.id
+      });
+      throw error;
+    }
   }),
   /** Create a new review (public - guests can review too) */
   create: publicProcedure.input(
@@ -1773,23 +1878,53 @@ var reviewsRouter = router({
       guestAvatarUrl: z3.string().optional()
     })
   ).mutation(async ({ ctx, input }) => {
-    return createReview({
-      ...input,
-      userId: ctx.user?.id ?? null,
-      isApproved: "pending",
-      helpfulCount: 0
-    });
+    try {
+      const review = await createReview({
+        ...input,
+        userId: ctx.user?.id ?? null,
+        isApproved: "pending",
+        helpfulCount: 0
+      });
+      console.log(`[reviews.create] created review: tripName=${input.tripName}, rating=${input.rating}`);
+      return review;
+    } catch (error) {
+      console.error("[reviews.create] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        tripName: input.tripName
+      });
+      throw error;
+    }
   }),
   /** Get current user's reviews */
   myReviews: protectedProcedure.query(async ({ ctx }) => {
-    return list("reviews", {
-      where: [["userId", "==", ctx.user.id]],
-      orderBy: [["createdAt", "desc"]]
-    });
+    try {
+      const reviews = await list("reviews", {
+        where: [["userId", "==", ctx.user.id]],
+        orderBy: [["createdAt", "desc"]]
+      });
+      console.log(`[reviews.myReviews] retrieved ${reviews.length} reviews for user: ${ctx.user.id}`);
+      return reviews;
+    } catch (error) {
+      console.error("[reviews.myReviews] query error:", {
+        error: error instanceof Error ? error.message : String(error),
+        userId: ctx.user.id
+      });
+      throw error;
+    }
   }),
   /** Mark review as helpful (public) */
   markHelpful: publicProcedure.input(z3.object({ id: z3.number() })).mutation(async ({ input }) => {
-    return incrementHelpfulCount(input.id);
+    try {
+      const result = await incrementHelpfulCount(input.id);
+      console.log(`[reviews.markHelpful] marked review as helpful: id=${input.id}`);
+      return result;
+    } catch (error) {
+      console.error("[reviews.markHelpful] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        id: input.id
+      });
+      throw error;
+    }
   }),
   /** List all reviews including pending (admin only) */
   listAll: adminProcedure.input(
@@ -1798,8 +1933,17 @@ var reviewsRouter = router({
       offset: z3.number().min(0).default(0)
     }).optional()
   ).query(async ({ input }) => {
-    const { limit = 50, offset = 0 } = input ?? {};
-    return getAllReviews(limit, offset);
+    try {
+      const { limit = 50, offset = 0 } = input ?? {};
+      const reviews = await getAllReviews(limit, offset);
+      console.log(`[reviews.listAll] retrieved ${reviews.length} reviews (including pending)`);
+      return reviews;
+    } catch (error) {
+      console.error("[reviews.listAll] query error:", {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
   }),
   /** Approve or reject a review (admin only) */
   moderate: adminProcedure.input(
@@ -1808,7 +1952,17 @@ var reviewsRouter = router({
       isApproved: z3.enum(["pending", "approved", "rejected"])
     })
   ).mutation(async ({ input }) => {
-    return updateReviewApproval(input.id, input.isApproved);
+    try {
+      const result = await updateReviewApproval(input.id, input.isApproved);
+      console.log(`[reviews.moderate] updated review approval: id=${input.id}, status=${input.isApproved}`);
+      return result;
+    } catch (error) {
+      console.error("[reviews.moderate] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        id: input.id
+      });
+      throw error;
+    }
   }),
   /** Add admin reply to a review (admin only) */
   reply: adminProcedure.input(
@@ -1817,7 +1971,17 @@ var reviewsRouter = router({
       adminReply: z3.string().min(1)
     })
   ).mutation(async ({ input }) => {
-    return addAdminReply(input.id, input.adminReply);
+    try {
+      const result = await addAdminReply(input.id, input.adminReply);
+      console.log(`[reviews.reply] added admin reply to review: id=${input.id}`);
+      return result;
+    } catch (error) {
+      console.error("[reviews.reply] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        id: input.id
+      });
+      throw error;
+    }
   })
 });
 
@@ -1954,16 +2118,6 @@ import { z as z6 } from "zod";
 
 // server/storage.ts
 init_firebase_storage();
-import fs2 from "fs";
-import path2 from "path";
-var DIRNAME = typeof __dirname !== "undefined" ? __dirname : new URL(".", import.meta.url).pathname;
-var LOCAL_UPLOADS_DIR = path2.resolve(DIRNAME, "..", "public", "uploads");
-function ensureLocalDir(filePath) {
-  const dir = path2.dirname(filePath);
-  if (!fs2.existsSync(dir)) {
-    fs2.mkdirSync(dir, { recursive: true });
-  }
-}
 function normalizeKey(relKey) {
   return relKey.replace(/^\/+/, "");
 }
@@ -1978,18 +2132,15 @@ async function storagePut2(relKey, data, contentType = "application/octet-stream
     fileBuffer = data;
   }
   try {
-    console.log(`[Storage] Attempting Firebase Storage upload for: ${key}`);
+    console.log(`[Storage] Uploading to Firebase Storage: ${key}`);
     const result = await storagePut(key, fileBuffer, contentType);
     console.log(`[Storage] Firebase Storage upload successful for: ${key}`);
     return { key, url: result.url };
   } catch (firebaseErr) {
-    console.warn(`[Storage] Firebase Storage failed for ${key}, falling back to local filesystem:`, firebaseErr);
+    const errorMessage = firebaseErr instanceof Error ? firebaseErr.message : String(firebaseErr);
+    console.error(`[Storage] Firebase Storage upload FAILED for ${key}:`, errorMessage);
+    throw new Error(`Failed to upload file to Firebase Storage: ${errorMessage}`);
   }
-  console.log(`[Storage] Using local filesystem fallback for: ${key}`);
-  const localPath = path2.join(LOCAL_UPLOADS_DIR, key);
-  ensureLocalDir(localPath);
-  fs2.writeFileSync(localPath, fileBuffer);
-  return { key, url: `/uploads/${key}` };
 }
 
 // server/routers/uploads.ts
@@ -2039,12 +2190,43 @@ var VIDEOS_COL = "gallery_videos";
 var galleryRouter = router({
   // ─── Public Endpoints ───
   listVisible: publicProcedure.query(async () => {
-    const snap = await db.collection(ITEMS_COL).where("isVisible", "==", "visible").orderBy("sortOrder", "asc").get();
-    return snap.docs.map((d) => d.data());
+    try {
+      const snap = await db.collection(ITEMS_COL).where("isVisible", "==", "visible").orderBy("sortOrder", "asc").get();
+      console.log(`[Gallery] listVisible: Found ${snap.docs.length} items (with index)`);
+      return snap.docs.map((d) => {
+        const data = d.data();
+        console.log(`[Gallery] Item data:`, { id: data.id, imageUrl: data.imageUrl, title: data.title });
+        return { ...data, _docId: d.id };
+      });
+    } catch (indexErr) {
+      console.warn("[Gallery] listVisible: Index query failed, falling back to client-side filter", indexErr.message);
+      const snap = await db.collection(ITEMS_COL).orderBy("createdAt", "desc").get();
+      const filtered = snap.docs.map((d) => {
+        const data = d.data();
+        return { ...data, _docId: d.id };
+      }).filter((item) => item.isVisible === "visible").sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+      console.log(`[Gallery] listVisible: Found ${filtered.length} items (fallback)`);
+      return filtered;
+    }
   }),
   listVisibleVideos: publicProcedure.query(async () => {
-    const snap = await db.collection(VIDEOS_COL).where("isVisible", "==", "visible").orderBy("sortOrder", "asc").get();
-    return snap.docs.map((d) => d.data());
+    try {
+      const snap = await db.collection(VIDEOS_COL).where("isVisible", "==", "visible").orderBy("sortOrder", "asc").get();
+      console.log(`[Gallery] listVisibleVideos: Found ${snap.docs.length} items (with index)`);
+      return snap.docs.map((d) => {
+        const data = d.data();
+        return { ...data, _docId: d.id };
+      });
+    } catch (indexErr) {
+      console.warn("[Gallery] listVisibleVideos: Index query failed, falling back to client-side filter", indexErr.message);
+      const snap = await db.collection(VIDEOS_COL).orderBy("createdAt", "desc").get();
+      const filtered = snap.docs.map((d) => {
+        const data = d.data();
+        return { ...data, _docId: d.id };
+      }).filter((item) => item.isVisible === "visible").sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+      console.log(`[Gallery] listVisibleVideos: Found ${filtered.length} items (fallback)`);
+      return filtered;
+    }
   }),
   // ─── Admin Endpoints: Gallery Items ───
   listAll: adminProcedure.input(
@@ -2055,7 +2237,7 @@ var galleryRouter = router({
   ).query(async ({ input }) => {
     const { limit = 100, offset = 0 } = input ?? {};
     const snap = await db.collection(ITEMS_COL).orderBy("createdAt", "desc").offset(offset).limit(limit).get();
-    return snap.docs.map((d) => d.data());
+    return snap.docs.map((d) => ({ ...d.data(), _docId: d.id }));
   }),
   create: adminProcedure.input(
     z7.object({
@@ -2073,15 +2255,15 @@ var galleryRouter = router({
       sortOrder: z7.number().default(0)
     })
   ).mutation(async ({ input }) => {
-    const id = Date.now();
-    const item = {
+    const docRef = await db.collection(ITEMS_COL).add({
       ...input,
-      id,
       isVisible: "visible",
       createdAt: /* @__PURE__ */ new Date()
-    };
-    await db.collection(ITEMS_COL).add(item);
-    return item;
+    });
+    const doc = await docRef.get();
+    const data = doc.data();
+    console.log(`[Gallery] Created new item: docId=${docRef.id}, imageUrl=${input.imageUrl}`);
+    return { ...data, _docId: docRef.id };
   }),
   update: adminProcedure.input(
     z7.object({
@@ -2102,16 +2284,36 @@ var galleryRouter = router({
     })
   ).mutation(async ({ input }) => {
     const { id, ...data } = input;
-    const snap = await db.collection(ITEMS_COL).where("id", "==", id).limit(1).get();
-    if (snap.empty) throw new Error("Gallery item not found");
-    await snap.docs[0].ref.set(data, { merge: true });
-    const updated = (await snap.docs[0].ref.get()).data();
-    return updated;
+    const snap = await db.collection(ITEMS_COL).limit(1e3).get();
+    let found = false;
+    let docRef = null;
+    for (const doc of snap.docs) {
+      const docData = doc.data();
+      if (docData._docId === id || doc.id === id) {
+        docRef = doc.ref;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      throw new Error(`Gallery item not found: ${id}`);
+    }
+    await docRef.set(data, { merge: true });
+    const updated = (await docRef.get()).data();
+    console.log(`[Gallery] Updated item: docId=${docRef.id}`);
+    return { ...updated, _docId: docRef.id };
   }),
   delete: adminProcedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
-    const snap = await db.collection(ITEMS_COL).where("id", "==", input.id).limit(1).get();
-    if (!snap.empty) await snap.docs[0].ref.delete();
-    return { success: true };
+    const snap = await db.collection(ITEMS_COL).limit(1e3).get();
+    for (const doc of snap.docs) {
+      const docData = doc.data();
+      if (docData._docId === input.id || doc.id === input.id) {
+        await doc.ref.delete();
+        console.log(`[Gallery] Deleted item: docId=${doc.id}`);
+        return { success: true };
+      }
+    }
+    throw new Error(`Gallery item not found: ${input.id}`);
   }),
   uploadImage: adminProcedure.input(
     z7.object({
@@ -2139,7 +2341,7 @@ var galleryRouter = router({
   ).query(async ({ input }) => {
     const { limit = 50, offset = 0 } = input ?? {};
     const snap = await db.collection(VIDEOS_COL).orderBy("createdAt", "desc").offset(offset).limit(limit).get();
-    return snap.docs.map((d) => d.data());
+    return snap.docs.map((d) => ({ ...d.data(), _docId: d.id }));
   }),
   createVideo: adminProcedure.input(
     z7.object({
@@ -2152,15 +2354,15 @@ var galleryRouter = router({
       sortOrder: z7.number().default(0)
     })
   ).mutation(async ({ input }) => {
-    const id = Date.now();
-    const video = {
+    const docRef = await db.collection(VIDEOS_COL).add({
       ...input,
-      id,
       isVisible: "visible",
       createdAt: /* @__PURE__ */ new Date()
-    };
-    await db.collection(VIDEOS_COL).add(video);
-    return video;
+    });
+    const doc = await docRef.get();
+    const data = doc.data();
+    console.log(`[Gallery] Created new video: docId=${docRef.id}, youtubeId=${input.youtubeId}`);
+    return { ...data, _docId: docRef.id };
   }),
   updateVideo: adminProcedure.input(
     z7.object({
@@ -2176,16 +2378,36 @@ var galleryRouter = router({
     })
   ).mutation(async ({ input }) => {
     const { id, ...data } = input;
-    const snap = await db.collection(VIDEOS_COL).where("id", "==", id).limit(1).get();
-    if (snap.empty) throw new Error("Gallery video not found");
-    await snap.docs[0].ref.set(data, { merge: true });
-    const updated = (await snap.docs[0].ref.get()).data();
-    return updated;
+    const snap = await db.collection(VIDEOS_COL).limit(1e3).get();
+    let found = false;
+    let docRef = null;
+    for (const doc of snap.docs) {
+      const docData = doc.data();
+      if (docData._docId === id || doc.id === id) {
+        docRef = doc.ref;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      throw new Error(`Gallery video not found: ${id}`);
+    }
+    await docRef.set(data, { merge: true });
+    const updated = (await docRef.get()).data();
+    console.log(`[Gallery] Updated video: docId=${docRef.id}`);
+    return { ...updated, _docId: docRef.id };
   }),
   deleteVideo: adminProcedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
-    const snap = await db.collection(VIDEOS_COL).where("id", "==", input.id).limit(1).get();
-    if (!snap.empty) await snap.docs[0].ref.delete();
-    return { success: true };
+    const snap = await db.collection(VIDEOS_COL).limit(1e3).get();
+    for (const doc of snap.docs) {
+      const docData = doc.data();
+      if (docData._docId === input.id || doc.id === input.id) {
+        await doc.ref.delete();
+        console.log(`[Gallery] Deleted video: docId=${doc.id}`);
+        return { success: true };
+      }
+    }
+    throw new Error(`Gallery video not found: ${input.id}`);
   })
 });
 
@@ -2594,28 +2816,45 @@ var usersRouter = router({
       offset: z9.number().min(0).default(0)
     }).optional()
   ).query(async ({ input }) => {
-    const { limit = 50, offset = 0 } = input ?? {};
-    const [usersList, total] = await Promise.all([
-      getAllUsers(limit, offset),
-      getUsersCount()
-    ]);
-    return {
-      users: usersList,
-      total,
-      limit,
-      offset
-    };
+    try {
+      const { limit = 50, offset = 0 } = input ?? {};
+      const [usersList, total] = await Promise.all([
+        getAllUsers(limit, offset),
+        getUsersCount()
+      ]);
+      console.log(`[users.list] retrieved ${usersList.length} users out of ${total} total`);
+      return {
+        users: usersList,
+        total,
+        limit,
+        offset
+      };
+    } catch (error) {
+      console.error("[users.list] query error:", {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
   }),
   // Get single user by ID (admin only)
   getById: adminProcedure2.input(z9.object({ id: z9.number() })).query(async ({ input }) => {
-    const user = await getUserById(input.id);
-    if (!user) {
-      throw new TRPCError3({
-        code: "NOT_FOUND",
-        message: "User not found"
+    try {
+      const user = await getUserById(input.id);
+      if (!user) {
+        throw new TRPCError3({
+          code: "NOT_FOUND",
+          message: "User not found"
+        });
+      }
+      console.log(`[users.getById] retrieved user: id=${input.id}`);
+      return user;
+    } catch (error) {
+      console.error("[users.getById] query error:", {
+        error: error instanceof Error ? error.message : String(error),
+        id: input.id
       });
+      throw error;
     }
-    return user;
   }),
   // Update user role (admin only)
   updateRole: adminProcedure2.input(
@@ -2624,14 +2863,24 @@ var usersRouter = router({
       role: z9.enum(["user", "admin"])
     })
   ).mutation(async ({ input }) => {
-    const user = await updateUserRole(input.id, input.role);
-    if (!user) {
-      throw new TRPCError3({
-        code: "NOT_FOUND",
-        message: "User not found"
+    try {
+      const user = await updateUserRole(input.id, input.role);
+      if (!user) {
+        throw new TRPCError3({
+          code: "NOT_FOUND",
+          message: "User not found"
+        });
+      }
+      console.log(`[users.updateRole] updated user: id=${input.id}, role=${input.role}`);
+      return user;
+    } catch (error) {
+      console.error("[users.updateRole] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        id: input.id,
+        role: input.role
       });
+      throw error;
     }
-    return user;
   }),
   // Search users (admin only)
   search: adminProcedure2.input(
@@ -2640,15 +2889,42 @@ var usersRouter = router({
       limit: z9.number().min(1).max(50).default(20)
     })
   ).query(async ({ input }) => {
-    return searchUsers(input.query, input.limit);
+    try {
+      const results = await searchUsers(input.query, input.limit);
+      console.log(`[users.search] found ${results.length} users matching: ${input.query}`);
+      return results;
+    } catch (error) {
+      console.error("[users.search] query error:", {
+        error: error instanceof Error ? error.message : String(error),
+        query: input.query
+      });
+      throw error;
+    }
   }),
   // Get user statistics (admin only)
   stats: adminProcedure2.query(async () => {
-    return getUserStats();
+    try {
+      const stats = await getUserStats();
+      console.log("[users.stats] retrieved user statistics");
+      return stats;
+    } catch (error) {
+      console.error("[users.stats] query error:", {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
   }),
   // Get current user profile
   profile: protectedProcedure.query(async ({ ctx }) => {
-    return ctx.user;
+    try {
+      console.log(`[users.profile] retrieved profile for user: ${ctx.user.id}`);
+      return ctx.user;
+    } catch (error) {
+      console.error("[users.profile] query error:", {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
   }),
   // Update current user profile
   updateProfile: protectedProcedure.input(
@@ -2658,14 +2934,23 @@ var usersRouter = router({
       avatarUrl: z9.string().url().nullable().optional()
     })
   ).mutation(async ({ ctx, input }) => {
-    const updated = await updateUserProfile(ctx.user.id, input);
-    if (!updated) {
-      throw new TRPCError3({
-        code: "NOT_FOUND",
-        message: "User not found"
+    try {
+      const updated = await updateUserProfile(ctx.user.id, input);
+      if (!updated) {
+        throw new TRPCError3({
+          code: "NOT_FOUND",
+          message: "User not found"
+        });
+      }
+      console.log(`[users.updateProfile] updated profile for user: ${ctx.user.id}`);
+      return updated;
+    } catch (error) {
+      console.error("[users.updateProfile] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        userId: ctx.user.id
       });
+      throw error;
     }
-    return updated;
   }),
   // Get profile stats for current user (bookings count, reviews count, AI credits)
   profileStats: protectedProcedure.query(async ({ ctx }) => {
@@ -2674,24 +2959,33 @@ var usersRouter = router({
     let reviewsCount = 0;
     let aiCreditsBalance = 0;
     try {
-      const userBookings = await getUserBookings(userId);
-      bookingsCount = userBookings.length;
-    } catch {
+      try {
+        const userBookings = await getUserBookings(userId);
+        bookingsCount = userBookings.length;
+      } catch {
+      }
+      try {
+        reviewsCount = await count("reviews", [["userId", "==", userId]]);
+      } catch {
+      }
+      try {
+        const credits = await getOrCreateAICredits(userId);
+        aiCreditsBalance = parseFloat(credits.balance.toString());
+      } catch {
+      }
+      console.log(`[users.profileStats] retrieved stats for user: ${userId}, bookings=${bookingsCount}, reviews=${reviewsCount}`);
+      return {
+        bookings: bookingsCount,
+        reviews: reviewsCount,
+        aiCredits: aiCreditsBalance
+      };
+    } catch (error) {
+      console.error("[users.profileStats] query error:", {
+        error: error instanceof Error ? error.message : String(error),
+        userId
+      });
+      throw error;
     }
-    try {
-      reviewsCount = await count("reviews", [["userId", "==", userId]]);
-    } catch {
-    }
-    try {
-      const credits = await getOrCreateAICredits(userId);
-      aiCreditsBalance = parseFloat(credits.balance.toString());
-    } catch {
-    }
-    return {
-      bookings: bookingsCount,
-      reviews: reviewsCount,
-      aiCredits: aiCreditsBalance
-    };
   })
 });
 
@@ -3412,8 +3706,17 @@ var adminDestinationsRouter = router({
       exclusions: z12.string().optional()
     })
   ).mutation(async ({ input }) => {
-    await insert(COL2, { ...input, isActive: "active" });
-    return { success: true };
+    try {
+      const result = await insert(COL2, { ...input, isActive: "active" });
+      console.log(`[adminDestinations.create] created destination: id=${result.id}, name=${input.name}`);
+      return { success: true, id: result.id };
+    } catch (error) {
+      console.error("[adminDestinations.create] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        name: input.name
+      });
+      throw error;
+    }
   }),
   /** Update destination */
   update: adminProcedure.input(
@@ -3435,38 +3738,81 @@ var adminDestinationsRouter = router({
       isActive: z12.enum(["active", "inactive"]).optional()
     })
   ).mutation(async ({ input }) => {
-    const { id, ...data } = input;
-    await update(COL2, id, data);
-    return { success: true };
+    try {
+      const { id, ...data } = input;
+      await update(COL2, id, data);
+      console.log(`[adminDestinations.update] updated destination: id=${id}`);
+      return { success: true };
+    } catch (error) {
+      console.error("[adminDestinations.update] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        id: input.id
+      });
+      throw error;
+    }
   }),
   /** Delete destination */
   delete: adminProcedure.input(z12.object({ id: z12.number() })).mutation(async ({ input }) => {
-    await remove(COL2, input.id);
-    return { success: true };
+    try {
+      await remove(COL2, input.id);
+      console.log(`[adminDestinations.delete] deleted destination: id=${input.id}`);
+      return { success: true };
+    } catch (error) {
+      console.error("[adminDestinations.delete] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        id: input.id
+      });
+      throw error;
+    }
   }),
   /** Bulk delete destinations */
   bulkDelete: adminProcedure.input(z12.object({ ids: z12.array(z12.number()) })).mutation(async ({ input }) => {
-    for (const id of input.ids) await remove(COL2, id);
-    return { success: true, deleted: input.ids.length };
+    try {
+      for (const id of input.ids) await remove(COL2, id);
+      console.log(`[adminDestinations.bulkDelete] deleted ${input.ids.length} destinations`);
+      return { success: true, deleted: input.ids.length };
+    } catch (error) {
+      console.error("[adminDestinations.bulkDelete] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        count: input.ids.length
+      });
+      throw error;
+    }
   }),
   /** Update destination status (active/inactive) */
   updateStatus: adminProcedure.input(z12.object({ id: z12.number(), isActive: z12.enum(["active", "inactive"]) })).mutation(async ({ input }) => {
-    await update(COL2, input.id, { isActive: input.isActive });
-    return { success: true };
+    try {
+      await update(COL2, input.id, { isActive: input.isActive });
+      console.log(`[adminDestinations.updateStatus] updated status: id=${input.id}, status=${input.isActive}`);
+      return { success: true };
+    } catch (error) {
+      console.error("[adminDestinations.updateStatus] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        id: input.id
+      });
+      throw error;
+    }
   }),
   /** Get statistics */
   getStats: adminProcedure.query(async () => {
-    const allDestinations = await list(COL2, {});
-    const activeCount = allDestinations.filter((d) => d.isActive === "active").length;
-    const avgRating = allDestinations.length > 0 ? (allDestinations.reduce((sum, d) => sum + (parseFloat(d.rating) || 0), 0) / allDestinations.length).toFixed(2) : 0;
-    const avgPrice = allDestinations.length > 0 ? (allDestinations.reduce((sum, d) => sum + (parseFloat(d.pricePerPerson) || 0), 0) / allDestinations.length).toFixed(2) : 0;
-    return {
-      total: allDestinations.length,
-      active: activeCount,
-      inactive: allDestinations.length - activeCount,
-      avgRating: parseFloat(avgRating),
-      avgPrice: parseFloat(avgPrice)
-    };
+    try {
+      const allDestinations = await list(COL2, {});
+      const activeCount = allDestinations.filter((d) => d.isActive === "active").length;
+      const avgRating = allDestinations.length > 0 ? (allDestinations.reduce((sum, d) => sum + (parseFloat(d.rating) || 0), 0) / allDestinations.length).toFixed(2) : 0;
+      const avgPrice = allDestinations.length > 0 ? (allDestinations.reduce((sum, d) => sum + (parseFloat(d.pricePerPerson) || 0), 0) / allDestinations.length).toFixed(2) : 0;
+      return {
+        total: allDestinations.length,
+        active: activeCount,
+        inactive: allDestinations.length - activeCount,
+        avgRating: parseFloat(avgRating),
+        avgPrice: parseFloat(avgPrice)
+      };
+    } catch (error) {
+      console.error("[adminDestinations.getStats] query error:", {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
   })
 });
 
@@ -3525,8 +3871,17 @@ var adminOffersRouter = router({
       badgeColor: z13.string().optional()
     })
   ).mutation(async ({ input }) => {
-    await insert(COL3, { ...input, isActive: "active", bookedSpots: 0 });
-    return { success: true };
+    try {
+      const result = await insert(COL3, { ...input, isActive: "active", bookedSpots: 0 });
+      console.log(`[adminOffers.create] created offer: id=${result.id}, title=${input.title}`);
+      return { success: true, id: result.id };
+    } catch (error) {
+      console.error("[adminOffers.create] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        title: input.title
+      });
+      throw error;
+    }
   }),
   /** Update offer */
   update: adminProcedure.input(
@@ -3548,40 +3903,83 @@ var adminOffersRouter = router({
       isActive: z13.enum(["active", "inactive", "expired"]).optional()
     })
   ).mutation(async ({ input }) => {
-    const { id, ...data } = input;
-    await update(COL3, id, data);
-    return { success: true };
+    try {
+      const { id, ...data } = input;
+      await update(COL3, id, data);
+      console.log(`[adminOffers.update] updated offer: id=${id}`);
+      return { success: true };
+    } catch (error) {
+      console.error("[adminOffers.update] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        id: input.id
+      });
+      throw error;
+    }
   }),
   /** Delete offer */
   delete: adminProcedure.input(z13.object({ id: z13.number() })).mutation(async ({ input }) => {
-    await remove(COL3, input.id);
-    return { success: true };
+    try {
+      await remove(COL3, input.id);
+      console.log(`[adminOffers.delete] deleted offer: id=${input.id}`);
+      return { success: true };
+    } catch (error) {
+      console.error("[adminOffers.delete] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        id: input.id
+      });
+      throw error;
+    }
   }),
   /** Bulk delete offers */
   bulkDelete: adminProcedure.input(z13.object({ ids: z13.array(z13.number()) })).mutation(async ({ input }) => {
-    for (const id of input.ids) await remove(COL3, id);
-    return { success: true, deleted: input.ids.length };
+    try {
+      for (const id of input.ids) await remove(COL3, id);
+      console.log(`[adminOffers.bulkDelete] deleted ${input.ids.length} offers`);
+      return { success: true, deleted: input.ids.length };
+    } catch (error) {
+      console.error("[adminOffers.bulkDelete] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        count: input.ids.length
+      });
+      throw error;
+    }
   }),
   /** Update offer status */
   updateStatus: adminProcedure.input(z13.object({ id: z13.number(), isActive: z13.enum(["active", "inactive", "expired"]) })).mutation(async ({ input }) => {
-    await update(COL3, input.id, { isActive: input.isActive });
-    return { success: true };
+    try {
+      await update(COL3, input.id, { isActive: input.isActive });
+      console.log(`[adminOffers.updateStatus] updated status: id=${input.id}, status=${input.isActive}`);
+      return { success: true };
+    } catch (error) {
+      console.error("[adminOffers.updateStatus] mutation error:", {
+        error: error instanceof Error ? error.message : String(error),
+        id: input.id
+      });
+      throw error;
+    }
   }),
   /** Get statistics */
   getStats: adminProcedure.query(async () => {
-    const allOffers = await list(COL3, {});
-    const activeCount = allOffers.filter((o) => o.isActive === "active").length;
-    const totalDiscount = allOffers.reduce(
-      (sum, o) => sum + (parseFloat(o.discountValue) || 0),
-      0
-    );
-    const avgDiscount = allOffers.length > 0 ? (totalDiscount / allOffers.length).toFixed(2) : 0;
-    return {
-      total: allOffers.length,
-      active: activeCount,
-      inactive: allOffers.length - activeCount,
-      avgDiscount: parseFloat(avgDiscount)
-    };
+    try {
+      const allOffers = await list(COL3, {});
+      const activeCount = allOffers.filter((o) => o.isActive === "active").length;
+      const totalDiscount = allOffers.reduce(
+        (sum, o) => sum + (parseFloat(o.discountValue) || 0),
+        0
+      );
+      const avgDiscount = allOffers.length > 0 ? (totalDiscount / allOffers.length).toFixed(2) : 0;
+      return {
+        total: allOffers.length,
+        active: activeCount,
+        inactive: allOffers.length - activeCount,
+        avgDiscount: parseFloat(avgDiscount)
+      };
+    } catch (error) {
+      console.error("[adminOffers.getStats] query error:", {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
   })
 });
 
@@ -5019,13 +5417,19 @@ async function createContext(opts) {
           lastSignedIn: now
         };
       }
-    } catch {
+    } catch (err) {
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[context] Firebase token verification failed");
+      }
     }
   }
   if (!user) {
     try {
       user = await sdk.authenticateRequest(opts.req);
-    } catch {
+    } catch (err) {
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[context] Session auth failed");
+      }
       user = null;
     }
   }
@@ -5047,10 +5451,10 @@ async function createContext(opts) {
 
 // server/_core/vite.ts
 import express from "express";
-import fs3 from "fs";
+import fs2 from "fs";
 import { nanoid as nanoid5 } from "nanoid";
-import path4 from "path";
-var DIRNAME2 = typeof __dirname !== "undefined" ? __dirname : new URL(".", import.meta.url).pathname;
+import path3 from "path";
+var DIRNAME = typeof __dirname !== "undefined" ? __dirname : new URL(".", import.meta.url).pathname;
 async function setupVite(app, server) {
   const { createServer: createViteServer } = await import("vite");
   const viteConfig = (await Promise.resolve().then(() => (init_vite_config(), vite_config_exports))).default;
@@ -5069,8 +5473,8 @@ async function setupVite(app, server) {
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
     try {
-      const clientTemplate = path4.resolve(DIRNAME2, "../..", "client", "index.html");
-      let template = await fs3.promises.readFile(clientTemplate, "utf-8");
+      const clientTemplate = path3.resolve(DIRNAME, "../..", "client", "index.html");
+      let template = await fs2.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid5()}"`
@@ -5084,8 +5488,8 @@ async function setupVite(app, server) {
   });
 }
 function serveStatic(app) {
-  const distPath = process.env.NODE_ENV === "development" ? path4.resolve(DIRNAME2, "../..", "dist", "public") : path4.resolve(DIRNAME2, "public");
-  if (!fs3.existsSync(distPath)) {
+  const distPath = process.env.NODE_ENV === "development" ? path3.resolve(DIRNAME, "../..", "dist", "public") : path3.resolve(DIRNAME, "public");
+  if (!fs2.existsSync(distPath)) {
     console.error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
@@ -5097,7 +5501,7 @@ function serveStatic(app) {
           res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
           res.setHeader("Pragma", "no-cache");
           res.setHeader("Expires", "0");
-        } else if (filePath.includes(`${path4.sep}assets${path4.sep}`)) {
+        } else if (filePath.includes(`${path3.sep}assets${path3.sep}`)) {
           res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
         }
       }
@@ -5107,12 +5511,12 @@ function serveStatic(app) {
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
-    res.sendFile(path4.resolve(distPath, "index.html"));
+    res.sendFile(path3.resolve(distPath, "index.html"));
   });
 }
 
 // server/_core/index.ts
-var DIRNAME3 = typeof __dirname !== "undefined" ? __dirname : new URL(".", import.meta.url).pathname;
+var DIRNAME2 = typeof __dirname !== "undefined" ? __dirname : new URL(".", import.meta.url).pathname;
 function isPortAvailable(port) {
   return new Promise((resolve) => {
     const server = net.createServer();
@@ -5153,7 +5557,7 @@ function createApp() {
   });
   app.use(express2.json({ limit: "50mb" }));
   app.use(express2.urlencoded({ limit: "50mb", extended: true }));
-  app.use("/uploads", express2.static(path5.resolve(DIRNAME3, "..", "public", "uploads")));
+  app.use("/uploads", express2.static(path4.resolve(DIRNAME2, "..", "public", "uploads")));
   registerStorageProxy(app);
   registerDownloadProxy(app);
   registerOAuthRoutes(app);

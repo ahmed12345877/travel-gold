@@ -5,7 +5,7 @@
  */
 import { useAuth } from "@/_core/hooks/useAuth";
 import Navbar from "@/components/Navbar";
-import HeroSection from "@/components/HeroSection";
+import HeroSectionEgyptian from "@/components/HeroSectionEgyptian";
 import SearchForm from "@/components/SearchForm";
 import AboutSection from "@/components/AboutSection";
 import ActivitiesSection from "@/components/ActivitiesSection";
@@ -48,7 +48,12 @@ export default function Home() {
       <ScrollProgressIndicator />
 
       <Navbar />
-      <HeroSection />
+      <HeroSectionEgyptian
+        title="استكشف مصر الخالدة"
+        subtitle="رحلة عبر الزمن بين الحضارة العريقة والعصرية المتحركة"
+        ctaText="ابدأ الاستكشاف"
+        ctaLink="/destinations"
+      />
 
       {/* About Section - Fade up reveal */}
       <ScrollReveal variant="fade-up" duration={0.9}>
