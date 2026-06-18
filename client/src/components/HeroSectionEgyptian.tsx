@@ -285,21 +285,12 @@ export default function HeroSectionEgyptian({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900"
+      className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-amber-900 via-amber-950 to-slate-950"
     >
-      {/* SVG Mask Definitions */}
-      <EgyptianSVGMask id="hero-mask" />
-
-      {/* Background Media with Mask */}
+      {/* Background Media - Full coverage without mask for better image display */}
       <div
         ref={mediaRef}
         className="absolute inset-0"
-        style={{
-          maskImage: `url(#egyptian-mask-hero-mask)`,
-          WebkitMaskImage: `url(#egyptian-mask-hero-mask)`,
-          maskSize: 'cover',
-          WebkitMaskSize: 'cover',
-        }}
       >
         {videoSrc ? (
           <video
@@ -309,7 +300,7 @@ export default function HeroSectionEgyptian({
             playsInline
             className="w-full h-full object-cover"
             style={{
-              filter: 'brightness(0.7) saturate(1.2)',
+              filter: 'brightness(0.6) saturate(1.1) contrast(1.05)',
             }}
           >
             <source src={videoSrc} type="video/mp4" />
@@ -320,14 +311,14 @@ export default function HeroSectionEgyptian({
             alt="Hero Background"
             className="w-full h-full object-cover"
             style={{
-              filter: 'brightness(0.7) saturate(1.2)',
+              filter: 'brightness(0.65) saturate(1.1) contrast(1.05)',
             }}
           />
         )}
       </div>
 
-      {/* Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent z-10" />
+      {/* Gradient Overlay - Enhanced for golden Egyptian theme */}
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-amber-900/30 to-transparent z-10" />
 
       {/* Particle Effects */}
       <EgyptianParticles />

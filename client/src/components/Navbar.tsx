@@ -135,13 +135,13 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Main navbar - fully transparent, blends with background */}
+      {/* Main navbar - transparent with smooth gradient transition */}
       <nav
-        className={`sticky top-0 z-50 transition-all duration-500 ${
+        className={`sticky top-0 z-50 transition-all duration-500 backdrop-blur-md ${
           scrolled
-            ? "bg-[var(--theme-surface)] shadow-lg shadow-black/20 border-b border-white/5"
+            ? "bg-slate-900/95 shadow-lg shadow-black/20 border-b border-white/10"
             : isHome
-            ? "bg-gradient-to-b from-black/40 to-transparent border-b border-transparent"
+            ? "bg-gradient-to-b from-amber-950/30 via-slate-900/20 to-transparent border-b border-transparent"
             : "bg-transparent border-b border-transparent"
         }`}
       >
