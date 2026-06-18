@@ -298,7 +298,8 @@ export default function HeroSection() {
             loop
             playsInline
             onError={() => setVideoError(true)}
-            className="absolute inset-0 w-full h-[120%] object-cover object-center"
+            className="absolute inset-0 w-full h-full object-cover object-center"
+            style={{ minHeight: "100vh" }}
           >
             <source src={ASSETS.HERO_VIDEO} type="video/mp4" />
           </video>
@@ -307,11 +308,12 @@ export default function HeroSection() {
           <img
             src={ASSETS.HERO_BG}
             alt="Misty mountains landscape - atmospheric travel destination"
-            className="absolute inset-0 w-full h-[120%] object-cover object-center"
+            className="absolute inset-0 w-full h-full object-cover object-center"
           />
         )}
-        <div className="fog-overlay" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[var(--theme-surface)]/60 via-[var(--theme-surface)]/30 to-[var(--theme-surface)]/80" />
+        {/* Enhanced overlay for better text contrast and cinematic feel */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/30" />
       </motion.div>
 
       {/* ── Ambient Particles ── */}
