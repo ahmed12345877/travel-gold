@@ -739,6 +739,7 @@ export default function Gallery() {
                     <OptimizedImage
                       src={item.src}
                       alt={item.title}
+                      lazy={false}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
 
@@ -795,6 +796,7 @@ export default function Gallery() {
                     <OptimizedImage
                       src={video.thumbnail}
                       alt={video.title}
+                      lazy={false}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors" />
@@ -841,6 +843,7 @@ export default function Gallery() {
               <OptimizedImage
                 src={selectedImage.src}
                 alt={selectedImage.title}
+                lazy={false}
                 className="w-full h-auto rounded-lg"
               />
 
