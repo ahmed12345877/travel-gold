@@ -252,14 +252,21 @@ export default function HeroSectionEgyptian({
       0.8
     );
 
-    // Continuous subtle movement
-    gsap.to(mediaRef.current, {
+    // Continuous subtle movement - store reference for cleanup
+    const floatTween = gsap.to(mediaRef.current, {
       y: 20,
       duration: 4,
       repeat: -1,
       yoyo: true,
       ease: 'sine.inOut',
     });
+
+    // Cleanup: Kill all GSAP animations on unmount
+    return () => {
+      tl.kill();
+      floatTween.kill();
+      gsap.set(mediaRef.current, { clearProps: 'all' });
+    };
   }, []);
 
   // Handle CTA click

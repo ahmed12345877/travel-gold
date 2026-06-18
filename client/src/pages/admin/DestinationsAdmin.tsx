@@ -30,6 +30,7 @@ export default function DestinationsAdmin() {
     exclusions: "",
   });
 
+  const utils = trpc.useUtils();
   const { data: destinations, isLoading, refetch } = trpc.adminDestinations.list.useQuery({
     search,
     limit: 20,
@@ -42,6 +43,9 @@ export default function DestinationsAdmin() {
       setFormData(prev => ({ ...prev, imageUrl: result.url }));
       toast.success("تم رفع الصورة بنجاح");
       setIsUploadingImage(false);
+      // Keep gallery views in sync with new uploads
+      utils.gallery.listAll.invalidate();
+      utils.gallery.listVisible.invalidate();
     },
     onError: (error: any) => {
       console.error("[DestinationsAdmin] Image upload failed:", error);
@@ -51,20 +55,24 @@ export default function DestinationsAdmin() {
   });
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
       toast.error("حجم الملف يتجاوز 10 ميجابايت");
+      input.value = "";
       return;
     }
 
     setIsUploadingImage(true);
     const reader = new FileReader();
     reader.onload = async () => {
-      const base64 = reader.result as string;
-      const base64Data = base64.split(",")[1];
       try {
+        if (typeof reader.result !== "string") {
+          throw new Error("Invalid file reader result");
+        }
+        const base64Data = reader.result.split(",")[1];
         await uploadImageMutation.mutateAsync({
           fileData: base64Data,
           filename: file.name,
@@ -72,18 +80,23 @@ export default function DestinationsAdmin() {
         });
       } catch (error) {
         console.error("[DestinationsAdmin] Upload error:", error);
+        toast.error("خطأ في رفع الصورة");
+      } finally {
+        setIsUploadingImage(false);
+        input.value = "";
       }
     };
     reader.onerror = () => {
       toast.error("خطأ في قراءة الملف");
       setIsUploadingImage(false);
+      input.value = "";
     };
     reader.readAsDataURL(file);
   };
 
   const createMutation = trpc.adminDestinations.create.useMutation({
     onSuccess: () => {
-      alert("تم إنشاء الوجهة بنجاح");
+      toast.success("تم إنشاء الوجهة بنجاح");
       refetch();
       setIsOpen(false);
       setFormData({
@@ -103,19 +116,19 @@ export default function DestinationsAdmin() {
       });
     },
     onError: (error: any) => {
-      alert("خطأ: " + error.message);
+      toast.error("خطأ: " + (error.message || "فشل حفظ الوجهة"));
     },
   });
 
   const updateMutation = trpc.adminDestinations.update.useMutation({
     onSuccess: () => {
-      alert("تم تحديث الوجهة بنجاح");
+      toast.success("تم تحديث الوجهة بنجاح");
       refetch();
       setIsOpen(false);
       setEditingId(null);
     },
     onError: (error: any) => {
-      alert("خطأ: " + error.message);
+      toast.error("خطأ: " + (error.message || "فشل تحديث الوجهة"));
     },
   });
 
@@ -136,17 +149,41 @@ export default function DestinationsAdmin() {
     }
 
     if (!formData.name || !formData.location) {
-      alert("الاسم والموقع مطلوبان");
+      toast.error("الاسم والموقع مطلوبان");
       return;
     }
 
+    // Numeric validation
+    const pricePerPerson = Number(formData.pricePerPerson);
+    const rating = Number(formData.rating);
+    const groupSize = formData.groupSize ? Number(formData.groupSize) : null;
+
+    if (Number.isNaN(pricePerPerson) || pricePerPerson <= 0) {
+      toast.error("السعر لكل شخص يجب أن يكون رقماً أكبر من 0");
+      return;
+    }
+
+    if (Number.isNaN(rating) || rating < 1 || rating > 5) {
+      toast.error("التقييم يجب أن يكون بين 1 و 5");
+      return;
+    }
+
+    if (groupSize !== null && (Number.isNaN(groupSize) || groupSize <= 0)) {
+      toast.error("حجم المجموعة يجب أن يكون رقماً موجباً");
+      return;
+    }
+
+    const payload = {
+      ...formData,
+      pricePerPerson,
+      rating,
+      groupSize,
+    };
+
     if (editingId) {
-      await updateMutation.mutateAsync({
-        id: editingId,
-        ...formData,
-      });
+      await updateMutation.mutateAsync({ id: editingId, ...payload });
     } else {
-      await createMutation.mutateAsync(formData);
+      await createMutation.mutateAsync(payload);
     }
   };
 

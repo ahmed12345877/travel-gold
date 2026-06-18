@@ -3,13 +3,16 @@ import { motion } from "framer-motion";
 import { useInView } from "@/hooks/useInView";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import type { GalleryImage, GalleryCategory } from "@/types/gallery";
+import { getGalleryErrorMessage } from "@/lib/errorUtils";
 
 export default function GallerySection() {
   const { ref, inView } = useInView({ threshold: 0.1 });
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState<GalleryCategory | "all">("all");
+  const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set());
 
   // Fetch gallery items from server (uses permanent Firebase URLs)
-  const { data: images = [], isLoading, error } = trpc.gallery.listVisible.useQuery(
+  const { data: images = [], isLoading, error } = trpc.gallery.listVisible.useQuery<GalleryImage[]>(
     undefined,
     { 
       staleTime: 10 * 60 * 1000,
@@ -32,22 +35,23 @@ export default function GallerySection() {
     }
   }, [images]);
 
-  // Debug: Log errors
+  // Handle errors safely
   useEffect(() => {
     if (error) {
       console.error("[GallerySection] Error loading gallery:", error);
-      toast.error("خطأ في تحميل المعرض");
+      const safeMessage = getGalleryErrorMessage(error);
+      toast.error(safeMessage);
     }
   }, [error]);
 
   // Filter images by category
   const filteredImages = selectedCategory === "all"
     ? images
-    : images.filter((img: any) => img.category === selectedCategory);
+    : images.filter((img) => img.category === selectedCategory);
 
   // Get unique categories
-  const categories = ["all", ...Array.from(
-    new Set(images.map((img: any) => img.category))
+  const categories: (GalleryCategory | "all")[] = ["all", ...Array.from(
+    new Set(images.map((img) => img.category))
   )];
 
   const categories_display: Record<string, string> = {
@@ -87,20 +91,29 @@ export default function GallerySection() {
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.1 }}
             className="flex flex-wrap justify-center gap-2 mb-8 sm:mb-12"
+            role="tablist"
+            aria-label="تصفية الصور حسب التصنيف"
           >
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  selectedCategory === cat
-                    ? "bg-[var(--theme-primary)] text-[var(--theme-surface)]"
-                    : "bg-white/10 text-white hover:bg-white/20"
-                }`}
-              >
-                {categories_display[cat as keyof typeof categories_display] || cat}
-              </button>
-            ))}
+            {categories.map((cat) => {
+              const isSelected = selectedCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  role="tab"
+                  aria-selected={isSelected}
+                  aria-pressed={isSelected}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-surface)] ${
+                    isSelected
+                      ? "bg-[var(--theme-primary)] text-[var(--theme-surface)]"
+                      : "bg-white/10 text-white hover:bg-white/20"
+                  }`}
+                >
+                  {categories_display[cat as keyof typeof categories_display] || cat}
+                </button>
+              );
+            })}
           </motion.div>
         )}
 
@@ -115,7 +128,9 @@ export default function GallerySection() {
         {error && !isLoading && (
           <div className="text-center py-12">
             <p className="text-red-400">خطأ في تحميل المعرض</p>
-            <p className="text-white/40 text-sm mt-2">{error.message}</p>
+            <p className="text-white/40 text-sm mt-2">
+              {getGalleryErrorMessage(error)}
+            </p>
           </div>
         )}
 
@@ -134,37 +149,43 @@ export default function GallerySection() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6"
           >
-            {filteredImages.map((img: any, index: number) => (
-              <motion.div
-                key={img._docId || index}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={inView ? { opacity: 1, scale: 1 } : {}}
-                transition={{ duration: 0.5, delay: index * 0.05 }}
-                className="group relative bg-[var(--theme-surface)] border border-white/8 overflow-hidden cursor-pointer hover:border-[var(--theme-primary)]/40 transition-all duration-500"
-              >
-                {/* Image */}
-                <div className="relative aspect-[4/3] bg-black overflow-hidden">
-                  <img
-                    src={img.imageUrl}
-                    alt={img.title || img.titleAr || "Gallery Image"}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    onError={(e) => {
-                      console.error("[GallerySection] Image failed to load:", {
-                        url: img.imageUrl,
-                        title: img.title,
-                        error: e,
-                      });
-                      (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23333' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dy='.3em' fill='%23999' font-size='12' font-family='monospace'%3EImage Not Found%3C/text%3E%3C/svg%3E";
-                    }}
-                    loading="lazy"
-                  />
+            {filteredImages.map((img, index) => {
+              const isBroken = brokenImages.has(img.id);
+              return (
+                <motion.div
+                  key={img.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={inView ? { opacity: 1, scale: 1 } : {}}
+                  transition={{ duration: 0.5, delay: Math.min(index * 0.03, 0.6) }}
+                  className="group relative bg-[var(--theme-surface)] border border-white/8 overflow-hidden cursor-pointer hover:border-[var(--theme-primary)]/40 transition-all duration-500"
+                >
+                  {/* Image */}
+                  <div className="relative aspect-[4/3] bg-black overflow-hidden">
+                    <img
+                      src={isBroken ? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23333' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dy='.3em' fill='%23999' font-size='12'%3EImage Error%3C/text%3E%3C/svg%3E" : img.imageUrl}
+                      alt={img.title || img.titleAr || img.description || img.descriptionAr || "صورة من رحلات فانير"}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                        if (isBroken) return; // Prevent error loops
+                        console.error("[GallerySection] Image failed to load:", {
+                          url: img.imageUrl,
+                          title: img.title,
+                          id: img.id,
+                        });
+                        setBrokenImages(prev => new Set([...prev, img.id]));
+                      }}
+                      loading="lazy"
+                    />
 
                   {/* Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-[var(--theme-surface)]/90 via-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                   {/* Featured Badge */}
                   {img.featured === "yes" && (
-                    <div className="absolute top-3 right-3 bg-[var(--theme-primary)] text-[var(--theme-surface)] px-3 py-1 rounded-full text-xs font-bold">
+                    <div 
+                      className="absolute top-3 right-3 bg-[var(--theme-primary)] text-[var(--theme-surface)] px-3 py-1 rounded-full text-xs font-bold"
+                      aria-label="صورة مميزة"
+                    >
                       مميزة
                     </div>
                   )}
@@ -187,19 +208,20 @@ export default function GallerySection() {
                   </div>
                 </div>
 
-                {/* Title Bar */}
-                <div className="p-4">
-                  <p className="text-white font-medium truncate">
-                    {img.title || img.titleAr || "صورة"}
-                  </p>
-                  {img.category && (
-                    <p className="text-white/40 text-xs mt-1">
-                      {categories_display[img.category as keyof typeof categories_display] || img.category}
+                  {/* Title Bar */}
+                  <div className="p-4">
+                    <p className="text-white font-medium truncate">
+                      {img.title || img.titleAr || "صورة"}
                     </p>
-                  )}
-                </div>
-              </motion.div>
-            ))}
+                    {img.category && (
+                      <p className="text-white/40 text-xs mt-1">
+                        {categories_display[img.category as keyof typeof categories_display] || img.category}
+                      </p>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
           </motion.div>
         )}
       </div>
