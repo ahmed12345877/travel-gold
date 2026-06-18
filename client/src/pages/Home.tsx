@@ -3,6 +3,7 @@
  * Home Page: Assembles all sections with advanced scroll transition effects
  * Color palette: Black (#0d1117), Gold (#D4A853), Light Gold (#F5E6B8)
  */
+import { lazy, Suspense } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 import HeroSectionEgyptian from "@/components/HeroSectionEgyptian";
@@ -12,7 +13,7 @@ import ActivitiesSection from "@/components/ActivitiesSection";
 import CTASection from "@/components/CTASection";
 import PopularPlaces from "@/components/PopularPlaces";
 import DestinationsSection from "@/components/DestinationsSection";
-import GallerySection from "@/components/GallerySection";
+const GallerySection = lazy(() => import("@/components/GallerySection"));
 import StatsSection from "@/components/StatsSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import BlogSection from "@/components/BlogSection";
@@ -101,7 +102,13 @@ export default function Home() {
 
       {/* Gallery - Fade up reveal - Shows user-uploaded images from admin panel */}
       <ScrollReveal variant="fade-up" duration={0.9}>
-        <GallerySection />
+        <Suspense
+          fallback={
+            <div className="py-12 text-center text-white/60">جاري تحميل المعرج...</div>
+          }
+        >
+          <GallerySection />
+        </Suspense>
       </ScrollReveal>
 
       <AnimatedDivider style="wave" />
