@@ -5,13 +5,14 @@
  */
 import { useAuth } from "@/_core/hooks/useAuth";
 import Navbar from "@/components/Navbar";
-import HeroSection from "@/components/HeroSection";
+import HeroSectionEgyptian from "@/components/HeroSectionEgyptian";
 import SearchForm from "@/components/SearchForm";
 import AboutSection from "@/components/AboutSection";
 import ActivitiesSection from "@/components/ActivitiesSection";
 import CTASection from "@/components/CTASection";
 import PopularPlaces from "@/components/PopularPlaces";
 import DestinationsSection from "@/components/DestinationsSection";
+import GallerySection from "@/components/GallerySection";
 import StatsSection from "@/components/StatsSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import BlogSection from "@/components/BlogSection";
@@ -47,7 +48,12 @@ export default function Home() {
       <ScrollProgressIndicator />
 
       <Navbar />
-      <HeroSection />
+      <HeroSectionEgyptian
+        title="استكشف مصر الخالدة"
+        subtitle="رحلة عبر الزمن بين الحضارة العريقة والعصرية المتحركة"
+        ctaText="ابدأ الاستكشاف"
+        ctaLink="/destinations"
+      />
 
       {/* About Section - Fade up reveal */}
       <ScrollReveal variant="fade-up" duration={0.9}>
@@ -92,6 +98,13 @@ export default function Home() {
       </ScrollReveal>
 
       <AnimatedDivider style="gold-line" />
+
+      {/* Gallery - Fade up reveal - Shows user-uploaded images from admin panel */}
+      <ScrollReveal variant="fade-up" duration={0.9}>
+        <GallerySection />
+      </ScrollReveal>
+
+      <AnimatedDivider style="wave" />
 
       {/* Stats - Scale up for impact */}
       <ScrollReveal variant="scale-up" duration={0.8}>
