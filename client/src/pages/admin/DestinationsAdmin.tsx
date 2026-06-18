@@ -5,13 +5,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit2, Trash2, Search } from "lucide-react";
+import { Plus, Edit2, Trash2, Search, Upload } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 export default function DestinationsAdmin() {
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -32,6 +34,52 @@ export default function DestinationsAdmin() {
     search,
     limit: 20,
   });
+
+  // Mutation for uploading destination images
+  const uploadImageMutation = trpc.gallery.uploadImage.useMutation({
+    onSuccess: (result) => {
+      console.log("[DestinationsAdmin] Image uploaded successfully:", result.url);
+      setFormData(prev => ({ ...prev, imageUrl: result.url }));
+      toast.success("تم رفع الصورة بنجاح");
+      setIsUploadingImage(false);
+    },
+    onError: (error: any) => {
+      console.error("[DestinationsAdmin] Image upload failed:", error);
+      toast.error("خطأ في رفع الصورة: " + (error.message || "Unknown error"));
+      setIsUploadingImage(false);
+    },
+  });
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("حجم الملف يتجاوز 10 ميجابايت");
+      return;
+    }
+
+    setIsUploadingImage(true);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+      const base64Data = base64.split(",")[1];
+      try {
+        await uploadImageMutation.mutateAsync({
+          fileData: base64Data,
+          filename: file.name,
+          mimeType: file.type,
+        });
+      } catch (error) {
+        console.error("[DestinationsAdmin] Upload error:", error);
+      }
+    };
+    reader.onerror = () => {
+      toast.error("خطأ في قراءة الملف");
+      setIsUploadingImage(false);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const createMutation = trpc.adminDestinations.create.useMutation({
     onSuccess: () => {
@@ -112,7 +160,7 @@ export default function DestinationsAdmin() {
             <DialogHeader>
               <DialogTitle>{editingId ? "تعديل الوجهة" : "إضافة وجهة جديدة"}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[600px] overflow-y-auto">
               <Input
                 placeholder="اسم الوجهة"
                 value={formData.name}
@@ -134,12 +182,66 @@ export default function DestinationsAdmin() {
                 value={formData.pricePerPerson}
                 onChange={(e) => setFormData({ ...formData, pricePerPerson: e.target.value })}
               />
+              
+              {/* Image Upload Section */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">الصورة</label>
+                {formData.imageUrl && (
+                  <div className="relative w-full h-40 rounded-lg overflow-hidden mb-2 border border-gray-200">
+                    <img 
+                      src={formData.imageUrl} 
+                      alt="Preview" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        console.error("[DestinationsAdmin] Image preview failed:", formData.imageUrl);
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                  </div>
+                )}
+                <label className="flex items-center justify-center w-full px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={isUploadingImage}
+                    className="hidden"
+                  />
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Upload size={16} />
+                    <span className="text-sm">
+                      {isUploadingImage ? "جاري الرفع..." : "رفع صورة أو انقر للاختيار"}
+                    </span>
+                  </div>
+                </label>
+                <p className="text-xs text-gray-500">
+                  {formData.imageUrl && `✓ الصورة المرفوعة: ${formData.imageUrl.substring(0, 50)}...`}
+                </p>
+              </div>
+
               <Input
-                placeholder="رابط الصورة"
-                value={formData.imageUrl}
-                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                placeholder="التقييم (1-5)"
+                type="number"
+                min="1"
+                max="5"
+                value={formData.rating}
+                onChange={(e) => setFormData({ ...formData, rating: e.target.value })}
               />
-              <Button onClick={handleSubmit} className="w-full">
+              <Input
+                placeholder="مدة الرحلة"
+                value={formData.duration}
+                onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+              />
+              <Textarea
+                placeholder="الأنشطة المميزة"
+                value={formData.highlights}
+                onChange={(e) => setFormData({ ...formData, highlights: e.target.value })}
+              />
+              <Button 
+                onClick={handleSubmit} 
+                className="w-full"
+                disabled={isUploadingImage || !formData.name || !formData.location}
+              >
                 {editingId ? "تحديث" : "إضافة"}
               </Button>
             </div>
