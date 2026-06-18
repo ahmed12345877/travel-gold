@@ -250,13 +250,18 @@ html {
   background: rgba(100, 140, 180, 0.6);
 }
 
-/* ── Hero CTA Buttons - Misty Theme ── */
+/* ── Hero CTA Buttons - Misty Theme with Video Enhancement ── */
 .hero-btn-primary {
   position: relative;
   overflow: hidden;
-  background: #ffffff;
+  background: linear-gradient(135deg, #D4A853 0%, #F5E6B8 50%, #D4A853 100%);
   color: #0d1117;
-  border-radius: 6px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  transition: all 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+  box-shadow: 0 4px 20px rgba(212, 168, 83, 0.35);
 }
 
 .hero-btn-primary::before {
@@ -269,17 +274,23 @@ html {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.4),
+    rgba(255, 255, 255, 0.5),
     transparent
   );
-  transition: left 0.5s ease;
+  transition: left 0.6s ease;
 }
 
 .hero-btn-primary:hover {
-  background: linear-gradient(135deg, #D4A853 0%, #F5E6B8 50%, #D4A853 100%);
+  background: linear-gradient(135deg, #F5E6B8 0%, #D4A853 50%, #F5E6B8 100%);
   color: #0d1117;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(212, 168, 83, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(212, 168, 83, 0.55);
+  letter-spacing: 0.1em;
+}
+
+.hero-btn-primary:active {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 25px rgba(212, 168, 83, 0.4);
 }
 
 .hero-btn-primary:hover::before {
@@ -289,9 +300,15 @@ html {
 .hero-btn-secondary {
   position: relative;
   overflow: hidden;
-  border-color: rgba(255, 255, 255, 0.4);
+  border: 2px solid rgba(212, 168, 83, 0.6);
   color: #ffffff;
-  border-radius: 6px;
+  background: rgba(13, 17, 23, 0.4);
+  border-radius: 8px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  transition: all 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .hero-btn-secondary::before {
@@ -304,18 +321,24 @@ html {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(100, 140, 180, 0.15),
+    rgba(212, 168, 83, 0.2),
     transparent
   );
-  transition: left 0.5s ease;
+  transition: left 0.6s ease;
 }
 
 .hero-btn-secondary:hover {
-  border-color: rgba(100, 140, 180, 0.6);
-  color: #ffffff;
-  background: rgba(100, 140, 180, 0.1);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(100, 140, 180, 0.2);
+  border-color: rgba(212, 168, 83, 1);
+  color: #D4A853;
+  background: rgba(212, 168, 83, 0.1);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(212, 168, 83, 0.35);
+  letter-spacing: 0.1em;
+}
+
+.hero-btn-secondary:active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(212, 168, 83, 0.25);
 }
 
 .hero-btn-secondary:hover::before {
