@@ -25,7 +25,7 @@ export function FileUploadComponent({
 
   const validateFile = (file: File): string | null => {
     if (file.size > maxBytes) {
-      return `حجم الملف يتجاوز ${maxSizeMB} ميجابايت`;
+      return `File size exceeds ${maxSizeMB} MB`;
     }
     return null;
   };
@@ -74,7 +74,7 @@ export function FileUploadComponent({
 
   const handleUpload = async () => {
     if (!file) {
-      setError('الرجاء اختيار ملف أولاً');
+      setError('Please select a file first');
       return;
     }
 
@@ -83,7 +83,7 @@ export function FileUploadComponent({
     setSuccess(false);
 
     try {
-      // تحويل الملف إلى Base64
+      // Convert file to Base64
       const arrayBuffer = await file.arrayBuffer();
       const bytes = new Uint8Array(arrayBuffer);
       let binaryString = '';
@@ -92,7 +92,7 @@ export function FileUploadComponent({
       }
       const base64String = btoa(binaryString);
 
-      // إرسال الطلب للـ API
+      // Send request to API
       const response = await fetch('/api/trpc/uploads.upload', {
         method: 'POST',
         headers: {
@@ -107,7 +107,7 @@ export function FileUploadComponent({
       });
 
       if (!response.ok) {
-        throw new Error('فشل رفع الملف');
+        throw new Error('File upload failed');
       }
 
       const data = await response.json();
@@ -122,7 +122,7 @@ export function FileUploadComponent({
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'حدث خطأ أثناء الرفع');
+      setError(err instanceof Error ? err.message : 'An error occurred during upload');
       console.error('[FileUpload] Error:', err);
     } finally {
       setLoading(false);
@@ -162,10 +162,10 @@ export function FileUploadComponent({
           <label htmlFor="file-input" className="cursor-pointer block">
             <Upload className="mx-auto h-12 w-12 text-gray-400 mb-2" />
             <p className="text-gray-600 font-medium">
-              اسحب الملف هنا أو انقر للاختيار
+              Drag and drop your file here or click to select
             </p>
             <p className="text-sm text-gray-500 mt-1">
-              الحد الأقصى: {maxSizeMB} ميجابايت
+              Maximum: {maxSizeMB} MB
             </p>
           </label>
         </div>
@@ -204,10 +204,10 @@ export function FileUploadComponent({
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <div className="flex gap-3 mb-3">
               <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-              <p className="text-sm text-green-700">تم رفع الملف بنجاح!</p>
+              <p className="text-sm text-green-700">File uploaded successfully!</p>
             </div>
             <div className="bg-white rounded p-3 border border-green-100">
-              <p className="text-xs text-gray-600 mb-1">رابط الملف:</p>
+              <p className="text-xs text-gray-600 mb-1">File link:</p>
               <a
                 href={uploadedUrl}
                 target="_blank"
@@ -231,7 +231,7 @@ export function FileUploadComponent({
                 : 'bg-blue-600 text-white hover:bg-blue-700'
             }`}
           >
-            {loading ? 'جاري الرفع...' : 'رفع الملف'}
+            {loading ? 'Uploading...' : 'Upload File'}
           </button>
 
           {(file || success) && (
@@ -240,7 +240,7 @@ export function FileUploadComponent({
               disabled={loading}
               className="px-4 py-2 rounded-lg font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all disabled:opacity-50"
             >
-              مسح
+              Clear
             </button>
           )}
         </div>
@@ -248,7 +248,7 @@ export function FileUploadComponent({
         {/* Info Text */}
         {success && (
           <p className="text-xs text-gray-500 text-center">
-            يمكنك الآن استخدام الرابط أعلاه
+            You can now use the link above
           </p>
         )}
       </div>

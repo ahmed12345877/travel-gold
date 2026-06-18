@@ -35,13 +35,13 @@ export default function SocialMediaSharing({
 
   return (
     <div className="flex items-center gap-3 p-4 bg-[var(--card)] rounded-lg border border-[var(--theme-primary)]/20">
-      <span className="text-sm font-medium text-white/70">مشاركة:</span>
+      <span className="text-sm font-medium text-white/70">Share:</span>
       
       {/* Facebook */}
       <button
         onClick={() => openShare(shareLinks.facebook)}
         className="p-2 rounded-lg bg-[#1877F2]/10 hover:bg-[#1877F2]/20 transition-colors"
-        title="مشاركة على Facebook"
+        title="Share on Facebook"
       >
         <Facebook size={18} className="text-[#1877F2]" />
       </button>
@@ -50,7 +50,7 @@ export default function SocialMediaSharing({
       <button
         onClick={() => openShare(shareLinks.twitter)}
         className="p-2 rounded-lg bg-[#1DA1F2]/10 hover:bg-[#1DA1F2]/20 transition-colors"
-        title="مشاركة على Twitter"
+        title="Share on Twitter"
       >
         <Twitter size={18} className="text-[#1DA1F2]" />
       </button>
@@ -59,7 +59,7 @@ export default function SocialMediaSharing({
       <button
         onClick={() => openShare(shareLinks.linkedin)}
         className="p-2 rounded-lg bg-[#0A66C2]/10 hover:bg-[#0A66C2]/20 transition-colors"
-        title="مشاركة على LinkedIn"
+        title="Share on LinkedIn"
       >
         <Linkedin size={18} className="text-[#0A66C2]" />
       </button>
@@ -68,7 +68,7 @@ export default function SocialMediaSharing({
       <button
         onClick={() => openShare(shareLinks.whatsapp)}
         className="p-2 rounded-lg bg-[#25D366]/10 hover:bg-[#25D366]/20 transition-colors"
-        title="مشاركة على WhatsApp"
+        title="Share on WhatsApp"
       >
         <MessageCircle size={18} className="text-[#25D366]" />
       </button>
@@ -77,7 +77,7 @@ export default function SocialMediaSharing({
       <button
         onClick={handleCopyLink}
         className="p-2 rounded-lg bg-[var(--theme-primary)]/10 hover:bg-[var(--theme-primary)]/20 transition-colors"
-        title="نسخ الرابط"
+        title="Copy Link"
       >
         {copied ? (
           <Check size={18} className="text-[var(--theme-primary)]" />
