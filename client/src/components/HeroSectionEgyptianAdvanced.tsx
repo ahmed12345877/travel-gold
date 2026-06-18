@@ -129,13 +129,13 @@ function FloatingSearchCard() {
           {/* Destination Input */}
           <div className="relative">
             <label className="block text-sm font-semibold text-amber-100 mb-2">
-              الوجهة
+              Destination
             </label>
             <div className="flex items-center gap-2 bg-slate-800/50 rounded-lg px-4 py-3 border border-amber-500/20 focus-within:border-amber-500/50 transition-colors">
               <MapPin size={18} className="text-amber-400" />
               <input
                 type="text"
-                placeholder="اختر الوجهة..."
+                placeholder="Choose a destination..."
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
                 className="bg-transparent flex-1 outline-none text-white placeholder-gray-400"
@@ -146,7 +146,7 @@ function FloatingSearchCard() {
           {/* Check-in Date */}
           <div className="relative">
             <label className="block text-sm font-semibold text-amber-100 mb-2">
-              التاريخ
+              Check-in Date
             </label>
             <div className="flex items-center gap-2 bg-slate-800/50 rounded-lg px-4 py-3 border border-amber-500/20 focus-within:border-amber-500/50 transition-colors">
               <Calendar size={18} className="text-amber-400" />
@@ -162,7 +162,7 @@ function FloatingSearchCard() {
           {/* Guests Count */}
           <div className="relative">
             <label className="block text-sm font-semibold text-amber-100 mb-2">
-              عدد الأشخاص
+              Number of Guests
             </label>
             <div className="flex items-center gap-2 bg-slate-800/50 rounded-lg px-4 py-3 border border-amber-500/20 focus-within:border-amber-500/50 transition-colors">
               <Users size={18} className="text-amber-400" />
@@ -171,11 +171,11 @@ function FloatingSearchCard() {
                 onChange={(e) => setGuests(e.target.value)}
                 className="bg-transparent flex-1 outline-none text-white"
               >
-                <option value="1">1 شخص</option>
-                <option value="2">2 شخص</option>
-                <option value="3">3 أشخاص</option>
-                <option value="4">4 أشخاص</option>
-                <option value="5">5+ أشخاص</option>
+                <option value="1">1 Guest</option>
+                <option value="2">2 Guests</option>
+                <option value="3">3 Guests</option>
+                <option value="4">4 Guests</option>
+                <option value="5">5+ Guests</option>
               </select>
             </div>
           </div>
@@ -189,7 +189,7 @@ function FloatingSearchCard() {
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-transparent via-white to-transparent" />
           <div className="relative flex items-center gap-2 justify-center md:justify-start">
             <Sparkles size={18} />
-            ابحث الآن
+            Search Now
             <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </div>
         </button>

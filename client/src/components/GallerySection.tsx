@@ -55,13 +55,13 @@ export default function GallerySection() {
   )];
 
   const categories_display: Record<string, string> = {
-    "all": "الكل",
-    "luxury": "فخامة",
-    "safari": "سفاري",
-    "beach": "شاطئ",
-    "cuisine": "الطعام",
-    "culture": "ثقافة",
-    "adventure": "مغامرة",
+    "all": "All",
+    "luxury": "Luxury",
+    "safari": "Safari",
+    "beach": "Beach",
+    "cuisine": "Cuisine",
+    "culture": "Culture",
+    "adventure": "Adventure",
   };
 
   return (
@@ -73,13 +73,12 @@ export default function GallerySection() {
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6 }}
           className="text-center mb-8 sm:mb-12 md:mb-16"
-          dir="rtl"
         >
           <span className="font-[var(--font-script)] text-[var(--theme-primary)] text-lg sm:text-xl mb-2 sm:mb-3 block">
-            معرض الصور
+            Photo Gallery
           </span>
           <h2 className="font-[var(--font-display)] text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4">
-            أجمل اللحظات من رحلاتنا
+            Capture the Moments of Your Journey
           </h2>
           <div className="w-20 h-[2px] bg-gradient-to-r from-transparent via-[var(--theme-primary)] to-transparent mx-auto mt-4" />
         </motion.div>
@@ -92,7 +91,7 @@ export default function GallerySection() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="flex flex-wrap justify-center gap-2 mb-8 sm:mb-12"
             role="tablist"
-            aria-label="تصفية الصور حسب التصنيف"
+            aria-label="Filter photos by category"
           >
             {categories.map((cat) => {
               const isSelected = selectedCategory === cat;
@@ -120,14 +119,14 @@ export default function GallerySection() {
         {/* Loading State */}
         {isLoading && (
           <div className="text-center py-12">
-            <p className="text-white/60">جاري تحميل المعرض...</p>
+            <p className="text-white/60">Loading gallery...</p>
           </div>
         )}
 
         {/* Error State */}
         {error && !isLoading && (
           <div className="text-center py-12">
-            <p className="text-red-400">خطأ في تحميل المعرض</p>
+            <p className="text-red-400">Error Loading Gallery</p>
             <p className="text-white/40 text-sm mt-2">
               {getGalleryErrorMessage(error)}
             </p>
@@ -137,7 +136,7 @@ export default function GallerySection() {
         {/* Empty State */}
         {!isLoading && !error && filteredImages.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-white/60">لا توجد صور في هذه الفئة حالياً</p>
+            <p className="text-white/60">No photos available in this category</p>
           </div>
         )}
 
@@ -163,7 +162,7 @@ export default function GallerySection() {
                   <div className="relative aspect-[4/3] bg-black overflow-hidden">
                     <img
                       src={isBroken ? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23333' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dy='.3em' fill='%23999' font-size='12'%3EImage Error%3C/text%3E%3C/svg%3E" : img.imageUrl}
-                      alt={img.title || img.titleAr || img.description || img.descriptionAr || "صورة من رحلات فانير"}
+                      alt={img.title || img.titleAr || img.description || img.descriptionAr || "Gallery photo from Vanir Travel"}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                         if (isBroken) return; // Prevent error loops
@@ -184,16 +183,16 @@ export default function GallerySection() {
                   {img.featured === "yes" && (
                     <div 
                       className="absolute top-3 right-3 bg-[var(--theme-primary)] text-[var(--theme-surface)] px-3 py-1 rounded-full text-xs font-bold"
-                      aria-label="صورة مميزة"
+                      aria-label="Featured photo"
                     >
-                      مميزة
+                      Featured
                     </div>
                   )}
 
                   {/* Hover Info */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 text-center">
                     <h3 className="text-white font-semibold text-lg mb-2">
-                      {img.title || img.titleAr || "صورة"}
+                      {img.title || img.titleAr || "Photo"}
                     </h3>
                     {(img.location || img.locationAr) && (
                       <p className="text-white/70 text-sm mb-3">
@@ -211,7 +210,7 @@ export default function GallerySection() {
                   {/* Title Bar */}
                   <div className="p-4">
                     <p className="text-white font-medium truncate">
-                      {img.title || img.titleAr || "صورة"}
+                      {img.title || img.titleAr || "Photo"}
                     </p>
                     {img.category && (
                       <p className="text-white/40 text-xs mt-1">

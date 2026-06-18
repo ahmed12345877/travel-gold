@@ -50,9 +50,10 @@ export default function Home() {
 
       <Navbar />
       <HeroSectionEgyptian
-        title="استكشف مصر الخالدة"
-        subtitle="رحلة عبر الزمن بين الحضارة العريقة والعصرية المتحركة"
-        ctaText="ابدأ الاستكشاف"
+        title="Discover Egypt's Timeless Wonders"
+        subtitle="Journey through ancient civilization and modern enchantment"
+        imageSrc="/hero-egyptian.jpg"
+        ctaText="Start Exploring"
         ctaLink="/destinations"
       />
 
