@@ -130,6 +130,11 @@ export default function DestinationsAdmin() {
   });
 
   const handleSubmit = async () => {
+    // Prevent concurrent mutations
+    if (updateMutation.isPending || createMutation.isPending || isUploadingImage) {
+      return;
+    }
+
     if (!formData.name || !formData.location) {
       alert("الاسم والموقع مطلوبان");
       return;
@@ -240,7 +245,7 @@ export default function DestinationsAdmin() {
               <Button 
                 onClick={handleSubmit} 
                 className="w-full"
-                disabled={isUploadingImage || !formData.name || !formData.location}
+                disabled={isUploadingImage || !formData.name || !formData.location || updateMutation.isPending || createMutation.isPending}
               >
                 {editingId ? "تحديث" : "إضافة"}
               </Button>

@@ -174,12 +174,12 @@ export default function GallerySection() {
                     <h3 className="text-white font-semibold text-lg mb-2">
                       {img.title || img.titleAr || "صورة"}
                     </h3>
-                    {img.location && (
+                    {(img.location || img.locationAr) && (
                       <p className="text-white/70 text-sm mb-3">
                         {img.location || img.locationAr}
                       </p>
                     )}
-                    {img.description && (
+                    {(img.description || img.descriptionAr) && (
                       <p className="text-white/60 text-xs line-clamp-2">
                         {img.description || img.descriptionAr}
                       </p>
