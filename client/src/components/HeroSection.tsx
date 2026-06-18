@@ -282,6 +282,16 @@ export default function HeroSection() {
     return CARD_IMAGES_FALLBACK;
   }, [savedImagesJson]);
 
+  // Ensure video plays
+  useEffect(() => {
+    if (videoRef.current && !videoError) {
+      videoRef.current.play().catch((err) => {
+        console.warn("[v0] Video playback error:", err);
+        setVideoError(true);
+      });
+    }
+  }, [videoError]);
+
   return (
     <section
       ref={sectionRef}
@@ -289,17 +299,26 @@ export default function HeroSection() {
       style={{ background: "#0d1117" }}
     >
       {/* ── Background Video with parallax ── */}
-      <motion.div className="absolute inset-0 z-[1]" style={{ y: bgY }}>
+      <motion.div className="absolute inset-0 z-[1] w-full h-full" style={{ y: bgY }}>
         {!videoError && (
           <video
             ref={videoRef}
-            autoPlay
-            muted
-            loop
-            playsInline
-            onError={() => setVideoError(true)}
+            autoPlay={true}
+            muted={true}
+            loop={true}
+            playsInline={true}
+            preload="metadata"
+            onError={(e) => {
+              console.error("[v0] Video error:", e.currentTarget.error?.code, e.currentTarget.error?.message);
+              setVideoError(true);
+            }}
+            onLoadStart={() => console.log("[v0] Video loading from:", ASSETS.HERO_VIDEO)}
+            onLoadedMetadata={() => console.log("[v0] Video metadata loaded")}
+            onCanPlay={() => console.log("[v0] Video can play")}
+            onPlay={() => console.log("[v0] Video started playing")}
             className="absolute inset-0 w-full h-full object-cover object-center"
-            style={{ minHeight: "100vh" }}
+            style={{ minHeight: "100vh", display: "block" }}
+            crossOrigin="anonymous"
           >
             <source src={ASSETS.HERO_VIDEO} type="video/mp4" />
           </video>
@@ -311,9 +330,13 @@ export default function HeroSection() {
             className="absolute inset-0 w-full h-full object-cover object-center"
           />
         )}
-        {/* Enhanced overlay for better text contrast and cinematic feel */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/30" />
+        {/* Overlay for text contrast - only if video loaded successfully */}
+        {!videoError && (
+          <>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/30 pointer-events-none" />
+          </>
+        )}
       </motion.div>
 
       {/* ── Ambient Particles ── */}
