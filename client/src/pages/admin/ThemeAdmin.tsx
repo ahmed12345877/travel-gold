@@ -91,7 +91,7 @@ const PRESETS: ThemePreset[] = [
   {
     name: "Vanir Gold (Default)",
     description: "Ultra-premium black and deep gold",
-    colors: { ...DEFAULT_COLORS, primary: "#D4AF37", primaryLight: "#F5E6B8", accent: "#C9A84C", secondary: "#1A1A1A", background: "#0D0D0D", surface: "#141414", text: "#FFFFFF", textMuted: "#9CA3AF", border: "#2A2A2A" },
+    colors: { ...DEFAULT_COLORS, primary: "#B8860B", primaryLight: "#F5E6B8", accent: "#C9A84C", secondary: "#1A1A1A", background: "#0D0D0D", surface: "#141414", text: "#FFFFFF", textMuted: "#9CA3AF", border: "#2A2A2A" },
   },
   {
     name: "Royal Sapphire",
@@ -100,7 +100,7 @@ const PRESETS: ThemePreset[] = [
   },
   {
     name: "Imperial Emerald",
-    description: "Rich emerald with subtle champagne gold",
+    description: "Rich emerald with vibrant green tones",
     colors: { ...DEFAULT_COLORS, primary: "#065F46", primaryLight: "#86EFAC", accent: "#10B981", secondary: "#042F2E", background: "#0B1F1A", surface: "#0F2F2A", text: "#F0FDF4", textMuted: "#A7E8A7", border: "#1B4332" },
   },
   {
@@ -131,7 +131,7 @@ const PRESETS: ThemePreset[] = [
   {
     name: "Cyber Velvet",
     description: "High-tech neon cyan in premium violet",
-    colors: { ...DEFAULT_COLORS, primary: "#06B6D4", primaryLight: "#A5F3FC", accent: "#4F46E5", secondary: "#0B0726", background: "#050810", surface: "#0F0A18", text: "#FFFFFF", textMuted: "#A8B5FB", border: "#1F0F3D" },
+    colors: { ...DEFAULT_COLORS, primary: "#0891B2", primaryLight: "#A5F3FC", accent: "#4F46E5", secondary: "#0B0726", background: "#050810", surface: "#0F0A18", text: "#FFFFFF", textMuted: "#A8B5FB", border: "#1F0F3D" },
   },
   {
     name: "Amethyst Night",
@@ -146,7 +146,7 @@ const PRESETS: ThemePreset[] = [
   {
     name: "Dusty Cashmere",
     description: "Elegant muted rose-gold with warm taupe",
-    colors: { ...DEFAULT_COLORS, primary: "#B8860B", primaryLight: "#F5E6D3", accent: "#BC8F8F", secondary: "#2B1B1B", background: "#1A0F0F", surface: "#2A1818", text: "#FFF5F5", textMuted: "#D4A5A5", border: "#5C3D38" },
+    colors: { ...DEFAULT_COLORS, primary: "#8B4513", primaryLight: "#F5E6D3", accent: "#BC8F8F", secondary: "#2B1B1B", background: "#1A0F0F", surface: "#2A1818", text: "#FFFFFF", textMuted: "#D4A5A5", border: "#5C3D38" },
   },
   {
     name: "Mystic Lavender",

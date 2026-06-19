@@ -123,17 +123,23 @@ export default function HeroSection() {
               {/* Primary CTA */}
               <a
                 href="#search-form"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 font-semibold rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 font-semibold rounded-lg transition-all duration-300 hover:scale-105 focus-visible:scale-105 focus-visible:outline-none"
                 style={{
                   backgroundColor: colors.primary,
                   color: colors.background,
-                  boxShadow: `0 0 20px ${colors.primary}20`,
+                  boxShadow: `0 0 20px ${colorMix(colors.primary, 13)}`,
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = `0 0 30px ${colors.primary}40`;
+                  e.currentTarget.style.boxShadow = `0 0 30px ${colorMix(colors.primary, 25)}`;
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = `0 0 20px ${colors.primary}20`;
+                  e.currentTarget.style.boxShadow = `0 0 20px ${colorMix(colors.primary, 13)}`;
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.boxShadow = `0 0 30px ${colorMix(colors.primary, 25)}`;
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.boxShadow = `0 0 20px ${colorMix(colors.primary, 13)}`;
                 }}
               >
                 Begin Your Journey
@@ -143,17 +149,25 @@ export default function HeroSection() {
               {/* Secondary CTA */}
               <a
                 href="#gallery"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 border-2 font-semibold rounded-lg hover:transition-all duration-300"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 border-2 font-semibold rounded-lg transition-all duration-300 focus-visible:outline-none"
                 style={{
-                  borderColor: colors.text + "4d",
+                  borderColor: colorMix(colors.text, 30),
                   color: colors.text,
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = colors.primary;
-                  e.currentTarget.style.backgroundColor = colors.primary + "15";
+                  e.currentTarget.style.backgroundColor = colorMix(colors.primary, 8);
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = colors.text + "4d";
+                  e.currentTarget.style.borderColor = colorMix(colors.text, 30);
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = colors.primary;
+                  e.currentTarget.style.backgroundColor = colorMix(colors.primary, 8);
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = colorMix(colors.text, 30);
                   e.currentTarget.style.backgroundColor = "transparent";
                 }}
               >
@@ -192,22 +206,29 @@ export default function HeroSection() {
 
                 {/* Overlay */}
                 <div
-                  className="absolute inset-0 group-hover:transition-all duration-300"
+                  className="absolute inset-0 transition-all duration-300"
                   style={{
-                    backgroundColor: colors.background + "66",
+                    backgroundColor: colorMix(colors.background, 40),
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = colors.background + "33";
+                    e.currentTarget.style.backgroundColor = colorMix(colors.background, 20);
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = colors.background + "66";
+                    e.currentTarget.style.backgroundColor = colorMix(colors.background, 40);
                   }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.backgroundColor = colorMix(colors.background, 20);
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.backgroundColor = colorMix(colors.background, 40);
+                  }}
+                  tabIndex={-1}
                 />
 
                 {/* Title */}
                 <figcaption className="absolute inset-0 flex items-end p-3 sm:p-4">
                   <p
-                    className="text-xs sm:text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    className="text-xs sm:text-sm font-semibold opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300"
                     style={{ color: colors.text }}
                   >
                     {imageTitles[index]}
@@ -230,20 +251,29 @@ export default function HeroSection() {
           href="https://www.facebook.com/share/1DvRyfaQRC/"
           target="_blank"
           rel="noopener noreferrer"
-          className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300"
+          className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 focus-visible:outline-none"
           style={{
-            borderColor: colors.text + "4d",
-            color: colors.text + "b3",
-            border: `1px solid ${colors.text}4d`,
+            border: `1px solid ${colorMix(colors.text, 30)}`,
+            color: colorMix(colors.text, 70),
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.borderColor = colors.primary;
             e.currentTarget.style.color = colors.primary;
-            e.currentTarget.style.backgroundColor = colors.primary + "15";
+            e.currentTarget.style.backgroundColor = colorMix(colors.primary, 8);
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = colors.text + "4d";
-            e.currentTarget.style.color = colors.text + "b3";
+            e.currentTarget.style.borderColor = colorMix(colors.text, 30);
+            e.currentTarget.style.color = colorMix(colors.text, 70);
+            e.currentTarget.style.backgroundColor = "transparent";
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = colors.primary;
+            e.currentTarget.style.color = colors.primary;
+            e.currentTarget.style.backgroundColor = colorMix(colors.primary, 8);
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = colorMix(colors.text, 30);
+            e.currentTarget.style.color = colorMix(colors.text, 70);
             e.currentTarget.style.backgroundColor = "transparent";
           }}
           aria-label="Facebook"
@@ -254,20 +284,29 @@ export default function HeroSection() {
           href="https://www.instagram.com/vanir.group?igsh=cnpjczFsZzdrMDhi"
           target="_blank"
           rel="noopener noreferrer"
-          className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300"
+          className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 focus-visible:outline-none"
           style={{
-            borderColor: colors.text + "4d",
-            color: colors.text + "b3",
-            border: `1px solid ${colors.text}4d`,
+            border: `1px solid ${colorMix(colors.text, 30)}`,
+            color: colorMix(colors.text, 70),
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.borderColor = colors.primary;
             e.currentTarget.style.color = colors.primary;
-            e.currentTarget.style.backgroundColor = colors.primary + "15";
+            e.currentTarget.style.backgroundColor = colorMix(colors.primary, 8);
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = colors.text + "4d";
-            e.currentTarget.style.color = colors.text + "b3";
+            e.currentTarget.style.borderColor = colorMix(colors.text, 30);
+            e.currentTarget.style.color = colorMix(colors.text, 70);
+            e.currentTarget.style.backgroundColor = "transparent";
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = colors.primary;
+            e.currentTarget.style.color = colors.primary;
+            e.currentTarget.style.backgroundColor = colorMix(colors.primary, 8);
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = colorMix(colors.text, 30);
+            e.currentTarget.style.color = colorMix(colors.text, 70);
             e.currentTarget.style.backgroundColor = "transparent";
           }}
           aria-label="Instagram"
