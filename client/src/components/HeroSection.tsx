@@ -6,9 +6,10 @@
  */
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, Facebook, Instagram } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { ASSETS } from "@/config/assets";
 import { useThemeColors } from "@/contexts/ThemeColorsProvider";
+import { trpc } from "@/lib/trpc";
 
 /* ── Color utility for opacity-safe color mixing ── */
 const colorMix = (color: string, percentage: number): string => {
@@ -19,6 +20,42 @@ const colorMix = (color: string, percentage: number): string => {
 export default function HeroSection() {
   const sectionRef = useRef<HTMLSectionElement | null>(null);
   const { colors } = useThemeColors();
+  const [heroData, setHeroData] = useState<any>(null);
+  const [heroImages, setHeroImages] = useState<any[]>([]);
+
+  // Fetch hero data from admin
+  const { data: savedHeroData } = trpc.siteSettings.get.useQuery(
+    { category: "hero", key: "hero_data" },
+    { staleTime: 30000 }
+  );
+
+  // Fetch hero images from admin
+  const { data: savedHeroImages } = trpc.siteSettings.get.useQuery(
+    { category: "hero", key: "hero_images" },
+    { staleTime: 30000 }
+  );
+
+  useEffect(() => {
+    if (savedHeroData) {
+      try {
+        const parsed = JSON.parse(savedHeroData);
+        setHeroData(parsed);
+      } catch (e) {
+        console.error("Failed to parse hero data:", e);
+      }
+    }
+  }, [savedHeroData]);
+
+  useEffect(() => {
+    if (savedHeroImages) {
+      try {
+        const parsed = JSON.parse(savedHeroImages);
+        setHeroImages(parsed);
+      } catch (e) {
+        console.error("Failed to parse hero images:", e);
+      }
+    }
+  }, [savedHeroImages]);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -27,27 +64,38 @@ export default function HeroSection() {
 
   const textY = useTransform(scrollYProgress, [0, 1], ["0%", "15%"]);
 
+  // Default values if not configured in admin
+  const mainTitle = heroData?.title || "Explore";
+  const mainSubtitle = heroData?.subtitle || "Egypt's Wonders";
+  const mainDescription = heroData?.description || "Experience the magic of ancient Egypt with curated luxury tours, Nile cruises, and unforgettable adventures designed for the discerning traveler.";
+  const button1Text = heroData?.buttonText1 || "Begin Your Journey";
+  const button1Link = heroData?.buttonLink1 || "#search-form";
+  const button2Text = heroData?.buttonText2 || "Explore Gallery";
+  const button2Link = heroData?.buttonLink2 || "#gallery";
+
   // Travel images for the grid (beautiful destinations)
-  const heroImages = [
+  const heroGridImages = heroImages && heroImages.length > 0 ? heroImages : [
     {
-      src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop",
-      alt: "Mountain landscape",
+      url: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop",
+      label: "Mountain Paradise",
+      sublabel: "MOUNTAIN TOURS",
     },
     {
-      src: "https://images.unsplash.com/photo-1571115764595-644467f3f325?w=400&h=400&fit=crop",
-      alt: "Food and dining",
+      url: "https://images.unsplash.com/photo-1571115764595-644467f3f325?w=400&h=400&fit=crop",
+      label: "Culinary Tours",
+      sublabel: "CULINARY EXPERIENCE",
     },
     {
-      src: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=400&h=400&fit=crop",
-      alt: "Beach resort",
+      url: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=400&h=400&fit=crop",
+      label: "Beach Resorts",
+      sublabel: "BEACH PARADISE",
     },
     {
-      src: "https://images.unsplash.com/photo-1488747807830-63789f68bb65?w=400&h=400&fit=crop",
-      alt: "Coastal beauty",
+      url: "https://images.unsplash.com/photo-1488747807830-63789f68bb65?w=400&h=400&fit=crop",
+      label: "Island Paradise",
+      sublabel: "ISLAND ESCAPE",
     },
   ];
-
-  const imageTitles = ["Mountain Paradise", "Culinary Tours", "Beach Resorts", "Island Paradise"];
 
   return (
     <section
@@ -103,8 +151,8 @@ export default function HeroSection() {
               className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tight"
               style={{ color: colors.text }}
             >
-              <span className="block">Explore</span>
-              <span className="block" style={{ color: colors.primary }}>Egypt&apos;s Wonders</span>
+              <span className="block">{mainTitle}</span>
+              <span className="block" style={{ color: colors.primary }}>{mainSubtitle}</span>
             </motion.h1>
 
             {/* Description */}
@@ -115,7 +163,7 @@ export default function HeroSection() {
               className="text-base sm:text-lg max-w-md leading-relaxed"
               style={{ color: colors.textMuted }}
             >
-              Experience the magic of ancient Egypt with curated luxury tours, Nile cruises, and unforgettable adventures designed for the discerning traveler.
+              {mainDescription}
             </motion.p>
 
             {/* CTA Buttons */}
@@ -127,7 +175,7 @@ export default function HeroSection() {
             >
               {/* Primary CTA */}
               <a
-                href="#search-form"
+                href={button1Link}
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 font-semibold rounded-lg transition-all duration-300 hover:scale-105 focus-visible:scale-105 focus-visible:outline-none"
                 style={{
                   backgroundColor: colors.primary,
@@ -147,13 +195,13 @@ export default function HeroSection() {
                   e.currentTarget.style.boxShadow = `0 0 20px ${colorMix(colors.primary, 13)}`;
                 }}
               >
-                Begin Your Journey
+                {button1Text}
                 <ArrowRight size={20} />
               </a>
 
               {/* Secondary CTA */}
               <a
-                href="#gallery"
+                href={button2Link}
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 border-2 font-semibold rounded-lg transition-all duration-300 focus-visible:outline-none"
                 style={{
                   borderColor: colorMix(colors.text, 30),
@@ -176,7 +224,7 @@ export default function HeroSection() {
                   e.currentTarget.style.backgroundColor = "transparent";
                 }}
               >
-                Explore Gallery
+                {button2Text}
                 <ArrowRight size={20} />
               </a>
             </motion.div>
@@ -189,9 +237,9 @@ export default function HeroSection() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
-            {heroImages.map((image, index) => (
+            {heroGridImages.map((image, index) => (
               <motion.figure
-                key={image.src}
+                key={image.url || index}
                 className="relative group overflow-hidden rounded-lg"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -200,8 +248,8 @@ export default function HeroSection() {
               >
                 {/* Image */}
                 <img
-                  src={image.src}
-                  alt={image.alt}
+                  src={image.url || image.src}
+                  alt={image.label || image.alt || `Hero image ${index + 1}`}
                   loading="lazy"
                   decoding="async"
                   width={400}
@@ -232,12 +280,22 @@ export default function HeroSection() {
 
                 {/* Title */}
                 <figcaption className="absolute inset-0 flex items-end p-3 sm:p-4">
-                  <p
-                    className="text-xs sm:text-sm font-semibold opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300"
-                    style={{ color: colors.text }}
-                  >
-                    {imageTitles[index]}
-                  </p>
+                  <div className="space-y-1">
+                    <p
+                      className="text-xs sm:text-sm font-semibold opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300"
+                      style={{ color: colors.text }}
+                    >
+                      {image.label}
+                    </p>
+                    {image.sublabel && (
+                      <p
+                        className="text-xs opacity-0 group-hover:opacity-75 group-focus-within:opacity-75 transition-opacity duration-300 tracking-widest"
+                        style={{ color: colorMix(colors.text, 60) }}
+                      >
+                        {image.sublabel}
+                      </p>
+                    )}
+                  </div>
                 </figcaption>
               </motion.figure>
             ))}
