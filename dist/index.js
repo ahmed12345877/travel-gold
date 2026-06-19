@@ -1370,6 +1370,64 @@ function registerDownloadProxy(app) {
   });
 }
 
+// server/videoProxy.ts
+function registerVideoProxy(app) {
+  app.get("/api/video-proxy", async (req, res) => {
+    try {
+      const videoUrl = req.query.url;
+      if (!videoUrl) {
+        res.status(400).json({ error: "Missing 'url' query parameter" });
+        return;
+      }
+      const allowedDomains = [
+        "hebbkx1anhila5yf.public.blob.vercel-storage.com",
+        "blob.vercel-storage.com",
+        "d2xsxph8kpxj0f.cloudfront.net"
+      ];
+      let isAllowed = false;
+      let parsedUrl;
+      try {
+        parsedUrl = new URL(videoUrl);
+        isAllowed = allowedDomains.some(
+          (domain) => parsedUrl.hostname === domain || parsedUrl.hostname.endsWith(domain)
+        );
+      } catch {
+        res.status(400).json({ error: "Invalid URL format" });
+        return;
+      }
+      if (!isAllowed) {
+        res.status(403).json({ error: "URL domain not allowed for video proxy" });
+        return;
+      }
+      const response = await fetch(videoUrl);
+      if (!response.ok) {
+        res.status(response.status).json({
+          error: `Failed to fetch video: ${response.statusText}`
+        });
+        return;
+      }
+      const contentType = response.headers.get("content-type") || "video/mp4";
+      const contentLength = response.headers.get("content-length");
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      if (contentLength) {
+        res.setHeader("Content-Length", contentLength);
+        res.setHeader("Accept-Ranges", "bytes");
+      }
+      if (response.body) {
+        response.body.pipeTo(res);
+      } else {
+        const buffer = await response.arrayBuffer();
+        res.send(Buffer.from(buffer));
+      }
+    } catch (error) {
+      console.error("[Video Proxy] Error:", error);
+      res.status(500).json({ error: "Internal server error during video proxy" });
+    }
+  });
+}
+
 // server/authExpressRouter.ts
 import { getAuth } from "firebase-admin/auth";
 async function resolveAdminUser(uid, email, displayName) {
@@ -1662,6 +1720,21 @@ var systemRouter = router({
 
 // server/routers/bookings.ts
 import { z as z2 } from "zod";
+
+// server/utils/errorLogger.ts
+function formatErrorMessage(error) {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+function logError(tag, kind, error, extra) {
+  console.error(`[${tag}] ${kind}:`, {
+    error: formatErrorMessage(error),
+    stack: error instanceof Error ? error.stack : void 0,
+    ...extra
+  });
+}
+
+// server/routers/bookings.ts
 import { nanoid } from "nanoid";
 var bookingsRouter = router({
   /** Create a new booking (public - guests can book too) */
@@ -1705,10 +1778,7 @@ var bookingsRouter = router({
       });
       return booking;
     } catch (error) {
-      console.error("[bookings.create] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        packageName: input.packageName
-      });
+      logError("bookings.create", "mutation error", error, { packageName: input.packageName });
       throw error;
     }
   }),
@@ -1719,10 +1789,7 @@ var bookingsRouter = router({
       console.log(`[bookings.getById] retrieved booking: id=${input.id}`);
       return booking;
     } catch (error) {
-      console.error("[bookings.getById] query error:", {
-        error: error instanceof Error ? error.message : String(error),
-        id: input.id
-      });
+      logError("bookings.getById", "query error", error, { id: input.id });
       throw error;
     }
   }),
@@ -1733,10 +1800,7 @@ var bookingsRouter = router({
       console.log(`[bookings.getByCode] retrieved booking: code=${input.code}`);
       return booking;
     } catch (error) {
-      console.error("[bookings.getByCode] query error:", {
-        error: error instanceof Error ? error.message : String(error),
-        code: input.code
-      });
+      logError("bookings.getByCode", "query error", error, { code: input.code });
       throw error;
     }
   }),
@@ -1747,10 +1811,7 @@ var bookingsRouter = router({
       console.log(`[bookings.myBookings] retrieved ${bookings.length} bookings for user: ${ctx.user.id}`);
       return bookings;
     } catch (error) {
-      console.error("[bookings.myBookings] query error:", {
-        error: error instanceof Error ? error.message : String(error),
-        userId: ctx.user.id
-      });
+      logError("bookings.myBookings", "query error", error, { userId: ctx.user.id });
       throw error;
     }
   }),
@@ -1766,11 +1827,7 @@ var bookingsRouter = router({
       console.log(`[bookings.updateStatus] updated booking: id=${input.id}, status=${input.status}`);
       return result;
     } catch (error) {
-      console.error("[bookings.updateStatus] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        id: input.id,
-        status: input.status
-      });
+      logError("bookings.updateStatus", "mutation error", error, { id: input.id, status: input.status });
       throw error;
     }
   }),
@@ -1786,11 +1843,7 @@ var bookingsRouter = router({
       console.log(`[bookings.updatePaymentStatus] updated booking: id=${input.id}, paymentStatus=${input.paymentStatus}`);
       return result;
     } catch (error) {
-      console.error("[bookings.updatePaymentStatus] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        id: input.id,
-        paymentStatus: input.paymentStatus
-      });
+      logError("bookings.updatePaymentStatus", "mutation error", error, { id: input.id, paymentStatus: input.paymentStatus });
       throw error;
     }
   }),
@@ -1807,9 +1860,7 @@ var bookingsRouter = router({
       console.log(`[bookings.listAll] retrieved ${bookings.length} bookings`);
       return bookings;
     } catch (error) {
-      console.error("[bookings.listAll] query error:", {
-        error: error instanceof Error ? error.message : String(error)
-      });
+      logError("bookings.listAll", "query error", error);
       throw error;
     }
   })
@@ -1831,9 +1882,7 @@ var reviewsRouter = router({
       console.log(`[reviews.list] retrieved ${reviews.length} approved reviews`);
       return reviews;
     } catch (error) {
-      console.error("[reviews.list] query error:", {
-        error: error instanceof Error ? error.message : String(error)
-      });
+      logError("reviews.list", "query error", error);
       throw error;
     }
   }),
@@ -1844,9 +1893,7 @@ var reviewsRouter = router({
       console.log("[reviews.stats] retrieved review statistics");
       return stats;
     } catch (error) {
-      console.error("[reviews.stats] query error:", {
-        error: error instanceof Error ? error.message : String(error)
-      });
+      logError("reviews.stats", "query error", error);
       throw error;
     }
   }),
@@ -1857,10 +1904,7 @@ var reviewsRouter = router({
       console.log(`[reviews.getById] retrieved review: id=${input.id}`);
       return review;
     } catch (error) {
-      console.error("[reviews.getById] query error:", {
-        error: error instanceof Error ? error.message : String(error),
-        id: input.id
-      });
+      logError("reviews.getById", "query error", error, { id: input.id });
       throw error;
     }
   }),
@@ -1888,10 +1932,7 @@ var reviewsRouter = router({
       console.log(`[reviews.create] created review: tripName=${input.tripName}, rating=${input.rating}`);
       return review;
     } catch (error) {
-      console.error("[reviews.create] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        tripName: input.tripName
-      });
+      logError("reviews.create", "mutation error", error, { tripName: input.tripName });
       throw error;
     }
   }),
@@ -1905,10 +1946,7 @@ var reviewsRouter = router({
       console.log(`[reviews.myReviews] retrieved ${reviews.length} reviews for user: ${ctx.user.id}`);
       return reviews;
     } catch (error) {
-      console.error("[reviews.myReviews] query error:", {
-        error: error instanceof Error ? error.message : String(error),
-        userId: ctx.user.id
-      });
+      logError("reviews.myReviews", "query error", error, { userId: ctx.user.id });
       throw error;
     }
   }),
@@ -1919,10 +1957,7 @@ var reviewsRouter = router({
       console.log(`[reviews.markHelpful] marked review as helpful: id=${input.id}`);
       return result;
     } catch (error) {
-      console.error("[reviews.markHelpful] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        id: input.id
-      });
+      logError("reviews.markHelpful", "mutation error", error, { id: input.id });
       throw error;
     }
   }),
@@ -1939,9 +1974,7 @@ var reviewsRouter = router({
       console.log(`[reviews.listAll] retrieved ${reviews.length} reviews (including pending)`);
       return reviews;
     } catch (error) {
-      console.error("[reviews.listAll] query error:", {
-        error: error instanceof Error ? error.message : String(error)
-      });
+      logError("reviews.listAll", "query error", error);
       throw error;
     }
   }),
@@ -1957,10 +1990,7 @@ var reviewsRouter = router({
       console.log(`[reviews.moderate] updated review approval: id=${input.id}, status=${input.isApproved}`);
       return result;
     } catch (error) {
-      console.error("[reviews.moderate] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        id: input.id
-      });
+      logError("reviews.moderate", "mutation error", error, { id: input.id });
       throw error;
     }
   }),
@@ -1976,10 +2006,7 @@ var reviewsRouter = router({
       console.log(`[reviews.reply] added admin reply to review: id=${input.id}`);
       return result;
     } catch (error) {
-      console.error("[reviews.reply] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        id: input.id
-      });
+      logError("reviews.reply", "mutation error", error, { id: input.id });
       throw error;
     }
   })
@@ -2143,8 +2170,22 @@ async function storagePut2(relKey, data, contentType = "application/octet-stream
   }
 }
 
-// server/routers/uploads.ts
+// server/utils/uploadHelper.ts
 import { nanoid as nanoid2 } from "nanoid";
+var MAX_FILE_SIZE = 10 * 1024 * 1024;
+function decodeAndValidateUpload(fileData, filename, keyPrefix) {
+  const buffer = Buffer.from(fileData, "base64");
+  const fileSize = buffer.length;
+  if (fileSize > MAX_FILE_SIZE) {
+    throw new Error("\u062D\u062C\u0645 \u0627\u0644\u0645\u0644\u0641 \u064A\u062A\u062C\u0627\u0648\u0632 \u0627\u0644\u062D\u062F \u0627\u0644\u0645\u0633\u0645\u0648\u062D (10 \u0645\u064A\u062C\u0627\u0628\u0627\u064A\u062A)");
+  }
+  const ext = filename.split(".").pop() || "bin";
+  const randomSuffix = nanoid2(8);
+  const fileKey = `${keyPrefix}/${randomSuffix}.${ext}`;
+  return { buffer, fileSize, fileKey, ext };
+}
+
+// server/routers/uploads.ts
 var uploadsRouter = router({
   /** Upload a file (authenticated users only) */
   upload: protectedProcedure.input(
@@ -2156,14 +2197,12 @@ var uploadsRouter = router({
       purpose: z6.string().optional()
     })
   ).mutation(async ({ ctx, input }) => {
-    const buffer = Buffer.from(input.fileData, "base64");
-    const fileSize = buffer.length;
-    if (fileSize > 10 * 1024 * 1024) {
-      throw new Error("\u062D\u062C\u0645 \u0627\u0644\u0645\u0644\u0641 \u064A\u062A\u062C\u0627\u0648\u0632 \u0627\u0644\u062D\u062F \u0627\u0644\u0645\u0633\u0645\u0648\u062D (10 \u0645\u064A\u062C\u0627\u0628\u0627\u064A\u062A)");
-    }
-    const ext = input.filename.split(".").pop() || "bin";
-    const randomSuffix = nanoid2(8);
-    const fileKey = `user-${ctx.user.id}/${input.purpose || "general"}/${randomSuffix}.${ext}`;
+    const keyPrefix = `user-${ctx.user.id}/${input.purpose || "general"}`;
+    const { buffer, fileSize, fileKey } = decodeAndValidateUpload(
+      input.fileData,
+      input.filename,
+      keyPrefix
+    );
     const { url } = await storagePut2(fileKey, buffer, input.mimeType);
     const fileRecord = await createFileUpload({
       userId: ctx.user.id,
@@ -2184,49 +2223,67 @@ var uploadsRouter = router({
 
 // server/routers/gallery.ts
 import { z as z7 } from "zod";
-import { nanoid as nanoid3 } from "nanoid";
+
+// server/utils/galleryCollectionHelper.ts
+async function listVisibleFromCollection(collection, label) {
+  try {
+    const snap = await db.collection(collection).where("isVisible", "==", "visible").orderBy("sortOrder", "asc").get();
+    console.log(`[Gallery] ${label}: Found ${snap.docs.length} items (with index)`);
+    return snap.docs.map((d) => ({ ...d.data(), _docId: d.id }));
+  } catch (indexErr) {
+    console.warn(
+      `[Gallery] ${label}: Index query failed, falling back to client-side filter`,
+      indexErr.message
+    );
+    const snap = await db.collection(collection).orderBy("createdAt", "desc").get();
+    const filtered = snap.docs.map((d) => ({ ...d.data(), _docId: d.id })).filter((item) => item.isVisible === "visible").sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    console.log(`[Gallery] ${label}: Found ${filtered.length} items (fallback)`);
+    return filtered;
+  }
+}
+async function findDocById(collection, id) {
+  const snap = await db.collection(collection).limit(1e3).get();
+  for (const doc of snap.docs) {
+    const docData = doc.data();
+    if (docData._docId === id || doc.id === String(id)) {
+      return doc.ref;
+    }
+  }
+  return null;
+}
+async function updateDocById(collection, label, id, data) {
+  const docRef = await findDocById(collection, id);
+  if (!docRef) {
+    throw new Error(`Gallery ${label} not found: ${id}`);
+  }
+  await docRef.set(data, { merge: true });
+  const updated = (await docRef.get()).data();
+  console.log(`[Gallery] Updated ${label}: docId=${docRef.id}`);
+  return { ...updated, _docId: docRef.id };
+}
+async function deleteDocById(collection, label, id) {
+  const snap = await db.collection(collection).limit(1e3).get();
+  for (const doc of snap.docs) {
+    const docData = doc.data();
+    if (docData._docId === id || doc.id === String(id)) {
+      await doc.ref.delete();
+      console.log(`[Gallery] Deleted ${label}: docId=${doc.id}`);
+      return { success: true };
+    }
+  }
+  throw new Error(`Gallery ${label} not found: ${id}`);
+}
+
+// server/routers/gallery.ts
 var ITEMS_COL = "gallery_items";
 var VIDEOS_COL = "gallery_videos";
 var galleryRouter = router({
   // ─── Public Endpoints ───
   listVisible: publicProcedure.query(async () => {
-    try {
-      const snap = await db.collection(ITEMS_COL).where("isVisible", "==", "visible").orderBy("sortOrder", "asc").get();
-      console.log(`[Gallery] listVisible: Found ${snap.docs.length} items (with index)`);
-      return snap.docs.map((d) => {
-        const data = d.data();
-        console.log(`[Gallery] Item data:`, { id: data.id, imageUrl: data.imageUrl, title: data.title });
-        return { ...data, _docId: d.id };
-      });
-    } catch (indexErr) {
-      console.warn("[Gallery] listVisible: Index query failed, falling back to client-side filter", indexErr.message);
-      const snap = await db.collection(ITEMS_COL).orderBy("createdAt", "desc").get();
-      const filtered = snap.docs.map((d) => {
-        const data = d.data();
-        return { ...data, _docId: d.id };
-      }).filter((item) => item.isVisible === "visible").sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-      console.log(`[Gallery] listVisible: Found ${filtered.length} items (fallback)`);
-      return filtered;
-    }
+    return listVisibleFromCollection(ITEMS_COL, "listVisible");
   }),
   listVisibleVideos: publicProcedure.query(async () => {
-    try {
-      const snap = await db.collection(VIDEOS_COL).where("isVisible", "==", "visible").orderBy("sortOrder", "asc").get();
-      console.log(`[Gallery] listVisibleVideos: Found ${snap.docs.length} items (with index)`);
-      return snap.docs.map((d) => {
-        const data = d.data();
-        return { ...data, _docId: d.id };
-      });
-    } catch (indexErr) {
-      console.warn("[Gallery] listVisibleVideos: Index query failed, falling back to client-side filter", indexErr.message);
-      const snap = await db.collection(VIDEOS_COL).orderBy("createdAt", "desc").get();
-      const filtered = snap.docs.map((d) => {
-        const data = d.data();
-        return { ...data, _docId: d.id };
-      }).filter((item) => item.isVisible === "visible").sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-      console.log(`[Gallery] listVisibleVideos: Found ${filtered.length} items (fallback)`);
-      return filtered;
-    }
+    return listVisibleFromCollection(VIDEOS_COL, "listVisibleVideos");
   }),
   // ─── Admin Endpoints: Gallery Items ───
   listAll: adminProcedure.input(
@@ -2284,36 +2341,10 @@ var galleryRouter = router({
     })
   ).mutation(async ({ input }) => {
     const { id, ...data } = input;
-    const snap = await db.collection(ITEMS_COL).limit(1e3).get();
-    let found = false;
-    let docRef = null;
-    for (const doc of snap.docs) {
-      const docData = doc.data();
-      if (docData._docId === id || doc.id === id) {
-        docRef = doc.ref;
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      throw new Error(`Gallery item not found: ${id}`);
-    }
-    await docRef.set(data, { merge: true });
-    const updated = (await docRef.get()).data();
-    console.log(`[Gallery] Updated item: docId=${docRef.id}`);
-    return { ...updated, _docId: docRef.id };
+    return updateDocById(ITEMS_COL, "item", id, data);
   }),
   delete: adminProcedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
-    const snap = await db.collection(ITEMS_COL).limit(1e3).get();
-    for (const doc of snap.docs) {
-      const docData = doc.data();
-      if (docData._docId === input.id || doc.id === input.id) {
-        await doc.ref.delete();
-        console.log(`[Gallery] Deleted item: docId=${doc.id}`);
-        return { success: true };
-      }
-    }
-    throw new Error(`Gallery item not found: ${input.id}`);
+    return deleteDocById(ITEMS_COL, "item", input.id);
   }),
   uploadImage: adminProcedure.input(
     z7.object({
@@ -2322,13 +2353,11 @@ var galleryRouter = router({
       mimeType: z7.string()
     })
   ).mutation(async ({ input }) => {
-    const buffer = Buffer.from(input.fileData, "base64");
-    if (buffer.length > 10 * 1024 * 1024) {
-      throw new Error("\u062D\u062C\u0645 \u0627\u0644\u0645\u0644\u0641 \u064A\u062A\u062C\u0627\u0648\u0632 \u0627\u0644\u062D\u062F \u0627\u0644\u0645\u0633\u0645\u0648\u062D (10 \u0645\u064A\u062C\u0627\u0628\u0627\u064A\u062A)");
-    }
-    const ext = input.filename.split(".").pop() || "jpg";
-    const randomSuffix = nanoid3(8);
-    const fileKey = `gallery/${randomSuffix}.${ext}`;
+    const { buffer, fileKey } = decodeAndValidateUpload(
+      input.fileData,
+      input.filename,
+      "gallery"
+    );
     const { url } = await storagePut2(fileKey, buffer, input.mimeType);
     return { url, fileKey };
   }),
@@ -2378,36 +2407,10 @@ var galleryRouter = router({
     })
   ).mutation(async ({ input }) => {
     const { id, ...data } = input;
-    const snap = await db.collection(VIDEOS_COL).limit(1e3).get();
-    let found = false;
-    let docRef = null;
-    for (const doc of snap.docs) {
-      const docData = doc.data();
-      if (docData._docId === id || doc.id === id) {
-        docRef = doc.ref;
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      throw new Error(`Gallery video not found: ${id}`);
-    }
-    await docRef.set(data, { merge: true });
-    const updated = (await docRef.get()).data();
-    console.log(`[Gallery] Updated video: docId=${docRef.id}`);
-    return { ...updated, _docId: docRef.id };
+    return updateDocById(VIDEOS_COL, "video", id, data);
   }),
   deleteVideo: adminProcedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
-    const snap = await db.collection(VIDEOS_COL).limit(1e3).get();
-    for (const doc of snap.docs) {
-      const docData = doc.data();
-      if (docData._docId === input.id || doc.id === input.id) {
-        await doc.ref.delete();
-        console.log(`[Gallery] Deleted video: docId=${doc.id}`);
-        return { success: true };
-      }
-    }
-    throw new Error(`Gallery video not found: ${input.id}`);
+    return deleteDocById(VIDEOS_COL, "video", input.id);
   })
 });
 
@@ -2992,15 +2995,6 @@ var usersRouter = router({
 // server/routers/blog.ts
 import { z as z10 } from "zod";
 import { TRPCError as TRPCError4 } from "@trpc/server";
-var adminProcedure3 = protectedProcedure.use(({ ctx, next }) => {
-  if (ctx.user.role !== "admin") {
-    throw new TRPCError4({
-      code: "FORBIDDEN",
-      message: "Admin access required"
-    });
-  }
-  return next({ ctx });
-});
 var blogRouter = router({
   // Public: List published blog posts
   list: publicProcedure.input(
@@ -3023,11 +3017,7 @@ var blogRouter = router({
         publishedAt: post.publishedAt ? new Date(post.publishedAt).toISOString() : null
       }));
     } catch (err) {
-      console.error("[blog.list] database error:", {
-        error: err instanceof Error ? err.message : String(err),
-        stack: err instanceof Error ? err.stack : void 0,
-        input
-      });
+      logError("blog.list", "database error", err, { input });
       throw new TRPCError4({
         code: "INTERNAL_SERVER_ERROR",
         message: "Failed to fetch blog posts"
@@ -3053,10 +3043,7 @@ var blogRouter = router({
       };
     } catch (err) {
       if (err instanceof TRPCError4) throw err;
-      console.error("[blog.getBySlug] database error:", {
-        error: err instanceof Error ? err.message : String(err),
-        slug: input.slug
-      });
+      logError("blog.getBySlug", "database error", err, { slug: input.slug });
       throw new TRPCError4({
         code: "INTERNAL_SERVER_ERROR",
         message: "Failed to fetch blog post"
@@ -3064,7 +3051,7 @@ var blogRouter = router({
     }
   }),
   // Admin: List all posts (including drafts)
-  adminList: adminProcedure3.input(
+  adminList: adminProcedure.input(
     z10.object({
       limit: z10.number().min(1).max(100).default(50),
       offset: z10.number().min(0).default(0)
@@ -3074,7 +3061,7 @@ var blogRouter = router({
     return getAllBlogPosts(limit, offset);
   }),
   // Admin: Create blog post
-  create: adminProcedure3.input(
+  create: adminProcedure.input(
     z10.object({
       slug: z10.string().min(1).max(255),
       title: z10.string().min(1).max(500),
@@ -3098,10 +3085,7 @@ var blogRouter = router({
         publishedAt: input.status === "published" ? (/* @__PURE__ */ new Date()).toISOString() : void 0
       });
     } catch (err) {
-      console.error("[blog.create] mutation error:", {
-        error: err instanceof Error ? err.message : String(err),
-        input: { ...input, content: "[omitted]" }
-      });
+      logError("blog.create", "mutation error", err, { input: { ...input, content: "[omitted]" } });
       throw new TRPCError4({
         code: "INTERNAL_SERVER_ERROR",
         message: "Failed to create blog post"
@@ -3109,7 +3093,7 @@ var blogRouter = router({
     }
   }),
   // Admin: Update blog post
-  update: adminProcedure3.input(
+  update: adminProcedure.input(
     z10.object({
       id: z10.number(),
       slug: z10.string().min(1).max(255).optional(),
@@ -3144,10 +3128,7 @@ var blogRouter = router({
       };
     } catch (err) {
       if (err instanceof TRPCError4) throw err;
-      console.error("[blog.update] mutation error:", {
-        error: err instanceof Error ? err.message : String(err),
-        postId: input.id
-      });
+      logError("blog.update", "mutation error", err, { postId: input.id });
       throw new TRPCError4({
         code: "INTERNAL_SERVER_ERROR",
         message: "Failed to update blog post"
@@ -3654,142 +3635,194 @@ ${template.templateContent}`;
 });
 
 // server/routers/admin.destinations.ts
+import { z as z13 } from "zod";
+
+// server/utils/firestoreAdminCrud.ts
 import { z as z12 } from "zod";
+function buildAdminCrudRouter(config) {
+  const {
+    collection: COL5,
+    tag,
+    createSchema,
+    updateSchema,
+    sortFields,
+    defaultSortBy,
+    defaultSortOrder = "desc",
+    searchField = "title",
+    statusField,
+    statusValues,
+    createDefaults = {}
+  } = config;
+  const sortByEnum = z12.enum(
+    Object.keys(sortFields)
+  );
+  const statusEnum = statusValues ? z12.enum(statusValues) : void 0;
+  return router({
+    /** List with pagination, search, sort, optional status filter */
+    list: adminProcedure.input(
+      z12.object({
+        limit: z12.number().min(1).max(100).default(20),
+        offset: z12.number().min(0).default(0),
+        search: z12.string().optional(),
+        status: statusEnum ? statusEnum.optional() : z12.string().optional(),
+        sortBy: sortByEnum.default(defaultSortBy),
+        sortOrder: z12.enum(["asc", "desc"]).default(defaultSortOrder)
+      }).optional()
+    ).query(async ({ input }) => {
+      try {
+        const {
+          limit = 20,
+          offset = 0,
+          search = "",
+          status,
+          sortBy = defaultSortBy,
+          sortOrder = defaultSortOrder
+        } = input ?? {};
+        let rows = await list(COL5, {});
+        if (status && statusField) {
+          rows = rows.filter((r) => r[statusField] === status);
+        }
+        if (search) {
+          const q = search.toLowerCase();
+          rows = rows.filter(
+            (r) => (r[searchField] ?? "").toLowerCase().includes(q)
+          );
+        }
+        const key = sortFields[sortBy] ?? "createdAt";
+        rows.sort((a, b) => {
+          const av = a[key];
+          const bv = b[key];
+          const an = typeof av === "string" && isNaN(Number(av)) ? av : Number(av ?? 0);
+          const bn = typeof bv === "string" && isNaN(Number(bv)) ? bv : Number(bv ?? 0);
+          if (an < bn) return sortOrder === "desc" ? 1 : -1;
+          if (an > bn) return sortOrder === "desc" ? -1 : 1;
+          return 0;
+        });
+        return rows.slice(offset, offset + limit);
+      } catch (error) {
+        logError(tag + ".list", "query error", error);
+        throw error;
+      }
+    }),
+    /** Get single document by ID */
+    getById: adminProcedure.input(z12.object({ id: z12.number() })).query(async ({ input }) => {
+      try {
+        return await getById(COL5, input.id) || null;
+      } catch (error) {
+        logError(tag + ".getById", "query error", error, { id: input.id });
+        throw error;
+      }
+    }),
+    /** Create document */
+    create: adminProcedure.input(createSchema).mutation(async ({ input }) => {
+      try {
+        const result = await insert(COL5, {
+          ...input,
+          ...createDefaults
+        });
+        return { success: true, id: result.id };
+      } catch (error) {
+        logError(tag + ".create", "mutation error", error);
+        throw error;
+      }
+    }),
+    /** Update document */
+    update: adminProcedure.input(updateSchema).mutation(async ({ input }) => {
+      try {
+        const { id, ...data } = input;
+        await update(COL5, id, data);
+        return { success: true };
+      } catch (error) {
+        logError(tag + ".update", "mutation error", error, {
+          id: input.id
+        });
+        throw error;
+      }
+    }),
+    /** Delete document */
+    delete: adminProcedure.input(z12.object({ id: z12.number() })).mutation(async ({ input }) => {
+      try {
+        await remove(COL5, input.id);
+        return { success: true };
+      } catch (error) {
+        logError(tag + ".delete", "mutation error", error, { id: input.id });
+        throw error;
+      }
+    }),
+    /** Bulk-delete documents */
+    bulkDelete: adminProcedure.input(z12.object({ ids: z12.array(z12.number()) })).mutation(async ({ input }) => {
+      try {
+        for (const id of input.ids) await remove(COL5, id);
+        return { success: true, deleted: input.ids.length };
+      } catch (error) {
+        logError(tag + ".bulkDelete", "mutation error", error, {
+          count: input.ids.length
+        });
+        throw error;
+      }
+    })
+  });
+}
+
+// server/routers/admin.destinations.ts
 var COL2 = "destinations";
+var crudRouter = buildAdminCrudRouter({
+  collection: COL2,
+  tag: "adminDestinations",
+  createSchema: z13.object({
+    name: z13.string().min(1, "\u0627\u0633\u0645 \u0627\u0644\u0648\u062C\u0647\u0629 \u0645\u0637\u0644\u0648\u0628"),
+    description: z13.string().optional(),
+    location: z13.string().min(1, "\u0627\u0644\u0645\u0648\u0642\u0639 \u0645\u0637\u0644\u0648\u0628"),
+    pricePerPerson: z13.string().optional(),
+    rating: z13.string().optional(),
+    imageUrl: z13.string().optional(),
+    highlights: z13.string().optional(),
+    bestTimeToVisit: z13.string().optional(),
+    duration: z13.string().optional(),
+    difficulty: z13.enum(["easy", "moderate", "hard"]).optional(),
+    groupSize: z13.string().optional(),
+    inclusions: z13.string().optional(),
+    exclusions: z13.string().optional()
+  }),
+  updateSchema: z13.object({
+    id: z13.number(),
+    name: z13.string().optional(),
+    description: z13.string().optional(),
+    location: z13.string().optional(),
+    pricePerPerson: z13.string().optional(),
+    rating: z13.string().optional(),
+    imageUrl: z13.string().optional(),
+    highlights: z13.string().optional(),
+    bestTimeToVisit: z13.string().optional(),
+    duration: z13.string().optional(),
+    difficulty: z13.enum(["easy", "moderate", "hard"]).optional(),
+    groupSize: z13.string().optional(),
+    inclusions: z13.string().optional(),
+    exclusions: z13.string().optional(),
+    isActive: z13.enum(["active", "inactive"]).optional()
+  }),
+  sortFields: {
+    name: "name",
+    rating: "rating",
+    price: "pricePerPerson",
+    createdAt: "createdAt"
+  },
+  defaultSortBy: "name",
+  defaultSortOrder: "asc",
+  searchField: "name",
+  statusField: "isActive",
+  statusValues: ["active", "inactive"],
+  createDefaults: { isActive: "active" }
+});
 var adminDestinationsRouter = router({
-  /** List all destinations with pagination and filtering */
-  list: adminProcedure.input(
-    z12.object({
-      limit: z12.number().min(1).max(100).default(20),
-      offset: z12.number().min(0).default(0),
-      search: z12.string().optional(),
-      sortBy: z12.enum(["name", "rating", "price", "createdAt"]).default("name"),
-      sortOrder: z12.enum(["asc", "desc"]).default("asc")
-    }).optional()
-  ).query(async ({ input }) => {
-    const { limit = 20, offset = 0, search = "", sortBy = "name", sortOrder = "asc" } = input ?? {};
-    let rows = await list(COL2, {});
-    if (search) {
-      const q = search.toLowerCase();
-      rows = rows.filter((d) => (d.name ?? "").toLowerCase().includes(q));
-    }
-    const key = sortBy === "name" ? "name" : sortBy === "rating" ? "rating" : sortBy === "price" ? "pricePerPerson" : "createdAt";
-    rows.sort((a, b) => {
-      const av = a[key], bv = b[key];
-      const an = typeof av === "string" && isNaN(Number(av)) ? av : Number(av ?? 0);
-      const bn = typeof bv === "string" && isNaN(Number(bv)) ? bv : Number(bv ?? 0);
-      if (an < bn) return sortOrder === "desc" ? 1 : -1;
-      if (an > bn) return sortOrder === "desc" ? -1 : 1;
-      return 0;
-    });
-    return rows.slice(offset, offset + limit);
-  }),
-  /** Get single destination by ID */
-  getById: adminProcedure.input(z12.object({ id: z12.number() })).query(async ({ input }) => {
-    return await getById(COL2, input.id) || null;
-  }),
-  /** Create new destination */
-  create: adminProcedure.input(
-    z12.object({
-      name: z12.string().min(1, "\u0627\u0633\u0645 \u0627\u0644\u0648\u062C\u0647\u0629 \u0645\u0637\u0644\u0648\u0628"),
-      description: z12.string().optional(),
-      location: z12.string().min(1, "\u0627\u0644\u0645\u0648\u0642\u0639 \u0645\u0637\u0644\u0648\u0628"),
-      pricePerPerson: z12.string().optional(),
-      rating: z12.string().optional(),
-      imageUrl: z12.string().optional(),
-      highlights: z12.string().optional(),
-      bestTimeToVisit: z12.string().optional(),
-      duration: z12.string().optional(),
-      difficulty: z12.enum(["easy", "moderate", "hard"]).optional(),
-      groupSize: z12.string().optional(),
-      inclusions: z12.string().optional(),
-      exclusions: z12.string().optional()
-    })
-  ).mutation(async ({ input }) => {
-    try {
-      const result = await insert(COL2, { ...input, isActive: "active" });
-      console.log(`[adminDestinations.create] created destination: id=${result.id}, name=${input.name}`);
-      return { success: true, id: result.id };
-    } catch (error) {
-      console.error("[adminDestinations.create] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        name: input.name
-      });
-      throw error;
-    }
-  }),
-  /** Update destination */
-  update: adminProcedure.input(
-    z12.object({
-      id: z12.number(),
-      name: z12.string().optional(),
-      description: z12.string().optional(),
-      location: z12.string().optional(),
-      pricePerPerson: z12.string().optional(),
-      rating: z12.string().optional(),
-      imageUrl: z12.string().optional(),
-      highlights: z12.string().optional(),
-      bestTimeToVisit: z12.string().optional(),
-      duration: z12.string().optional(),
-      difficulty: z12.enum(["easy", "moderate", "hard"]).optional(),
-      groupSize: z12.string().optional(),
-      inclusions: z12.string().optional(),
-      exclusions: z12.string().optional(),
-      isActive: z12.enum(["active", "inactive"]).optional()
-    })
-  ).mutation(async ({ input }) => {
-    try {
-      const { id, ...data } = input;
-      await update(COL2, id, data);
-      console.log(`[adminDestinations.update] updated destination: id=${id}`);
-      return { success: true };
-    } catch (error) {
-      console.error("[adminDestinations.update] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        id: input.id
-      });
-      throw error;
-    }
-  }),
-  /** Delete destination */
-  delete: adminProcedure.input(z12.object({ id: z12.number() })).mutation(async ({ input }) => {
-    try {
-      await remove(COL2, input.id);
-      console.log(`[adminDestinations.delete] deleted destination: id=${input.id}`);
-      return { success: true };
-    } catch (error) {
-      console.error("[adminDestinations.delete] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        id: input.id
-      });
-      throw error;
-    }
-  }),
-  /** Bulk delete destinations */
-  bulkDelete: adminProcedure.input(z12.object({ ids: z12.array(z12.number()) })).mutation(async ({ input }) => {
-    try {
-      for (const id of input.ids) await remove(COL2, id);
-      console.log(`[adminDestinations.bulkDelete] deleted ${input.ids.length} destinations`);
-      return { success: true, deleted: input.ids.length };
-    } catch (error) {
-      console.error("[adminDestinations.bulkDelete] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        count: input.ids.length
-      });
-      throw error;
-    }
-  }),
+  ...crudRouter._def.procedures,
   /** Update destination status (active/inactive) */
-  updateStatus: adminProcedure.input(z12.object({ id: z12.number(), isActive: z12.enum(["active", "inactive"]) })).mutation(async ({ input }) => {
+  updateStatus: adminProcedure.input(z13.object({ id: z13.number(), isActive: z13.enum(["active", "inactive"]) })).mutation(async ({ input }) => {
     try {
       await update(COL2, input.id, { isActive: input.isActive });
-      console.log(`[adminDestinations.updateStatus] updated status: id=${input.id}, status=${input.isActive}`);
       return { success: true };
     } catch (error) {
-      console.error("[adminDestinations.updateStatus] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        id: input.id
-      });
+      logError("adminDestinations.updateStatus", "mutation error", error, { id: input.id });
       throw error;
     }
   }),
@@ -3808,153 +3841,70 @@ var adminDestinationsRouter = router({
         avgPrice: parseFloat(avgPrice)
       };
     } catch (error) {
-      console.error("[adminDestinations.getStats] query error:", {
-        error: error instanceof Error ? error.message : String(error)
-      });
+      logError("adminDestinations.getStats", "query error", error);
       throw error;
     }
   })
 });
 
 // server/routers/admin.offers.ts
-import { z as z13 } from "zod";
+import { z as z14 } from "zod";
 var COL3 = "offers";
+var crudRouter2 = buildAdminCrudRouter({
+  collection: COL3,
+  tag: "adminOffers",
+  createSchema: z14.object({
+    title: z14.string().min(1, "\u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u0639\u0631\u0636 \u0645\u0637\u0644\u0648\u0628"),
+    description: z14.string().optional(),
+    discountType: z14.enum(["percentage", "fixed"]),
+    discountValue: z14.string(),
+    promoCode: z14.string().optional(),
+    startDate: z14.number(),
+    endDate: z14.number(),
+    category: z14.string().optional(),
+    destination: z14.string().optional(),
+    imageUrl: z14.string().optional(),
+    totalSpots: z14.number().optional(),
+    badgeText: z14.string().optional(),
+    badgeColor: z14.string().optional()
+  }),
+  updateSchema: z14.object({
+    id: z14.number(),
+    title: z14.string().optional(),
+    description: z14.string().optional(),
+    discountType: z14.enum(["percentage", "fixed"]).optional(),
+    discountValue: z14.string().optional(),
+    promoCode: z14.string().optional(),
+    startDate: z14.number().optional(),
+    endDate: z14.number().optional(),
+    category: z14.string().optional(),
+    destination: z14.string().optional(),
+    imageUrl: z14.string().optional(),
+    totalSpots: z14.number().optional(),
+    badgeText: z14.string().optional(),
+    badgeColor: z14.string().optional(),
+    isActive: z14.enum(["active", "inactive", "expired"]).optional()
+  }),
+  sortFields: {
+    title: "title",
+    discount: "discountValue",
+    createdAt: "createdAt",
+    startDate: "startDate"
+  },
+  defaultSortBy: "createdAt",
+  statusField: "isActive",
+  statusValues: ["active", "inactive", "expired"],
+  createDefaults: { isActive: "active", bookedSpots: 0 }
+});
 var adminOffersRouter = router({
-  /** List all offers with pagination and filtering */
-  list: adminProcedure.input(
-    z13.object({
-      limit: z13.number().min(1).max(100).default(20),
-      offset: z13.number().min(0).default(0),
-      search: z13.string().optional(),
-      status: z13.enum(["active", "inactive", "expired"]).optional(),
-      sortBy: z13.enum(["title", "discount", "createdAt", "startDate"]).default("createdAt"),
-      sortOrder: z13.enum(["asc", "desc"]).default("desc")
-    }).optional()
-  ).query(async ({ input }) => {
-    const { limit = 20, offset = 0, search = "", status, sortBy = "createdAt", sortOrder = "desc" } = input ?? {};
-    let rows = await list(COL3, {});
-    if (status) rows = rows.filter((o) => o.isActive === status);
-    if (search) {
-      const q = search.toLowerCase();
-      rows = rows.filter((o) => (o.title ?? "").toLowerCase().includes(q));
-    }
-    const key = sortBy === "title" ? "title" : sortBy === "discount" ? "discountValue" : sortBy === "startDate" ? "startDate" : "createdAt";
-    rows.sort((a, b) => {
-      const av = a[key], bv = b[key];
-      const an = typeof av === "string" && isNaN(Number(av)) ? av : Number(av ?? 0);
-      const bn = typeof bv === "string" && isNaN(Number(bv)) ? bv : Number(bv ?? 0);
-      if (an < bn) return sortOrder === "desc" ? 1 : -1;
-      if (an > bn) return sortOrder === "desc" ? -1 : 1;
-      return 0;
-    });
-    return rows.slice(offset, offset + limit);
-  }),
-  /** Get single offer by ID */
-  getById: adminProcedure.input(z13.object({ id: z13.number() })).query(async ({ input }) => {
-    return await getById(COL3, input.id) || null;
-  }),
-  /** Create new offer */
-  create: adminProcedure.input(
-    z13.object({
-      title: z13.string().min(1, "\u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u0639\u0631\u0636 \u0645\u0637\u0644\u0648\u0628"),
-      description: z13.string().optional(),
-      discountType: z13.enum(["percentage", "fixed"]),
-      discountValue: z13.string(),
-      promoCode: z13.string().optional(),
-      startDate: z13.number(),
-      endDate: z13.number(),
-      category: z13.string().optional(),
-      destination: z13.string().optional(),
-      imageUrl: z13.string().optional(),
-      totalSpots: z13.number().optional(),
-      badgeText: z13.string().optional(),
-      badgeColor: z13.string().optional()
-    })
-  ).mutation(async ({ input }) => {
-    try {
-      const result = await insert(COL3, { ...input, isActive: "active", bookedSpots: 0 });
-      console.log(`[adminOffers.create] created offer: id=${result.id}, title=${input.title}`);
-      return { success: true, id: result.id };
-    } catch (error) {
-      console.error("[adminOffers.create] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        title: input.title
-      });
-      throw error;
-    }
-  }),
-  /** Update offer */
-  update: adminProcedure.input(
-    z13.object({
-      id: z13.number(),
-      title: z13.string().optional(),
-      description: z13.string().optional(),
-      discountType: z13.enum(["percentage", "fixed"]).optional(),
-      discountValue: z13.string().optional(),
-      promoCode: z13.string().optional(),
-      startDate: z13.number().optional(),
-      endDate: z13.number().optional(),
-      category: z13.string().optional(),
-      destination: z13.string().optional(),
-      imageUrl: z13.string().optional(),
-      totalSpots: z13.number().optional(),
-      badgeText: z13.string().optional(),
-      badgeColor: z13.string().optional(),
-      isActive: z13.enum(["active", "inactive", "expired"]).optional()
-    })
-  ).mutation(async ({ input }) => {
-    try {
-      const { id, ...data } = input;
-      await update(COL3, id, data);
-      console.log(`[adminOffers.update] updated offer: id=${id}`);
-      return { success: true };
-    } catch (error) {
-      console.error("[adminOffers.update] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        id: input.id
-      });
-      throw error;
-    }
-  }),
-  /** Delete offer */
-  delete: adminProcedure.input(z13.object({ id: z13.number() })).mutation(async ({ input }) => {
-    try {
-      await remove(COL3, input.id);
-      console.log(`[adminOffers.delete] deleted offer: id=${input.id}`);
-      return { success: true };
-    } catch (error) {
-      console.error("[adminOffers.delete] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        id: input.id
-      });
-      throw error;
-    }
-  }),
-  /** Bulk delete offers */
-  bulkDelete: adminProcedure.input(z13.object({ ids: z13.array(z13.number()) })).mutation(async ({ input }) => {
-    try {
-      for (const id of input.ids) await remove(COL3, id);
-      console.log(`[adminOffers.bulkDelete] deleted ${input.ids.length} offers`);
-      return { success: true, deleted: input.ids.length };
-    } catch (error) {
-      console.error("[adminOffers.bulkDelete] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        count: input.ids.length
-      });
-      throw error;
-    }
-  }),
+  ...crudRouter2._def.procedures,
   /** Update offer status */
-  updateStatus: adminProcedure.input(z13.object({ id: z13.number(), isActive: z13.enum(["active", "inactive", "expired"]) })).mutation(async ({ input }) => {
+  updateStatus: adminProcedure.input(z14.object({ id: z14.number(), isActive: z14.enum(["active", "inactive", "expired"]) })).mutation(async ({ input }) => {
     try {
       await update(COL3, input.id, { isActive: input.isActive });
-      console.log(`[adminOffers.updateStatus] updated status: id=${input.id}, status=${input.isActive}`);
       return { success: true };
     } catch (error) {
-      console.error("[adminOffers.updateStatus] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        id: input.id
-      });
+      logError("adminOffers.updateStatus", "mutation error", error, { id: input.id });
       throw error;
     }
   }),
@@ -3975,195 +3925,87 @@ var adminOffersRouter = router({
         avgDiscount: parseFloat(avgDiscount)
       };
     } catch (error) {
-      console.error("[adminOffers.getStats] query error:", {
-        error: error instanceof Error ? error.message : String(error)
-      });
+      logError("adminOffers.getStats", "query error", error);
       throw error;
     }
   })
 });
 
 // server/routers/admin.blog.ts
-import { z as z14 } from "zod";
+import { z as z15 } from "zod";
 var COL4 = "blogPosts";
+var crudRouter3 = buildAdminCrudRouter({
+  collection: COL4,
+  tag: "adminBlog",
+  createSchema: z15.object({
+    slug: z15.string().min(1, "\u0627\u0644\u0631\u0627\u0628\u0637 \u0627\u0644\u0648\u062F\u0648\u062F \u0645\u0637\u0644\u0648\u0628"),
+    title: z15.string().min(1, "\u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u0645\u0642\u0627\u0644\u0629 \u0645\u0637\u0644\u0648\u0628"),
+    excerpt: z15.string().min(1, "\u0627\u0644\u0645\u0644\u062E\u0635 \u0645\u0637\u0644\u0648\u0628"),
+    content: z15.string().min(1, "\u0645\u062D\u062A\u0648\u0649 \u0627\u0644\u0645\u0642\u0627\u0644\u0629 \u0645\u0637\u0644\u0648\u0628"),
+    metaTitle: z15.string().optional(),
+    metaDescription: z15.string().optional(),
+    metaKeywords: z15.string().optional(),
+    coverImageUrl: z15.string().optional(),
+    category: z15.string().optional(),
+    tags: z15.array(z15.string()).optional(),
+    authorName: z15.string().optional(),
+    readingTime: z15.number().optional()
+  }),
+  updateSchema: z15.object({
+    id: z15.number(),
+    slug: z15.string().optional(),
+    title: z15.string().optional(),
+    excerpt: z15.string().optional(),
+    content: z15.string().optional(),
+    metaTitle: z15.string().optional(),
+    metaDescription: z15.string().optional(),
+    metaKeywords: z15.string().optional(),
+    coverImageUrl: z15.string().optional(),
+    category: z15.string().optional(),
+    tags: z15.array(z15.string()).optional(),
+    authorName: z15.string().optional(),
+    readingTime: z15.number().optional(),
+    status: z15.enum(["draft", "published", "archived"]).optional()
+  }),
+  sortFields: {
+    title: "title",
+    publishedAt: "publishedAt",
+    createdAt: "createdAt",
+    viewCount: "viewCount"
+  },
+  defaultSortBy: "createdAt",
+  statusField: "status",
+  statusValues: ["draft", "published", "archived"],
+  createDefaults: { status: "draft", viewCount: 0 }
+});
 var adminBlogRouter = router({
-  /** List all blog posts with pagination and filtering */
-  list: adminProcedure.input(
-    z14.object({
-      limit: z14.number().min(1).max(100).default(20),
-      offset: z14.number().min(0).default(0),
-      search: z14.string().optional(),
-      status: z14.enum(["draft", "published", "archived"]).optional(),
-      category: z14.string().optional(),
-      sortBy: z14.enum(["title", "publishedAt", "createdAt", "viewCount"]).default("createdAt"),
-      sortOrder: z14.enum(["asc", "desc"]).default("desc")
-    }).optional()
-  ).query(async ({ input }) => {
-    try {
-      const { limit = 20, offset = 0, search = "", status, category, sortBy = "createdAt", sortOrder = "desc" } = input ?? {};
-      let rows = await list(COL4, {});
-      if (status) rows = rows.filter((p) => p.status === status);
-      if (category) rows = rows.filter((p) => p.category === category);
-      if (search) {
-        const q = search.toLowerCase();
-        rows = rows.filter((p) => (p.title ?? "").toLowerCase().includes(q));
-      }
-      const key = sortBy === "title" ? "title" : sortBy === "publishedAt" ? "publishedAt" : sortBy === "viewCount" ? "viewCount" : "createdAt";
-      rows.sort((a, b) => {
-        const av = a[key], bv = b[key];
-        const an = typeof av === "string" && isNaN(Number(av)) ? av : Number(av ?? 0);
-        const bn = typeof bv === "string" && isNaN(Number(bv)) ? bv : Number(bv ?? 0);
-        if (an < bn) return sortOrder === "desc" ? 1 : -1;
-        if (an > bn) return sortOrder === "desc" ? -1 : 1;
-        return 0;
-      });
-      return rows.slice(offset, offset + limit);
-    } catch (error) {
-      console.error("[adminBlog.list] database error:", {
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : void 0
-      });
-      throw error;
-    }
-  }),
-  /** Get single blog post by ID */
-  getById: adminProcedure.input(z14.object({ id: z14.number() })).query(async ({ input }) => {
-    try {
-      return await getById(COL4, input.id) || null;
-    } catch (error) {
-      console.error("[adminBlog.getById] database error:", {
-        error: error instanceof Error ? error.message : String(error),
-        id: input.id
-      });
-      throw error;
-    }
-  }),
+  ...crudRouter3._def.procedures,
   /** Get blog post by slug */
-  getBySlug: adminProcedure.input(z14.object({ slug: z14.string() })).query(async ({ input }) => {
+  getBySlug: adminProcedure.input(z15.object({ slug: z15.string() })).query(async ({ input }) => {
     try {
       return await findOne(COL4, [["slug", "==", input.slug]]) || null;
     } catch (error) {
-      console.error("[adminBlog.getBySlug] database error:", {
-        error: error instanceof Error ? error.message : String(error),
-        slug: input.slug
-      });
-      throw error;
-    }
-  }),
-  /** Create new blog post */
-  create: adminProcedure.input(
-    z14.object({
-      slug: z14.string().min(1, "\u0627\u0644\u0631\u0627\u0628\u0637 \u0627\u0644\u0648\u062F\u0648\u062F \u0645\u0637\u0644\u0648\u0628"),
-      title: z14.string().min(1, "\u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u0645\u0642\u0627\u0644\u0629 \u0645\u0637\u0644\u0648\u0628"),
-      excerpt: z14.string().min(1, "\u0627\u0644\u0645\u0644\u062E\u0635 \u0645\u0637\u0644\u0648\u0628"),
-      content: z14.string().min(1, "\u0645\u062D\u062A\u0648\u0649 \u0627\u0644\u0645\u0642\u0627\u0644\u0629 \u0645\u0637\u0644\u0648\u0628"),
-      metaTitle: z14.string().optional(),
-      metaDescription: z14.string().optional(),
-      metaKeywords: z14.string().optional(),
-      coverImageUrl: z14.string().optional(),
-      category: z14.string().optional(),
-      tags: z14.array(z14.string()).optional(),
-      authorName: z14.string().optional(),
-      readingTime: z14.number().optional()
-    })
-  ).mutation(async ({ input }) => {
-    try {
-      const now = (/* @__PURE__ */ new Date()).toISOString();
-      const result = await insert(COL4, {
-        ...input,
-        status: "draft",
-        viewCount: 0,
-        createdAt: now
-      });
-      return { success: true, id: result.id };
-    } catch (error) {
-      console.error("[adminBlog.create] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        slug: input.slug
-      });
-      throw error;
-    }
-  }),
-  /** Update blog post */
-  update: adminProcedure.input(
-    z14.object({
-      id: z14.number(),
-      slug: z14.string().optional(),
-      title: z14.string().optional(),
-      excerpt: z14.string().optional(),
-      content: z14.string().optional(),
-      metaTitle: z14.string().optional(),
-      metaDescription: z14.string().optional(),
-      metaKeywords: z14.string().optional(),
-      coverImageUrl: z14.string().optional(),
-      category: z14.string().optional(),
-      tags: z14.array(z14.string()).optional(),
-      authorName: z14.string().optional(),
-      readingTime: z14.number().optional(),
-      status: z14.enum(["draft", "published", "archived"]).optional()
-    })
-  ).mutation(async ({ input }) => {
-    try {
-      const { id, ...data } = input;
-      await update(COL4, id, data);
-      return { success: true };
-    } catch (error) {
-      console.error("[adminBlog.update] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        id: input.id
-      });
-      throw error;
-    }
-  }),
-  /** Delete blog post */
-  delete: adminProcedure.input(z14.object({ id: z14.number() })).mutation(async ({ input }) => {
-    try {
-      await remove(COL4, input.id);
-      return { success: true };
-    } catch (error) {
-      console.error("[adminBlog.delete] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        id: input.id
-      });
-      throw error;
-    }
-  }),
-  /** Bulk delete blog posts */
-  bulkDelete: adminProcedure.input(z14.object({ ids: z14.array(z14.number()) })).mutation(async ({ input }) => {
-    try {
-      for (const id of input.ids) await remove(COL4, id);
-      return { success: true, deleted: input.ids.length };
-    } catch (error) {
-      console.error("[adminBlog.bulkDelete] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        count: input.ids.length
-      });
+      logError("adminBlog.getBySlug", "database error", error, { slug: input.slug });
       throw error;
     }
   }),
   /** Publish blog post */
-  publish: adminProcedure.input(z14.object({ id: z14.number() })).mutation(async ({ input }) => {
+  publish: adminProcedure.input(z15.object({ id: z15.number() })).mutation(async ({ input }) => {
     try {
       await update(COL4, input.id, { status: "published", publishedAt: (/* @__PURE__ */ new Date()).toISOString() });
       return { success: true };
     } catch (error) {
-      console.error("[adminBlog.publish] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        id: input.id
-      });
+      logError("adminBlog.publish", "mutation error", error, { id: input.id });
       throw error;
     }
   }),
   /** Archive blog post */
-  archive: adminProcedure.input(z14.object({ id: z14.number() })).mutation(async ({ input }) => {
+  archive: adminProcedure.input(z15.object({ id: z15.number() })).mutation(async ({ input }) => {
     try {
       await update(COL4, input.id, { status: "archived" });
       return { success: true };
     } catch (error) {
-      console.error("[adminBlog.archive] mutation error:", {
-        error: error instanceof Error ? error.message : String(error),
-        id: input.id
-      });
+      logError("adminBlog.archive", "mutation error", error, { id: input.id });
       throw error;
     }
   }),
@@ -4184,17 +4026,15 @@ var adminBlogRouter = router({
         avgViews: parseInt(avgViews)
       };
     } catch (error) {
-      console.error("[adminBlog.getStats] query error:", {
-        error: error instanceof Error ? error.message : String(error)
-      });
+      logError("adminBlog.getStats", "query error", error);
       throw error;
     }
   })
 });
 
 // server/routers/aiCommand.ts
-import { z as z15 } from "zod";
-import { nanoid as nanoid4 } from "nanoid";
+import { z as z16 } from "zod";
+import { nanoid as nanoid3 } from "nanoid";
 var VANIR_SYSTEM_PROMPT = `You are the AI Command Center assistant for Vanir Travel Group \u2014 a luxury travel company specializing in Egyptian heritage and premium travel experiences. You combine ancient Egyptian elegance with modern luxury.
 
 Brand voice: Sophisticated, knowledgeable, warm yet professional. Use rich descriptive language that evokes luxury and wonder.
@@ -4644,25 +4484,25 @@ function buildMessageContent(text, attachments) {
   return parts.length === 1 && parts[0].type === "text" ? text : parts;
 }
 var allTaskTypeIds = ALL_TASK_TYPES.map((t2) => t2.id);
-var taskTypeEnum = z15.enum([
+var taskTypeEnum = z16.enum([
   "general",
   ...allTaskTypeIds
 ]);
-var attachmentSchema = z15.object({
-  url: z15.string().url(),
-  mimeType: z15.string(),
-  filename: z15.string().optional()
+var attachmentSchema = z16.object({
+  url: z16.string().url(),
+  mimeType: z16.string(),
+  filename: z16.string().optional()
 });
 var aiCommandRouter = router({
   /**
    * Upload a file for AI chat (admin only)
    */
   uploadFile: adminProcedure.input(
-    z15.object({
-      fileData: z15.string(),
+    z16.object({
+      fileData: z16.string(),
       // base64
-      filename: z15.string(),
-      mimeType: z15.string()
+      filename: z16.string(),
+      mimeType: z16.string()
     })
   ).mutation(async ({ ctx, input }) => {
     const buffer = Buffer.from(input.fileData, "base64");
@@ -4671,7 +4511,7 @@ var aiCommandRouter = router({
       throw new Error("File size exceeds 10MB limit");
     }
     const ext = input.filename.split(".").pop() || "bin";
-    const randomSuffix = nanoid4(8);
+    const randomSuffix = nanoid3(8);
     const fileKey = `ai-command/${ctx.user.id}/${randomSuffix}.${ext}`;
     const { url } = await storagePut2(fileKey, buffer, input.mimeType);
     return {
@@ -4686,12 +4526,12 @@ var aiCommandRouter = router({
    * Main AI chat - send a message with optional file attachments
    */
   chat: adminProcedure.input(
-    z15.object({
-      messages: z15.array(
-        z15.object({
-          role: z15.enum(["system", "user", "assistant"]),
-          content: z15.string(),
-          attachments: z15.array(attachmentSchema).optional()
+    z16.object({
+      messages: z16.array(
+        z16.object({
+          role: z16.enum(["system", "user", "assistant"]),
+          content: z16.string(),
+          attachments: z16.array(attachmentSchema).optional()
         })
       ),
       taskType: taskTypeEnum.default("general")
@@ -4719,12 +4559,12 @@ var aiCommandRouter = router({
    * Now supports file attachments
    */
   executeTask: adminProcedure.input(
-    z15.object({
-      taskType: z15.enum(allTaskTypeIds),
-      prompt: z15.string().min(1),
-      context: z15.string().optional(),
-      language: z15.enum(["ar", "en", "auto"]).default("auto"),
-      attachments: z15.array(attachmentSchema).optional()
+    z16.object({
+      taskType: z16.enum(allTaskTypeIds),
+      prompt: z16.string().min(1),
+      context: z16.string().optional(),
+      language: z16.enum(["ar", "en", "auto"]).default("auto"),
+      attachments: z16.array(attachmentSchema).optional()
     })
   ).mutation(async ({ input }) => {
     const systemPrompt = TASK_PROMPTS[input.taskType];
@@ -4766,7 +4606,7 @@ Please respond in ${input.language === "ar" ? "Arabic" : "English"}.`;
 });
 
 // server/routers/siteSettings.ts
-import { z as z16 } from "zod";
+import { z as z17 } from "zod";
 var siteSettingsRouter = router({
   /**
    * Get theme settings (public - no auth required for visitors)
@@ -4783,13 +4623,13 @@ var siteSettingsRouter = router({
   /**
    * Get a single setting by category + key
    */
-  get: protectedProcedure.input(z16.object({ category: z16.string(), key: z16.string() })).query(async ({ input }) => {
+  get: protectedProcedure.input(z17.object({ category: z17.string(), key: z17.string() })).query(async ({ input }) => {
     return getSettingValue(input.category, input.key);
   }),
   /**
    * Get all settings for a category
    */
-  getByCategory: protectedProcedure.input(z16.object({ category: z16.string() })).query(async ({ input }) => {
+  getByCategory: protectedProcedure.input(z17.object({ category: z17.string() })).query(async ({ input }) => {
     const rows = await list("siteSettings", {
       where: [["category", "==", input.category]]
     });
@@ -4812,16 +4652,16 @@ var siteSettingsRouter = router({
   /**
    * Set a single setting (upsert)
    */
-  set: adminProcedure.input(z16.object({ category: z16.string(), key: z16.string(), value: z16.string() })).mutation(async ({ input, ctx }) => {
+  set: adminProcedure.input(z17.object({ category: z17.string(), key: z17.string(), value: z17.string() })).mutation(async ({ input, ctx }) => {
     await setSettingValue(input.category, input.key, input.value, ctx.user.id);
     return { success: true };
   }),
   /**
    * Set multiple settings at once (batch upsert)
    */
-  setMany: adminProcedure.input(z16.object({
-    category: z16.string(),
-    settings: z16.record(z16.string(), z16.string())
+  setMany: adminProcedure.input(z17.object({
+    category: z17.string(),
+    settings: z17.record(z17.string(), z17.string())
   })).mutation(async ({ input, ctx }) => {
     const entries = Object.entries(input.settings);
     for (const [key, value] of entries) {
@@ -4832,7 +4672,7 @@ var siteSettingsRouter = router({
   /**
    * Delete a setting
    */
-  delete: adminProcedure.input(z16.object({ category: z16.string(), key: z16.string() })).mutation(async ({ input }) => {
+  delete: adminProcedure.input(z17.object({ category: z17.string(), key: z17.string() })).mutation(async ({ input }) => {
     const docId = `${input.category}__${input.key}`;
     await db.collection("siteSettings").doc(docId).delete();
     return { success: true };
@@ -4840,7 +4680,7 @@ var siteSettingsRouter = router({
 });
 
 // server/routers/backup.ts
-import { z as z17 } from "zod";
+import { z as z18 } from "zod";
 var TABLE_MAP = {
   destinations: { collection: "destinations", label: "Destinations" },
   offers: { collection: "offers", label: "Offers & Packages" },
@@ -4872,9 +4712,9 @@ var backupRouter = router({
   /**
    * Export selected sections as JSON data
    */
-  exportData: adminProcedure.input(z17.object({
-    sections: z17.array(z17.string()),
-    format: z17.enum(["json", "csv"]).default("json")
+  exportData: adminProcedure.input(z18.object({
+    sections: z18.array(z18.string()),
+    format: z18.enum(["json", "csv"]).default("json")
   })).mutation(async ({ input }) => {
     const exportResult = {};
     for (const sectionId of input.sections) {
@@ -4918,13 +4758,13 @@ var backupRouter = router({
   /**
    * Restore data from backup file
    */
-  restoreData: adminProcedure.input(z17.object({
-    sections: z17.record(z17.string(), z17.object({
-      label: z17.string(),
-      recordCount: z17.number(),
-      data: z17.array(z17.any())
+  restoreData: adminProcedure.input(z18.object({
+    sections: z18.record(z18.string(), z18.object({
+      label: z18.string(),
+      recordCount: z18.number(),
+      data: z18.array(z18.any())
     })),
-    mode: z17.enum(["merge", "replace"]).default("merge")
+    mode: z18.enum(["merge", "replace"]).default("merge")
   })).mutation(async ({ input }) => {
     const results = {};
     for (const [sectionId, section] of Object.entries(input.sections)) {
@@ -4970,8 +4810,8 @@ var backupRouter = router({
   /**
    * Save backup settings
    */
-  saveSettings: adminProcedure.input(z17.object({
-    settings: z17.record(z17.string(), z17.string())
+  saveSettings: adminProcedure.input(z18.object({
+    settings: z18.record(z18.string(), z18.string())
   })).mutation(async ({ input, ctx }) => {
     for (const [key, value] of Object.entries(input.settings)) {
       await setSettingValue("backup", key, value, ctx.user.id);
@@ -4981,7 +4821,7 @@ var backupRouter = router({
 });
 
 // server/routers/dataImport.ts
-import { z as z18 } from "zod";
+import { z as z19 } from "zod";
 var IMPORT_TABLES = [
   {
     id: "destinations",
@@ -5164,9 +5004,9 @@ var dataImportRouter = router({
    * Validate (dry run) a batch of mapped rows without writing to the DB.
    * Returns per-row errors so the admin can fix the source file first.
    */
-  validateImport: adminProcedure.input(z18.object({
-    tableId: z18.string(),
-    rows: z18.array(z18.record(z18.string(), z18.any()))
+  validateImport: adminProcedure.input(z19.object({
+    tableId: z19.string(),
+    rows: z19.array(z19.record(z19.string(), z19.any()))
   })).mutation(({ input }) => {
     const target = getTable(input.tableId);
     if (!target) throw new Error(`Unknown import table: ${input.tableId}`);
@@ -5190,10 +5030,10 @@ var dataImportRouter = router({
    * Import mapped rows into the target table. Each row is coerced/validated;
    * invalid rows are skipped (with reasons) and valid rows inserted.
    */
-  importRecords: adminProcedure.input(z18.object({
-    tableId: z18.string(),
-    rows: z18.array(z18.record(z18.string(), z18.any())),
-    skipInvalid: z18.boolean().default(true)
+  importRecords: adminProcedure.input(z19.object({
+    tableId: z19.string(),
+    rows: z19.array(z19.record(z19.string(), z19.any())),
+    skipInvalid: z19.boolean().default(true)
   })).mutation(async ({ input }) => {
     const target = getTable(input.tableId);
     if (!target) throw new Error(`Unknown import table: ${input.tableId}`);
@@ -5246,7 +5086,7 @@ var dataImportRouter = router({
 });
 
 // server/routers.ts
-import { z as z19 } from "zod";
+import { z as z20 } from "zod";
 import { TRPCError as TRPCError6 } from "@trpc/server";
 import { createHash, timingSafeEqual } from "crypto";
 var appRouter = router({
@@ -5260,7 +5100,7 @@ var appRouter = router({
         success: true
       };
     }),
-    login: publicProcedure.input(z19.object({ email: z19.string().email(), password: z19.string().min(1) })).mutation(async ({ ctx, input }) => {
+    login: publicProcedure.input(z20.object({ email: z20.string().email(), password: z20.string().min(1) })).mutation(async ({ ctx, input }) => {
       try {
         const adminEmail = ENV.adminEmail;
         const adminPasswordHash = ENV.adminPasswordHash;
@@ -5452,7 +5292,7 @@ async function createContext(opts) {
 // server/_core/vite.ts
 import express from "express";
 import fs2 from "fs";
-import { nanoid as nanoid5 } from "nanoid";
+import { nanoid as nanoid4 } from "nanoid";
 import path3 from "path";
 var DIRNAME = typeof __dirname !== "undefined" ? __dirname : new URL(".", import.meta.url).pathname;
 async function setupVite(app, server) {
@@ -5477,7 +5317,7 @@ async function setupVite(app, server) {
       let template = await fs2.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid5()}"`
+        `src="/src/main.tsx?v=${nanoid4()}"`
       );
       const page = await vite.transformIndexHtml(url, template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
@@ -5560,6 +5400,7 @@ function createApp() {
   app.use("/uploads", express2.static(path4.resolve(DIRNAME2, "..", "public", "uploads")));
   registerStorageProxy(app);
   registerDownloadProxy(app);
+  registerVideoProxy(app);
   registerOAuthRoutes(app);
   registerFirebaseAuthRoutes(app);
   app.use(
