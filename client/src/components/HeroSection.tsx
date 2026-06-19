@@ -157,7 +157,6 @@ export default function HeroSection() {
                   <p className="text-xs sm:text-sm font-semibold text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     {imageTitles[index]}
                   </p>
-                  <span className="sr-only">{imageTitles[index]}</span>
                 </figcaption>
               </motion.figure>
             ))}
