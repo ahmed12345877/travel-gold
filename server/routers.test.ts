@@ -1,4 +1,48 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+
+// Mock Firebase Admin to prevent credential errors during import
+vi.mock("./_core/firebaseAdmin", () => ({
+  db: {
+    collection: vi.fn(() => ({
+      doc: vi.fn(() => ({
+        get: vi.fn().mockResolvedValue({ exists: false, data: () => ({}) }),
+        set: vi.fn().mockResolvedValue(undefined),
+        delete: vi.fn().mockResolvedValue(undefined),
+      })),
+      where: vi.fn(() => ({
+        limit: vi.fn(() => ({
+          get: vi.fn().mockResolvedValue({ empty: true, docs: [] }),
+        })),
+        orderBy: vi.fn(() => ({
+          get: vi.fn().mockResolvedValue({ empty: true, docs: [] }),
+        })),
+      })),
+      orderBy: vi.fn(() => ({
+        offset: vi.fn(() => ({
+          limit: vi.fn(() => ({
+            get: vi.fn().mockResolvedValue({ docs: [] }),
+          })),
+        })),
+        get: vi.fn().mockResolvedValue({ docs: [] }),
+      })),
+      add: vi.fn().mockResolvedValue({ id: "mock-id", get: vi.fn().mockResolvedValue({ data: () => ({}) }) }),
+      get: vi.fn().mockResolvedValue({ docs: [] }),
+    })),
+    runTransaction: vi.fn(async (fn: any) => fn({
+      get: vi.fn().mockResolvedValue({ exists: false, data: () => ({}) }),
+      set: vi.fn(),
+    })),
+  },
+  getBucket: vi.fn(() => ({})),
+}));
+
+vi.mock("./_core/sdk", () => ({
+  sdk: {
+    createSessionToken: vi.fn().mockResolvedValue("mock-session-token"),
+    verifySession: vi.fn().mockResolvedValue(null),
+  },
+}));
+
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 

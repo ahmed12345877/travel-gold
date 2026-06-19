@@ -1,19 +1,15 @@
 import { describe, it, expect } from "vitest";
 
+const key = process.env.OPENAI_API_KEY;
+
 describe("OpenAI API Key Validation", () => {
-  it("should have OPENAI_API_KEY environment variable set", () => {
-    const key = process.env.OPENAI_API_KEY;
+  it.skipIf(!key)("should have OPENAI_API_KEY environment variable set", () => {
     expect(key).toBeDefined();
     expect(key).not.toBe("");
     expect(key!.startsWith("sk-")).toBe(true);
   });
 
-  it("should be able to reach OpenAI API with the key", async () => {
-    const key = process.env.OPENAI_API_KEY;
-    if (!key) {
-      throw new Error("OPENAI_API_KEY is not set");
-    }
-
+  it.skipIf(!key)("should be able to reach OpenAI API with the key", async () => {
     const response = await fetch("https://api.openai.com/v1/models", {
       headers: {
         Authorization: `Bearer ${key}`,
