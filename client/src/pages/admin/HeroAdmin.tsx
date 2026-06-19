@@ -719,6 +719,7 @@ export default function HeroAdmin() {
                     </div>
                   ))}
                 </div>
+                </div>
               )}
 
               {activeTab === "buttons" && (
