@@ -90,28 +90,78 @@ const WEIGHT_OPTIONS = [
 const PRESETS: ThemePreset[] = [
   {
     name: "Vanir Gold (Default)",
-    description: "Black & Gold luxury theme",
-    colors: { ...DEFAULT_COLORS },
+    description: "Ultra-premium black and deep gold",
+    colors: { ...DEFAULT_COLORS, primary: "#D4AF37", primaryLight: "#F5E6B8", accent: "#C9A84C", secondary: "#1A1A1A", background: "#0D0D0D", surface: "#141414", text: "#FFFFFF", textMuted: "#9CA3AF", border: "#2A2A2A" },
   },
   {
-    name: "Royal Blue",
-    description: "Deep blue with silver accents",
-    colors: { ...DEFAULT_COLORS, primary: "#4169E1", primaryLight: "#B8C9F5", accent: "#6B8DD6", secondary: "#0F1B3D", background: "#0A0F1E", surface: "#111827" },
+    name: "Royal Sapphire",
+    description: "Deep majestic blue with crisp silver",
+    colors: { ...DEFAULT_COLORS, primary: "#1E40AF", primaryLight: "#93C5FD", accent: "#3B82F6", secondary: "#0F172A", background: "#0A0F1E", surface: "#111827", text: "#F8FAFC", textMuted: "#94A3B8", border: "#1E293B" },
   },
   {
-    name: "Emerald Luxury",
-    description: "Rich emerald with gold touches",
-    colors: { ...DEFAULT_COLORS, primary: "#50C878", primaryLight: "#A8E6C3", accent: "#2E8B57", secondary: "#0D2818", background: "#0A1510", surface: "#0F1F15" },
+    name: "Imperial Emerald",
+    description: "Rich emerald with subtle champagne gold",
+    colors: { ...DEFAULT_COLORS, primary: "#065F46", primaryLight: "#86EFAC", accent: "#10B981", secondary: "#042F2E", background: "#0B1F1A", surface: "#0F2F2A", text: "#F0FDF4", textMuted: "#A7E8A7", border: "#1B4332" },
   },
   {
-    name: "Rose Elegance",
-    description: "Soft rose with warm tones",
-    colors: { ...DEFAULT_COLORS, primary: "#E8A0BF", primaryLight: "#F5D5E0", accent: "#D4789C", secondary: "#2E1A24", background: "#150D12", surface: "#1F1318" },
+    name: "Obsidian Platinum",
+    description: "Sleek dark charcoal with polished platinum",
+    colors: { ...DEFAULT_COLORS, primary: "#475569", primaryLight: "#CBD5E1", accent: "#94A3B8", secondary: "#020617", background: "#0F172A", surface: "#1E293B", text: "#F8FAFC", textMuted: "#64748B", border: "#334155" },
   },
   {
-    name: "Midnight Purple",
-    description: "Deep purple with violet accents",
-    colors: { ...DEFAULT_COLORS, primary: "#9B59B6", primaryLight: "#D2B4DE", accent: "#8E44AD", secondary: "#1A0F2E", background: "#0D0A15", surface: "#15101F" },
+    name: "Vintage Walnut",
+    description: "Sophisticated dark chocolate and bronze",
+    colors: { ...DEFAULT_COLORS, primary: "#8B4513", primaryLight: "#D2B48C", accent: "#CD7F32", secondary: "#1C110A", background: "#2A1810", surface: "#3D2817", text: "#FFFDF5", textMuted: "#D3C0AA", border: "#5C3D1A" },
+  },
+  {
+    name: "Nordic Sage",
+    description: "Calming muted sage with forest tones",
+    colors: { ...DEFAULT_COLORS, primary: "#2F4F4F", primaryLight: "#CAD2C5", accent: "#52796F", secondary: "#111D1A", background: "#0D1612", surface: "#152620", text: "#F5F6F1", textMuted: "#7A8A7F", border: "#25453D" },
+  },
+  {
+    name: "Midnight Ocean",
+    description: "Deep navy with luminous icy cyan tones",
+    colors: { ...DEFAULT_COLORS, primary: "#0A192F", primaryLight: "#64FFDA", accent: "#172A45", secondary: "#020C1B", background: "#001428", surface: "#081D36", text: "#FFFFFF", textMuted: "#8BA2B8", border: "#0F2F3D" },
+  },
+  {
+    name: "Desert Terracotta",
+    description: "Earthy warm clay with sun-bleached sand",
+    colors: { ...DEFAULT_COLORS, primary: "#C2410C", primaryLight: "#FED7AA", accent: "#EA580C", secondary: "#2A1008", background: "#1F0F05", surface: "#2D1609", text: "#FFF7ED", textMuted: "#FDBA74", border: "#7C2D12" },
+  },
+  {
+    name: "Cyber Velvet",
+    description: "High-tech neon cyan in premium violet",
+    colors: { ...DEFAULT_COLORS, primary: "#06B6D4", primaryLight: "#A5F3FC", accent: "#4F46E5", secondary: "#0B0726", background: "#050810", surface: "#0F0A18", text: "#FFFFFF", textMuted: "#A8B5FB", border: "#1F0F3D" },
+  },
+  {
+    name: "Amethyst Night",
+    description: "Majestic deep purple with lavender",
+    colors: { ...DEFAULT_COLORS, primary: "#6D28D9", primaryLight: "#E9D5FF", accent: "#A78BFA", secondary: "#120626", background: "#0A0514", surface: "#150829", text: "#FAF5FF", textMuted: "#C4B5FD", border: "#2E1065" },
+  },
+  {
+    name: "Corporate Teal",
+    description: "Professional dark teal with slate grays",
+    colors: { ...DEFAULT_COLORS, primary: "#0F766E", primaryLight: "#99F6E4", accent: "#14B8A6", secondary: "#0F172A", background: "#051E1C", surface: "#0D2620", text: "#F0FDFA", textMuted: "#7DCDCC", border: "#134E4A" },
+  },
+  {
+    name: "Dusty Cashmere",
+    description: "Elegant muted rose-gold with warm taupe",
+    colors: { ...DEFAULT_COLORS, primary: "#B8860B", primaryLight: "#F5E6D3", accent: "#BC8F8F", secondary: "#2B1B1B", background: "#1A0F0F", surface: "#2A1818", text: "#FFF5F5", textMuted: "#D4A5A5", border: "#5C3D38" },
+  },
+  {
+    name: "Mystic Lavender",
+    description: "Soothing dark lavender with matte black",
+    colors: { ...DEFAULT_COLORS, primary: "#7851A9", primaryLight: "#E9D5FF", accent: "#9B72AA", secondary: "#140A1D", background: "#0B0415", surface: "#14091F", text: "#F7F4F9", textMuted: "#C7B3D9", border: "#302460" },
+  },
+  {
+    name: "Espresso Cream",
+    description: "Deep coffee tones with vanilla cream",
+    colors: { ...DEFAULT_COLORS, primary: "#4A3728", primaryLight: "#D2B48C", accent: "#8B6939", secondary: "#1A120B", background: "#0F0A07", surface: "#1C1410", text: "#FDFBF7", textMuted: "#B89B7F", border: "#3D2F24" },
+  },
+  {
+    name: "Stealth Charcoal",
+    description: "Monochromatic minimalist with clean white",
+    colors: { ...DEFAULT_COLORS, primary: "#374151", primaryLight: "#F3F4F6", accent: "#4B5563", secondary: "#111827", background: "#030712", surface: "#1F2937", text: "#F9FAFB", textMuted: "#9CA3AF", border: "#2D3748" },
   },
 ];
 

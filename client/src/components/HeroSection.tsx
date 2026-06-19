@@ -1,17 +1,19 @@
 /*
- * Design: Art Deco Luxe - Black & Gold
+ * Design: Art Deco Luxe - Dynamic Theme Colors
  * Layout: Left side text with CTAs, right side image grid
- * Color palette: Black (#0d1117), Gold (#D4A853), Light Gold (#F5E6B8)
- * Features: Restored original design with beautiful travel imagery grid
+ * Color palette: Uses CSS custom properties (--theme-* variables)
+ * Features: Restored original design with dynamic theme color support
  */
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, Facebook, Instagram } from "lucide-react";
 import { useRef } from "react";
 import { ASSETS } from "@/config/assets";
+import { useThemeColors } from "@/contexts/ThemeColorsProvider";
 
 /* ── Main Hero ── */
 export default function HeroSection() {
   const sectionRef = useRef<HTMLSectionElement | null>(null);
+  const { colors } = useThemeColors();
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -45,12 +47,25 @@ export default function HeroSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-screen bg-gradient-to-b from-[#0d1117] to-[#1a1f2e] flex items-center overflow-hidden"
+      className="relative min-h-screen flex items-center overflow-hidden"
+      style={{
+        background: `linear-gradient(to bottom, var(--theme-background), var(--theme-surface))`,
+      }}
     >
       {/* ── Background accent ── */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -right-32 -top-32 w-64 h-64 bg-[#D4A853]/5 rounded-full blur-3xl"></div>
-        <div className="absolute -left-32 -bottom-32 w-80 h-80 bg-[#D4A853]/3 rounded-full blur-3xl"></div>
+        <div
+          className="absolute -right-32 -top-32 w-64 h-64 rounded-full blur-3xl"
+          style={{
+            backgroundColor: colors.primary + "08",
+          }}
+        ></div>
+        <div
+          className="absolute -left-32 -bottom-32 w-80 h-80 rounded-full blur-3xl"
+          style={{
+            backgroundColor: colors.primary + "05",
+          }}
+        ></div>
       </div>
 
       {/* ── Main Content Container ── */}
@@ -69,20 +84,22 @@ export default function HeroSection() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="text-sm sm:text-base tracking-widest text-[#D4A853]/80 uppercase"
+              className="text-sm sm:text-base tracking-widest uppercase"
+              style={{ color: colors.primary + "cc" }}
             >
               — VANIR GROUP — LUXURY TRAVEL —
             </motion.p>
 
-            {/* Main Title with "Explore" in gold */}
+            {/* Main Title with dynamic primary color */}
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
               className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tight"
+              style={{ color: colors.text }}
             >
-              <span className="block text-white">Explore</span>
-              <span className="block text-[#D4A853]">Egypt&apos;s Wonders</span>
+              <span className="block">Explore</span>
+              <span className="block" style={{ color: colors.primary }}>Egypt&apos;s Wonders</span>
             </motion.h1>
 
             {/* Description */}
@@ -90,7 +107,8 @@ export default function HeroSection() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.6 }}
-              className="text-base sm:text-lg text-gray-300/90 max-w-md leading-relaxed"
+              className="text-base sm:text-lg max-w-md leading-relaxed"
+              style={{ color: colors.textMuted }}
             >
               Experience the magic of ancient Egypt with curated luxury tours, Nile cruises, and unforgettable adventures designed for the discerning traveler.
             </motion.p>
@@ -105,7 +123,18 @@ export default function HeroSection() {
               {/* Primary CTA */}
               <a
                 href="#search-form"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-[#0d1117] font-semibold rounded-lg hover:shadow-lg hover:shadow-[#D4A853]/20 transition-all duration-300 hover:scale-105"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 font-semibold rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105"
+                style={{
+                  backgroundColor: colors.primary,
+                  color: colors.background,
+                  boxShadow: `0 0 20px ${colors.primary}20`,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow = `0 0 30px ${colors.primary}40`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow = `0 0 20px ${colors.primary}20`;
+                }}
               >
                 Begin Your Journey
                 <ArrowRight size={20} />
@@ -114,7 +143,19 @@ export default function HeroSection() {
               {/* Secondary CTA */}
               <a
                 href="#gallery"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 border-2 border-white/30 text-white font-semibold rounded-lg hover:border-white hover:bg-white/5 transition-all duration-300"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 border-2 font-semibold rounded-lg hover:transition-all duration-300"
+                style={{
+                  borderColor: colors.text + "4d",
+                  color: colors.text,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = colors.primary;
+                  e.currentTarget.style.backgroundColor = colors.primary + "15";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = colors.text + "4d";
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
               >
                 Explore Gallery
                 <ArrowRight size={20} />
@@ -150,11 +191,25 @@ export default function HeroSection() {
                 />
 
                 {/* Overlay */}
-                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all duration-300" />
+                <div
+                  className="absolute inset-0 group-hover:transition-all duration-300"
+                  style={{
+                    backgroundColor: colors.background + "66",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = colors.background + "33";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = colors.background + "66";
+                  }}
+                />
 
                 {/* Title */}
                 <figcaption className="absolute inset-0 flex items-end p-3 sm:p-4">
-                  <p className="text-xs sm:text-sm font-semibold text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <p
+                    className="text-xs sm:text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{ color: colors.text }}
+                  >
                     {imageTitles[index]}
                   </p>
                 </figcaption>
@@ -175,7 +230,22 @@ export default function HeroSection() {
           href="https://www.facebook.com/share/1DvRyfaQRC/"
           target="_blank"
           rel="noopener noreferrer"
-          className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white/70 hover:text-white hover:border-[#D4A853] hover:bg-white/10 transition-all duration-300"
+          className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300"
+          style={{
+            borderColor: colors.text + "4d",
+            color: colors.text + "b3",
+            border: `1px solid ${colors.text}4d`,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = colors.primary;
+            e.currentTarget.style.color = colors.primary;
+            e.currentTarget.style.backgroundColor = colors.primary + "15";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = colors.text + "4d";
+            e.currentTarget.style.color = colors.text + "b3";
+            e.currentTarget.style.backgroundColor = "transparent";
+          }}
           aria-label="Facebook"
         >
           <Facebook size={18} />
@@ -184,7 +254,22 @@ export default function HeroSection() {
           href="https://www.instagram.com/vanir.group?igsh=cnpjczFsZzdrMDhi"
           target="_blank"
           rel="noopener noreferrer"
-          className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white/70 hover:text-white hover:border-[#D4A853] hover:bg-white/10 transition-all duration-300"
+          className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300"
+          style={{
+            borderColor: colors.text + "4d",
+            color: colors.text + "b3",
+            border: `1px solid ${colors.text}4d`,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = colors.primary;
+            e.currentTarget.style.color = colors.primary;
+            e.currentTarget.style.backgroundColor = colors.primary + "15";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = colors.text + "4d";
+            e.currentTarget.style.color = colors.text + "b3";
+            e.currentTarget.style.backgroundColor = "transparent";
+          }}
           aria-label="Instagram"
         >
           <Instagram size={18} />
