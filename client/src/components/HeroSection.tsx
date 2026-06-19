@@ -22,6 +22,7 @@ export default function HeroSection() {
   const { colors } = useThemeColors();
   const [heroData, setHeroData] = useState<any>(null);
   const [heroImages, setHeroImages] = useState<any[]>([]);
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
 
   // Fetch hero data from admin
   const { data: savedHeroData } = trpc.siteSettings.get.useQuery(
@@ -67,6 +68,18 @@ export default function HeroSection() {
       setHeroImages([]);
     }
   }, [savedHeroImages]);
+
+  // Rotating words effect
+  useEffect(() => {
+    if (!heroData?.rotatingWords || heroData?.rotatingWords.length === 0) return;
+    
+    const speed = heroData?.rotatingWordsStyle?.speed || 3000;
+    const interval = setInterval(() => {
+      setCurrentWordIndex((prev) => (prev + 1) % heroData.rotatingWords.length);
+    }, speed);
+    
+    return () => clearInterval(interval);
+  }, [heroData?.rotatingWords, heroData?.rotatingWordsStyle?.speed]);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -155,16 +168,49 @@ export default function HeroSection() {
               — VANIR GROUP — LUXURY TRAVEL —
             </motion.p>
 
-            {/* Main Title with dynamic primary color */}
+            {/* Main Title with dynamic primary color and custom styles */}
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tight"
-              style={{ color: colors.text }}
+              className="leading-tight tracking-tight"
+              style={{
+                fontSize: `${heroData?.titleStyle?.fontSize || 56}px`,
+                fontWeight: heroData?.titleStyle?.fontWeight || "bold",
+                color: heroData?.titleStyle?.color || colors.text,
+                textAlign: (heroData?.titleStyle?.textAlign || "left") as any,
+                textTransform: (heroData?.titleStyle?.textTransform || "none") as any,
+                letterSpacing: `${heroData?.titleStyle?.letterSpacing || 1}px`,
+                lineHeight: `${heroData?.titleStyle?.lineHeight || 1.4}`,
+                opacity: heroData?.titleStyle?.opacity || 1,
+                textShadow: heroData?.titleStyle?.textShadow
+                  ? `${heroData?.titleStyle?.shadowOffsetX || 2}px ${heroData?.titleStyle?.shadowOffsetY || 2}px ${heroData?.titleStyle?.shadowBlur || 8}px ${heroData?.titleStyle?.shadowColor || "rgba(0,0,0,0.5)"}`
+                  : "none",
+              }}
             >
               <span className="block">{mainTitle}</span>
-              <span className="block" style={{ color: colors.primary }}>{mainSubtitle}</span>
+              {/* Subtitle with rotating words */}
+              <motion.span
+                className="block"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                style={{
+                  fontSize: `${heroData?.subtitleStyle?.fontSize || 32}px`,
+                  fontWeight: heroData?.subtitleStyle?.fontWeight || "bold",
+                  color: heroData?.rotatingWordsStyle?.textColor || "#FFD700",
+                  backgroundColor: heroData?.rotatingWordsStyle?.showBackground 
+                    ? (heroData?.rotatingWordsStyle?.backgroundColor || "transparent")
+                    : "transparent",
+                  padding: heroData?.rotatingWordsStyle?.showBackground
+                    ? `${heroData?.rotatingWordsStyle?.paddingY || 4}px ${heroData?.rotatingWordsStyle?.paddingX || 8}px`
+                    : "0",
+                  borderRadius: `${heroData?.rotatingWordsStyle?.borderRadius || 4}px`,
+                  display: "inline-block",
+                }}
+              >
+                {mainSubtitle}
+              </motion.span>
             </motion.h1>
 
             {/* Description */}
@@ -188,23 +234,21 @@ export default function HeroSection() {
               {/* Primary CTA */}
               <a
                 href={button1Link}
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 font-semibold rounded-lg transition-all duration-300 hover:scale-105 focus-visible:scale-105 focus-visible:outline-none"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg transition-all duration-300 hover:scale-105 focus-visible:scale-105 focus-visible:outline-none"
                 style={{
-                  backgroundColor: colors.primary,
-                  color: colors.background,
-                  boxShadow: `0 0 20px ${colorMix(colors.primary, 13)}`,
+                  backgroundColor: heroData?.button1BgColor || colors.primary,
+                  color: heroData?.button1Style?.color || colors.background,
+                  fontSize: `${heroData?.button1Style?.fontSize || 16}px`,
+                  fontWeight: heroData?.button1Style?.fontWeight || "semibold",
+                  boxShadow: `0 0 20px ${colorMix(heroData?.button1BgColor || colors.primary, 13)}`,
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = `0 0 30px ${colorMix(colors.primary, 25)}`;
+                  e.currentTarget.style.backgroundColor = heroData?.button1HoverBgColor || colors.primary;
+                  e.currentTarget.style.boxShadow = `0 0 30px ${colorMix(heroData?.button1HoverBgColor || colors.primary, 25)}`;
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = `0 0 20px ${colorMix(colors.primary, 13)}`;
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.boxShadow = `0 0 30px ${colorMix(colors.primary, 25)}`;
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.boxShadow = `0 0 20px ${colorMix(colors.primary, 13)}`;
+                  e.currentTarget.style.backgroundColor = heroData?.button1BgColor || colors.primary;
+                  e.currentTarget.style.boxShadow = `0 0 20px ${colorMix(heroData?.button1BgColor || colors.primary, 13)}`;
                 }}
               >
                 {button1Text}

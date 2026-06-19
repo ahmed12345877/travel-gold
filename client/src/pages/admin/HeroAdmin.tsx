@@ -6,7 +6,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Upload, Save, AlertCircle, Eye, ImageIcon, Type, Link2, Sparkles, Loader2, Film, Layout, Monitor, Columns2, Maximize, X, Plus, Trash2, RotateCcw } from "lucide-react";
+import { Upload, Save, AlertCircle, Eye, ImageIcon, Type, Link2, Sparkles, Loader2, Film, Layout, Monitor, Columns2, Maximize, X, Plus, Trash2, RotateCcw, Palette, Zap } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import type { SubPageHero } from "@/contexts/ThemeColorsProvider";
@@ -18,6 +18,33 @@ interface HeroImage {
   label: string;
   sublabel: string;
   link: string;
+}
+
+interface TextStyle {
+  fontSize: number;
+  fontWeight: "normal" | "bold" | "900";
+  color: string;
+  textAlign: "left" | "center" | "right";
+  textShadow: boolean;
+  shadowColor: string;
+  shadowBlur: number;
+  shadowOffsetX: number;
+  shadowOffsetY: number;
+  lineHeight: number;
+  letterSpacing: number;
+  textTransform: "none" | "uppercase" | "lowercase" | "capitalize";
+  opacity: number;
+}
+
+interface RotatingWordsStyle {
+  animation: "fade" | "slide" | "flip" | "zoom" | "typewriter" | "bounce";
+  speed: number; // milliseconds
+  textColor: string;
+  backgroundColor?: string;
+  showBackground: boolean;
+  paddingX: number;
+  paddingY: number;
+  borderRadius: number;
 }
 
 interface HeroData {
@@ -33,12 +60,51 @@ interface HeroData {
   overlayOpacity: number;
   overlayColor: "dark" | "light";
   featuredImageUrl?: string;
+  // Text Styles
+  titleStyle?: TextStyle;
+  subtitleStyle?: TextStyle;
+  rotatingWordsStyle?: RotatingWordsStyle;
+  button1Style?: TextStyle;
+  button2Style?: TextStyle;
+  button1BgColor?: string;
+  button2BgColor?: string;
+  button1HoverBgColor?: string;
+  button2HoverBgColor?: string;
 }
 
 const ACCEPTED_IMAGE_TYPES = "image/jpeg,image/png,image/webp,image/gif";
 const ACCEPTED_VIDEO_TYPES = "video/mp4,video/webm";
 const ACCEPTED_MEDIA_TYPES = `${ACCEPTED_IMAGE_TYPES},${ACCEPTED_VIDEO_TYPES}`;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+// Default Text Style
+const DEFAULT_TEXT_STYLE: TextStyle = {
+  fontSize: 24,
+  fontWeight: "bold",
+  color: "#ffffff",
+  textAlign: "center",
+  textShadow: true,
+  shadowColor: "#000000",
+  shadowBlur: 8,
+  shadowOffsetX: 2,
+  shadowOffsetY: 2,
+  lineHeight: 1.4,
+  letterSpacing: 1,
+  textTransform: "none",
+  opacity: 1,
+};
+
+// Default Rotating Words Style
+const DEFAULT_ROTATING_STYLE: RotatingWordsStyle = {
+  animation: "fade",
+  speed: 3000,
+  textColor: "#FFD700",
+  backgroundColor: "transparent",
+  showBackground: false,
+  paddingX: 8,
+  paddingY: 4,
+  borderRadius: 4,
+};
 
 const SUB_PAGES = [
   { id: "about", label: "About Us", labelAr: "من نحن" },
@@ -82,6 +148,16 @@ export default function HeroAdmin() {
     overlayOpacity: 50,
     overlayColor: "dark",
     featuredImageUrl: "",
+    // Default Text Styles
+    titleStyle: { ...DEFAULT_TEXT_STYLE, fontSize: 56, fontWeight: "900" },
+    subtitleStyle: { ...DEFAULT_TEXT_STYLE, fontSize: 32, fontWeight: "bold" },
+    rotatingWordsStyle: DEFAULT_ROTATING_STYLE,
+    button1Style: { ...DEFAULT_TEXT_STYLE, fontSize: 16, fontWeight: "bold" },
+    button2Style: { ...DEFAULT_TEXT_STYLE, fontSize: 16, fontWeight: "bold" },
+    button1BgColor: "#FFD700",
+    button2BgColor: "transparent",
+    button1HoverBgColor: "#FFC700",
+    button2HoverBgColor: "rgba(255, 255, 255, 0.1)",
   });
 
   const [heroImages, setHeroImages] = useState<HeroImage[]>([
@@ -98,6 +174,20 @@ export default function HeroAdmin() {
   const [uploadingImageId, setUploadingImageId] = useState<number | null>(null);
   const [uploadingBgMedia, setUploadingBgMedia] = useState(false);
   const [uploadingFeaturedImage, setUploadingFeaturedImage] = useState(false);
+  // Advanced Text Management
+  const [editingStyle, setEditingStyle] = useState<"title" | "subtitle" | "rotating" | "button1" | "button2" | null>(null);
+  const [showStylePicker, setShowStylePicker] = useState(false);
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+
+  // Rotating words preview effect
+  useEffect(() => {
+    if (!heroData?.rotatingWords || heroData?.rotatingWords.length === 0) return;
+    const speed = heroData?.rotatingWordsStyle?.speed || 3000;
+    const interval = setInterval(() => {
+      setCurrentWordIndex((prev) => (prev + 1) % heroData.rotatingWords.length);
+    }, speed);
+    return () => clearInterval(interval);
+  }, [heroData?.rotatingWords, heroData?.rotatingWordsStyle?.speed]);
 
   /* ─── Sub-page hero state ─── */
   const [subHeroes, setSubHeroes] = useState<SubPageHero[]>([]);
@@ -232,6 +322,48 @@ export default function HeroAdmin() {
     markData({ ...heroData, rotatingWords: heroData.rotatingWords.filter((_, i) => i !== index) });
   };
 
+  /* ─── Advanced Text Style Functions ─── */
+  const updateTitleStyle = (updates: Partial<TextStyle>) => {
+    markData({
+      ...heroData,
+      titleStyle: { ...heroData.titleStyle, ...updates },
+    });
+  };
+
+  const updateSubtitleStyle = (updates: Partial<TextStyle>) => {
+    markData({
+      ...heroData,
+      subtitleStyle: { ...heroData.subtitleStyle, ...updates },
+    });
+  };
+
+  const updateRotatingWordsStyle = (updates: Partial<RotatingWordsStyle>) => {
+    markData({
+      ...heroData,
+      rotatingWordsStyle: { ...heroData.rotatingWordsStyle, ...updates },
+    });
+  };
+
+  const updateButton1Style = (updates: Partial<TextStyle>) => {
+    markData({
+      ...heroData,
+      button1Style: { ...heroData.button1Style, ...updates },
+    });
+  };
+
+  const updateButton2Style = (updates: Partial<TextStyle>) => {
+    markData({
+      ...heroData,
+      button2Style: { ...heroData.button2Style, ...updates },
+    });
+  };
+
+  const resetTitleStyle = () => updateTitleStyle({ ...DEFAULT_TEXT_STYLE, fontSize: 56, fontWeight: "900" });
+  const resetSubtitleStyle = () => updateSubtitleStyle({ ...DEFAULT_TEXT_STYLE, fontSize: 32, fontWeight: "bold" });
+  const resetRotatingStyle = () => updateRotatingWordsStyle(DEFAULT_ROTATING_STYLE);
+  const resetButton1Style = () => updateButton1Style({ ...DEFAULT_TEXT_STYLE, fontSize: 16, fontWeight: "bold" });
+  const resetButton2Style = () => updateButton2Style({ ...DEFAULT_TEXT_STYLE, fontSize: 16, fontWeight: "bold" });
+
   /* ─── Sub-page hero helpers ─── */
   const getSubHero = (page: string): SubPageHero => {
     return subHeroes.find(h => h.page === page) || { ...DEFAULT_SUB_HERO, page };
@@ -248,6 +380,7 @@ export default function HeroAdmin() {
 
   const mainTabs = [
     { id: "text" as const, label: "النصوص", icon: Type },
+    { id: "advanced" as const, label: "تنسيق النصوص المتقدم", icon: Palette },
     { id: "media" as const, label: "الوسائط", icon: Film },
     { id: "images" as const, label: "الصور", icon: ImageIcon },
     { id: "buttons" as const, label: "الأزرار", icon: Link2 },
@@ -335,6 +468,124 @@ export default function HeroAdmin() {
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">العنوان الفرعي</label>
                     <Input value={heroData.subtitle} onChange={(e) => markData({ ...heroData, subtitle: e.target.value })} className="bg-[#1a1a1a] border-white/10 text-white" placeholder="Egypt's Wonders" />
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "advanced" && (
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2"><Palette size={20} /> تنسيق النصوص المتقدم</h3>
+                  <p className="text-sm text-white/50">التحكم الكامل في مظهر وسلوك النصوص والأزرار</p>
+
+                  {/* Title Style */}
+                  <div className="bg-[#1a1a1a] border border-white/5 rounded-lg p-5 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-white flex items-center gap-2"><Type size={16} /> العنوان الرئيسي</span>
+                      <Button onClick={resetTitleStyle} variant="ghost" size="sm" className="text-xs text-white/50 hover:text-white/70">
+                        <RotateCcw size={14} className="mr-1" /> إعادة تعيين
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs text-white/60">حجم الخط</Label>
+                        <div className="flex items-center gap-2">
+                          <Slider value={[heroData.titleStyle?.fontSize || 56]} onValueChange={(v) => updateTitleStyle({ fontSize: v[0] })} min={16} max={96} step={2} className="flex-1" />
+                          <span className="text-xs text-white/70 w-8">{heroData.titleStyle?.fontSize || 56}px</span>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-white/60">سمك الخط</Label>
+                        <Select value={heroData.titleStyle?.fontWeight || "bold"} onValueChange={(v) => updateTitleStyle({ fontWeight: v as any })}>
+                          <SelectTrigger className="bg-black/40 border-white/10 h-8"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="normal">عادي</SelectItem>
+                            <SelectItem value="bold">غامق</SelectItem>
+                            <SelectItem value="900">فائق الغموق</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs text-white/60">اللون</Label>
+                        <div className="flex items-center gap-2">
+                          <input type="color" value={heroData.titleStyle?.color || "#ffffff"} onChange={(e) => updateTitleStyle({ color: e.target.value })} className="h-8 w-12 rounded cursor-pointer border border-white/10" />
+                          <span className="text-xs text-white/70">{heroData.titleStyle?.color || "#ffffff"}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-white/60">التحويل</Label>
+                        <Select value={heroData.titleStyle?.textTransform || "none"} onValueChange={(v) => updateTitleStyle({ textTransform: v as any })}>
+                          <SelectTrigger className="bg-black/40 border-white/10 h-8"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">عادي</SelectItem>
+                            <SelectItem value="uppercase">أحرف كبيرة</SelectItem>
+                            <SelectItem value="lowercase">أحرف صغيرة</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="border-t border-white/10 pt-3">
+                      <Label className="text-xs text-white/60 flex items-center gap-2 mb-2"><Sparkles size={14} /> الظل النصي</Label>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <input type="checkbox" checked={heroData.titleStyle?.textShadow || false} onChange={(e) => updateTitleStyle({ textShadow: e.target.checked })} className="w-4 h-4 rounded" />
+                          <span className="text-sm text-white/70">تفعيل الظل</span>
+                        </div>
+                        {heroData.titleStyle?.textShadow && (
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <Label className="text-xs text-white/60">لون الظل</Label>
+                              <input type="color" value={heroData.titleStyle?.shadowColor || "#000000"} onChange={(e) => updateTitleStyle({ shadowColor: e.target.value })} className="h-6 w-full rounded cursor-pointer border border-white/10" />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-white/60">ضبابية</Label>
+                              <Slider value={[heroData.titleStyle?.shadowBlur || 8]} onValueChange={(v) => updateTitleStyle({ shadowBlur: v[0] })} min={0} max={20} step={1} />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Rotating Words Style */}
+                  <div className="bg-[#1a1a1a] border border-white/5 rounded-lg p-5 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-white flex items-center gap-2"><Zap size={16} /> الكلمات الدوارة</span>
+                      <Button onClick={resetRotatingStyle} variant="ghost" size="sm" className="text-xs text-white/50 hover:text-white/70">
+                        <RotateCcw size={14} className="mr-1" /> إعادة تعيين
+                      </Button>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-white/60">نوع الرسوم المتحركة</Label>
+                      <Select value={heroData.rotatingWordsStyle?.animation || "fade"} onValueChange={(v) => updateRotatingWordsStyle({ animation: v as any })}>
+                        <SelectTrigger className="bg-black/40 border-white/10"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fade">تلاشي (Fade)</SelectItem>
+                          <SelectItem value="slide">انزلاق (Slide)</SelectItem>
+                          <SelectItem value="flip">قلب (Flip)</SelectItem>
+                          <SelectItem value="zoom">تكبير (Zoom)</SelectItem>
+                          <SelectItem value="typewriter">كاتبة (Typewriter)</SelectItem>
+                          <SelectItem value="bounce">ارتداد (Bounce)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs text-white/60">السرعة (ميلي ثانية)</Label>
+                        <div className="flex items-center gap-2">
+                          <Slider value={[heroData.rotatingWordsStyle?.speed || 3000]} onValueChange={(v) => updateRotatingWordsStyle({ speed: v[0] })} min={1000} max={10000} step={500} className="flex-1" />
+                          <span className="text-xs text-white/70 w-12">{heroData.rotatingWordsStyle?.speed || 3000}ms</span>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-white/60">اللون</Label>
+                        <div className="flex items-center gap-2">
+                          <input type="color" value={heroData.rotatingWordsStyle?.textColor || "#FFD700"} onChange={(e) => updateRotatingWordsStyle({ textColor: e.target.value })} className="h-8 w-12 rounded cursor-pointer border border-white/10" />
+                          <span className="text-xs text-white/70">{heroData.rotatingWordsStyle?.textColor || "#FFD700"}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -519,17 +770,70 @@ export default function HeroAdmin() {
                   {/* Overlay */}
                   <div className="absolute inset-0" style={{ backgroundColor: heroData.overlayColor === "dark" ? `rgba(0,0,0,${heroData.overlayOpacity / 100})` : `rgba(255,255,255,${heroData.overlayOpacity / 100})` }} />
                   {/* Text */}
-                  <div className="relative z-10 w-full h-full flex flex-col justify-center items-center text-center p-8">
-                    <h1 className="text-2xl md:text-4xl font-extrabold tracking-tighter leading-tight text-white">
-                      {heroData.title.split(" — ")[0]} — <span className="text-[var(--theme-primary)]">{heroData.title.split(" — ")[1]}</span>
+                  <div className="relative z-10 w-full h-full flex flex-col justify-center items-center p-8" style={{ textAlign: (heroData.titleStyle?.textAlign || "center") as any }}>
+                    <h1 
+                      className="leading-tight tracking-tighter"
+                      style={{
+                        fontSize: `${heroData.titleStyle?.fontSize || 32}px`,
+                        fontWeight: heroData.titleStyle?.fontWeight || "bold",
+                        color: heroData.titleStyle?.color || "#ffffff",
+                        textTransform: (heroData.titleStyle?.textTransform || "none") as any,
+                        letterSpacing: `${heroData.titleStyle?.letterSpacing || 1}px`,
+                        lineHeight: `${heroData.titleStyle?.lineHeight || 1.4}`,
+                        opacity: heroData.titleStyle?.opacity || 1,
+                        textShadow: heroData.titleStyle?.textShadow
+                          ? `${heroData.titleStyle?.shadowOffsetX || 2}px ${heroData.titleStyle?.shadowOffsetY || 2}px ${heroData.titleStyle?.shadowBlur || 8}px ${heroData.titleStyle?.shadowColor || "rgba(0,0,0,0.5)"}`
+                          : "none",
+                      }}
+                    >
+                      {heroData.title}
                     </h1>
-                    <div className="text-2xl md:text-4xl font-extrabold tracking-tighter leading-tight my-2">
-                      <span className="text-white">{heroData.rotatingWords[0]}</span>
+                    <div 
+                      className="font-extrabold tracking-tighter leading-tight my-2 transition-opacity duration-300"
+                      style={{
+                        fontSize: `${heroData.subtitleStyle?.fontSize || 28}px`,
+                        color: heroData.rotatingWordsStyle?.textColor || "#FFD700",
+                        backgroundColor: heroData.rotatingWordsStyle?.showBackground 
+                          ? (heroData.rotatingWordsStyle?.backgroundColor || "transparent")
+                          : "transparent",
+                        padding: heroData.rotatingWordsStyle?.showBackground
+                          ? `${heroData.rotatingWordsStyle?.paddingY || 4}px ${heroData.rotatingWordsStyle?.paddingX || 8}px`
+                          : "0",
+                        borderRadius: `${heroData.rotatingWordsStyle?.borderRadius || 4}px`,
+                        display: "inline-block",
+                        opacity: 0.7,
+                      }}
+                    >
+                      {heroData.rotatingWords[currentWordIndex] || "Discover"}
                     </div>
-                    <p className="text-sm md:text-lg text-white/80 font-light mt-2">{heroData.subtitle}</p>
+                    <p className="text-sm md:text-lg text-white/80 font-light mt-2" style={{ color: heroData.subtitleStyle?.color || "#ffffff" }}>
+                      {heroData.subtitle}
+                    </p>
                     <div className="mt-4 flex justify-center gap-3">
-                      <Button size="sm" className="bg-[var(--theme-primary)] text-black hover:bg-[var(--theme-primary-light)] font-bold">{heroData.buttonText1}</Button>
-                      <Button size="sm" variant="outline" className="border-white/50 text-white hover:bg-white/10 font-bold">{heroData.buttonText2}</Button>
+                      <Button 
+                        size="sm" 
+                        style={{
+                          backgroundColor: heroData.button1BgColor || "#FFD700",
+                          color: heroData.button1Style?.color || "#000000",
+                          fontSize: `${heroData.button1Style?.fontSize || 14}px`,
+                          fontWeight: heroData.button1Style?.fontWeight || "bold",
+                        }}
+                      >
+                        {heroData.buttonText1}
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        style={{
+                          backgroundColor: heroData.button2BgColor || "transparent",
+                          color: heroData.button2Style?.color || "#ffffff",
+                          borderColor: "rgba(255,255,255,0.5)",
+                          fontSize: `${heroData.button2Style?.fontSize || 14}px`,
+                          fontWeight: heroData.button2Style?.fontWeight || "bold",
+                        }}
+                      >
+                        {heroData.buttonText2}
+                      </Button>
                     </div>
                   </div>
                 </div>
