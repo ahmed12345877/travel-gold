@@ -100,12 +100,12 @@ describe("Download Proxy", () => {
     );
   });
 
-  it("should allow URLs containing ai-generated pattern", async () => {
+  it("should allow URLs containing ai-generated pattern on allowed domains", async () => {
     const mockImageBuffer = Buffer.from("fake-image-data");
     mockFetch.mockResolvedValue(createMockResponse(mockImageBuffer));
 
     const res = await request(app).get(
-      "/api/download-image?url=https://some-cdn.example.com/ai-generated/image.png"
+      "/api/download-image?url=https://my-bucket.s3.amazonaws.com/ai-generated/image.png"
     );
 
     expect(res.status).toBe(200);

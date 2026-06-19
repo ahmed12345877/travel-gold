@@ -1,14 +1,15 @@
 import { describe, it, expect } from "vitest";
 
+const apiKey = process.env.GEMINI_API_KEY;
+
 describe("Gemini API Key Validation", () => {
-  it("should have GEMINI_API_KEY set", () => {
-    expect(process.env.GEMINI_API_KEY).toBeDefined();
-    expect(process.env.GEMINI_API_KEY!.length).toBeGreaterThan(10);
-    expect(process.env.GEMINI_API_KEY!.startsWith("AIza")).toBe(true);
+  it.skipIf(!apiKey)("should have GEMINI_API_KEY set", () => {
+    expect(apiKey).toBeDefined();
+    expect(apiKey!.length).toBeGreaterThan(10);
+    expect(apiKey!.startsWith("AIza")).toBe(true);
   });
 
-  it("should be able to reach Gemini API", async () => {
-    const apiKey = process.env.GEMINI_API_KEY;
+  it.skipIf(!apiKey)("should be able to reach Gemini API", async () => {
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
     );

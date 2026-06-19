@@ -1,4 +1,53 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// Mock Firebase and all modules that transitively import it
+vi.mock("./_core/firebaseAdmin", () => ({
+  db: {
+    collection: vi.fn(() => ({
+      doc: vi.fn(() => ({
+        get: vi.fn().mockResolvedValue({ exists: false, data: () => ({}) }),
+        set: vi.fn().mockResolvedValue(undefined),
+        delete: vi.fn().mockResolvedValue(undefined),
+      })),
+      where: vi.fn(() => ({
+        limit: vi.fn(() => ({
+          get: vi.fn().mockResolvedValue({ empty: true, docs: [] }),
+        })),
+        orderBy: vi.fn(() => ({
+          get: vi.fn().mockResolvedValue({ empty: true, docs: [] }),
+        })),
+      })),
+      orderBy: vi.fn(() => ({
+        offset: vi.fn(() => ({
+          limit: vi.fn(() => ({
+            get: vi.fn().mockResolvedValue({ docs: [] }),
+          })),
+        })),
+        get: vi.fn().mockResolvedValue({ docs: [] }),
+      })),
+      add: vi.fn().mockResolvedValue({ id: "mock-id", get: vi.fn().mockResolvedValue({ data: () => ({}) }) }),
+      get: vi.fn().mockResolvedValue({ docs: [] }),
+    })),
+    runTransaction: vi.fn(async (fn: any) => fn({
+      get: vi.fn().mockResolvedValue({ exists: false, data: () => ({}) }),
+      set: vi.fn(),
+    })),
+  },
+  getBucket: vi.fn(() => ({})),
+}));
+
+vi.mock("./_core/sdk", () => ({
+  sdk: {
+    createSessionToken: vi.fn().mockResolvedValue("mock-session-token"),
+    verifySession: vi.fn().mockResolvedValue(null),
+  },
+}));
+
+vi.mock("./db", () => ({
+  upsertUser: vi.fn().mockResolvedValue(undefined),
+  getUserByOpenId: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { appRouter } from "./routers";
 import { COOKIE_NAME } from "../shared/const";
 import type { TrpcContext } from "./_core/context";

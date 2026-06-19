@@ -1,6 +1,86 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { appRouter } from "./routers";
-import type { TrpcContext } from "./_core/context";
+
+/* ─── Shared state via vi.hoisted so mock factories can access them ─── */
+const { mockItems, mockVideos, nextItemId, nextVideoId } = vi.hoisted(() => ({
+  mockItems: [] as any[],
+  mockVideos: [] as any[],
+  nextItemId: { value: 1 },
+  nextVideoId: { value: 1 },
+}));
+
+// Mock Firebase Admin with a stateful Firestore backed by mockItems/mockVideos
+vi.mock("./_core/firebaseAdmin", () => {
+  function getArr(col: string) {
+    if (col === "gallery_items") return mockItems;
+    if (col === "gallery_videos") return mockVideos;
+    return [];
+  }
+
+  function makeDoc(item: any, col: string) {
+    const docId = String(item._docId ?? item.id ?? "doc");
+    const ref: any = {
+      id: docId,
+      set: vi.fn(async (data: any) => { Object.assign(item, data); }),
+      get: vi.fn(async () => ({ data: () => item })),
+      delete: vi.fn(async () => {
+        const arr = getArr(col);
+        const idx = arr.indexOf(item);
+        if (idx !== -1) arr.splice(idx, 1);
+      }),
+    };
+    return { id: docId, ref, data: () => item };
+  }
+
+  return {
+    db: {
+      collection: vi.fn((col: string) => {
+        const filters: { field: string; op: string; value: any }[] = [];
+        const q: any = {};
+        q.where = vi.fn((f: string, o: string, v: any) => { filters.push({ field: f, op: o, value: v }); return q; });
+        q.orderBy = vi.fn(() => q);
+        q.offset = vi.fn(() => q);
+        q.limit = vi.fn(() => q);
+        q.get = vi.fn(async () => {
+          let items = [...getArr(col)];
+          for (const f of filters) {
+            if (f.op === "==") items = items.filter((i: any) => i[f.field] === f.value);
+          }
+          // Ensure items have _docId for router lookup
+          for (const i of items) { if (i._docId === undefined && i.id !== undefined) i._docId = i.id; }
+          const docs = items.map((i: any) => makeDoc(i, col));
+          return { empty: docs.length === 0, docs };
+        });
+        q.doc = vi.fn(() => ({
+          get: vi.fn().mockResolvedValue({ exists: false, data: () => ({}) }),
+          set: vi.fn().mockResolvedValue(undefined),
+          delete: vi.fn().mockResolvedValue(undefined),
+        }));
+        q.add = vi.fn(async (data: any) => {
+          const id = col === "gallery_videos" ? nextVideoId.value++ : nextItemId.value++;
+          const item = { ...data, id, _docId: id };
+          getArr(col).push(item);
+          return {
+            id: String(id),
+            get: vi.fn(async () => ({ data: () => item })),
+          };
+        });
+        return q;
+      }),
+      runTransaction: vi.fn(async (fn: any) => fn({
+        get: vi.fn().mockResolvedValue({ exists: false, data: () => ({}) }),
+        set: vi.fn(),
+      })),
+    },
+    getBucket: vi.fn(() => ({})),
+  };
+});
+
+vi.mock("./_core/sdk", () => ({
+  sdk: {
+    createSessionToken: vi.fn().mockResolvedValue("mock-session-token"),
+    verifySession: vi.fn().mockResolvedValue(null),
+  },
+}));
 
 /* ─── Mock S3 storage ─── */
 vi.mock("./storage", () => ({
@@ -10,54 +90,51 @@ vi.mock("./storage", () => ({
   }),
 }));
 
-/* ─── Mock DB helpers ─── */
-const mockItems: any[] = [];
-const mockVideos: any[] = [];
-let nextItemId = 1;
-let nextVideoId = 1;
+/* ─── Mock DB (full replacement, no importOriginal to avoid Firebase import) ─── */
+vi.mock("./db", () => ({
+  upsertUser: vi.fn().mockResolvedValue(undefined),
+  getUserByOpenId: vi.fn().mockResolvedValue(undefined),
+  createBooking: vi.fn().mockResolvedValue({ id: 1 }),
+  getBookingById: vi.fn().mockResolvedValue(null),
+  getBookingByConfirmationCode: vi.fn().mockResolvedValue(null),
+  getUserBookings: vi.fn().mockResolvedValue([]),
+  updateBookingStatus: vi.fn().mockResolvedValue({}),
+  updateBookingPaymentStatus: vi.fn().mockResolvedValue({}),
+  getAllBookings: vi.fn().mockResolvedValue([]),
+  createReview: vi.fn().mockResolvedValue({ id: 1 }),
+  getApprovedReviews: vi.fn().mockResolvedValue([]),
+  getAllReviews: vi.fn().mockResolvedValue([]),
+  getReviewById: vi.fn().mockResolvedValue(null),
+  updateReviewApproval: vi.fn().mockResolvedValue({}),
+  addAdminReply: vi.fn().mockResolvedValue({}),
+  incrementHelpfulCount: vi.fn().mockResolvedValue({}),
+  getReviewStats: vi.fn().mockResolvedValue({ total: 0, average: 0, distribution: {} }),
+  createContactMessage: vi.fn().mockResolvedValue({ id: 1 }),
+  getAllContactMessages: vi.fn().mockResolvedValue([]),
+  updateContactMessageStatus: vi.fn().mockResolvedValue(undefined),
+  createOffer: vi.fn().mockResolvedValue({ id: 1 }),
+  getActiveOffers: vi.fn().mockResolvedValue([]),
+  getAllOffers: vi.fn().mockResolvedValue([]),
+  getOfferByPromoCode: vi.fn().mockResolvedValue(null),
+  updateOffer: vi.fn().mockResolvedValue({}),
+  createFileUpload: vi.fn().mockResolvedValue({ id: 1 }),
+  getUserFiles: vi.fn().mockResolvedValue([]),
+  getAllUsers: vi.fn().mockResolvedValue([]),
+  getUsersCount: vi.fn().mockResolvedValue(0),
+  getUserById: vi.fn().mockResolvedValue(null),
+  updateUserRole: vi.fn().mockResolvedValue(null),
+  searchUsers: vi.fn().mockResolvedValue([]),
+  getUserStats: vi.fn().mockResolvedValue({ total: 0, admins: 0, recentSignups: 0, todaySignups: 0 }),
+  updateUserProfile: vi.fn().mockResolvedValue({}),
+  getOrCreateAICredits: vi.fn().mockResolvedValue({ id: 1, balance: "10", totalUsed: "0" }),
+  getDb: vi.fn().mockResolvedValue({}),
+  getBlogPosts: vi.fn().mockResolvedValue([]),
+  getBlogPostBySlug: vi.fn().mockResolvedValue(null),
+  incrementBlogViewCount: vi.fn().mockResolvedValue(undefined),
+}));
 
-vi.mock("./db", async (importOriginal) => {
-  const actual = (await importOriginal()) as Record<string, unknown>;
-  return {
-    ...actual,
-    createGalleryItem: vi.fn((data: any) => {
-      const item = { id: nextItemId++, ...data, createdAt: new Date(), updatedAt: new Date() };
-      mockItems.push(item);
-      return item;
-    }),
-    getVisibleGalleryItems: vi.fn(() => mockItems.filter((i) => i.isVisible === "visible")),
-    getAllGalleryItems: vi.fn((_limit?: number, _offset?: number) => mockItems),
-    getGalleryItemById: vi.fn((id: number) => mockItems.find((i) => i.id === id) || null),
-    updateGalleryItem: vi.fn((id: number, data: any) => {
-      const idx = mockItems.findIndex((i) => i.id === id);
-      if (idx === -1) throw new Error("Not found");
-      mockItems[idx] = { ...mockItems[idx], ...data, updatedAt: new Date() };
-      return mockItems[idx];
-    }),
-    deleteGalleryItem: vi.fn((id: number) => {
-      const idx = mockItems.findIndex((i) => i.id === id);
-      if (idx !== -1) mockItems.splice(idx, 1);
-    }),
-    createGalleryVideo: vi.fn((data: any) => {
-      const video = { id: nextVideoId++, ...data, createdAt: new Date(), updatedAt: new Date() };
-      mockVideos.push(video);
-      return video;
-    }),
-    getVisibleGalleryVideos: vi.fn(() => mockVideos.filter((v) => v.isVisible === "visible")),
-    getAllGalleryVideos: vi.fn((_limit?: number, _offset?: number) => mockVideos),
-    getGalleryVideoById: vi.fn((id: number) => mockVideos.find((v) => v.id === id) || null),
-    updateGalleryVideo: vi.fn((id: number, data: any) => {
-      const idx = mockVideos.findIndex((v) => v.id === id);
-      if (idx === -1) throw new Error("Not found");
-      mockVideos[idx] = { ...mockVideos[idx], ...data, updatedAt: new Date() };
-      return mockVideos[idx];
-    }),
-    deleteGalleryVideo: vi.fn((id: number) => {
-      const idx = mockVideos.findIndex((v) => v.id === id);
-      if (idx !== -1) mockVideos.splice(idx, 1);
-    }),
-  };
-});
+import { appRouter } from "./routers";
+import type { TrpcContext } from "./_core/context";
 
 /* ─── Context Helpers ─── */
 function createAdminContext(): TrpcContext {
@@ -107,8 +184,8 @@ function createUserContext(): TrpcContext {
 beforeEach(() => {
   mockItems.length = 0;
   mockVideos.length = 0;
-  nextItemId = 1;
-  nextVideoId = 1;
+  nextItemId.value = 1;
+  nextVideoId.value = 1;
 });
 
 /* ═══════════════════════════════════════════════════════════════
