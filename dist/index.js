@@ -4621,9 +4621,9 @@ var siteSettingsRouter = router({
     return settings;
   }),
   /**
-   * Get a single setting by category + key
+   * Get a single setting by category + key (public - hero/theme data accessible to all)
    */
-  get: protectedProcedure.input(z17.object({ category: z17.string(), key: z17.string() })).query(async ({ input }) => {
+  get: publicProcedure.input(z17.object({ category: z17.string(), key: z17.string() })).query(async ({ input }) => {
     return getSettingValue(input.category, input.key);
   }),
   /**

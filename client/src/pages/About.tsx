@@ -78,7 +78,13 @@ function AboutHero() {
         const heroes = JSON.parse(savedSubHeroes) as SubPageHero[];
         const aboutHero = heroes.find(h => h.page === "about");
         if (aboutHero) setSubHero(aboutHero);
-      } catch {}
+        else setSubHero(null);
+      } catch (e) {
+        console.error("Failed to parse sub-page heroes:", e);
+        setSubHero(null);
+      }
+    } else {
+      setSubHero(null);
     }
   }, [savedSubHeroes]);
 

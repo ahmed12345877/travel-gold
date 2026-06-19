@@ -42,7 +42,10 @@ export default function HeroSection() {
         setHeroData(parsed);
       } catch (e) {
         console.error("Failed to parse hero data:", e);
+        setHeroData(null);
       }
+    } else {
+      setHeroData(null);
     }
   }, [savedHeroData]);
 
@@ -50,10 +53,18 @@ export default function HeroSection() {
     if (savedHeroImages) {
       try {
         const parsed = JSON.parse(savedHeroImages);
-        setHeroImages(parsed);
+        if (Array.isArray(parsed)) {
+          setHeroImages(parsed);
+        } else {
+          console.error("Hero images is not an array:", parsed);
+          setHeroImages([]);
+        }
       } catch (e) {
         console.error("Failed to parse hero images:", e);
+        setHeroImages([]);
       }
+    } else {
+      setHeroImages([]);
     }
   }, [savedHeroImages]);
 
