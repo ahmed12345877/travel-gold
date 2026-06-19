@@ -2,7 +2,7 @@ import { z } from "zod";
 import { router, protectedProcedure } from "../_core/trpc";
 import { storagePut } from "../storage";
 import { createFileUpload, getUserFiles } from "../db";
-import { nanoid } from "nanoid";
+import { decodeAndValidateUpload } from "../utils/uploadHelper";
 
 export const uploadsRouter = router({
   /** Upload a file (authenticated users only) */
@@ -17,17 +17,12 @@ export const uploadsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const buffer = Buffer.from(input.fileData, "base64");
-      const fileSize = buffer.length;
-
-      // Max 10MB
-      if (fileSize > 10 * 1024 * 1024) {
-        throw new Error("حجم الملف يتجاوز الحد المسموح (10 ميجابايت)");
-      }
-
-      const ext = input.filename.split(".").pop() || "bin";
-      const randomSuffix = nanoid(8);
-      const fileKey = `user-${ctx.user.id}/${input.purpose || "general"}/${randomSuffix}.${ext}`;
+      const keyPrefix = `user-${ctx.user.id}/${input.purpose || "general"}`;
+      const { buffer, fileSize, fileKey } = decodeAndValidateUpload(
+        input.fileData,
+        input.filename,
+        keyPrefix,
+      );
 
       const { url } = await storagePut(fileKey, buffer, input.mimeType);
 

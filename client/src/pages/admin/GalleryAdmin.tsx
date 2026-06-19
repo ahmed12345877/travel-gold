@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { buildMutationCallbacks } from "@/hooks/useAdminCrud";
 
 interface GalleryImage {
   id: number;
@@ -55,41 +56,17 @@ export default function GalleryAdmin() {
   );
 
   // Mutations
-  const createMutation = trpc.gallery.create.useMutation({
-    onSuccess: () => {
-      toast.success("تم إضافة الصورة بنجاح");
-      setIsDialogOpen(false);
-      refetch();
-    },
-    onError: (error: unknown) => {
-      console.error("[createMutation] Error:", error);
-      toast.error("خطأ في إضافة الصورة");
-    },
-  });
+  const createMutation = trpc.gallery.create.useMutation(
+    buildMutationCallbacks({ successMessage: "تم إضافة الصورة بنجاح", errorMessage: "خطأ في إضافة الصورة", refetch, onSuccess: () => setIsDialogOpen(false) }),
+  );
 
-  const updateMutation = trpc.gallery.update.useMutation({
-    onSuccess: () => {
-      toast.success("تم تحديث الصورة بنجاح");
-      setIsDialogOpen(false);
-      setEditingImage(null);
-      refetch();
-    },
-    onError: (error: unknown) => {
-      console.error("[updateMutation] Error:", error);
-      toast.error("خطأ في تحديث الصورة");
-    },
-  });
+  const updateMutation = trpc.gallery.update.useMutation(
+    buildMutationCallbacks({ successMessage: "تم تحديث الصورة بنجاح", errorMessage: "خطأ في تحديث الصورة", refetch, onSuccess: () => { setIsDialogOpen(false); setEditingImage(null); } }),
+  );
 
-  const deleteMutation = trpc.gallery.delete.useMutation({
-    onSuccess: () => {
-      toast.success("تم حذف الصورة بنجاح");
-      refetch();
-    },
-    onError: (error: unknown) => {
-      console.error("[deleteMutation] Error:", error);
-      toast.error("خطأ في حذف الصورة");
-    },
-  });
+  const deleteMutation = trpc.gallery.delete.useMutation(
+    buildMutationCallbacks({ successMessage: "تم حذف الصورة بنجاح", errorMessage: "خطأ في حذف الصورة", refetch }),
+  );
 
   const uploadMutation = trpc.gallery.uploadImage.useMutation({
     onSuccess: (result) => {

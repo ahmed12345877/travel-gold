@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
 import { adminProcedure } from "../_core/trpc";
+import { logError } from "../utils/errorLogger";
 import {
   createBooking,
   getBookingById,
@@ -59,10 +60,7 @@ export const bookingsRouter = router({
 
         return booking;
       } catch (error) {
-        console.error("[bookings.create] mutation error:", {
-          error: error instanceof Error ? error.message : String(error),
-          packageName: input.packageName,
-        });
+        logError("bookings.create", "mutation error", error, { packageName: input.packageName });
         throw error;
       }
     }),
@@ -76,10 +74,7 @@ export const bookingsRouter = router({
         console.log(`[bookings.getById] retrieved booking: id=${input.id}`);
         return booking;
       } catch (error) {
-        console.error("[bookings.getById] query error:", {
-          error: error instanceof Error ? error.message : String(error),
-          id: input.id,
-        });
+        logError("bookings.getById", "query error", error, { id: input.id });
         throw error;
       }
     }),
@@ -93,10 +88,7 @@ export const bookingsRouter = router({
         console.log(`[bookings.getByCode] retrieved booking: code=${input.code}`);
         return booking;
       } catch (error) {
-        console.error("[bookings.getByCode] query error:", {
-          error: error instanceof Error ? error.message : String(error),
-          code: input.code,
-        });
+        logError("bookings.getByCode", "query error", error, { code: input.code });
         throw error;
       }
     }),
@@ -108,10 +100,7 @@ export const bookingsRouter = router({
       console.log(`[bookings.myBookings] retrieved ${bookings.length} bookings for user: ${ctx.user.id}`);
       return bookings;
     } catch (error) {
-      console.error("[bookings.myBookings] query error:", {
-        error: error instanceof Error ? error.message : String(error),
-        userId: ctx.user.id,
-      });
+      logError("bookings.myBookings", "query error", error, { userId: ctx.user.id });
       throw error;
     }
   }),
@@ -130,11 +119,7 @@ export const bookingsRouter = router({
         console.log(`[bookings.updateStatus] updated booking: id=${input.id}, status=${input.status}`);
         return result;
       } catch (error) {
-        console.error("[bookings.updateStatus] mutation error:", {
-          error: error instanceof Error ? error.message : String(error),
-          id: input.id,
-          status: input.status,
-        });
+        logError("bookings.updateStatus", "mutation error", error, { id: input.id, status: input.status });
         throw error;
       }
     }),
@@ -153,11 +138,7 @@ export const bookingsRouter = router({
         console.log(`[bookings.updatePaymentStatus] updated booking: id=${input.id}, paymentStatus=${input.paymentStatus}`);
         return result;
       } catch (error) {
-        console.error("[bookings.updatePaymentStatus] mutation error:", {
-          error: error instanceof Error ? error.message : String(error),
-          id: input.id,
-          paymentStatus: input.paymentStatus,
-        });
+        logError("bookings.updatePaymentStatus", "mutation error", error, { id: input.id, paymentStatus: input.paymentStatus });
         throw error;
       }
     }),
@@ -177,9 +158,7 @@ export const bookingsRouter = router({
         console.log(`[bookings.listAll] retrieved ${bookings.length} bookings`);
         return bookings;
       } catch (error) {
-        console.error("[bookings.listAll] query error:", {
-          error: error instanceof Error ? error.message : String(error),
-        });
+        logError("bookings.listAll", "query error", error);
         throw error;
       }
     }),

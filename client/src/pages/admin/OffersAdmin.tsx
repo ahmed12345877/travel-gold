@@ -7,6 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit2, Trash2, Search, Calendar } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { formatDate } from "@/lib/formatDate";
+import { buildMutationCallbacks } from "@/hooks/useAdminCrud";
 
 export default function OffersAdmin() {
   const [search, setSearch] = useState("");
@@ -32,52 +34,26 @@ export default function OffersAdmin() {
     limit: 20,
   });
 
-  const createMutation = trpc.admin.offers.create.useMutation({
-    onSuccess: () => {
-      alert("تم إنشاء العرض بنجاح");
-      refetch();
-      setIsOpen(false);
-      setFormData({
-        title: "",
-        description: "",
-        destination: "",
-        discountType: "percentage",
-        discountValue: "",
-        promoCode: "",
-        startDate: "",
-        endDate: "",
-        totalSpots: "",
-        imageUrl: "",
-        badgeText: "",
-        badgeColor: "#D4A853",
-      });
-    },
-    onError: (error: any) => {
-      alert("خطأ: " + error.message);
-    },
-  });
+  const resetForm = () => {
+    setFormData({ title: "", description: "", destination: "", discountType: "percentage", discountValue: "", promoCode: "", startDate: "", endDate: "", totalSpots: "", imageUrl: "", badgeText: "", badgeColor: "#D4A853" });
+  };
 
-  const updateMutation = trpc.admin.offers.update.useMutation({
-    onSuccess: () => {
-      alert("تم تحديث العرض بنجاح");
-      refetch();
-      setIsOpen(false);
-      setEditingId(null);
-    },
-    onError: (error: any) => {
-      alert("خطأ: " + error.message);
-    },
-  });
+  const notify = {
+    success: (msg: string) => alert(msg),
+    error: (msg: string) => alert(msg),
+  };
 
-  const deleteMutation = trpc.admin.offers.delete.useMutation({
-    onSuccess: () => {
-      alert("تم حذف العرض بنجاح");
-      refetch();
-    },
-    onError: (error: any) => {
-      alert("خطأ: " + error.message);
-    },
-  });
+  const createMutation = trpc.admin.offers.create.useMutation(
+    buildMutationCallbacks({ successMessage: "تم إنشاء العرض بنجاح", errorMessage: "خطأ في إنشاء العرض", refetch, onSuccess: () => { setIsOpen(false); resetForm(); }, notify }),
+  );
+
+  const updateMutation = trpc.admin.offers.update.useMutation(
+    buildMutationCallbacks({ successMessage: "تم تحديث العرض بنجاح", errorMessage: "خطأ في تحديث العرض", refetch, onSuccess: () => { setIsOpen(false); setEditingId(null); }, notify }),
+  );
+
+  const deleteMutation = trpc.admin.offers.delete.useMutation(
+    buildMutationCallbacks({ successMessage: "تم حذف العرض بنجاح", errorMessage: "خطأ في حذف العرض", refetch, notify }),
+  );
 
   const handleSubmit = async () => {
     if (!formData.title || !formData.discountValue) {
@@ -106,10 +82,7 @@ export default function OffersAdmin() {
     }
   };
 
-  const formatDate = (timestamp: number) => {
-    if (!timestamp) return "-";
-    return new Date(timestamp).toLocaleDateString("ar-EG");
-  };
+
 
   return (
     <div className="space-y-6">
