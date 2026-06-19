@@ -2,7 +2,7 @@
  * Design: Art Deco Luxe - Black & Gold
  * About Page: Company history, vision, mission, values, team, and timeline
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Eye, Target, Award, Users, Globe, Shield, Heart, Star,
@@ -15,11 +15,13 @@ import BackToTop from "@/components/BackToTop";
 import SEO from "@/components/SEO";
 import OptimizedImage from "@/components/OptimizedImage";
 import PageMeta from "@/components/PageMeta";
+import { trpc } from "@/lib/trpc";
+import type { SubPageHero } from "@/contexts/ThemeColorsProvider";
 
 /* ─── Image URLs ─── */
 const IMAGES = {
   aboutHero: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/about-hero-2AaUoasqgiUnSNWvY9HdZm.webp",
-  ceo: "/storage/1000148297_a30175e7.webp",
+  ceo: "/ahmed-roshdi.png",
   coo: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/team-coo-5AGG89HCnmBhjQbcJ4ALq8.webp",
   marketing: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/team-marketing-b3JHQd27mnnpLURydNtbgX.webp",
   travel: "https://d2xsxph8kpxj0f.cloudfront.net/310519663477605010/hMv7CdB7RdAWDPc2Ku9pP8/team-travel-DWXCJxcJmzveyZdkVFafeg.webp",
@@ -63,11 +65,46 @@ function SectionTitle({ subtitle, title, description, align = "center" }: {
 
 /* ─── Hero Banner ─── */
 function AboutHero() {
+  const [subHero, setSubHero] = useState<SubPageHero | null>(null);
+  
+  const { data: savedSubHeroes } = trpc.siteSettings.get.useQuery(
+    { category: "hero", key: "sub_page_heroes" },
+    { staleTime: 30000 }
+  );
+
+  useEffect(() => {
+    if (savedSubHeroes) {
+      try {
+        const heroes = JSON.parse(savedSubHeroes) as SubPageHero[];
+        const aboutHero = heroes.find(h => h.page === "about");
+        if (aboutHero) setSubHero(aboutHero);
+      } catch {}
+    }
+  }, [savedSubHeroes]);
+
+  // Default values if not configured in admin
+  const title = subHero?.title || "About Us";
+  const subtitle = subHero?.subtitle || "Discover Our Story";
+  const bgImage = subHero?.mediaUrl || IMAGES.aboutHero;
+  const isVideo = subHero?.mediaUrl && /\.(mp4|webm)(\?|$)/i.test(subHero.mediaUrl);
+
   return (
     <section className="relative h-[40vh] sm:h-[50vh] md:h-[60vh] flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0">
-        <OptimizedImage src={IMAGES.aboutHero} alt="VANIR GROUP Office" className="w-full h-full object-cover" containerClassName="w-full h-full" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[var(--theme-surface)]/80 via-[var(--theme-surface)]/60 to-[var(--theme-surface)]" />
+        {isVideo && subHero?.mediaUrl ? (
+          <video src={subHero.mediaUrl} className="w-full h-full object-cover" autoPlay muted loop playsInline />
+        ) : (
+          <OptimizedImage src={bgImage} alt="VANIR GROUP Office" className="w-full h-full object-cover" containerClassName="w-full h-full" />
+        )}
+        {subHero?.mediaType === "gradient" ? (
+          <div className="absolute inset-0" style={{ 
+            background: `linear-gradient(to bottom, ${subHero.gradientFrom}, ${subHero.gradientTo})`
+          }} />
+        ) : (
+          <div className="absolute inset-0" style={{
+            backgroundColor: `rgba(0, 0, 0, ${(subHero?.overlayOpacity || 60) / 100})`
+          }} />
+        )}
       </div>
       <div className="relative z-10 text-center container">
         <motion.span
@@ -76,7 +113,7 @@ function AboutHero() {
           transition={{ duration: 0.6 }}
           className="font-[var(--font-display)] text-[var(--theme-primary)] text-sm tracking-[0.3em] uppercase italic"
         >
-          Discover Our Story
+          {subtitle}
         </motion.span>
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
@@ -84,7 +121,7 @@ function AboutHero() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="font-[var(--font-display)] text-white text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold mt-3 sm:mt-4"
         >
-          About Us
+          {title}
         </motion.h1>
         <motion.div
           initial={{ scaleX: 0 }}
