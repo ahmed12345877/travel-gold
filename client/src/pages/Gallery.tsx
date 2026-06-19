@@ -574,7 +574,32 @@ export default function Gallery() {
 
   console.log("[Gallery] Fetched items:", dbGalleryItems);
 
-  const galleryItems = dbGalleryItems && dbGalleryItems.length > 0 ? dbGalleryItems : staticGalleryItems;
+  // Transform DB items to match GalleryItemDisplay format
+  // Convert imageUrl to src and ensure all required fields are present
+  // Use useMemo to prevent re-transformation on every render
+  const transformedDbItems = useMemo(() => {
+    if (!dbGalleryItems || dbGalleryItems.length === 0) return [];
+    
+    return dbGalleryItems.map((item: any, index: number) => ({
+      ...item,
+      // Use stable ID: prefer _docId, fallback to id, then use deterministic index-based fallback
+      id: item._docId || item.id || `db-fallback-${index}`,
+      src: item.imageUrl || item.src || "", // Map imageUrl to src
+      title: item.title || "Untitled",
+      titleAr: item.titleAr || item.title || "بدون عنوان",
+      description: item.description || "",
+      descriptionAr: item.descriptionAr || "",
+      category: item.category || "General",
+      categoryAr: item.categoryAr || "عام",
+      location: item.location || "",
+      locationAr: item.locationAr || "",
+      // Keep featured as string ('yes'/'no') for consistency with existing consumers
+      featured: item.featured || "no",
+      aspect: item.aspect || "landscape",
+    }));
+  }, [dbGalleryItems]);
+
+  const galleryItems = transformedDbItems.length > 0 ? transformedDbItems : staticGalleryItems;
 
   // Extract unique categories
   const categories = useMemo(() => {
@@ -612,7 +637,8 @@ export default function Gallery() {
   const navigateImage = useCallback(
     (direction: "next" | "prev") => {
       if (!selectedImage) return;
-      const currentIndex = filteredItems.findIndex((item: any) => item._docId === selectedImage._docId);
+      // Use id field for comparison to match transformedDbItems logic
+      const currentIndex = filteredItems.findIndex((item: any) => item.id === selectedImage.id);
       const newIndex = direction === "next" ? currentIndex + 1 : currentIndex - 1;
       if (newIndex >= 0 && newIndex < filteredItems.length) {
         setSelectedImage(filteredItems[newIndex]);
