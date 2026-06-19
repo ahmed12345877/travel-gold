@@ -20,7 +20,7 @@ import {
   CheckCircle2, RefreshCw, Paperclip, X, Image, File, MapPin, Crown,
   Target, DollarSign, Upload, Link2, ExternalLink, Plug, Settings,
   BarChart2, Map, AlertCircle, Wifi, WifiOff, ChevronDown, ChevronUp,
-  Banana, Palette
+  Banana, Palette, Github
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════
@@ -329,6 +329,19 @@ const CONNECTOR_TEMPLATES: Omit<Connector, "connected" | "status" | "lastSync" |
     icon: <Map className="w-5 h-5" />,
     color: "text-emerald-400",
     bgColor: "bg-emerald-500/10",
+  },
+  {
+    id: "github",
+    name: "GitHub Repository",
+    nameAr: "مستودع جيت هاب",
+    description: "Link your GitHub repository so the AI can reference your codebase, issues, and documentation.",
+    icon: <Github className="w-5 h-5" />,
+    color: "text-white",
+    bgColor: "bg-white/10",
+    configFields: [
+      { key: "repo_url", label: "Repository URL", placeholder: "https://github.com/owner/repo" },
+      { key: "github_token", label: "Personal Access Token (optional, for private repos)", placeholder: "ghp_...", type: "password" },
+    ],
   },
 ];
 
@@ -1089,6 +1102,25 @@ export default function AICommandCenter() {
                     </div>
                   )}
 
+                  {/* GitHub repo link - only for github connector */}
+                  {expandedConnector === "github" && connector.id === "github" && connector.connected && connector.metrics && (
+                    <div className="px-5 pb-5">
+                      <div className="border-t border-white/5 pt-4">
+                        <h4 className="text-white/70 text-sm font-medium flex items-center gap-2 mb-3">
+                          <Github className="w-4 h-4 text-white/60" /> Connected Repository
+                        </h4>
+                        {connector.metrics.filter(m => m.label.toLowerCase().includes("repo")).map((metric, i) => (
+                          <a key={i} href={metric.value} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-black/40 border border-white/10 hover:border-[var(--theme-primary)]/30 hover:bg-[var(--theme-primary)]/5 transition-all text-[var(--theme-primary)] text-sm">
+                            <Github className="w-4 h-4" />
+                            <span className="truncate max-w-xs">{metric.value}</span>
+                            <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Sitemap Pages Table - only for sitemap connector */}
                   {expandedConnector === "sitemap" && connector.id === "sitemap" && (
                     <div className="px-5 pb-5">
@@ -1174,11 +1206,12 @@ export default function AICommandCenter() {
                   <p className="text-white/50 text-sm">Connected services feed data into AI responses for better insights</p>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {[
                   { icon: <BarChart2 className="w-5 h-5" />, title: "Analytics Data", desc: "Traffic, user behavior, and conversion metrics from Google Analytics", active: connectors.find(c => c.id === "google_analytics")?.connected },
                   { icon: <Search className="w-5 h-5" />, title: "Search Performance", desc: "Keywords, impressions, and indexing from Search Console", active: connectors.find(c => c.id === "search_console")?.connected },
                   { icon: <Map className="w-5 h-5" />, title: "Site Structure", desc: `${SITE_PAGES.length} pages, sitemap, and navigation data`, active: true },
+                  { icon: <Github className="w-5 h-5" />, title: "GitHub Codebase", desc: "Repository, issues, and documentation linked to AI context", active: connectors.find(c => c.id === "github")?.connected },
                 ].map((item, i) => (
                   <div key={i} className={`rounded-lg p-4 border ${item.active ? "bg-green-500/5 border-green-500/20" : "bg-black/30 border-white/5"}`}>
                     <div className={`mb-2 ${item.active ? "text-green-400" : "text-white/30"}`}>{item.icon}</div>
