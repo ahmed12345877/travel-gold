@@ -15,15 +15,15 @@ const env = import.meta.env as Record<string, string | undefined>;
 
 // إعدادات Firebase الكاملة من Firebase Console
 // استخدم النطاق الافتراضي من Firebase (جاهز للاستخدام)
-const projectId = env.VITE_FIREBASE_PROJECT_ID ?? "gen-lang-client-0364375301";
+const projectId = env.VITE_FIREBASE_PROJECT_ID ?? "";
 const firebaseConfig = {
   apiKey: env.VITE_FIREBASE_API_KEY ?? "",
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN ?? `${projectId}.firebaseapp.com`,
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN ?? (projectId ? `${projectId}.firebaseapp.com` : ""),
   projectId,
-  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET ?? "gen-lang-client-0364375301.firebasestorage.app",
-  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? "1001729880037",
-  appId: env.VITE_FIREBASE_APP_ID ?? "1:1001729880037:web:0cf4200a2a48e96547090c",
-  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID ?? "G-5ETHDXPS4L",
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET ?? "",
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? "",
+  appId: env.VITE_FIREBASE_APP_ID ?? "",
+  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID ?? "",
 };
 
 export function getFirebaseApp(): FirebaseApp | null {

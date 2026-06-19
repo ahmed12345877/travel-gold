@@ -163,10 +163,17 @@ class SDKServer {
     if (secret) {
       return new TextEncoder().encode(secret);
     }
-    // JWT_SECRET not configured — derive a fallback from Firebase identifiers so the
-    // server can start without crashing. Sessions signed with this fallback are valid
-    // only while the same Firebase project config is in use.
-    // ACTION: set JWT_SECRET as a Firebase App Hosting secret to remove this warning.
+    // In production, refuse to start without a proper JWT_SECRET.
+    // A missing secret means anyone who knows the Firebase project IDs (public
+    // info) could forge session tokens.
+    if (ENV.isProduction) {
+      throw new Error(
+        "CRITICAL: JWT_SECRET is not configured in production. " +
+          "Session tokens cannot be signed securely. " +
+          "Add JWT_SECRET to apphosting.yaml secrets."
+      );
+    }
+    // Development-only fallback — derive from Firebase identifiers.
     const fallback =
       (process.env.VITE_FIREBASE_APP_ID ?? "") +
       "|" +
@@ -178,7 +185,7 @@ class SDKServer {
       );
     }
     console.warn(
-      "[Auth] JWT_SECRET is not set — using derived fallback secret. " +
+      "[Auth] JWT_SECRET is not set — using derived fallback secret (dev only). " +
         "Create a JWT_SECRET secret in Firebase App Hosting for production."
     );
     return new TextEncoder().encode(fallback);

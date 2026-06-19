@@ -54,7 +54,6 @@ export function registerVideoProxy(app: Express) {
 
       res.setHeader("Content-Type", contentType);
       res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-      res.setHeader("Access-Control-Allow-Origin", "*");
 
       // Support range requests for video seeking
       if (contentLength) {

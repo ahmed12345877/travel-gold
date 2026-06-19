@@ -13,6 +13,7 @@ import { registerFirebaseAuthRoutes } from "../authExpressRouter";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { securityHeaders, rateLimit } from "./securityMiddleware";
 
 const DIRNAME = typeof __dirname !== "undefined"
   ? __dirname
@@ -67,6 +68,9 @@ export function createApp() {
     credentials: true,
   }));
 
+  // Security headers (X-Frame-Options, X-Content-Type-Options, etc.)
+  app.use(securityHeaders);
+
   // Allow Firebase Google Sign-In popup to communicate back.
   // COOP: same-origin blocks popup.closed checks which Firebase signInWithPopup depends on.
   app.use((_req, res, next) => {
@@ -74,7 +78,12 @@ export function createApp() {
     next();
   });
 
-app.use(express.json({ limit: "50mb" }));
+  // Rate limiting on auth endpoints (5 attempts per 15 minutes per IP)
+  app.use("/api/auth/login", rateLimit({ windowMs: 15 * 60 * 1000, max: 5, keyPrefix: "auth-login" }));
+  app.use("/api/auth/admin-google", rateLimit({ windowMs: 15 * 60 * 1000, max: 5, keyPrefix: "auth-admin-google" }));
+  app.use("/api/auth/user-login", rateLimit({ windowMs: 15 * 60 * 1000, max: 10, keyPrefix: "auth-user-login" }));
+
+  app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // Serve locally-uploaded files (fallback when Supabase is not configured)
   app.use("/uploads", express.static(path.resolve(DIRNAME, "..", "public", "uploads")));

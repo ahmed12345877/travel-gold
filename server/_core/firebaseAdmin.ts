@@ -23,7 +23,9 @@ const isCloudRun = Boolean(
 const storageBucketName =
   process.env.FIREBASE_STORAGE_BUCKET ||
   process.env.VITE_FIREBASE_STORAGE_BUCKET ||
-  `${process.env.VITE_FIREBASE_PROJECT_ID ?? "gen-lang-client-0364375301"}.firebasestorage.app`;
+  (process.env.VITE_FIREBASE_PROJECT_ID
+    ? `${process.env.VITE_FIREBASE_PROJECT_ID}.firebasestorage.app`
+    : "");
 
 if (!getApps().length) {
   if (isCloudRun) {
