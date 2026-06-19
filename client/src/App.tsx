@@ -56,6 +56,8 @@ import BackupExport from "./pages/admin/BackupExport";
 import ImportData from "./pages/admin/ImportData";
 import AICommandCenter from "./pages/admin/AICommandCenter";
 import Profile from "./pages/Profile";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import MarketingSuite from "./pages/MarketingSuite";
@@ -94,6 +96,8 @@ function Router() {
       <Route path={"/register"} component={Login} />
 
       <Route path={"/profile"} component={Profile} />
+      <Route path={"/privacy-policy"} component={PrivacyPolicy} />
+      <Route path={"/terms-of-service"} component={TermsOfService} />
       <Route path={"/blog"} component={Blog} />
       <Route path={"/blog/:slug"} component={BlogPost} />
       <Route path={"/marketing"} component={MarketingSuite} />
