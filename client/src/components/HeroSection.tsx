@@ -11,7 +11,7 @@ import { ASSETS } from "@/config/assets";
 
 /* ── Main Hero ── */
 export default function HeroSection() {
-  const sectionRef = useRef<HTMLSection>(null);
+  const sectionRef = useRef<HTMLSectionElement | null>(null);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -130,8 +130,8 @@ export default function HeroSection() {
             transition={{ duration: 0.8, delay: 0.4 }}
           >
             {heroImages.map((image, index) => (
-              <motion.div
-                key={index}
+              <motion.figure
+                key={image.src}
                 className="relative group overflow-hidden rounded-lg"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -143,6 +143,9 @@ export default function HeroSection() {
                   src={image.src}
                   alt={image.alt}
                   loading="lazy"
+                  decoding="async"
+                  width={400}
+                  height={320}
                   className="w-full h-40 sm:h-48 md:h-56 object-cover transition-transform duration-500 group-hover:scale-110"
                 />
 
@@ -150,12 +153,13 @@ export default function HeroSection() {
                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all duration-300" />
 
                 {/* Title */}
-                <div className="absolute inset-0 flex items-end p-3 sm:p-4">
+                <figcaption className="absolute inset-0 flex items-end p-3 sm:p-4">
                   <p className="text-xs sm:text-sm font-semibold text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     {imageTitles[index]}
                   </p>
-                </div>
-              </motion.div>
+                  <span className="sr-only">{imageTitles[index]}</span>
+                </figcaption>
+              </motion.figure>
             ))}
           </motion.div>
         </div>
@@ -189,12 +193,13 @@ export default function HeroSection() {
       </motion.div>
 
       {/* ── Watermark ── */}
-      <div className="absolute bottom-6 left-6 z-5 pointer-events-none opacity-10">
+      <div className="absolute bottom-6 left-6 z-10 pointer-events-none opacity-10">
         <img
           src={ASSETS.LOGO_WATERMARK}
           alt="VANIR GROUP logo watermark"
           className="h-8 sm:h-10 md:h-14 lg:h-16 w-auto object-contain"
           draggable={false}
+          decoding="async"
         />
       </div>
     </section>
