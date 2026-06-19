@@ -59,6 +59,8 @@ interface HeroData {
   mediaUrl: string;
   overlayOpacity: number;
   overlayColor: "dark" | "light";
+  mediaCropX?: number;
+  mediaCropY?: number;
   featuredImageUrl?: string;
   // Text Styles
   titleStyle?: TextStyle;
@@ -147,6 +149,8 @@ export default function HeroAdmin() {
     mediaUrl: "",
     overlayOpacity: 50,
     overlayColor: "dark",
+    mediaCropX: 50,
+    mediaCropY: 50,
     featuredImageUrl: "",
     // Default Text Styles
     titleStyle: { ...DEFAULT_TEXT_STYLE, fontSize: 56, fontWeight: "900" },
@@ -642,6 +646,23 @@ export default function HeroAdmin() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {heroData.mediaType !== "gradient" && (
+                    <div className="space-y-3 border border-white/10 rounded-lg p-4">
+                      <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                        <Maximize size={16} /> قص الوسائط (Crop)
+                      </h4>
+                      <p className="text-xs text-white/50">اضبط موضع الصورة/الفيديو داخل الإطار</p>
+                      <div>
+                        <Label className="text-white/70 text-sm">الموضع الأفقي: {heroData.mediaCropX ?? 50}%</Label>
+                        <Slider value={[heroData.mediaCropX ?? 50]} onValueChange={([v]) => markData({ ...heroData, mediaCropX: v })} min={0} max={100} step={5} className="mt-2" />
+                      </div>
+                      <div>
+                        <Label className="text-white/70 text-sm">الموضع الرأسي: {heroData.mediaCropY ?? 50}%</Label>
+                        <Slider value={[heroData.mediaCropY ?? 50]} onValueChange={([v]) => markData({ ...heroData, mediaCropY: v })} min={0} max={100} step={5} className="mt-2" />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -762,9 +783,9 @@ export default function HeroAdmin() {
                 <div className="aspect-[16/9] bg-black rounded-lg overflow-hidden border-2 border-[var(--theme-primary)] relative">
                   {/* Background media */}
                   {heroData.mediaType === "video" && heroData.mediaUrl ? (
-                    <video src={heroData.mediaUrl} className="absolute inset-0 w-full h-full object-cover" muted autoPlay loop playsInline />
+                    <video src={heroData.mediaUrl} className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: `${heroData.mediaCropX ?? 50}% ${heroData.mediaCropY ?? 50}%` }} muted autoPlay loop playsInline />
                   ) : heroData.mediaType === "image" && heroData.mediaUrl ? (
-                    <img src={heroData.mediaUrl} className="absolute inset-0 w-full h-full object-cover" alt="" />
+                    <img src={heroData.mediaUrl} className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: `${heroData.mediaCropX ?? 50}% ${heroData.mediaCropY ?? 50}%` }} alt="" />
                   ) : (
                     <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, var(--theme-background), var(--theme-surface))` }} />
                   )}

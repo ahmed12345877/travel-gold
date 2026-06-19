@@ -5,7 +5,7 @@
  * Features: Restored original design with dynamic theme color support
  */
 import { motion, useScroll, useTransform } from "framer-motion";
-import { ArrowRight, Facebook, Instagram } from "lucide-react";
+import { Facebook, Instagram } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { ASSETS } from "@/config/assets";
 import { useThemeColors } from "@/contexts/ThemeColorsProvider";
@@ -22,7 +22,6 @@ export default function HeroSection() {
   const { colors } = useThemeColors();
   const [heroData, setHeroData] = useState<any>(null);
   const [heroImages, setHeroImages] = useState<any[]>([]);
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
 
   // Fetch hero data from admin
   const { data: savedHeroData } = trpc.siteSettings.get.useQuery(
@@ -69,18 +68,6 @@ export default function HeroSection() {
     }
   }, [savedHeroImages]);
 
-  // Rotating words effect
-  useEffect(() => {
-    if (!heroData?.rotatingWords || heroData?.rotatingWords.length === 0) return;
-    
-    const speed = heroData?.rotatingWordsStyle?.speed || 3000;
-    const interval = setInterval(() => {
-      setCurrentWordIndex((prev) => (prev + 1) % heroData.rotatingWords.length);
-    }, speed);
-    
-    return () => clearInterval(interval);
-  }, [heroData?.rotatingWords, heroData?.rotatingWordsStyle?.speed]);
-
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start start", "end start"],
@@ -89,14 +76,9 @@ export default function HeroSection() {
   const textY = useTransform(scrollYProgress, [0, 1], ["0%", "15%"]);
 
   // Default values if not configured in admin
-  const mainTitle = heroData?.title || "Explore";
-  const mainSubtitle = heroData?.subtitle || "Egypt's Wonders";
-  const mainDescription = heroData?.description || "Experience the magic of ancient Egypt with curated luxury tours, Nile cruises, and unforgettable adventures designed for the discerning traveler.";
-  const button1Text = heroData?.buttonText1 || "Begin Your Journey";
-  const button1Link = heroData?.buttonLink1 || "#search-form";
-  const button2Text = heroData?.buttonText2 || "Explore Gallery";
-  const button2Link = heroData?.buttonLink2 || "#gallery";
+  const mainTitle = heroData?.title || "VANIR GROUP — LUXURY TRAVEL";
   const featuredImageUrl = heroData?.featuredImageUrl;
+  const hasBgMedia = heroData && (heroData.mediaType === "image" || heroData.mediaType === "video") && heroData.mediaUrl;
 
   // Travel images for the grid (beautiful destinations)
   const heroGridImages = heroImages && heroImages.length > 0 ? heroImages : [
@@ -127,9 +109,42 @@ export default function HeroSection() {
       ref={sectionRef}
       className="relative min-h-screen flex items-center overflow-hidden"
       style={{
-        background: `linear-gradient(to bottom, var(--theme-background), var(--theme-surface))`,
+        background: hasBgMedia
+          ? "black"
+          : `linear-gradient(to bottom, var(--theme-background), var(--theme-surface))`,
       }}
     >
+      {/* ── Background media (image / video from admin) ── */}
+      {heroData?.mediaType === "video" && heroData?.mediaUrl && (
+        <video
+          src={heroData.mediaUrl}
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ objectPosition: `${heroData.mediaCropX ?? 50}% ${heroData.mediaCropY ?? 50}%` }}
+          muted
+          autoPlay
+          loop
+          playsInline
+        />
+      )}
+      {heroData?.mediaType === "image" && heroData?.mediaUrl && (
+        <img
+          src={heroData.mediaUrl}
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ objectPosition: `${heroData.mediaCropX ?? 50}% ${heroData.mediaCropY ?? 50}%` }}
+          alt=""
+        />
+      )}
+      {hasBgMedia && (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundColor: heroData?.overlayColor === "light"
+              ? `rgba(255,255,255,${(heroData?.overlayOpacity ?? 50) / 100})`
+              : `rgba(0,0,0,${(heroData?.overlayOpacity ?? 50) / 100})`,
+          }}
+        />
+      )}
+
       {/* ── Background accent ── */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
@@ -189,101 +204,7 @@ export default function HeroSection() {
               }}
             >
               <span className="block">{mainTitle}</span>
-              {/* Subtitle with rotating words */}
-              <motion.span
-                className="block"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.5 }}
-                style={{
-                  fontSize: `${heroData?.subtitleStyle?.fontSize || 32}px`,
-                  fontWeight: heroData?.subtitleStyle?.fontWeight || "bold",
-                  color: heroData?.rotatingWordsStyle?.textColor || "#FFD700",
-                  backgroundColor: heroData?.rotatingWordsStyle?.showBackground 
-                    ? (heroData?.rotatingWordsStyle?.backgroundColor || "transparent")
-                    : "transparent",
-                  padding: heroData?.rotatingWordsStyle?.showBackground
-                    ? `${heroData?.rotatingWordsStyle?.paddingY || 4}px ${heroData?.rotatingWordsStyle?.paddingX || 8}px`
-                    : "0",
-                  borderRadius: `${heroData?.rotatingWordsStyle?.borderRadius || 4}px`,
-                  display: "inline-block",
-                }}
-              >
-                {mainSubtitle}
-              </motion.span>
             </motion.h1>
-
-            {/* Description */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.6 }}
-              className="text-base sm:text-lg max-w-md leading-relaxed"
-              style={{ color: colors.textMuted }}
-            >
-              {mainDescription}
-            </motion.p>
-
-            {/* CTA Buttons */}
-            <motion.div
-              className="flex flex-col sm:flex-row gap-4 pt-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.8 }}
-            >
-              {/* Primary CTA */}
-              <a
-                href={button1Link}
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg transition-all duration-300 hover:scale-105 focus-visible:scale-105 focus-visible:outline-none"
-                style={{
-                  backgroundColor: heroData?.button1BgColor || colors.primary,
-                  color: heroData?.button1Style?.color || colors.background,
-                  fontSize: `${heroData?.button1Style?.fontSize || 16}px`,
-                  fontWeight: heroData?.button1Style?.fontWeight || "semibold",
-                  boxShadow: `0 0 20px ${colorMix(heroData?.button1BgColor || colors.primary, 13)}`,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = heroData?.button1HoverBgColor || colors.primary;
-                  e.currentTarget.style.boxShadow = `0 0 30px ${colorMix(heroData?.button1HoverBgColor || colors.primary, 25)}`;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = heroData?.button1BgColor || colors.primary;
-                  e.currentTarget.style.boxShadow = `0 0 20px ${colorMix(heroData?.button1BgColor || colors.primary, 13)}`;
-                }}
-              >
-                {button1Text}
-                <ArrowRight size={20} />
-              </a>
-
-              {/* Secondary CTA */}
-              <a
-                href={button2Link}
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 border-2 font-semibold rounded-lg transition-all duration-300 focus-visible:outline-none"
-                style={{
-                  borderColor: colorMix(colors.text, 30),
-                  color: colors.text,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = colors.primary;
-                  e.currentTarget.style.backgroundColor = colorMix(colors.primary, 8);
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = colorMix(colors.text, 30);
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = colors.primary;
-                  e.currentTarget.style.backgroundColor = colorMix(colors.primary, 8);
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = colorMix(colors.text, 30);
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-              >
-                {button2Text}
-                <ArrowRight size={20} />
-              </a>
-            </motion.div>
           </motion.div>
 
           {/* ── Right Column: Image Grid ── */}
