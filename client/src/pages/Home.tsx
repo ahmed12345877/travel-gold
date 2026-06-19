@@ -6,7 +6,7 @@
 import { lazy, Suspense } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import Navbar from "@/components/Navbar";
-import HeroSectionEgyptian from "@/components/HeroSectionEgyptian";
+import HeroSection from "@/components/HeroSection";
 import SearchForm from "@/components/SearchForm";
 import AboutSection from "@/components/AboutSection";
 import ActivitiesSection from "@/components/ActivitiesSection";
@@ -49,13 +49,7 @@ export default function Home() {
       <ScrollProgressIndicator />
 
       <Navbar />
-      <HeroSectionEgyptian
-        title="Discover Egypt's Timeless Wonders"
-        subtitle="Journey through ancient civilization and modern enchantment"
-        imageSrc="/hero-egyptian.jpg"
-        ctaText="Start Exploring"
-        ctaLink="/destinations"
-      />
+      <HeroSection />
 
       {/* About Section - Fade up reveal */}
       <ScrollReveal variant="fade-up" duration={0.9}>
