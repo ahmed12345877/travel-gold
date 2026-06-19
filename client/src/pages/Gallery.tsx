@@ -574,7 +574,27 @@ export default function Gallery() {
 
   console.log("[Gallery] Fetched items:", dbGalleryItems);
 
-  const galleryItems = dbGalleryItems && dbGalleryItems.length > 0 ? dbGalleryItems : staticGalleryItems;
+  // Transform DB items to match GalleryItemDisplay format
+  // Convert imageUrl to src and ensure all required fields are present
+  const transformedDbItems = dbGalleryItems && dbGalleryItems.length > 0 
+    ? dbGalleryItems.map((item: any) => ({
+        ...item,
+        id: item._docId || item.id || Math.random(), // Use _docId as primary ID
+        src: item.imageUrl || item.src || "", // Map imageUrl to src
+        title: item.title || "Untitled",
+        titleAr: item.titleAr || item.title || "بدون عنوان",
+        description: item.description || "",
+        descriptionAr: item.descriptionAr || "",
+        category: item.category || "General",
+        categoryAr: item.categoryAr || "عام",
+        location: item.location || "",
+        locationAr: item.locationAr || "",
+        featured: item.featured === "yes",
+        aspect: item.aspect || "landscape",
+      }))
+    : [];
+
+  const galleryItems = transformedDbItems.length > 0 ? transformedDbItems : staticGalleryItems;
 
   // Extract unique categories
   const categories = useMemo(() => {
