@@ -10,6 +10,11 @@ import { useRef } from "react";
 import { ASSETS } from "@/config/assets";
 import { useThemeColors } from "@/contexts/ThemeColorsProvider";
 
+/* ── Color utility for opacity-safe color mixing ── */
+const colorMix = (color: string, percentage: number): string => {
+  return `color-mix(in srgb, ${color} ${percentage}%, transparent)`;
+};
+
 /* ── Main Hero ── */
 export default function HeroSection() {
   const sectionRef = useRef<HTMLSectionElement | null>(null);
@@ -57,13 +62,13 @@ export default function HeroSection() {
         <div
           className="absolute -right-32 -top-32 w-64 h-64 rounded-full blur-3xl"
           style={{
-            backgroundColor: colors.primary + "08",
+            backgroundColor: colorMix(colors.primary, 3),
           }}
         ></div>
         <div
           className="absolute -left-32 -bottom-32 w-80 h-80 rounded-full blur-3xl"
           style={{
-            backgroundColor: colors.primary + "05",
+            backgroundColor: colorMix(colors.primary, 2),
           }}
         ></div>
       </div>
@@ -85,7 +90,7 @@ export default function HeroSection() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
               className="text-sm sm:text-base tracking-widest uppercase"
-              style={{ color: colors.primary + "cc" }}
+              style={{ color: colorMix(colors.primary, 80) }}
             >
               — VANIR GROUP — LUXURY TRAVEL —
             </motion.p>
