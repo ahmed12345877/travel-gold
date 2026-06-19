@@ -21,18 +21,26 @@ export const contactRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const msg = await createContactMessage({
-        ...input,
-        status: "new",
-      });
+      try {
+        const msg = await createContactMessage({
+          ...input,
+          status: "new",
+        });
 
-      // Notify owner about new contact message
-      await notifyOwner({
-        title: "رسالة اتصال جديدة - New Contact Message",
-        content: `من: ${input.name} (${input.email})\nالموضوع: ${input.subject || "بدون موضوع"}\n\n${input.message.substring(0, 200)}`,
-      });
+        // Notify owner about new contact message (non-critical)
+        await notifyOwner({
+          title: "رسالة اتصال جديدة - New Contact Message",
+          content: `من: ${input.name} (${input.email})\nالموضوع: ${input.subject || "بدون موضوع"}\n\n${input.message.substring(0, 200)}`,
+        });
 
-      return { success: true, id: msg.id };
+        return { success: true, id: msg.id };
+      } catch (error) {
+        console.error("[contact.submit] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          email: input.email,
+        });
+        throw error;
+      }
     }),
 
   /** List all contact messages (admin only) */
@@ -44,8 +52,15 @@ export const contactRouter = router({
       }).optional()
     )
     .query(async ({ input }) => {
-      const { limit = 50, offset = 0 } = input ?? {};
-      return getAllContactMessages(limit, offset);
+      try {
+        const { limit = 50, offset = 0 } = input ?? {};
+        return getAllContactMessages(limit, offset);
+      } catch (error) {
+        console.error("[contact.listAll] query error:", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
     }),
 
   /** Update message status (admin only) */
@@ -57,7 +72,16 @@ export const contactRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      await updateContactMessageStatus(input.id, input.status);
-      return { success: true };
+      try {
+        await updateContactMessageStatus(input.id, input.status);
+        return { success: true };
+      } catch (error) {
+        console.error("[contact.updateStatus] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          id: input.id,
+          status: input.status,
+        });
+        throw error;
+      }
     }),
 });

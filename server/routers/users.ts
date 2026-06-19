@@ -197,21 +197,21 @@ export const usersRouter = router({
       try {
         const userBookings = await getUserBookings(userId);
         bookingsCount = userBookings.length;
-      } catch {
-        // bookings table might not exist yet
+      } catch (error) {
+        console.warn("[users.profileStats] Failed to fetch bookings (table may not exist):", error instanceof Error ? error.message : String(error));
       }
 
       try {
         reviewsCount = await count("reviews", [["userId", "==", userId]]);
-      } catch {
-        // reviews collection might not exist yet
+      } catch (error) {
+        console.warn("[users.profileStats] Failed to count reviews (collection may not exist):", error instanceof Error ? error.message : String(error));
       }
 
       try {
         const credits = await getOrCreateAICredits(userId);
         aiCreditsBalance = parseFloat(credits.balance.toString());
-      } catch {
-        // AI credits table might not exist yet
+      } catch (error) {
+        console.warn("[users.profileStats] Failed to fetch AI credits (table may not exist):", error instanceof Error ? error.message : String(error));
       }
 
       console.log(`[users.profileStats] retrieved stats for user: ${userId}, bookings=${bookingsCount}, reviews=${reviewsCount}`);

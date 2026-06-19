@@ -37,7 +37,8 @@ export const backupRouter = router({
       try {
         const recordCount = await countDocs(collection);
         sections.push({ id, label, recordCount });
-      } catch {
+      } catch (error) {
+        console.warn(`[backup.getExportSections] Failed to count ${collection}:`, error instanceof Error ? error.message : String(error));
         sections.push({ id, label, recordCount: 0 });
       }
     }
@@ -53,7 +54,7 @@ export const backupRouter = router({
       format: z.enum(["json", "csv"]).default("json"),
     }))
     .mutation(async ({ input }) => {
-      const exportResult: Record<string, { label: string; recordCount: number; data: any[] }> = {};
+      const exportResult: Record<string, { label: string; recordCount: number; data: any[]; error?: string }> = {};
 
       for (const sectionId of input.sections) {
         const mapping = TABLE_MAP[sectionId];
@@ -66,11 +67,13 @@ export const backupRouter = router({
             recordCount: rows.length,
             data: rows,
           };
-        } catch {
+        } catch (error) {
+          console.error(`[backup.exportData] Failed to export ${sectionId}:`, error instanceof Error ? error.message : String(error));
           exportResult[sectionId] = {
             label: mapping.label,
             recordCount: 0,
             data: [],
+            error: error instanceof Error ? error.message : "Export failed",
           };
         }
       }
@@ -136,11 +139,13 @@ export const backupRouter = router({
               delete cleanRow.id; // Let the data layer auto-generate ids
               await insert(mapping.collection, cleanRow);
               restored++;
-            } catch {
+            } catch (error) {
+              console.warn(`[backup.restoreData] Failed to insert row in ${sectionId}:`, error instanceof Error ? error.message : String(error));
               errors++;
             }
           }
-        } catch {
+        } catch (error) {
+          console.error(`[backup.restoreData] Failed to restore section ${sectionId}:`, error instanceof Error ? error.message : String(error));
           errors = section.data.length;
         }
 

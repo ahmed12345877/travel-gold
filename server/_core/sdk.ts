@@ -357,8 +357,8 @@ class SDKServer {
             lastSignedIn: now,
           });
           user = await db.getUserByOpenId(sessionUserId);
-        } catch {
-          // DB error — fall through to synthetic user below
+        } catch (error) {
+          console.warn("[Auth] DB upsert failed for admin session, using synthetic user:", error instanceof Error ? error.message : String(error));
         }
 
         if (!user) {

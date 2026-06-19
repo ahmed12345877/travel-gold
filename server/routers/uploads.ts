@@ -17,35 +17,52 @@ export const uploadsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const buffer = Buffer.from(input.fileData, "base64");
-      const fileSize = buffer.length;
+      try {
+        const buffer = Buffer.from(input.fileData, "base64");
+        const fileSize = buffer.length;
 
-      // Max 10MB
-      if (fileSize > 10 * 1024 * 1024) {
-        throw new Error("حجم الملف يتجاوز الحد المسموح (10 ميجابايت)");
+        // Max 10MB
+        if (fileSize > 10 * 1024 * 1024) {
+          throw new Error("حجم الملف يتجاوز الحد المسموح (10 ميجابايت)");
+        }
+
+        const ext = input.filename.split(".").pop() || "bin";
+        const randomSuffix = nanoid(8);
+        const fileKey = `user-${ctx.user.id}/${input.purpose || "general"}/${randomSuffix}.${ext}`;
+
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+
+        const fileRecord = await createFileUpload({
+          userId: ctx.user.id,
+          fileKey,
+          url,
+          filename: input.filename,
+          mimeType: input.mimeType,
+          fileSize,
+          purpose: input.purpose,
+        });
+
+        return fileRecord;
+      } catch (error) {
+        console.error("[uploads.upload] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          filename: input.filename,
+          userId: ctx.user.id,
+        });
+        throw error;
       }
-
-      const ext = input.filename.split(".").pop() || "bin";
-      const randomSuffix = nanoid(8);
-      const fileKey = `user-${ctx.user.id}/${input.purpose || "general"}/${randomSuffix}.${ext}`;
-
-      const { url } = await storagePut(fileKey, buffer, input.mimeType);
-
-      const fileRecord = await createFileUpload({
-        userId: ctx.user.id,
-        fileKey,
-        url,
-        filename: input.filename,
-        mimeType: input.mimeType,
-        fileSize,
-        purpose: input.purpose,
-      });
-
-      return fileRecord;
     }),
 
   /** List user's uploaded files */
   myFiles: protectedProcedure.query(async ({ ctx }) => {
-    return getUserFiles(ctx.user.id);
+    try {
+      return await getUserFiles(ctx.user.id);
+    } catch (error) {
+      console.error("[uploads.myFiles] query error:", {
+        error: error instanceof Error ? error.message : String(error),
+        userId: ctx.user.id,
+      });
+      throw error;
+    }
   }),
 });

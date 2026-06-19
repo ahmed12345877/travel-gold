@@ -52,11 +52,15 @@ export async function callDataApi(
     );
   }
 
-  const payload = await response.json().catch(() => ({}));
+  const payload = await response.json().catch((parseError) => {
+    console.warn("[DataApi] Failed to parse JSON response:", parseError instanceof Error ? parseError.message : String(parseError));
+    return {};
+  });
   if (payload && typeof payload === "object" && "jsonData" in payload) {
     try {
       return JSON.parse((payload as Record<string, string>).jsonData ?? "{}");
-    } catch {
+    } catch (error) {
+      console.warn("[DataApi] Failed to parse jsonData field:", error instanceof Error ? error.message : String(error));
       return (payload as Record<string, unknown>).jsonData;
     }
   }

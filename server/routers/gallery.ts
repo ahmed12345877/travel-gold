@@ -25,8 +25,13 @@ export const galleryRouter = router({
         return { ...data, _docId: d.id };
       });
     } catch (indexErr) {
-      console.warn('[Gallery] listVisible: Index query failed, falling back to client-side filter', (indexErr as Error).message);
-      // Fallback: get all items and filter client-side
+      const errMsg = indexErr instanceof Error ? indexErr.message : String(indexErr);
+      const isIndexError = errMsg.includes("index") || errMsg.includes("requires an index") || errMsg.includes("FAILED_PRECONDITION");
+      if (!isIndexError) {
+        console.error("[Gallery] listVisible: Unexpected query error (not an index issue):", errMsg);
+        throw indexErr;
+      }
+      console.warn('[Gallery] listVisible: Index query failed, falling back to client-side filter:', errMsg);
       const snap = await db.collection(ITEMS_COL)
         .orderBy("createdAt", "desc")
         .get();
@@ -55,8 +60,13 @@ export const galleryRouter = router({
         return { ...data, _docId: d.id };
       });
     } catch (indexErr) {
-      console.warn('[Gallery] listVisibleVideos: Index query failed, falling back to client-side filter', (indexErr as Error).message);
-      // Fallback: get all items and filter client-side
+      const errMsg = indexErr instanceof Error ? indexErr.message : String(indexErr);
+      const isIndexError = errMsg.includes("index") || errMsg.includes("requires an index") || errMsg.includes("FAILED_PRECONDITION");
+      if (!isIndexError) {
+        console.error("[Gallery] listVisibleVideos: Unexpected query error (not an index issue):", errMsg);
+        throw indexErr;
+      }
+      console.warn('[Gallery] listVisibleVideos: Index query failed, falling back to client-side filter:', errMsg);
       const snap = await db.collection(VIDEOS_COL)
         .orderBy("createdAt", "desc")
         .get();

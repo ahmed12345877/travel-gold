@@ -36,8 +36,8 @@ export function getFirebaseApp(): FirebaseApp | null {
   if (firebaseConfig.measurementId) {
     try {
       getAnalytics(app);
-    } catch {
-      // Analytics غير مدعوم في بعض البيئات (SSR / المتصفحات القديمة)
+    } catch (error) {
+      console.warn("[firebase] Analytics initialization skipped:", error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -87,8 +87,8 @@ export async function verifyServerSession(maxRetries = 5): Promise<boolean> {
         const data = await res.json().catch(() => null);
         if (data) return true;
       }
-    } catch {
-      // Network error — keep retrying
+    } catch (error) {
+      console.warn(`[firebase] Session verification attempt ${i + 1} failed:`, error instanceof Error ? error.message : String(error));
     }
   }
   return false;
@@ -220,5 +220,7 @@ export async function firebaseSignOut(): Promise<void> {
   const app = getFirebaseApp();
   if (!app) return;
   const auth = getAuth(app);
-  await auth.signOut().catch(() => {});
+  await auth.signOut().catch((error) => {
+    console.warn("[firebase] Sign-out failed:", error instanceof Error ? error.message : String(error));
+  });
 }

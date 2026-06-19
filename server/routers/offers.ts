@@ -12,31 +12,46 @@ import {
 export const offersRouter = router({
   /** List active offers (public) */
   listActive: publicProcedure.query(async () => {
-    return getActiveOffers();
+    try {
+      return await getActiveOffers();
+    } catch (error) {
+      console.error("[offers.listActive] query error:", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
   }),
 
   /** Validate a promo code (public) */
   validatePromo: publicProcedure
     .input(z.object({ promoCode: z.string().min(1) }))
     .query(async ({ input }) => {
-      const offer = await getOfferByPromoCode(input.promoCode);
-      if (!offer) return { valid: false, message: "رمز الخصم غير صالح" } as const;
+      try {
+        const offer = await getOfferByPromoCode(input.promoCode);
+        if (!offer) return { valid: false, message: "رمز الخصم غير صالح" } as const;
 
-      const now = Date.now();
-      if (offer.isActive !== "active") return { valid: false, message: "هذا العرض غير نشط" } as const;
-      if (now < offer.startDate) return { valid: false, message: "هذا العرض لم يبدأ بعد" } as const;
-      if (now > offer.endDate) return { valid: false, message: "انتهت صلاحية هذا العرض" } as const;
-      if (offer.totalSpots && offer.bookedSpots && offer.bookedSpots >= offer.totalSpots) {
-        return { valid: false, message: "نفدت جميع الأماكن المتاحة" } as const;
+        const now = Date.now();
+        if (offer.isActive !== "active") return { valid: false, message: "هذا العرض غير نشط" } as const;
+        if (now < offer.startDate) return { valid: false, message: "هذا العرض لم يبدأ بعد" } as const;
+        if (now > offer.endDate) return { valid: false, message: "انتهت صلاحية هذا العرض" } as const;
+        if (offer.totalSpots && offer.bookedSpots && offer.bookedSpots >= offer.totalSpots) {
+          return { valid: false, message: "نفدت جميع الأماكن المتاحة" } as const;
+        }
+
+        return {
+          valid: true,
+          discountType: offer.discountType,
+          discountValue: offer.discountValue,
+          title: offer.title,
+          message: "تم تطبيق رمز الخصم بنجاح",
+        } as const;
+      } catch (error) {
+        console.error("[offers.validatePromo] query error:", {
+          error: error instanceof Error ? error.message : String(error),
+          promoCode: input.promoCode,
+        });
+        throw error;
       }
-
-      return {
-        valid: true,
-        discountType: offer.discountType,
-        discountValue: offer.discountValue,
-        title: offer.title,
-        message: "تم تطبيق رمز الخصم بنجاح",
-      } as const;
     }),
 
   /** List all offers (admin only) */
@@ -48,8 +63,15 @@ export const offersRouter = router({
       }).optional()
     )
     .query(async ({ input }) => {
-      const { limit = 50, offset = 0 } = input ?? {};
-      return getAllOffers(limit, offset);
+      try {
+        const { limit = 50, offset = 0 } = input ?? {};
+        return await getAllOffers(limit, offset);
+      } catch (error) {
+        console.error("[offers.listAll] query error:", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
     }),
 
   /** Create a new offer (admin only) */
@@ -72,11 +94,19 @@ export const offersRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      return createOffer({
-        ...input,
-        isActive: "active",
-        bookedSpots: 0,
-      });
+      try {
+        return await createOffer({
+          ...input,
+          isActive: "active",
+          bookedSpots: 0,
+        });
+      } catch (error) {
+        console.error("[offers.create] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          title: input.title,
+        });
+        throw error;
+      }
     }),
 
   /** Update an offer (admin only) */
@@ -96,7 +126,15 @@ export const offersRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const { id, ...data } = input;
-      return updateOffer(id, data);
+      try {
+        const { id, ...data } = input;
+        return await updateOffer(id, data);
+      } catch (error) {
+        console.error("[offers.update] mutation error:", {
+          error: error instanceof Error ? error.message : String(error),
+          id: input.id,
+        });
+        throw error;
+      }
     }),
 });

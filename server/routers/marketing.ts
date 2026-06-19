@@ -159,8 +159,8 @@ export const marketingRouter = router({
 
       try {
         parsed = JSON.parse(contentStr);
-      } catch {
-        // Fallback if JSON parsing fails
+      } catch (error) {
+        console.warn("[marketing.generate] Failed to parse LLM JSON response, using fallback:", error instanceof Error ? error.message : String(error));
         parsed = {
           title: input.prompt.slice(0, 100),
           content: contentStr,
