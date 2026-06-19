@@ -78,7 +78,13 @@ function AboutHero() {
         const heroes = JSON.parse(savedSubHeroes) as SubPageHero[];
         const aboutHero = heroes.find(h => h.page === "about");
         if (aboutHero) setSubHero(aboutHero);
-      } catch {}
+        else setSubHero(null);
+      } catch (e) {
+        console.error("Failed to parse sub-page heroes:", e);
+        setSubHero(null);
+      }
+    } else {
+      setSubHero(null);
     }
   }, [savedSubHeroes]);
 
@@ -102,7 +108,7 @@ function AboutHero() {
           }} />
         ) : (
           <div className="absolute inset-0" style={{
-            backgroundColor: `rgba(0, 0, 0, ${(subHero?.overlayOpacity || 60) / 100})`
+            backgroundColor: `rgba(0, 0, 0, ${(subHero?.overlayOpacity ?? 60) / 100})`
           }} />
         )}
       </div>

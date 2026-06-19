@@ -23,9 +23,9 @@ export const siteSettingsRouter = router({
   }),
 
   /**
-   * Get a single setting by category + key
+   * Get a single setting by category + key (public - hero/theme data accessible to all)
    */
-  get: protectedProcedure
+  get: publicProcedure
     .input(z.object({ category: z.string(), key: z.string() }))
     .query(async ({ input }) => {
       return getSettingValue(input.category, input.key);
