@@ -83,6 +83,7 @@ export default function HeroSection() {
   const button1Link = heroData?.buttonLink1 || "#search-form";
   const button2Text = heroData?.buttonText2 || "Explore Gallery";
   const button2Link = heroData?.buttonLink2 || "#gallery";
+  const featuredImageUrl = heroData?.featuredImageUrl;
 
   // Travel images for the grid (beautiful destinations)
   const heroGridImages = heroImages && heroImages.length > 0 ? heroImages : [
@@ -243,32 +244,29 @@ export default function HeroSection() {
 
           {/* ── Right Column: Image Grid ── */}
           <motion.div
-            className="grid grid-cols-2 gap-3 sm:gap-4"
+            className="flex flex-col gap-4"
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
-            {heroGridImages.map((image, index) => (
+            {/* Featured Image - 5th Hero Image */}
+            {featuredImageUrl && (
               <motion.figure
-                key={image.url || index}
-                className="relative group overflow-hidden rounded-lg"
+                className="relative group overflow-hidden rounded-lg w-full"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.5 + index * 0.1 }}
-                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                whileHover={{ scale: 1.02 }}
               >
-                {/* Image */}
                 <img
-                  src={image.url || image.src}
-                  alt={image.label || image.alt || `Hero image ${index + 1}`}
+                  src={featuredImageUrl}
+                  alt="Featured Hero Image"
                   loading="lazy"
                   decoding="async"
-                  width={400}
-                  height={320}
-                  className="w-full h-40 sm:h-48 md:h-56 object-cover transition-transform duration-500 group-hover:scale-110"
+                  width={500}
+                  height={300}
+                  className="w-full h-48 sm:h-56 md:h-64 object-cover transition-transform duration-500 group-hover:scale-110"
                 />
-
-                {/* Overlay */}
                 <div
                   className="absolute inset-0 transition-all duration-300"
                   style={{
@@ -280,36 +278,75 @@ export default function HeroSection() {
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = colorMix(colors.background, 40);
                   }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.backgroundColor = colorMix(colors.background, 20);
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.backgroundColor = colorMix(colors.background, 40);
-                  }}
-                  tabIndex={-1}
                 />
-
-                {/* Title */}
-                <figcaption className="absolute inset-0 flex items-end p-3 sm:p-4">
-                  <div className="space-y-1">
-                    <p
-                      className="text-xs sm:text-sm font-semibold opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300"
-                      style={{ color: colors.text }}
-                    >
-                      {image.label}
-                    </p>
-                    {image.sublabel && (
-                      <p
-                        className="text-xs opacity-0 group-hover:opacity-75 group-focus-within:opacity-75 transition-opacity duration-300 tracking-widest"
-                        style={{ color: colorMix(colors.text, 60) }}
-                      >
-                        {image.sublabel}
-                      </p>
-                    )}
-                  </div>
-                </figcaption>
               </motion.figure>
-            ))}
+            )}
+            
+            {/* Grid Images - 4 images */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              {heroGridImages.map((image, index) => (
+                <motion.figure
+                  key={image.url || index}
+                  className="relative group overflow-hidden rounded-lg"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, delay: 0.5 + index * 0.1 }}
+                  whileHover={{ scale: 1.05 }}
+                >
+                  {/* Image */}
+                  <img
+                    src={image.url || image.src}
+                    alt={image.label || image.alt || `Hero image ${index + 1}`}
+                    loading="lazy"
+                    decoding="async"
+                    width={400}
+                    height={320}
+                    className="w-full h-40 sm:h-48 md:h-56 object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+
+                  {/* Overlay */}
+                  <div
+                    className="absolute inset-0 transition-all duration-300"
+                    style={{
+                      backgroundColor: colorMix(colors.background, 40),
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = colorMix(colors.background, 20);
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = colorMix(colors.background, 40);
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.backgroundColor = colorMix(colors.background, 20);
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.backgroundColor = colorMix(colors.background, 40);
+                    }}
+                    tabIndex={-1}
+                  />
+
+                  {/* Title */}
+                  <figcaption className="absolute inset-0 flex items-end p-3 sm:p-4">
+                    <div className="space-y-1">
+                      <p
+                        className="text-xs sm:text-sm font-semibold opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300"
+                        style={{ color: colors.text }}
+                      >
+                        {image.label}
+                      </p>
+                      {image.sublabel && (
+                        <p
+                          className="text-xs opacity-0 group-hover:opacity-75 group-focus-within:opacity-75 transition-opacity duration-300 tracking-widest"
+                          style={{ color: colorMix(colors.text, 60) }}
+                        >
+                          {image.sublabel}
+                        </p>
+                      )}
+                    </div>
+                  </figcaption>
+                </motion.figure>
+              ))}
+            </div>
           </motion.div>
         </div>
       </div>

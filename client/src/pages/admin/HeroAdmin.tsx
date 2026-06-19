@@ -32,6 +32,7 @@ interface HeroData {
   mediaUrl: string;
   overlayOpacity: number;
   overlayColor: "dark" | "light";
+  featuredImageUrl?: string;
 }
 
 const ACCEPTED_IMAGE_TYPES = "image/jpeg,image/png,image/webp,image/gif";
@@ -80,6 +81,7 @@ export default function HeroAdmin() {
     mediaUrl: "",
     overlayOpacity: 50,
     overlayColor: "dark",
+    featuredImageUrl: "",
   });
 
   const [heroImages, setHeroImages] = useState<HeroImage[]>([
@@ -95,6 +97,7 @@ export default function HeroAdmin() {
   const [hasChanges, setHasChanges] = useState(false);
   const [uploadingImageId, setUploadingImageId] = useState<number | null>(null);
   const [uploadingBgMedia, setUploadingBgMedia] = useState(false);
+  const [uploadingFeaturedImage, setUploadingFeaturedImage] = useState(false);
 
   /* ─── Sub-page hero state ─── */
   const [subHeroes, setSubHeroes] = useState<SubPageHero[]>([]);
@@ -199,6 +202,19 @@ export default function HeroAdmin() {
     } catch (err: unknown) {
       toast.error(`فشل الرفع: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally { setUploadingSubMedia(false); }
+  };
+
+  const handleFeaturedImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingFeaturedImage(true);
+    try {
+      const url = await uploadMedia(file);
+      markData({ ...heroData, featuredImageUrl: url });
+      toast.success("تم رفع الصورة المميزة بنجاح");
+    } catch (err: unknown) {
+      toast.error(`فشل الرفع: ${err instanceof Error ? err.message : "Unknown error"}`);
+    } finally { setUploadingFeaturedImage(false); }
   };
 
   const updateImage = (id: number, field: keyof HeroImage, value: string) => {
@@ -380,23 +396,61 @@ export default function HeroAdmin() {
 
               {activeTab === "images" && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white">صور الـ Hero (4 صور)</h3>
-                  <p className="text-sm text-white/50">يدعم: JPEG, PNG, WebP, GIF, MP4, WebM</p>
-                  {heroImages.map((img) => (
-                    <div key={img.id} className="bg-[#1a1a1a] border border-white/5 rounded-lg p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-[var(--theme-primary)]">صورة #{img.id}</span>
-                        {img.url && (
-                          isVideoUrl(img.url) ? <video src={img.url} className="w-16 h-10 object-cover rounded" muted autoPlay loop playsInline /> : <img src={img.url} alt="" className="w-16 h-10 object-cover rounded" />
+                  <h3 className="text-lg font-semibold text-white">صور الـ Hero (4 صور شبكة + صورة مميزة)</h3>
+                  <p className="text-sm text-white/50">يدعم: JPEG, PNG, WebP, GIF, MP4, WebM (حد أقصى 10MB)</p>
+
+                  {/* Featured Image - الصورة الخامسة */}
+                  <div className="bg-[#2a2a2a] border-2 border-[var(--theme-primary)]/30 rounded-lg p-5 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-[var(--theme-primary)]" />
+                      <span className="text-sm font-semibold text-[var(--theme-primary)]">الصورة المميزة (الصورة الخامسة الرئيسية)</span>
+                    </div>
+                    <p className="text-xs text-white/60">صورة إضافية تظهر في الواجهة الرئيسية - يمكن أن تكون صورة أو فيديو</p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        {heroData.featuredImageUrl && (
+                          <div className="mb-3">
+                            {isVideoUrl(heroData.featuredImageUrl) ? (
+                              <video src={heroData.featuredImageUrl} className="w-20 h-20 object-cover rounded-lg border border-[var(--theme-primary)]/20" muted autoPlay loop playsInline />
+                            ) : (
+                              <img src={heroData.featuredImageUrl} alt="Featured" className="w-20 h-20 object-cover rounded-lg border border-[var(--theme-primary)]/20" />
+                            )}
+                          </div>
                         )}
                       </div>
-                      <div>
-                        <input type="file" accept={ACCEPTED_MEDIA_TYPES} onChange={(e) => handleImageUpload(img.id, e)} className="hidden" id={`hero-img-${img.id}`} disabled={uploadingImageId === img.id} />
-                        <label htmlFor={`hero-img-${img.id}`} className={`flex items-center gap-2 px-3 py-2 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] border border-[var(--theme-primary)]/20 rounded-lg cursor-pointer hover:bg-[var(--theme-primary)]/20 transition-colors text-sm w-fit ${uploadingImageId === img.id ? "opacity-60 cursor-not-allowed" : ""}`}>
-                          {uploadingImageId === img.id ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-                          {uploadingImageId === img.id ? "جاري الرفع..." : img.url ? "تغيير" : "اختر ملف"}
+                      <div className="space-y-2">
+                        <input type="file" accept={ACCEPTED_MEDIA_TYPES} onChange={handleFeaturedImageUpload} className="hidden" id="hero-featured-image" disabled={uploadingFeaturedImage} />
+                        <label htmlFor="hero-featured-image" className={`flex items-center gap-2 px-4 py-2 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] border border-[var(--theme-primary)]/20 rounded-lg cursor-pointer hover:bg-[var(--theme-primary)]/20 transition-colors text-sm w-fit ${uploadingFeaturedImage ? "opacity-60 cursor-not-allowed" : ""}`}>
+                          {uploadingFeaturedImage ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                          {uploadingFeaturedImage ? "جاري الرفع..." : heroData.featuredImageUrl ? "تغيير الصورة" : "رفع صورة"}
                         </label>
+                        {heroData.featuredImageUrl && (
+                          <button onClick={() => markData({ ...heroData, featuredImageUrl: "" })} className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1">
+                            <X size={12} /> إزالة
+                          </button>
+                        )}
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Grid Images - الصور الأربع */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-white/70 mb-3">صور الشبكة (4 صور)</h4>
+                    {heroImages.map((img) => (
+                      <div key={img.id} className="bg-[#1a1a1a] border border-white/5 rounded-lg p-4 space-y-3 mb-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-[var(--theme-primary)]">صورة #{img.id}</span>
+                          {img.url && (
+                            isVideoUrl(img.url) ? <video src={img.url} className="w-16 h-10 object-cover rounded" muted autoPlay loop playsInline /> : <img src={img.url} alt="" className="w-16 h-10 object-cover rounded" />
+                          )}
+                        </div>
+                        <div>
+                          <input type="file" accept={ACCEPTED_MEDIA_TYPES} onChange={(e) => handleImageUpload(img.id, e)} className="hidden" id={`hero-img-${img.id}`} disabled={uploadingImageId === img.id} />
+                          <label htmlFor={`hero-img-${img.id}`} className={`flex items-center gap-2 px-3 py-2 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] border border-[var(--theme-primary)]/20 rounded-lg cursor-pointer hover:bg-[var(--theme-primary)]/20 transition-colors text-sm w-fit ${uploadingImageId === img.id ? "opacity-60 cursor-not-allowed" : ""}`}>
+                            {uploadingImageId === img.id ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                            {uploadingImageId === img.id ? "جاري الرفع..." : img.url ? "تغيير" : "اختر ملف"}
+                          </label>
+                        </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <label className="block text-xs text-white/50 mb-1">العنوان</label>
@@ -479,18 +533,37 @@ export default function HeroAdmin() {
                     </div>
                   </div>
                 </div>
-                <div className="mt-4 grid grid-cols-4 gap-2">
-                  {heroImages.map(img => (
-                    <div key={img.id} className="aspect-video bg-black/20 rounded border-2 border-transparent hover:border-[var(--theme-primary)] cursor-pointer relative overflow-hidden group">
-                      {img.url ? (
-                        isVideoUrl(img.url) ? <video src={img.url} className="w-full h-full object-cover" muted autoPlay loop playsInline /> : <img src={img.url} className="w-full h-full object-cover" alt="" />
-                      ) : <div className="w-full h-full bg-gray-800 flex items-center justify-center"><ImageIcon className="text-gray-600" /></div>}
-                      <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-center p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <p className="text-xs font-bold text-white leading-tight">{img.label}</p>
-                        <p className="text-[10px] text-white/70 leading-tight">{img.sublabel}</p>
+                <div className="mt-4 space-y-2">
+                  {/* Featured Image */}
+                  {heroData.featuredImageUrl && (
+                    <div>
+                      <p className="text-xs text-white/50 mb-1">الصورة المميزة (الخامسة)</p>
+                      <div className="aspect-video bg-black/20 rounded border-2 border-[var(--theme-primary)]/50 relative overflow-hidden">
+                        {isVideoUrl(heroData.featuredImageUrl) ? (
+                          <video src={heroData.featuredImageUrl} className="w-full h-full object-cover" muted autoPlay loop playsInline />
+                        ) : (
+                          <img src={heroData.featuredImageUrl} className="w-full h-full object-cover" alt="Featured" />
+                        )}
                       </div>
                     </div>
-                  ))}
+                  )}
+                  {/* Grid Images */}
+                  <div>
+                    <p className="text-xs text-white/50 mb-1">صور الشبكة (4 صور)</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {heroImages.map(img => (
+                        <div key={img.id} className="aspect-video bg-black/20 rounded border-2 border-transparent hover:border-[var(--theme-primary)] cursor-pointer relative overflow-hidden group">
+                          {img.url ? (
+                            isVideoUrl(img.url) ? <video src={img.url} className="w-full h-full object-cover" muted autoPlay loop playsInline /> : <img src={img.url} className="w-full h-full object-cover" alt="" />
+                          ) : <div className="w-full h-full bg-gray-800 flex items-center justify-center"><ImageIcon className="text-gray-600" /></div>}
+                          <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-center p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <p className="text-xs font-bold text-white leading-tight">{img.label}</p>
+                            <p className="text-[10px] text-white/70 leading-tight">{img.sublabel}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -537,7 +610,7 @@ export default function HeroAdmin() {
                 <CardContent className="space-y-4">
                   {/* Layout selector */}
                   <div>
-                    <Label className="text-white/70 text-sm mb-3 block">التخطيط</Label>
+                    <Label className="text-white/70 text-sm mb-3 block">التخطي��</Label>
                     <div className="grid grid-cols-3 gap-3">
                       {[
                         { value: "centered" as const, label: "نص متمركز", desc: "نص نظيف فوق خلفية بسيطة", icon: Monitor },
@@ -606,19 +679,43 @@ export default function HeroAdmin() {
                   )}
 
                   {currentSubHero.mediaType !== "gradient" && (
-                    <div>
-                      <input type="file" accept={currentSubHero.mediaType === "video" ? ACCEPTED_VIDEO_TYPES : ACCEPTED_MEDIA_TYPES} onChange={handleSubMediaUpload} className="hidden" id="sub-hero-media" disabled={uploadingSubMedia} />
-                      <label htmlFor="sub-hero-media" className={`flex items-center gap-2 px-4 py-3 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] border border-[var(--theme-primary)]/20 rounded-lg cursor-pointer hover:bg-[var(--theme-primary)]/20 transition-colors ${uploadingSubMedia ? "opacity-60 cursor-not-allowed" : ""}`}>
-                        {uploadingSubMedia ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                        {uploadingSubMedia ? "جاري الرفع..." : "رفع وسائط (Firebase Storage)"}
-                      </label>
+                    <div className="bg-[#1a1a1a] border border-white/5 rounded-lg p-4 space-y-3">
+                      <div>
+                        <Label className="text-white/70 text-sm mb-2 block">رفع الوسائط</Label>
+                        <input type="file" accept={currentSubHero.mediaType === "video" ? ACCEPTED_VIDEO_TYPES : ACCEPTED_MEDIA_TYPES} onChange={handleSubMediaUpload} className="hidden" id="sub-hero-media" disabled={uploadingSubMedia} />
+                        <label htmlFor="sub-hero-media" className={`flex items-center justify-center gap-2 px-4 py-6 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] border-2 border-dashed border-[var(--theme-primary)]/30 rounded-lg cursor-pointer hover:bg-[var(--theme-primary)]/20 hover:border-[var(--theme-primary)]/50 transition-colors ${uploadingSubMedia ? "opacity-60 cursor-not-allowed" : ""}`}>
+                          <div className="flex flex-col items-center gap-2">
+                            {uploadingSubMedia ? (
+                              <>
+                                <Loader2 size={24} className="animate-spin" />
+                                <span className="text-sm">جاري الرفع إلى Firebase Storage...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Upload size={24} />
+                                <span className="text-sm">{currentSubHero.mediaType === "video" ? "انقر لرفع فيديو أو اسحب الملف هنا" : "انقر لرفع صورة أو اسحب الملف هنا"}</span>
+                                <span className="text-xs text-white/50">{currentSubHero.mediaType === "video" ? "MP4, WebM (حد أقصى 10MB)" : "JPEG, PNG, WebP, GIF (حد أقصى 10MB)"}</span>
+                              </>
+                            )}
+                          </div>
+                        </label>
+                      </div>
+
                       {currentSubHero.mediaUrl && (
-                        <div className="mt-2 p-2 bg-black/20 rounded border border-white/5">
-                          {isVideoUrl(currentSubHero.mediaUrl) ? (
-                            <video src={currentSubHero.mediaUrl} className="w-full h-24 object-cover rounded" muted autoPlay loop playsInline />
-                          ) : (
-                            <img src={currentSubHero.mediaUrl} className="w-full h-24 object-cover rounded" alt="" />
-                          )}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-white/60">معاينة الوسائط المرفوعة</p>
+                            <button onClick={() => updateSubHero(activeSubPage, { mediaUrl: "" })} className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1">
+                              <X size={12} /> إزالة
+                            </button>
+                          </div>
+                          <div className="relative rounded-lg overflow-hidden border border-[var(--theme-primary)]/30 bg-black/30">
+                            {isVideoUrl(currentSubHero.mediaUrl) ? (
+                              <video src={currentSubHero.mediaUrl} className="w-full h-32 object-cover" muted autoPlay loop playsInline />
+                            ) : (
+                              <img src={currentSubHero.mediaUrl} className="w-full h-32 object-cover" alt="Hero Media" />
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
