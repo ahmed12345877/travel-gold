@@ -1,27 +1,14 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
 import { trpc } from "@/lib/trpc";
 
 /**
  * ThemeColorsProvider
- * Loads theme colors from DB (public endpoint) and applies them as CSS custom properties
- * on document.documentElement so all components using var(--theme-*) pick them up.
- *
- * Color mapping from DB (ThemeAdmin saves these keys):
- *   primary      → --theme-primary       (Gold: #D4A853)
- *   primaryLight → --theme-primary-light  (Light Gold: #F5E6B8)
- *   accent       → --theme-accent         (Accent: #C9A84C)
- *   secondary    → --theme-secondary      (Dark: #1A1A2E)
- *   background   → --theme-background     (BG: #0A0A0A)
- *   surface      → --theme-surface        (Surface: #141414)
- *   text         → --theme-text           (White: #FFFFFF)
- *   textMuted    → --theme-text-muted     (Muted: #9CA3AF)
- *   border       → --theme-border         (Border: #2A2A2A)
- *   success      → --theme-success
- *   warning      → --theme-warning
- *   error        → --theme-error
+ * Loads theme colors, fonts, dark mode, and navbar styles from DB (public endpoint)
+ * and applies them as CSS custom properties on document.documentElement.
  */
 
-interface ThemeColors {
+/* ─── Types ─── */
+export interface ThemeColors {
   primary: string;
   primaryLight: string;
   secondary: string;
@@ -36,7 +23,59 @@ interface ThemeColors {
   error: string;
 }
 
-const DEFAULT_COLORS: ThemeColors = {
+export interface ThemeFonts {
+  heading: string;
+  body: string;
+  headingSize: number;
+  bodySize: number;
+  headingWeight: string;
+  bodyWeight: string;
+  lineHeight: number;
+  letterSpacing: number;
+}
+
+export interface NavbarStyle {
+  borderRadius: number;
+  paddingX: number;
+  paddingY: number;
+  hoverAnimation: "fade" | "slide" | "glow" | "none";
+  fontWeight: string;
+  bgOpacity: number;
+  blurEnabled: boolean;
+  blurAmount: number;
+  bgColorOverride: string;
+  linkColorOverride: string;
+  activeLinkColorOverride: string;
+}
+
+export interface HeroSettings {
+  title: string;
+  rotatingWords: string[];
+  subtitle: string;
+  buttonText1: string;
+  buttonText2: string;
+  buttonLink1: string;
+  buttonLink2: string;
+  mediaType: "image" | "video" | "gradient";
+  mediaUrl: string;
+  overlayOpacity: number;
+  overlayColor: "dark" | "light";
+}
+
+export interface SubPageHero {
+  page: string;
+  layout: "centered" | "split" | "fullbleed";
+  title: string;
+  subtitle: string;
+  mediaUrl: string;
+  mediaType: "image" | "video" | "gradient";
+  gradientFrom: string;
+  gradientTo: string;
+  overlayOpacity: number;
+}
+
+/* ─── Defaults ─── */
+export const DEFAULT_COLORS: ThemeColors = {
   primary: "#D4A853",
   primaryLight: "#F5E6B8",
   secondary: "#1A1A2E",
@@ -51,23 +90,63 @@ const DEFAULT_COLORS: ThemeColors = {
   error: "#EF4444",
 };
 
-interface ThemeColorsContextType {
+export const DEFAULT_FONTS: ThemeFonts = {
+  heading: "Playfair Display",
+  body: "Inter",
+  headingSize: 36,
+  bodySize: 16,
+  headingWeight: "700",
+  bodyWeight: "400",
+  lineHeight: 1.6,
+  letterSpacing: 0,
+};
+
+export const DEFAULT_NAVBAR_STYLE: NavbarStyle = {
+  borderRadius: 8,
+  paddingX: 16,
+  paddingY: 8,
+  hoverAnimation: "fade",
+  fontWeight: "500",
+  bgOpacity: 80,
+  blurEnabled: true,
+  blurAmount: 12,
+  bgColorOverride: "",
+  linkColorOverride: "",
+  activeLinkColorOverride: "",
+};
+
+export const FONT_PAIRINGS = [
+  { id: "modern", label: "Modern Sans", heading: "Inter", body: "DM Sans", description: "Clean tech aesthetic" },
+  { id: "luxury", label: "Luxury Serif", heading: "Playfair Display", body: "Lora", description: "Classic elegance" },
+  { id: "bold", label: "Bold Display", heading: "Montserrat", body: "Open Sans", description: "Modern & striking" },
+] as const;
+
+/* ─── Context ─── */
+interface ThemeContextType {
   colors: ThemeColors;
+  fonts: ThemeFonts;
+  navbarStyle: NavbarStyle;
+  darkMode: boolean;
+  fontPairing: string;
   isLoaded: boolean;
+  refetch: () => void;
 }
 
-const ThemeColorsContext = createContext<ThemeColorsContextType>({
+const ThemeContext = createContext<ThemeContextType>({
   colors: DEFAULT_COLORS,
+  fonts: DEFAULT_FONTS,
+  navbarStyle: DEFAULT_NAVBAR_STYLE,
+  darkMode: true,
+  fontPairing: "luxury",
   isLoaded: false,
+  refetch: () => {},
 });
 
 export function useThemeColors() {
-  return useContext(ThemeColorsContext);
+  return useContext(ThemeContext);
 }
 
-/**
- * Apply theme colors as CSS custom properties on :root
- */
+/* ─── Apply to DOM ─── */
 function applyColorsToDOM(colors: ThemeColors) {
   const root = document.documentElement;
   root.style.setProperty("--theme-primary", colors.primary);
@@ -82,8 +161,6 @@ function applyColorsToDOM(colors: ThemeColors) {
   root.style.setProperty("--theme-success", colors.success);
   root.style.setProperty("--theme-warning", colors.warning);
   root.style.setProperty("--theme-error", colors.error);
-
-  // Also compute opacity variants for primary
   root.style.setProperty("--theme-primary-10", colors.primary + "1a");
   root.style.setProperty("--theme-primary-20", colors.primary + "33");
   root.style.setProperty("--theme-primary-30", colors.primary + "4d");
@@ -91,44 +168,107 @@ function applyColorsToDOM(colors: ThemeColors) {
   root.style.setProperty("--theme-primary-70", colors.primary + "b3");
 }
 
+function applyFontsToDOM(fonts: ThemeFonts) {
+  const root = document.documentElement;
+  root.style.setProperty("--theme-font-heading", fonts.heading);
+  root.style.setProperty("--theme-font-body", fonts.body);
+  root.style.setProperty("--theme-font-heading-size", `${fonts.headingSize}px`);
+  root.style.setProperty("--theme-font-body-size", `${fonts.bodySize}px`);
+  root.style.setProperty("--theme-font-heading-weight", fonts.headingWeight);
+  root.style.setProperty("--theme-font-body-weight", fonts.bodyWeight);
+  root.style.setProperty("--theme-line-height", String(fonts.lineHeight));
+  root.style.setProperty("--theme-letter-spacing", `${fonts.letterSpacing}px`);
+}
+
+function applyNavbarToDOM(style: NavbarStyle) {
+  const root = document.documentElement;
+  root.style.setProperty("--navbar-border-radius", `${style.borderRadius}px`);
+  root.style.setProperty("--navbar-px", `${style.paddingX}px`);
+  root.style.setProperty("--navbar-py", `${style.paddingY}px`);
+  root.style.setProperty("--navbar-font-weight", style.fontWeight);
+  root.style.setProperty("--navbar-bg-opacity", String(style.bgOpacity / 100));
+  root.style.setProperty("--navbar-blur", style.blurEnabled ? `blur(${style.blurAmount}px)` : "none");
+  if (style.bgColorOverride) root.style.setProperty("--navbar-bg-override", style.bgColorOverride);
+  else root.style.removeProperty("--navbar-bg-override");
+  if (style.linkColorOverride) root.style.setProperty("--navbar-link-override", style.linkColorOverride);
+  else root.style.removeProperty("--navbar-link-override");
+  if (style.activeLinkColorOverride) root.style.setProperty("--navbar-active-override", style.activeLinkColorOverride);
+  else root.style.removeProperty("--navbar-active-override");
+}
+
+/* ─── Provider ─── */
 export function ThemeColorsProvider({ children }: { children: ReactNode }) {
   const [colors, setColors] = useState<ThemeColors>(DEFAULT_COLORS);
+  const [fonts, setFonts] = useState<ThemeFonts>(DEFAULT_FONTS);
+  const [navbarStyle, setNavbarStyle] = useState<NavbarStyle>(DEFAULT_NAVBAR_STYLE);
+  const [darkMode, setDarkMode] = useState(true);
+  const [fontPairing, setFontPairing] = useState("luxury");
   const [isLoaded, setIsLoaded] = useState(false);
 
   const themeQuery = trpc.siteSettings.getTheme.useQuery(undefined, {
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 5 * 60 * 1000,
     retry: 1,
   });
 
+  const refetch = useCallback(() => {
+    themeQuery.refetch();
+  }, [themeQuery]);
+
   useEffect(() => {
-    // Apply defaults immediately so CSS vars are available
     applyColorsToDOM(DEFAULT_COLORS);
+    applyFontsToDOM(DEFAULT_FONTS);
+    applyNavbarToDOM(DEFAULT_NAVBAR_STYLE);
   }, []);
 
   useEffect(() => {
     if (themeQuery.data) {
       try {
-        const dbColors = themeQuery.data.colors
-          ? JSON.parse(themeQuery.data.colors)
-          : null;
-        if (dbColors) {
-          const merged = { ...DEFAULT_COLORS, ...dbColors };
+        const d = themeQuery.data;
+        if (d.colors) {
+          const c = JSON.parse(d.colors);
+          const merged = { ...DEFAULT_COLORS, ...c };
           setColors(merged);
           applyColorsToDOM(merged);
         }
+        if (d.fonts) {
+          const f = JSON.parse(d.fonts);
+          const merged = { ...DEFAULT_FONTS, ...f };
+          setFonts(merged);
+          applyFontsToDOM(merged);
+        }
+        if (d.navbarStyle) {
+          const n = JSON.parse(d.navbarStyle);
+          const merged = { ...DEFAULT_NAVBAR_STYLE, ...n };
+          setNavbarStyle(merged);
+          applyNavbarToDOM(merged);
+        }
+        if (d.darkMode !== undefined) {
+          const dm = d.darkMode === "true";
+          setDarkMode(dm);
+          if (dm) document.documentElement.classList.add("dark");
+          else document.documentElement.classList.remove("dark");
+        }
+        if (d.fontPairing) {
+          setFontPairing(d.fontPairing);
+          const pairing = FONT_PAIRINGS.find(p => p.id === d.fontPairing);
+          if (pairing) {
+            const merged = { ...fonts, heading: pairing.heading, body: pairing.body };
+            setFonts(merged);
+            applyFontsToDOM(merged);
+          }
+        }
       } catch {
-        // If parsing fails, keep defaults
+        // keep defaults
       }
       setIsLoaded(true);
     } else if (themeQuery.isError || themeQuery.data === null) {
-      // No theme in DB or error - use defaults
       setIsLoaded(true);
     }
   }, [themeQuery.data, themeQuery.isError]);
 
   return (
-    <ThemeColorsContext.Provider value={{ colors, isLoaded }}>
+    <ThemeContext.Provider value={{ colors, fonts, navbarStyle, darkMode, fontPairing, isLoaded, refetch }}>
       {children}
-    </ThemeColorsContext.Provider>
+    </ThemeContext.Provider>
   );
 }
