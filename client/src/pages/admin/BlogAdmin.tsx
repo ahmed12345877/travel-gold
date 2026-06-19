@@ -7,6 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit2, Trash2, Search, Eye, Archive } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { formatDate } from "@/lib/formatDate";
+import { buildMutationCallbacks, getErrorMessage } from "@/hooks/useAdminCrud";
 
 export default function BlogAdmin() {
   const [search, setSearch] = useState("");
@@ -29,86 +31,34 @@ export default function BlogAdmin() {
     limit: 20,
   });
 
-  const handleErrorMessage = (error: unknown): string => {
-    if (error instanceof Error) {
-      return error.message;
-    }
-    return "حدث خطأ أثناء العملية. يرجى المحاولة مجددًا.";
+  const resetForm = () => {
+    setFormData({ title: "", slug: "", content: "", excerpt: "", imageUrl: "", category: "", author: "", tags: "", status: "draft" });
   };
 
-  const createMutation = trpc.adminBlog.create.useMutation({
-    onSuccess: () => {
-      alert("تم إنشاء المقالة بنجاح");
-      refetch();
-      setIsOpen(false);
-      setFormData({
-        title: "",
-        slug: "",
-        content: "",
-        excerpt: "",
-        imageUrl: "",
-        category: "",
-        author: "",
-        tags: "",
-        status: "draft",
-      });
-    },
-    onError: (error: unknown) => {
-      const message = handleErrorMessage(error);
-      console.error("[createMutation] Error:", error);
-      alert("خطأ: " + message);
-    },
-  });
+  const notify = {
+    success: (msg: string) => alert(msg),
+    error: (msg: string) => alert(msg),
+  };
 
-  const updateMutation = trpc.adminBlog.update.useMutation({
-    onSuccess: () => {
-      alert("تم تحديث المقالة بنجاح");
-      refetch();
-      setIsOpen(false);
-      setEditingId(null);
-    },
-    onError: (error: unknown) => {
-      const message = handleErrorMessage(error);
-      console.error("[updateMutation] Error:", error);
-      alert("خطأ: " + message);
-    },
-  });
+  const createMutation = trpc.adminBlog.create.useMutation(
+    buildMutationCallbacks({ successMessage: "تم إنشاء المقالة بنجاح", errorMessage: "خطأ في إنشاء المقالة", refetch, onSuccess: () => { setIsOpen(false); resetForm(); }, notify }),
+  );
 
-  const deleteMutation = trpc.adminBlog.delete.useMutation({
-    onSuccess: () => {
-      alert("تم حذف المقالة بنجاح");
-      refetch();
-    },
-    onError: (error: unknown) => {
-      const message = handleErrorMessage(error);
-      console.error("[deleteMutation] Error:", error);
-      alert("خطأ: " + message);
-    },
-  });
+  const updateMutation = trpc.adminBlog.update.useMutation(
+    buildMutationCallbacks({ successMessage: "تم تحديث المقالة بنجاح", errorMessage: "خطأ في تحديث المقالة", refetch, onSuccess: () => { setIsOpen(false); setEditingId(null); }, notify }),
+  );
 
-  const publishMutation = trpc.adminBlog.publish.useMutation({
-    onSuccess: () => {
-      alert("تم نشر المقالة بنجاح");
-      refetch();
-    },
-    onError: (error: unknown) => {
-      const message = handleErrorMessage(error);
-      console.error("[publishMutation] Error:", error);
-      alert("خطأ: " + message);
-    },
-  });
+  const deleteMutation = trpc.adminBlog.delete.useMutation(
+    buildMutationCallbacks({ successMessage: "تم حذف المقالة بنجاح", errorMessage: "خطأ في حذف المقالة", refetch, notify }),
+  );
 
-  const archiveMutation = trpc.adminBlog.archive.useMutation({
-    onSuccess: () => {
-      alert("تم أرشفة المقالة بنجاح");
-      refetch();
-    },
-    onError: (error: unknown) => {
-      const message = handleErrorMessage(error);
-      console.error("[archiveMutation] Error:", error);
-      alert("خطأ: " + message);
-    },
-  });
+  const publishMutation = trpc.adminBlog.publish.useMutation(
+    buildMutationCallbacks({ successMessage: "تم نشر المقالة بنجاح", errorMessage: "خطأ في نشر المقالة", refetch, notify }),
+  );
+
+  const archiveMutation = trpc.adminBlog.archive.useMutation(
+    buildMutationCallbacks({ successMessage: "تم أرشفة المقالة بنجاح", errorMessage: "خطأ في أرشفة المقالة", refetch, notify }),
+  );
 
   const handleSubmit = async () => {
     if (!formData.title || !formData.slug) {
@@ -157,20 +107,7 @@ export default function BlogAdmin() {
       .replace(/-+/g, "-");
   };
 
-  const formatDate = (dateValue: any) => {
-    if (!dateValue) return "-";
-    try {
-      const date = typeof dateValue === "string" ? new Date(dateValue) : new Date(dateValue);
-      if (isNaN(date.getTime())) return "-";
-      return date.toLocaleDateString("ar-EG", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    } catch {
-      return "-";
-    }
-  };
+
 
   return (
     <div className="space-y-6">

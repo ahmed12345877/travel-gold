@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
 import { adminProcedure } from "../_core/trpc";
+import { logError } from "../utils/errorLogger";
 import {
   createReview,
   getApprovedReviews,
@@ -29,9 +30,7 @@ export const reviewsRouter = router({
         console.log(`[reviews.list] retrieved ${reviews.length} approved reviews`);
         return reviews;
       } catch (error) {
-        console.error("[reviews.list] query error:", {
-          error: error instanceof Error ? error.message : String(error),
-        });
+        logError("reviews.list", "query error", error);
         throw error;
       }
     }),
@@ -43,9 +42,7 @@ export const reviewsRouter = router({
       console.log("[reviews.stats] retrieved review statistics");
       return stats;
     } catch (error) {
-      console.error("[reviews.stats] query error:", {
-        error: error instanceof Error ? error.message : String(error),
-      });
+      logError("reviews.stats", "query error", error);
       throw error;
     }
   }),
@@ -59,10 +56,7 @@ export const reviewsRouter = router({
         console.log(`[reviews.getById] retrieved review: id=${input.id}`);
         return review;
       } catch (error) {
-        console.error("[reviews.getById] query error:", {
-          error: error instanceof Error ? error.message : String(error),
-          id: input.id,
-        });
+        logError("reviews.getById", "query error", error, { id: input.id });
         throw error;
       }
     }),
@@ -93,10 +87,7 @@ export const reviewsRouter = router({
         console.log(`[reviews.create] created review: tripName=${input.tripName}, rating=${input.rating}`);
         return review;
       } catch (error) {
-        console.error("[reviews.create] mutation error:", {
-          error: error instanceof Error ? error.message : String(error),
-          tripName: input.tripName,
-        });
+        logError("reviews.create", "mutation error", error, { tripName: input.tripName });
         throw error;
       }
     }),
@@ -111,10 +102,7 @@ export const reviewsRouter = router({
       console.log(`[reviews.myReviews] retrieved ${reviews.length} reviews for user: ${ctx.user.id}`);
       return reviews;
     } catch (error) {
-      console.error("[reviews.myReviews] query error:", {
-        error: error instanceof Error ? error.message : String(error),
-        userId: ctx.user.id,
-      });
+      logError("reviews.myReviews", "query error", error, { userId: ctx.user.id });
       throw error;
     }
   }),
@@ -128,10 +116,7 @@ export const reviewsRouter = router({
         console.log(`[reviews.markHelpful] marked review as helpful: id=${input.id}`);
         return result;
       } catch (error) {
-        console.error("[reviews.markHelpful] mutation error:", {
-          error: error instanceof Error ? error.message : String(error),
-          id: input.id,
-        });
+        logError("reviews.markHelpful", "mutation error", error, { id: input.id });
         throw error;
       }
     }),
@@ -151,9 +136,7 @@ export const reviewsRouter = router({
         console.log(`[reviews.listAll] retrieved ${reviews.length} reviews (including pending)`);
         return reviews;
       } catch (error) {
-        console.error("[reviews.listAll] query error:", {
-          error: error instanceof Error ? error.message : String(error),
-        });
+        logError("reviews.listAll", "query error", error);
         throw error;
       }
     }),
@@ -172,10 +155,7 @@ export const reviewsRouter = router({
         console.log(`[reviews.moderate] updated review approval: id=${input.id}, status=${input.isApproved}`);
         return result;
       } catch (error) {
-        console.error("[reviews.moderate] mutation error:", {
-          error: error instanceof Error ? error.message : String(error),
-          id: input.id,
-        });
+        logError("reviews.moderate", "mutation error", error, { id: input.id });
         throw error;
       }
     }),
@@ -194,10 +174,7 @@ export const reviewsRouter = router({
         console.log(`[reviews.reply] added admin reply to review: id=${input.id}`);
         return result;
       } catch (error) {
-        console.error("[reviews.reply] mutation error:", {
-          error: error instanceof Error ? error.message : String(error),
-          id: input.id,
-        });
+        logError("reviews.reply", "mutation error", error, { id: input.id });
         throw error;
       }
     }),

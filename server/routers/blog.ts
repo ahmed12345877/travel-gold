@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
+import { publicProcedure, router, adminProcedure } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import {
   getPublishedBlogPosts,
@@ -10,17 +10,7 @@ import {
   incrementBlogViewCount,
   getBlogPostsByCategory,
 } from "../db";
-
-// Admin-only middleware
-const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (ctx.user.role !== "admin") {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "Admin access required",
-    });
-  }
-  return next({ ctx });
-});
+import { logError } from "../utils/errorLogger";
 
 export const blogRouter = router({
   // Public: List published blog posts
@@ -48,11 +38,7 @@ export const blogRouter = router({
           publishedAt: post.publishedAt ? new Date(post.publishedAt).toISOString() : null,
         }));
       } catch (err) {
-        console.error("[blog.list] database error:", {
-          error: err instanceof Error ? err.message : String(err),
-          stack: err instanceof Error ? err.stack : undefined,
-          input,
-        });
+        logError("blog.list", "database error", err, { input });
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to fetch blog posts",
@@ -82,10 +68,7 @@ export const blogRouter = router({
         };
       } catch (err) {
         if (err instanceof TRPCError) throw err;
-        console.error("[blog.getBySlug] database error:", {
-          error: err instanceof Error ? err.message : String(err),
-          slug: input.slug,
-        });
+        logError("blog.getBySlug", "database error", err, { slug: input.slug });
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to fetch blog post",
@@ -133,10 +116,7 @@ export const blogRouter = router({
           publishedAt: input.status === "published" ? new Date().toISOString() : undefined,
         });
       } catch (err) {
-        console.error("[blog.create] mutation error:", {
-          error: err instanceof Error ? err.message : String(err),
-          input: { ...input, content: "[omitted]" },
-        });
+        logError("blog.create", "mutation error", err, { input: { ...input, content: "[omitted]" } });
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to create blog post",
@@ -182,10 +162,7 @@ export const blogRouter = router({
         };
       } catch (err) {
         if (err instanceof TRPCError) throw err;
-        console.error("[blog.update] mutation error:", {
-          error: err instanceof Error ? err.message : String(err),
-          postId: input.id,
-        });
+        logError("blog.update", "mutation error", err, { postId: input.id });
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to update blog post",
