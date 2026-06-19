@@ -102,7 +102,7 @@ function AboutHero() {
           }} />
         ) : (
           <div className="absolute inset-0" style={{
-            backgroundColor: `rgba(0, 0, 0, ${(subHero?.overlayOpacity || 60) / 100})`
+            backgroundColor: `rgba(0, 0, 0, ${(subHero?.overlayOpacity ?? 60) / 100})`
           }} />
         )}
       </div>
