@@ -348,13 +348,13 @@ export default function Login() {
 
                 <p className="text-center text-gray-700 text-[10px] leading-relaxed">
                   By continuing, you agree to VANIR GROUP&apos;s{" "}
-                  <span className="text-gray-500 hover:text-[var(--theme-primary)] cursor-pointer transition-colors">
+                  <a href="/terms-of-service" className="text-gray-500 hover:text-[var(--theme-primary)] transition-colors underline-offset-2 hover:underline">
                     Terms of Service
-                  </span>{" "}
+                  </a>{" "}
                   and{" "}
-                  <span className="text-gray-500 hover:text-[var(--theme-primary)] cursor-pointer transition-colors">
+                  <a href="/privacy-policy" className="text-gray-500 hover:text-[var(--theme-primary)] transition-colors underline-offset-2 hover:underline">
                     Privacy Policy
-                  </span>
+                  </a>
                 </p>
               </div>
             </div>
