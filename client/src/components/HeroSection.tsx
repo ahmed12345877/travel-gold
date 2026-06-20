@@ -109,9 +109,7 @@ export default function HeroSection() {
       ref={sectionRef}
       className="relative min-h-screen flex items-center overflow-hidden"
       style={{
-        background: hasBgMedia
-          ? "black"
-          : `linear-gradient(to bottom, var(--theme-background), var(--theme-surface))`,
+        background: `linear-gradient(to bottom, var(--theme-background), var(--theme-surface))`,
       }}
     >
       {/* ── Background media (image / video from admin) ── */}
@@ -162,7 +160,7 @@ export default function HeroSection() {
       </div>
 
       {/* ── Main Content Container ── */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 sm:pt-28 md:pt-32 lg:pt-32">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* ── Left Column: Text Content ── */}
           <motion.div
