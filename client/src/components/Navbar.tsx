@@ -135,14 +135,16 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Main navbar - transparent with smooth gradient transition */}
+      {/* Main navbar - transparent overlay on home, sticky on other pages */}
       <nav
-        className={`sticky top-0 z-50 transition-all duration-500 backdrop-blur-md ${
-          scrolled
-            ? "bg-slate-900/95 shadow-lg shadow-black/20 border-b border-white/10"
-            : isHome
-            ? "bg-gradient-to-b from-amber-950/30 via-slate-900/20 to-transparent border-b border-transparent"
-            : "bg-transparent border-b border-transparent"
+        className={`w-full z-50 transition-all duration-500 backdrop-blur-md ${
+          isHome
+            ? scrolled
+              ? "fixed top-0 left-0 right-0 bg-slate-900/95 shadow-lg shadow-black/20 border-b border-white/10"
+              : "absolute top-0 left-0 right-0 bg-gradient-to-b from-amber-950/30 via-slate-900/20 to-transparent border-b border-transparent"
+            : scrolled
+            ? "sticky top-0 bg-slate-900/95 shadow-lg shadow-black/20 border-b border-white/10"
+            : "sticky top-0 bg-transparent border-b border-transparent"
         }`}
       >
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 flex items-center justify-between py-3 sm:py-4 md:py-5">
@@ -159,7 +161,7 @@ export default function Navbar() {
           </a>
 
           {/* Desktop nav links - hidden on md and below */}
-          <div className="hidden lg:flex items-center gap-0.5 xl:gap-1">
+          <div className="hidden lg:flex flex-1 justify-center items-center gap-0.5 xl:gap-1">
             {mainNavItems.map((item) =>
               isGroup(item) ? (
                 <div

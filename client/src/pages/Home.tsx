@@ -32,7 +32,7 @@ export default function Home() {
   const { user, isAuthenticated } = useAuth();
 
   return (
-    <div className="min-h-screen bg-[var(--theme-surface)]">
+    <div className="relative min-h-screen bg-[var(--theme-surface)]">
       <PageMeta
         title="VANIR GROUP - We Plan For Happiness | Luxury Egypt Travel"
         description="VANIR GROUP offers luxury travel packages to Egypt. Explore pyramids, Nile cruises, Red Sea resorts, and curated cultural experiences with our expert team."
