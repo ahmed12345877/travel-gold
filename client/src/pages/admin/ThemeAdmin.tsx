@@ -9,8 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Palette, Type, Eye, RotateCcw, Save, Download, Upload, Check, Sparkles, Loader2, Moon, Sun, Monitor } from "lucide-react";
-import { useThemeColors, FONT_PAIRINGS, DEFAULT_COLORS as PROVIDER_DEFAULTS, DEFAULT_FONTS as PROVIDER_FONT_DEFAULTS } from "@/contexts/ThemeColorsProvider";
+import { Palette, Type, Eye, RotateCcw, Save, Download, Upload, Check, Sparkles, Loader2, Moon, Sun, Monitor, History, Undo2 } from "lucide-react";
+import { useThemeColors, FONT_PAIRINGS, DEFAULT_COLORS as PROVIDER_DEFAULTS, DEFAULT_FONTS as PROVIDER_FONT_DEFAULTS, DEFAULT_DESIGN_TOKENS } from "@/contexts/ThemeColorsProvider";
 
 /* ─── Types ─── */
 interface ThemeColors {
@@ -44,6 +44,12 @@ interface ThemePreset {
   description: string;
   colors: ThemeColors;
   lightColors?: ThemeColors;
+}
+
+interface DesignTokens {
+  palettePreset: "light" | "dark" | "luxury-gold" | "minimalist-tailwind";
+  radiusPreset: "sharp" | "soft" | "glass";
+  shadowPreset: "none" | "soft" | "glass";
 }
 
 /* ─── Defaults ─── */
@@ -157,6 +163,13 @@ const PRESETS: ThemePreset[] = [
   },
 ];
 
+const PALETTE_PRESET_COLORS: Record<DesignTokens["palettePreset"], ThemeColors> = {
+  light: { ...DEFAULT_COLORS, background: "#FAFAFA", surface: "#FFFFFF", text: "#171717", textMuted: "#6B7280", border: "#E5E7EB", secondary: "#F3F4F6", primary: "#B8860B", primaryLight: "#F5E6B8", accent: "#D4A853" },
+  dark: { ...DEFAULT_COLORS, background: "#050505", surface: "#121212", text: "#FFFFFF", textMuted: "#9CA3AF", border: "#2A2A2A", secondary: "#1A1A1A", primary: "#8B7355", primaryLight: "#D6C6A6", accent: "#A68A64" },
+  "luxury-gold": { ...DEFAULT_COLORS, primary: "#B8860B", primaryLight: "#F5E6B8", accent: "#C9A84C", secondary: "#1A1A1A", background: "#0D0D0D", surface: "#141414", text: "#FFFFFF", textMuted: "#9CA3AF", border: "#2A2A2A" },
+  "minimalist-tailwind": { ...DEFAULT_COLORS, primary: "#111827", primaryLight: "#374151", accent: "#6B7280", secondary: "#F9FAFB", background: "#F3F4F6", surface: "#FFFFFF", text: "#111827", textMuted: "#6B7280", border: "#D1D5DB" },
+};
+
 /* ─── Color Swatch ─── */
 function ColorSwatch({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
@@ -182,12 +195,15 @@ export default function ThemeAdmin() {
   const [saved, setSaved] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   const [fontPairing, setFontPairing] = useState("luxury");
+  const [designTokens, setDesignTokens] = useState<DesignTokens>(DEFAULT_DESIGN_TOKENS);
 
   const { refetch: refetchTheme } = useThemeColors();
   const previewRef = useRef<HTMLDivElement>(null);
 
   const themeQuery = trpc.siteSettings.getByCategory.useQuery({ category: "theme" });
   const saveMutation = trpc.siteSettings.setMany.useMutation();
+  const versionsQuery = trpc.siteSettings.listDesignVersions.useQuery({ limit: 12 });
+  const rollbackMut = trpc.siteSettings.rollbackDesignVersion.useMutation();
 
   useEffect(() => {
     if (themeQuery.data) {
@@ -197,6 +213,7 @@ export default function ThemeAdmin() {
         if (themeQuery.data.preset) setActivePreset(themeQuery.data.preset);
         if (themeQuery.data.darkMode) setDarkMode(themeQuery.data.darkMode === "true");
         if (themeQuery.data.fontPairing) setFontPairing(themeQuery.data.fontPairing);
+        if (themeQuery.data.design_tokens) setDesignTokens(JSON.parse(themeQuery.data.design_tokens));
       } catch { /* ignore */ }
     }
   }, [themeQuery.data]);
@@ -266,6 +283,7 @@ export default function ThemeAdmin() {
           preset: activePreset,
           darkMode: String(darkMode),
           fontPairing: fontPairing,
+          design_tokens: JSON.stringify(designTokens),
         },
       });
 
@@ -296,6 +314,8 @@ export default function ThemeAdmin() {
       root.style.setProperty("--theme-font-body-weight", fonts.bodyWeight);
       root.style.setProperty("--theme-line-height", String(fonts.lineHeight));
       root.style.setProperty("--theme-letter-spacing", `${fonts.letterSpacing}px`);
+      root.style.setProperty("--theme-radius", designTokens.radiusPreset === "sharp" ? "0px" : designTokens.radiusPreset === "glass" ? "16px" : "10px");
+      root.style.setProperty("--theme-shadow", designTokens.shadowPreset === "none" ? "none" : designTokens.shadowPreset === "glass" ? "0 8px 24px rgba(0, 0, 0, 0.28)" : "0 6px 18px rgba(0, 0, 0, 0.2)");
 
       if (darkMode) root.classList.add("dark");
       else root.classList.remove("dark");
@@ -395,6 +415,9 @@ export default function ThemeAdmin() {
           </TabsTrigger>
           <TabsTrigger value="mode" className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:text-[var(--theme-primary)]">
             <Moon className="w-4 h-4 mr-1" /> Mode & Fonts
+          </TabsTrigger>
+          <TabsTrigger value="versions" className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:text-[var(--theme-primary)]">
+            <History className="w-4 h-4 mr-1" /> Versions
           </TabsTrigger>
         </TabsList>
 
@@ -648,7 +671,96 @@ export default function ThemeAdmin() {
                 ))}
               </CardContent>
             </Card>
+
+            <Card className="bg-black/40 border-white/10">
+              <CardHeader>
+                <CardTitle className="text-white text-lg flex items-center gap-2">
+                  <Monitor className="w-5 h-5" />
+                  Global Radius & Shadows
+                </CardTitle>
+                <CardDescription className="text-white/50">Sharp corners, soft rounded, or glassmorphism presentation</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label className="text-white/70 text-sm">Palette Preset</Label>
+                  <Select
+                    value={designTokens.palettePreset}
+                    onValueChange={(v) => {
+                      const nextPreset = v as DesignTokens["palettePreset"];
+                      setDesignTokens((prev) => ({ ...prev, palettePreset: nextPreset }));
+                      setColors(PALETTE_PRESET_COLORS[nextPreset]);
+                      setHasChanges(true);
+                    }}
+                  >
+                    <SelectTrigger className="bg-black/40 border-white/10 text-white mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="light">Light Mode</SelectItem>
+                      <SelectItem value="dark">Dark Mode</SelectItem>
+                      <SelectItem value="luxury-gold">Luxury / Gold</SelectItem>
+                      <SelectItem value="minimalist-tailwind">Minimalist Tailwind</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-white/70 text-sm">Border Radius Style</Label>
+                  <Select value={designTokens.radiusPreset} onValueChange={(v) => { setDesignTokens((prev) => ({ ...prev, radiusPreset: v as DesignTokens["radiusPreset"] })); setHasChanges(true); }}>
+                    <SelectTrigger className="bg-black/40 border-white/10 text-white mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sharp">Sharp Corners</SelectItem>
+                      <SelectItem value="soft">Soft Rounded</SelectItem>
+                      <SelectItem value="glass">Glassmorphism Rounded</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-white/70 text-sm">Shadow Style</Label>
+                  <Select value={designTokens.shadowPreset} onValueChange={(v) => { setDesignTokens((prev) => ({ ...prev, shadowPreset: v as DesignTokens["shadowPreset"] })); setHasChanges(true); }}>
+                    <SelectTrigger className="bg-black/40 border-white/10 text-white mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Shadow</SelectItem>
+                      <SelectItem value="soft">Soft Shadow</SelectItem>
+                      <SelectItem value="glass">Glass Shadow</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="versions" className="space-y-4">
+          <Card className="bg-black/40 border-white/10">
+            <CardHeader>
+              <CardTitle className="text-white text-lg">Design Version History</CardTitle>
+              <CardDescription className="text-white/50">Rollback any saved visual snapshot instantly</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {versionsQuery.data?.length ? versionsQuery.data.map((version: any) => (
+                <div key={version.id} className="border border-white/10 rounded-lg p-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm text-white">{version.reason || "Design change"}</p>
+                    <p className="text-xs text-white/50">{version.createdAt ? new Date(version.createdAt).toLocaleString() : "Unknown date"}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={rollbackMut.isPending}
+                    onClick={async () => {
+                      await rollbackMut.mutateAsync({ versionId: version.id });
+                      await Promise.all([themeQuery.refetch(), versionsQuery.refetch()]);
+                      refetchTheme();
+                      toast.success("Design rollback applied");
+                    }}
+                    className="border-white/20 text-white hover:bg-white/10"
+                  >
+                    <Undo2 className="w-4 h-4 mr-1" /> Rollback
+                  </Button>
+                </div>
+              )) : (
+                <p className="text-sm text-white/60">No versions found yet.</p>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ─── Live Preview Tab ─── */}

@@ -46,6 +46,9 @@ interface GalleryItemDisplay {
   aspect: "landscape" | "portrait" | "square";
 }
 
+type GalleryLayout = "dynamic-grid" | "masonry" | "swiper-carousel" | "grid-lightbox" | "isotope-filter";
+type GalleryAspect = "square" | "landscape" | "portrait" | "original";
+
 /* ─── Static Fallback Data ─── */
 const staticGalleryItems: GalleryItemDisplay[] = [
   {
@@ -565,12 +568,29 @@ export default function Gallery() {
   const [selectedVideo, setSelectedVideo] = useState<VideoItemDisplay | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [layoutMode, setLayoutMode] = useState<GalleryLayout>("dynamic-grid");
+  const [forcedAspect, setForcedAspect] = useState<GalleryAspect>("original");
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Fetch gallery data from DB (with fallback to static)
   const { data: dbGalleryItems = [] } = trpc.gallery.listVisible.useQuery(undefined, {
     staleTime: 1000 * 60 * 5, // 5 minutes
   }) as any;
+  const { data: mediaDisplaySettings } = trpc.siteSettings.get.useQuery(
+    { category: "media", key: "gallery_display" },
+    { staleTime: 30000 }
+  );
+
+  useEffect(() => {
+    if (!mediaDisplaySettings) return;
+    try {
+      const parsed = JSON.parse(mediaDisplaySettings);
+      if (parsed.layout) setLayoutMode(parsed.layout);
+      if (parsed.aspectRatio) setForcedAspect(parsed.aspectRatio);
+    } catch {
+      // ignore malformed admin setting
+    }
+  }, [mediaDisplaySettings]);
 
   console.log("[Gallery] Fetched items:", dbGalleryItems);
 
@@ -612,6 +632,14 @@ export default function Gallery() {
     if (activeCategory === "All") return galleryItems;
     return galleryItems.filter((item: any) => item.category === activeCategory);
   }, [galleryItems, activeCategory]);
+
+  const getAspectClass = useCallback((item: GalleryItemDisplay) => {
+    const chosen = forcedAspect === "original" ? item.aspect : forcedAspect;
+    if (chosen === "square") return "aspect-square";
+    if (chosen === "portrait") return "aspect-[4/5]";
+    if (chosen === "landscape") return "aspect-video";
+    return "aspect-auto";
+  }, [forcedAspect]);
 
   // Handle image click
   const handleImageClick = useCallback((item: any) => {
@@ -732,6 +760,12 @@ export default function Gallery() {
               <LayoutGrid size={20} />
             </button>
           </div>
+
+          {(layoutMode === "isotope-filter" || layoutMode === "dynamic-grid") && (
+            <p className="text-center text-xs text-gray-400">
+              Layout: {layoutMode === "isotope-filter" ? "Isotope-style Category Filtering" : "Dynamic Grid"} &middot; Aspect: {forcedAspect}
+            </p>
+          )}
         </div>
       </section>
 
@@ -740,11 +774,17 @@ export default function Gallery() {
         <div className="max-w-7xl mx-auto">
           <motion.div
             layout
-            className={`grid gap-3 sm:gap-4 md:gap-6 ${
-              viewMode === "grid"
-                ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-max"
-                : "grid-cols-1"
-            }`}
+            className={
+              layoutMode === "masonry"
+                ? "columns-1 sm:columns-2 lg:columns-3 gap-3 sm:gap-4 md:gap-6 space-y-3 sm:space-y-4 md:space-y-6"
+                : layoutMode === "swiper-carousel"
+                  ? "flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2"
+                  : `grid gap-3 sm:gap-4 md:gap-6 ${
+                      viewMode === "grid"
+                        ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-max"
+                        : "grid-cols-1"
+                    }`
+            }
           >
             <AnimatePresence mode="wait">
               {filteredItems.map((item: GalleryItemDisplay) => (
@@ -757,11 +797,16 @@ export default function Gallery() {
                   transition={{ duration: 0.3 }}
                   onClick={() => handleImageClick(item)}
                   className={`relative group cursor-pointer rounded-lg overflow-hidden bg-gray-900 ${
-                    item.aspect === "portrait" ? "row-span-2" : ""
+                    layoutMode === "masonry" ? "break-inside-avoid mb-4" : ""
+                  } ${
+                    layoutMode === "swiper-carousel" ? "snap-start min-w-[300px] sm:min-w-[360px] lg:min-w-[420px]" : ""
+                  } ${
+                    forcedAspect === "original" && item.aspect === "portrait" && layoutMode !== "masonry" ? "row-span-2" : ""
                   }`}
+                  style={{ borderRadius: "var(--theme-radius)", boxShadow: "var(--theme-shadow)" }}
                 >
                   {/* Image */}
-                  <div className="relative h-64 md:h-80 overflow-hidden">
+                  <div className={`relative overflow-hidden ${getAspectClass(item)} ${forcedAspect === "original" ? "h-64 md:h-80" : ""}`}>
                     <OptimizedImage
                       src={item.src}
                       alt={item.title}

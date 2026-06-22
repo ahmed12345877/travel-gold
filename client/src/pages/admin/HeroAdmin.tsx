@@ -56,6 +56,13 @@ interface HeroData {
   buttonLink1: string;
   buttonLink2: string;
   mediaType: "image" | "video" | "gradient";
+  backgroundType?: "static-image" | "html5-video" | "dynamic-slider";
+  sliderEngine?: "framer-motion" | "swiper" | "splide";
+  sliderEffect?: "fade" | "cube" | "flip" | "coverflow" | "creative";
+  autoplayMs?: number;
+  loopSlides?: boolean;
+  textFadeInEnabled?: boolean;
+  textFadeInDuration?: number;
   mediaUrl: string;
   overlayOpacity: number;
   overlayColor: "dark" | "light";
@@ -146,6 +153,13 @@ export default function HeroAdmin() {
     buttonLink1: "/booking",
     buttonLink2: "/gallery",
     mediaType: "image",
+    backgroundType: "static-image",
+    sliderEngine: "framer-motion",
+    sliderEffect: "fade",
+    autoplayMs: 3500,
+    loopSlides: true,
+    textFadeInEnabled: true,
+    textFadeInDuration: 900,
     mediaUrl: "",
     overlayOpacity: 50,
     overlayColor: "dark",
@@ -201,13 +215,31 @@ export default function HeroAdmin() {
   const [uploadingSubMedia, setUploadingSubMedia] = useState(false);
 
   /* ─── tRPC ─── */
-  const { data: savedData, isLoading: isLoadingData } = trpc.siteSettings.get.useQuery({ category: "hero", key: "hero_data" }, { staleTime: 30000 });
+  const { data: savedData, isLoading: isLoadingData } = trpc.siteSettings.get.useQuery({ category: "hero", key: "hero_settings" }, { staleTime: 30000 });
+  const { data: savedDataLegacy } = trpc.siteSettings.get.useQuery({ category: "hero", key: "hero_data" }, { staleTime: 30000 });
   const { data: savedImages, isLoading: isLoadingImages } = trpc.siteSettings.get.useQuery({ category: "hero", key: "hero_images" }, { staleTime: 30000 });
   const { data: savedSubHeroes, isLoading: isLoadingSub } = trpc.siteSettings.get.useQuery({ category: "hero", key: "sub_page_heroes" }, { staleTime: 30000 });
   const setMut = trpc.siteSettings.set.useMutation();
   const uploadImageMut = trpc.gallery.uploadImage.useMutation();
 
-  useEffect(() => { if (savedData) { try { const p = JSON.parse(savedData); setHeroData(prev => ({ ...prev, ...p })); } catch {} } }, [savedData]);
+  useEffect(() => {
+    const payload = savedData || savedDataLegacy;
+    if (!payload) return;
+    try {
+      const p = JSON.parse(payload);
+      setHeroData(prev => ({
+        ...prev,
+        ...p,
+        backgroundType: p.backgroundType || (p.mediaType === "video" ? "html5-video" : "static-image"),
+        sliderEngine: p.sliderEngine || "framer-motion",
+        sliderEffect: p.sliderEffect || "fade",
+        autoplayMs: typeof p.autoplayMs === "number" ? p.autoplayMs : 3500,
+        loopSlides: typeof p.loopSlides === "boolean" ? p.loopSlides : true,
+        textFadeInEnabled: typeof p.textFadeInEnabled === "boolean" ? p.textFadeInEnabled : true,
+        textFadeInDuration: typeof p.textFadeInDuration === "number" ? p.textFadeInDuration : 900,
+      }));
+    } catch {}
+  }, [savedData, savedDataLegacy]);
   useEffect(() => { if (savedImages) { try { const p = JSON.parse(savedImages); if (Array.isArray(p) && p.length > 0) setHeroImages(p); } catch {} } }, [savedImages]);
   useEffect(() => { if (savedSubHeroes) { try { const p = JSON.parse(savedSubHeroes); if (Array.isArray(p)) setSubHeroes(p); } catch {} } }, [savedSubHeroes]);
 
@@ -215,7 +247,7 @@ export default function HeroAdmin() {
   const saveToDb = useCallback(async () => {
     setSaving(true);
     try {
-      await setMut.mutateAsync({ category: "hero", key: "hero_data", value: JSON.stringify(heroData) });
+      await setMut.mutateAsync({ category: "hero", key: "hero_settings", value: JSON.stringify(heroData) });
       await setMut.mutateAsync({ category: "hero", key: "hero_images", value: JSON.stringify(heroImages) });
       setHasChanges(false);
       toast.success("تم الحفظ في قاعدة البيانات (Firebase Firestore)");
@@ -277,7 +309,12 @@ export default function HeroAdmin() {
     try {
       const url = await uploadMedia(file);
       const mType = file.type.startsWith("video/") ? "video" : "image";
-      markData({ ...heroData, mediaUrl: url, mediaType: mType as "image" | "video" });
+      markData({
+        ...heroData,
+        mediaUrl: url,
+        mediaType: mType as "image" | "video",
+        backgroundType: mType === "video" ? "html5-video" : "static-image",
+      });
       toast.success("تم رفع الوسائط");
     } catch (err: unknown) {
       toast.error(`فشل الرفع: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -600,20 +637,80 @@ export default function HeroAdmin() {
                   <p className="text-sm text-white/50">يدعم: JPEG, PNG, WebP, GIF, MP4, WebM (حد أقصى 10MB)</p>
 
                   <div>
-                    <Label className="text-white/70 text-sm mb-2 block">نوع الخلفية</Label>
-                    <Select value={heroData.mediaType} onValueChange={(v) => markData({ ...heroData, mediaType: v as HeroData["mediaType"] })}>
+                    <Label className="text-white/70 text-sm mb-2 block">نوع الخلفية المتقدم</Label>
+                    <Select
+                      value={heroData.backgroundType || "static-image"}
+                      onValueChange={(v) =>
+                        markData({
+                          ...heroData,
+                          backgroundType: v as HeroData["backgroundType"],
+                          mediaType: v === "html5-video" ? "video" : v === "dynamic-slider" ? "image" : "image",
+                        })
+                      }
+                    >
                       <SelectTrigger className="bg-black/40 border-white/10 text-white"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="image">صورة</SelectItem>
-                        <SelectItem value="video">فيديو</SelectItem>
-                        <SelectItem value="gradient">تدرج لوني</SelectItem>
+                        <SelectItem value="static-image">صورة ثابتة</SelectItem>
+                        <SelectItem value="html5-video">فيديو HTML5</SelectItem>
+                        <SelectItem value="dynamic-slider">سلايدر ديناميكي</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  {heroData.mediaType !== "gradient" && (
+                  {heroData.backgroundType === "dynamic-slider" && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border border-white/10 rounded-lg p-4">
+                      <div>
+                        <Label className="text-white/70 text-sm mb-2 block">محرك العرض</Label>
+                        <Select value={heroData.sliderEngine || "framer-motion"} onValueChange={(v) => markData({ ...heroData, sliderEngine: v as HeroData["sliderEngine"] })}>
+                          <SelectTrigger className="bg-black/40 border-white/10 text-white"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="framer-motion">Framer Motion</SelectItem>
+                            <SelectItem value="swiper">Swiper.js Pattern</SelectItem>
+                            <SelectItem value="splide">Splide.js Pattern</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-white/70 text-sm mb-2 block">تأثير السلايدر</Label>
+                        <Select value={heroData.sliderEffect || "fade"} onValueChange={(v) => markData({ ...heroData, sliderEffect: v as HeroData["sliderEffect"] })}>
+                          <SelectTrigger className="bg-black/40 border-white/10 text-white"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="fade">Fade</SelectItem>
+                            <SelectItem value="cube">3D Cube</SelectItem>
+                            <SelectItem value="flip">3D Flip</SelectItem>
+                            <SelectItem value="coverflow">Coverflow</SelectItem>
+                            <SelectItem value="creative">Creative</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label className="text-white/70 text-sm">Autoplay (ms): {heroData.autoplayMs || 3500}</Label>
+                        <Slider value={[heroData.autoplayMs || 3500]} onValueChange={([v]) => markData({ ...heroData, autoplayMs: v })} min={1000} max={15000} step={250} className="mt-2" />
+                      </div>
+                      <label className="flex items-center gap-2 text-sm text-white/80">
+                        <input type="checkbox" checked={heroData.loopSlides ?? true} onChange={(e) => markData({ ...heroData, loopSlides: e.target.checked })} />
+                        تشغيل دائري (Loop)
+                      </label>
+                    </div>
+                  )}
+
+                  <div className="border border-white/10 rounded-lg p-4 space-y-3">
+                    <Label className="text-white/80 text-sm">Text Fade-In Animation</Label>
+                    <label className="flex items-center gap-2 text-sm text-white/80">
+                      <input type="checkbox" checked={heroData.textFadeInEnabled ?? true} onChange={(e) => markData({ ...heroData, textFadeInEnabled: e.target.checked })} />
+                      تفعيل Fade-In للنص
+                    </label>
+                    {(heroData.textFadeInEnabled ?? true) && (
+                      <div>
+                        <Label className="text-white/70 text-sm">Fade Duration: {heroData.textFadeInDuration || 900}ms</Label>
+                        <Slider value={[heroData.textFadeInDuration || 900]} onValueChange={([v]) => markData({ ...heroData, textFadeInDuration: v })} min={150} max={5000} step={50} className="mt-2" />
+                      </div>
+                    )}
+                  </div>
+
+                  {heroData.backgroundType !== "dynamic-slider" && (
                     <div>
-                      <input type="file" accept={heroData.mediaType === "video" ? ACCEPTED_VIDEO_TYPES : ACCEPTED_MEDIA_TYPES} onChange={handleBgMediaUpload} className="hidden" id="hero-bg-media" disabled={uploadingBgMedia} />
+                      <input type="file" accept={heroData.backgroundType === "html5-video" ? ACCEPTED_VIDEO_TYPES : ACCEPTED_MEDIA_TYPES} onChange={handleBgMediaUpload} className="hidden" id="hero-bg-media" disabled={uploadingBgMedia} />
                       <label htmlFor="hero-bg-media" className={`flex items-center gap-2 px-4 py-3 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] border border-[var(--theme-primary)]/20 rounded-lg cursor-pointer hover:bg-[var(--theme-primary)]/20 transition-colors ${uploadingBgMedia ? "opacity-60 cursor-not-allowed" : ""}`}>
                         {uploadingBgMedia ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
                         {uploadingBgMedia ? "جاري الرفع إلى Firebase Storage..." : "رفع ملف وسائط"}
@@ -647,7 +744,7 @@ export default function HeroAdmin() {
                     </Select>
                   </div>
 
-                  {heroData.mediaType !== "gradient" && (
+                  {heroData.backgroundType !== "dynamic-slider" && (
                     <div className="space-y-3 border border-white/10 rounded-lg p-4">
                       <h4 className="text-sm font-semibold text-white flex items-center gap-2">
                         <Maximize size={16} /> قص الوسائط (Crop)
@@ -782,7 +879,9 @@ export default function HeroAdmin() {
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2"><Eye className="text-[var(--theme-primary)]" size={20} /> معاينة حية</h3>
                 <div className="aspect-[16/9] bg-black rounded-lg overflow-hidden border-2 border-[var(--theme-primary)] relative">
                   {/* Background media */}
-                  {heroData.mediaType === "video" && heroData.mediaUrl ? (
+                  {heroData.backgroundType === "dynamic-slider" ? (
+                    <img src={heroImages.find((img) => img.url)?.url || heroData.mediaUrl} className="absolute inset-0 w-full h-full object-cover" alt="" />
+                  ) : heroData.mediaType === "video" && heroData.mediaUrl ? (
                     <video src={heroData.mediaUrl} className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: `${heroData.mediaCropX ?? 50}% ${heroData.mediaCropY ?? 50}%` }} muted autoPlay loop playsInline />
                   ) : heroData.mediaType === "image" && heroData.mediaUrl ? (
                     <img src={heroData.mediaUrl} className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: `${heroData.mediaCropX ?? 50}% ${heroData.mediaCropY ?? 50}%` }} alt="" />
@@ -796,6 +895,7 @@ export default function HeroAdmin() {
                     <h1 
                       className="leading-tight tracking-tighter"
                       style={{
+                        transition: heroData.textFadeInEnabled ? `opacity ${heroData.textFadeInDuration || 900}ms ease` : undefined,
                         fontSize: `${heroData.titleStyle?.fontSize || 32}px`,
                         fontWeight: heroData.titleStyle?.fontWeight || "bold",
                         color: heroData.titleStyle?.color || "#ffffff",
