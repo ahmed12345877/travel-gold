@@ -97,6 +97,7 @@ function Router() {
       <Route path={"/offers"} component={Offers} />
       <Route path={"/case-studies"} component={CaseStudies} />
       <Route path={"/destinations"} component={Destinations} />
+      <Route path={"/destinations/:slug"} component={Destinations} />
       <Route path={"/programs"} component={Programs} />
       <Route path={"/services"} component={Services} />
       <Route path={"/vanir"} component={Vanir} />

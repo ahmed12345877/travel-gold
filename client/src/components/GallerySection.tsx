@@ -1,20 +1,55 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useInView } from "@/hooks/useInView";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import type { GalleryImage, GalleryCategory } from "@/types/gallery";
 import { getGalleryErrorMessage } from "@/lib/errorUtils";
+import { applyLuxuryImageFallback } from "@/lib/imageFallback";
+
+const UNSPLASH_GALLERY_FALLBACKS: GalleryImage[] = [
+  {
+    id: "fallback-luxury-resort-interior",
+    imageUrl: "https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1800&q=80",
+    category: "luxury",
+    title: "Luxury Resort Interior",
+    description: "Curated fallback visual",
+    featured: "yes",
+  },
+  {
+    id: "fallback-private-yacht-deck",
+    imageUrl: "https://images.unsplash.com/photo-1569263979104-865ab7cd8d13?auto=format&fit=crop&w=1800&q=80",
+    category: "adventure",
+    title: "Private Yacht Deck",
+    description: "Curated fallback visual",
+    featured: "no",
+  },
+  {
+    id: "fallback-spa-retreat",
+    imageUrl: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=1800&q=80",
+    category: "luxury",
+    title: "Spa Retreat",
+    description: "Curated fallback visual",
+    featured: "no",
+  },
+  {
+    id: "fallback-fine-dining-ambiance",
+    imageUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1800&q=80",
+    category: "cuisine",
+    title: "Fine Dining Ambiance",
+    description: "Curated fallback visual",
+    featured: "yes",
+  },
+];
 
 export default function GallerySection() {
   const { ref, inView } = useInView({ threshold: 0.1 });
   const [selectedCategory, setSelectedCategory] = useState<GalleryCategory | "all">("all");
-  const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set());
   const [layoutMode, setLayoutMode] = useState<"dynamic-grid" | "masonry" | "swiper-carousel" | "grid-lightbox" | "isotope-filter">("dynamic-grid");
   const [forcedAspect, setForcedAspect] = useState<"square" | "landscape" | "portrait" | "original">("original");
 
   // Fetch gallery items from server (uses permanent Firebase URLs)
-  const { data: images = [], isLoading, error } = trpc.gallery.listVisible.useQuery<GalleryImage[]>(
+  const { data: images = [], isLoading, error } = trpc.gallery.listVisible.useQuery(
     undefined,
     { 
       staleTime: 10 * 60 * 1000,
@@ -61,14 +96,26 @@ export default function GallerySection() {
     }
   }, [error]);
 
+  const normalizedImages = useMemo(() => {
+    return (images as any[])
+      .map((img, index) => ({
+        ...img,
+        id: String(img.id ?? img._docId ?? img.imageUrl ?? img.title ?? `gallery-item-${index}`),
+        imageUrl: img.imageUrl ?? img.url ?? "",
+      }))
+      .filter((img) => Boolean(img.imageUrl));
+  }, [images]);
+
+  const effectiveImages = normalizedImages.length > 0 ? normalizedImages : UNSPLASH_GALLERY_FALLBACKS;
+
   // Filter images by category
   const filteredImages = selectedCategory === "all"
-    ? images
-    : images.filter((img) => img.category === selectedCategory);
+    ? effectiveImages
+    : effectiveImages.filter((img) => img.category === selectedCategory);
 
   // Get unique categories
   const categories: (GalleryCategory | "all")[] = ["all", ...Array.from(
-    new Set(images.map((img) => img.category))
+    new Set(effectiveImages.map((img) => img.category))
   )];
 
   const categories_display: Record<string, string> = {
@@ -140,25 +187,25 @@ export default function GallerySection() {
           </div>
         )}
 
-        {/* Error State */}
-        {error && !isLoading && (
-          <div className="text-center py-12">
-            <p className="text-red-400">Error Loading Gallery</p>
-            <p className="text-white/40 text-sm mt-2">
-              {getGalleryErrorMessage(error)}
+        {/* Error/Recovery State */}
+        {error && (
+          <div className="text-center py-6 px-4 mb-6 rounded-xl border border-amber-400/30 bg-amber-500/10">
+            <p className="text-amber-200">Gallery feed is unavailable right now.</p>
+            <p className="text-white/60 text-sm mt-2">
+              {getGalleryErrorMessage(error)} — showing curated luxury visuals instead.
             </p>
           </div>
         )}
 
         {/* Empty State */}
-        {!isLoading && !error && filteredImages.length === 0 && (
+        {!isLoading && filteredImages.length === 0 && (
           <div className="text-center py-12">
             <p className="text-white/60">No photos available in this category</p>
           </div>
         )}
 
         {/* Gallery Grid */}
-        {!isLoading && !error && filteredImages.length > 0 && (
+        {!isLoading && filteredImages.length > 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={inView ? { opacity: 1 } : {}}
@@ -172,7 +219,6 @@ export default function GallerySection() {
             }
           >
             {filteredImages.map((img, index) => {
-              const isBroken = brokenImages.has(img.id);
               const aspectClass = forcedAspect === "square"
                 ? "aspect-square"
                 : forcedAspect === "landscape"
@@ -193,17 +239,16 @@ export default function GallerySection() {
                   {/* Image */}
                   <div className={`relative ${aspectClass} bg-black overflow-hidden`}>
                     <img
-                      src={isBroken ? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23333' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dy='.3em' fill='%23999' font-size='12'%3EImage Error%3C/text%3E%3C/svg%3E" : img.imageUrl}
+                      src={img.imageUrl}
                       alt={img.title || img.titleAr || img.description || img.descriptionAr || "Gallery photo from Vanir Travel"}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                        if (isBroken) return; // Prevent error loops
                         console.error("[GallerySection] Image failed to load:", {
                           url: img.imageUrl,
                           title: img.title,
                           id: img.id,
                         });
-                        setBrokenImages(prev => new Set([...prev, img.id]));
+                        applyLuxuryImageFallback(e.currentTarget);
                       }}
                       loading="lazy"
                     />

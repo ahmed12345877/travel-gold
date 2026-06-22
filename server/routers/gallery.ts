@@ -12,12 +12,21 @@ import {
 
 const ITEMS_COL = "gallery_items";
 const VIDEOS_COL = "gallery_videos";
+const LEGACY_ITEMS_COLS = ["Gallery", "gallery", "media_library", "mediaLibrary"];
 
 export const galleryRouter = router({
   // ─── Public Endpoints ───
 
   listVisible: publicProcedure.query(async () => {
-    return listVisibleFromCollection(ITEMS_COL, "listVisible");
+    const primary = await listVisibleFromCollection(ITEMS_COL, "listVisible");
+    if (primary.length > 0) return primary;
+
+    for (const collection of LEGACY_ITEMS_COLS) {
+      const legacyItems = await listVisibleFromCollection(collection, `listVisible(${collection})`);
+      if (legacyItems.length > 0) return legacyItems;
+    }
+
+    return primary;
   }),
 
   listVisibleVideos: publicProcedure.query(async () => {
