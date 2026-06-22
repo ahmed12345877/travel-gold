@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, fireEvent } from "@testing-library/react";
 import OptimizedImage, { ImageGrid, ImageSkeleton } from "./OptimizedImage";
 
 // Mock IntersectionObserver
@@ -76,13 +76,13 @@ describe("OptimizedImage", () => {
     expect(shimmer).toBeNull();
   });
 
-  it("shows error fallback when image fails to load", () => {
+  it("swaps to luxury placeholder when image fails to load", () => {
     const { container } = render(
       <OptimizedImage src="https://example.com/broken.jpg" alt="Broken test image" />
     );
     const img = container.querySelector("img")!;
     fireEvent.error(img);
-    expect(screen.getByText("Image unavailable")).toBeDefined();
+    expect(img.getAttribute("src")).toContain("images.unsplash.com");
   });
 
   it("calls onImageLoad callback when image loads", () => {
@@ -101,6 +101,7 @@ describe("OptimizedImage", () => {
       <OptimizedImage src="https://example.com/broken.jpg" alt="Error callback test image" onImageError={onError} />
     );
     const img = container.querySelector("img")!;
+    fireEvent.error(img);
     fireEvent.error(img);
     expect(onError).toHaveBeenCalledOnce();
   });

@@ -10,6 +10,7 @@ import { useRef, useState, useEffect } from "react";
 import { ASSETS } from "@/config/assets";
 import { useThemeColors } from "@/contexts/ThemeColorsProvider";
 import { trpc } from "@/lib/trpc";
+import { applyLuxuryImageFallback } from "@/lib/imageFallback";
 
 /* ── Color utility for opacity-safe color mixing ── */
 const colorMix = (color: string, percentage: number): string => {
@@ -18,7 +19,7 @@ const colorMix = (color: string, percentage: number): string => {
 
 /* ── Main Hero ── */
 export default function HeroSection() {
-  const sectionRef = useRef<HTMLSectionElement | null>(null);
+  const sectionRef = useRef<HTMLElement | null>(null);
   const { colors } = useThemeColors();
   const [heroData, setHeroData] = useState<any>(null);
   const [heroImages, setHeroImages] = useState<any[]>([]);
@@ -27,17 +28,17 @@ export default function HeroSection() {
   // Fetch hero data from admin
   const { data: savedHeroData } = trpc.siteSettings.get.useQuery(
     { category: "hero", key: "hero_settings" },
-    { staleTime: 30000 }
+    { staleTime: 30000, refetchInterval: 4000, refetchOnWindowFocus: true }
   );
   const { data: savedLegacyHeroData } = trpc.siteSettings.get.useQuery(
     { category: "hero", key: "hero_data" },
-    { staleTime: 30000 }
+    { staleTime: 30000, refetchInterval: 4000, refetchOnWindowFocus: true }
   );
 
   // Fetch hero images from admin
   const { data: savedHeroImages } = trpc.siteSettings.get.useQuery(
     { category: "hero", key: "hero_images" },
-    { staleTime: 30000 }
+    { staleTime: 30000, refetchInterval: 4000, refetchOnWindowFocus: true }
   );
 
   useEffect(() => {
@@ -83,6 +84,7 @@ export default function HeroSection() {
 
   // Default values if not configured in admin
   const mainTitle = heroData?.title || "VANIR GROUP — LUXURY TRAVEL";
+  const subtitle = heroData?.subtitle || "— VANIR GROUP — LUXURY TRAVEL —";
   const featuredImageUrl = heroData?.featuredImageUrl;
   const hasBgMedia = heroData && (heroData.mediaType === "image" || heroData.mediaType === "video") && heroData.mediaUrl;
   const backgroundType = heroData?.backgroundType || (heroData?.mediaType === "video" ? "html5-video" : "static-image");
@@ -160,6 +162,7 @@ export default function HeroSection() {
             className="absolute inset-0 w-full h-full object-cover"
             style={{ objectPosition: `${heroData?.mediaCropX ?? 50}% ${heroData?.mediaCropY ?? 50}%` }}
             alt=""
+            onError={(e) => applyLuxuryImageFallback(e.currentTarget)}
             transition={{ duration: 0.8, ease: "easeOut" }}
             {...getSliderAnimation()}
           />
@@ -182,6 +185,7 @@ export default function HeroSection() {
           className="absolute inset-0 w-full h-full object-cover"
           style={{ objectPosition: `${heroData.mediaCropX ?? 50}% ${heroData.mediaCropY ?? 50}%` }}
           alt=""
+          onError={(e) => applyLuxuryImageFallback(e.currentTarget)}
         />
       )}
       {(hasBgMedia || backgroundType === "dynamic-slider") && (
@@ -193,6 +197,9 @@ export default function HeroSection() {
               : `rgba(0,0,0,${(heroData?.overlayOpacity ?? 50) / 100})`,
           }}
         />
+      )}
+      {(hasBgMedia || backgroundType === "dynamic-slider") && (
+        <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/45 to-black/75" />
       )}
 
       {/* ── Background accent ── */}
@@ -228,9 +235,21 @@ export default function HeroSection() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
               className="text-sm sm:text-base tracking-widest uppercase"
-              style={{ color: colorMix(colors.primary, 80) }}
+              style={{
+                color: heroData?.subtitleStyle?.color || colorMix(colors.primary, 85),
+                fontSize: `${heroData?.subtitleStyle?.fontSize || 16}px`,
+                fontWeight: heroData?.subtitleStyle?.fontWeight || "bold",
+                textAlign: (heroData?.subtitleStyle?.textAlign || "left") as any,
+                letterSpacing: `${heroData?.subtitleStyle?.letterSpacing || 4}px`,
+                lineHeight: `${heroData?.subtitleStyle?.lineHeight || 1.4}`,
+                textTransform: (heroData?.subtitleStyle?.textTransform || "uppercase") as any,
+                opacity: heroData?.subtitleStyle?.opacity || 1,
+                textShadow: heroData?.subtitleStyle?.textShadow
+                  ? `${heroData?.subtitleStyle?.shadowOffsetX || 2}px ${heroData?.subtitleStyle?.shadowOffsetY || 2}px ${heroData?.subtitleStyle?.shadowBlur || 8}px ${heroData?.subtitleStyle?.shadowColor || "rgba(0,0,0,0.5)"}`
+                  : "none",
+              }}
             >
-              — VANIR GROUP — LUXURY TRAVEL —
+              {subtitle}
             </motion.p>
 
             {/* Main Title with dynamic primary color and custom styles */}
@@ -243,7 +262,7 @@ export default function HeroSection() {
                 transition: heroData?.textFadeInEnabled ? `opacity ${heroData?.textFadeInDuration || 900}ms ease` : undefined,
                 fontSize: `${heroData?.titleStyle?.fontSize || 56}px`,
                 fontWeight: heroData?.titleStyle?.fontWeight || "bold",
-                color: heroData?.titleStyle?.color || colors.text,
+                color: heroData?.titleStyle?.color || "#ffffff",
                 textAlign: (heroData?.titleStyle?.textAlign || "left") as any,
                 textTransform: (heroData?.titleStyle?.textTransform || "none") as any,
                 letterSpacing: `${heroData?.titleStyle?.letterSpacing || 1}px`,
@@ -282,6 +301,7 @@ export default function HeroSection() {
                   width={500}
                   height={300}
                   className="w-full h-48 sm:h-56 md:h-64 object-cover transition-transform duration-500 group-hover:scale-110"
+                  onError={(e) => applyLuxuryImageFallback(e.currentTarget)}
                 />
                 <div
                   className="absolute inset-0 transition-all duration-300"
@@ -318,6 +338,7 @@ export default function HeroSection() {
                     width={400}
                     height={320}
                     className="w-full h-40 sm:h-48 md:h-56 object-cover transition-transform duration-500 group-hover:scale-110"
+                    onError={(e) => applyLuxuryImageFallback(e.currentTarget)}
                   />
 
                   {/* Overlay */}
@@ -450,6 +471,7 @@ export default function HeroSection() {
           className="h-8 sm:h-10 md:h-14 lg:h-16 w-auto object-contain"
           draggable={false}
           decoding="async"
+          onError={(e) => applyLuxuryImageFallback(e.currentTarget)}
         />
       </div>
     </section>

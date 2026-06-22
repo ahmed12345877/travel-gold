@@ -8,12 +8,14 @@ import superjson from "superjson";
 import App from "./App";
 // 1. استيراد دالة Auth الآمنة التي تضمن تهيئة Firebase أولاً
 import { getFirebaseAuth } from "@/lib/firebase-api";
+import { installGlobalImageErrorHandler } from "@/lib/imageFallback";
 import { ThemeColorsProvider } from "./contexts/ThemeColorsProvider";
 import "./index.css";
 
 // Ensure dark theme is always applied
 if (typeof document !== 'undefined') {
   document.documentElement.classList.add('dark');
+  installGlobalImageErrorHandler();
 }
 
 const queryClient = new QueryClient();
