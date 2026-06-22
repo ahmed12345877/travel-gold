@@ -3,6 +3,7 @@ import fs from "fs";
 import { type Server } from "http";
 import { nanoid } from "nanoid";
 import path from "path";
+import { getSEOMetadata, normalizeRoute } from "@shared/seo/seoMatrix";
 // Vite and its config are only needed in development. To avoid bundling
 // them into the production server build (and breaking CJS), load them
 // dynamically inside `setupVite`.
@@ -12,6 +13,35 @@ const DIRNAME = typeof __dirname !== "undefined"
   ? __dirname
   // eslint-disable-next-line no-undef
   : new URL('.', import.meta.url).pathname;
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function injectSeoMeta(html: string, rawRoute: string): string {
+  const route = normalizeRoute(rawRoute);
+  const seo = getSEOMetadata(route);
+  if (!seo) return html;
+
+  const title = escapeHtml(seo.metaTitle);
+  const description = escapeHtml(seo.metaDescription);
+  const canonical = `https://vanirgroup.com${seo.route}`;
+
+  return html
+    .replace(/<title>[\s\S]*?<\/title>/i, `<title>${title}</title>`)
+    .replace(/<meta\s+name="description"\s+content="[^"]*"\s*\/?>/i, `<meta name="description" content="${description}" />`)
+    .replace(/<meta\s+property="og:title"\s+content="[^"]*"\s*\/?>/i, `<meta property="og:title" content="${title}" />`)
+    .replace(/<meta\s+property="og:description"\s+content="[^"]*"\s*\/?>/i, `<meta property="og:description" content="${description}" />`)
+    .replace(/<meta\s+name="twitter:title"\s+content="[^"]*"\s*\/?>/i, `<meta name="twitter:title" content="${title}" />`)
+    .replace(/<meta\s+name="twitter:description"\s+content="[^"]*"\s*\/?>/i, `<meta name="twitter:description" content="${description}" />`)
+    .replace(/<link\s+rel="canonical"\s+href="[^"]*"\s*\/?>/i, `<link rel="canonical" href="${canonical}" />`)
+    .replace(/<meta\s+property="og:url"\s+content="[^"]*"\s*\/?>/i, `<meta property="og:url" content="${canonical}" />`);
+}
 
 export async function setupVite(app: import("express").Application, server: Server) {
   const { createServer: createViteServer } = await import("vite");
@@ -42,7 +72,7 @@ export async function setupVite(app: import("express").Application, server: Serv
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`
       );
-      const page = await vite.transformIndexHtml(url, template);
+      const page = injectSeoMeta(await vite.transformIndexHtml(url, template), url);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);
@@ -78,10 +108,13 @@ export function serveStatic(app: import("express").Application) {
     })
   );
 
-  app.use("*", (_req: any, res: any) => {
+  app.use("*", (req: any, res: any) => {
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
-    res.sendFile(path.resolve(distPath, "index.html"));
+    const indexPath = path.resolve(distPath, "index.html");
+    const template = fs.readFileSync(indexPath, "utf-8");
+    const page = injectSeoMeta(template, req.originalUrl || req.url || "/");
+    res.status(200).set({ "Content-Type": "text/html" }).end(page);
   });
 }

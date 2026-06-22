@@ -1,4 +1,6 @@
 import { Helmet } from "react-helmet-async";
+import { useLocation } from "wouter";
+import { getSEOMetadata } from "@shared/seo/seoMatrix";
 
 interface PageMetaProps {
   title: string;
@@ -27,14 +29,23 @@ export default function PageMeta({
   noIndex = false,
   jsonLd,
 }: PageMetaProps) {
-  const fullTitle = title === SITE_NAME ? title : `${title} | ${SITE_NAME}`;
-  const canonical = canonicalPath ? `${SITE_URL}${canonicalPath}` : undefined;
+  const [location] = useLocation();
+  const routeMetadata = getSEOMetadata(canonicalPath || location);
+  const effectiveTitle = routeMetadata?.metaTitle ?? title;
+  const effectiveDescription = routeMetadata?.metaDescription ?? description;
+  const fullTitle = routeMetadata
+    ? effectiveTitle
+    : effectiveTitle === SITE_NAME
+      ? effectiveTitle
+      : `${effectiveTitle} | ${SITE_NAME}`;
+  const canonicalRoute = canonicalPath || routeMetadata?.route;
+  const canonical = canonicalRoute ? `${SITE_URL}${canonicalRoute}` : undefined;
   const image = ogImage || DEFAULT_OG_IMAGE;
 
   return (
     <Helmet>
       <title>{fullTitle}</title>
-      <meta name="description" content={description} />
+      <meta name="description" content={effectiveDescription} />
       {keywords && <meta name="keywords" content={keywords} />}
       {noIndex ? (
         <meta name="robots" content="noindex, nofollow" />
@@ -45,7 +56,7 @@ export default function PageMeta({
 
       {/* Open Graph */}
       <meta property="og:title" content={fullTitle} />
-      <meta property="og:description" content={description} />
+      <meta property="og:description" content={effectiveDescription} />
       <meta property="og:type" content={ogType} />
       <meta property="og:image" content={image} />
       <meta property="og:site_name" content={SITE_NAME} />
@@ -55,7 +66,7 @@ export default function PageMeta({
       {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />
-      <meta name="twitter:description" content={description} />
+      <meta name="twitter:description" content={effectiveDescription} />
       <meta name="twitter:image" content={image} />
 
       {/* JSON-LD Structured Data */}
