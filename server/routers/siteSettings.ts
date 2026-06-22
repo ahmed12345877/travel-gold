@@ -37,7 +37,16 @@ const ThemeDesignSchema = z
 
 const DesignVersionSchema = z.object({
   id: z.string(),
-  createdAt: z.date().nullable().optional(),
+  createdAt: z.preprocess(
+    (val) => {
+      if (val == null) return val;
+      if (val instanceof Date) return val;
+      // Firestore Admin SDK returns Timestamp objects with a toDate() method
+      if (typeof (val as any)?.toDate === "function") return (val as any).toDate() as Date;
+      return val;
+    },
+    z.date().nullable().optional()
+  ),
   createdBy: z.union([z.number(), z.string()]).nullable().optional(),
   reason: z.string().optional(),
   snapshot: z.record(z.string(), z.record(z.string(), z.string())),

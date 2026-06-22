@@ -4629,7 +4629,15 @@ var ThemeDesignSchema = z17.object({
 }).passthrough();
 var DesignVersionSchema = z17.object({
   id: z17.string(),
-  createdAt: z17.date().nullable().optional(),
+  createdAt: z17.preprocess(
+    (val) => {
+      if (val == null) return val;
+      if (val instanceof Date) return val;
+      if (typeof val?.toDate === "function") return val.toDate();
+      return val;
+    },
+    z17.date().nullable().optional()
+  ),
   createdBy: z17.union([z17.number(), z17.string()]).nullable().optional(),
   reason: z17.string().optional(),
   snapshot: z17.record(z17.string(), z17.record(z17.string(), z17.string()))
