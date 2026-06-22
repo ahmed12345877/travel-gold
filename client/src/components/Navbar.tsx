@@ -105,6 +105,14 @@ export default function Navbar() {
         { label: "Blog", href: "/blog" },
       ],
     },
+    {
+      label: "Explore",
+      children: [
+        { label: "Destinations", href: "/destinations" },
+        { label: "Programs", href: "/programs" },
+        { label: "Services", href: "/services" },
+      ],
+    },
   ];
 
   const handleDropdownEnter = (label: string) => {
