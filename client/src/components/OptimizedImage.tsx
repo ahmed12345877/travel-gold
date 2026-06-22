@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, ImgHTMLAttributes } from "react";
+import { getLuxuryPlaceholderImageUrl } from "@/lib/imageFallback";
 
 type AnimationStyle = "fade" | "blur-up" | "scale" | "slide-up" | "none";
 
@@ -157,6 +158,15 @@ export default function OptimizedImage({
       }
     } catch {
       // ignore URL parsing issues and show error fallback
+    }
+    const fallbackSrc = getLuxuryPlaceholderImageUrl();
+    if (currentSrc !== fallbackSrc) {
+      triedApiFallbackRef.current = true;
+      setHasError(false);
+      setIsLoaded(false);
+      setShowImage(false);
+      setCurrentSrc(fallbackSrc);
+      return;
     }
     setHasError(true);
     onImageError?.();

@@ -2277,10 +2277,17 @@ async function deleteDocById(collection, label, id) {
 // server/routers/gallery.ts
 var ITEMS_COL = "gallery_items";
 var VIDEOS_COL = "gallery_videos";
+var LEGACY_ITEMS_COLS = ["Gallery", "gallery", "media_library", "mediaLibrary"];
 var galleryRouter = router({
   // ─── Public Endpoints ───
   listVisible: publicProcedure.query(async () => {
-    return listVisibleFromCollection(ITEMS_COL, "listVisible");
+    const primary = await listVisibleFromCollection(ITEMS_COL, "listVisible");
+    if (primary.length > 0) return primary;
+    for (const collection of LEGACY_ITEMS_COLS) {
+      const legacyItems = await listVisibleFromCollection(collection, `listVisible(${collection})`);
+      if (legacyItems.length > 0) return legacyItems;
+    }
+    return primary;
   }),
   listVisibleVideos: publicProcedure.query(async () => {
     return listVisibleFromCollection(VIDEOS_COL, "listVisibleVideos");
