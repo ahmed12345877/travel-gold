@@ -54,48 +54,40 @@ export default function Navbar() {
   const mainNavItems: NavItem[] = [
     { label: "Home", href: isHome ? "#" : "/" },
     {
-      label: "AI Studio",
+      label: "Bookings",
       children: [
-        { label: "AI Studio Home", href: "/ai-studio" },
-        { label: "Image Generator", href: "/ai-image-generator" },
-        { label: "Marketing Suite", href: "/marketing" },
-        { label: "My Dashboard", href: "/ai-dashboard" },
+        { label: "Hotels Booking", href: "/hotels-booking" },
+        { label: "Flights Booking", href: "/flights-booking" },
+        { label: "Packages", href: "/packages" },
       ],
     },
     {
-      label: "Destinations",
+      label: "Luxury Experiences",
       children: [
-        { label: "View All Destinations", href: "/destinations" },
-        { label: "Book a Trip", href: "/booking" },
-        { label: "Special Offers", href: "/offers" },
+        { label: "Private Jet", href: "/private-jet" },
+        { label: "Day Trips", href: "/day-trips" },
+        { label: "Tours", href: "/tours" },
+        { label: "Hotels", href: "/hotels" },
       ],
     },
     {
-      label: "Programs",
+      label: "Business & Corporate",
       children: [
-        { label: "View All Programs", href: "/programs" },
-        { label: "Packages", href: "/programs#packages" },
-        { label: "Hotels", href: "/programs#hotels" },
-        { label: "Day Trips & Excursions", href: "/programs#day-trips" },
-        { label: "MICE", href: "/programs#mice" },
-        { label: "Private Jet", href: "/programs#private-jet" },
-        { label: "Fast Track & Airport Transfer", href: "/programs#fast-track" },
-        { label: "Visa Assistance & Meet and Greet", href: "/programs#visa" },
-        { label: "eSIM Purchase", href: "/programs#esim" },
+        { label: "MICE", href: "/mice" },
+        { label: "Groups", href: "/groups" },
+        { label: "Affiliated", href: "/affiliated" },
       ],
     },
     {
-      label: "Services",
+      label: "Travel Essentials",
       children: [
-        { label: "View All Services", href: "/services" },
-        { label: "Flight Booking", href: "/services#flights" },
-        { label: "Hotel Reservations", href: "/services#hotels" },
-        { label: "Tour Packages", href: "/services#tours" },
-        { label: "Travel Insurance", href: "/services#insurance" },
-        { label: "Group Travel", href: "/services#groups" },
+        { label: "Visa", href: "/visa" },
+        { label: "eSIM", href: "/esim" },
+        { label: "Fast Track", href: "/fast-track" },
+        { label: "Insurance", href: "/insurance" },
       ],
     },
-    { label: "Blog", href: "/blog" },
+    { label: "Media", href: "/news" },
   ];
 
   // More menu items (hidden in desktop, shown in "More" dropdown)
@@ -104,14 +96,12 @@ export default function Navbar() {
       label: "VANIR GROUP",
       children: [
         { label: "About VANIR GROUP", href: "/vanir" },
-        { label: "VANIR GROUP News", href: "/vanir#news" },
-        { label: "International Offices", href: "/vanir#offices" },
-        { label: "Affiliated Companies", href: "/vanir#affiliated" },
         { label: "About Us", href: "/about" },
         { label: "Contact Us", href: "/contact" },
+        { label: "AI Studio", href: "/ai-studio" },
+        { label: "Blog", href: "/blog" },
       ],
     },
-    { label: "Blog", href: "/blog" },
   ];
 
   const handleDropdownEnter = (label: string) => {

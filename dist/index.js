@@ -4606,7 +4606,80 @@ Please respond in ${input.language === "ar" ? "Arabic" : "English"}.`;
 });
 
 // server/routers/siteSettings.ts
+import { TRPCError as TRPCError6 } from "@trpc/server";
 import { z as z17 } from "zod";
+var DESIGN_VERSION_CATEGORIES = /* @__PURE__ */ new Set(["hero", "theme", "media"]);
+var HeroSettingsSchema = z17.object({
+  backgroundType: z17.enum(["static-image", "html5-video", "dynamic-slider"]).optional(),
+  sliderEngine: z17.enum(["framer-motion", "swiper", "splide"]).optional(),
+  sliderEffect: z17.enum(["fade", "cube", "flip", "coverflow", "creative"]).optional(),
+  autoplayMs: z17.number().int().min(1e3).max(15e3).optional(),
+  loopSlides: z17.boolean().optional(),
+  textFadeInEnabled: z17.boolean().optional(),
+  textFadeInDuration: z17.number().int().min(150).max(5e3).optional()
+}).passthrough();
+var MediaDisplaySchema = z17.object({
+  layout: z17.enum(["dynamic-grid", "masonry", "swiper-carousel", "grid-lightbox", "isotope-filter"]).default("dynamic-grid"),
+  aspectRatio: z17.enum(["square", "landscape", "portrait", "original"]).default("original")
+}).passthrough();
+var ThemeDesignSchema = z17.object({
+  palettePreset: z17.enum(["light", "dark", "luxury-gold", "minimalist-tailwind"]).default("luxury-gold"),
+  radiusPreset: z17.enum(["sharp", "soft", "glass"]).default("soft"),
+  shadowPreset: z17.enum(["none", "soft", "glass"]).default("soft")
+}).passthrough();
+var DesignVersionSchema = z17.object({
+  id: z17.string(),
+  createdAt: z17.date().nullable().optional(),
+  createdBy: z17.union([z17.number(), z17.string()]).nullable().optional(),
+  reason: z17.string().optional(),
+  snapshot: z17.record(z17.string(), z17.record(z17.string(), z17.string()))
+});
+function parseAndSanitize(category, key, value) {
+  if ((category !== "hero" || key !== "hero_data" && key !== "hero_settings") && !(category === "media" && key === "gallery_display") && !(category === "theme" && key === "design_tokens")) {
+    return value;
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    throw new TRPCError6({ code: "BAD_REQUEST", message: "Invalid JSON payload." });
+  }
+  if (category === "hero") {
+    const validated2 = HeroSettingsSchema.safeParse(parsed);
+    if (!validated2.success) throw new TRPCError6({ code: "BAD_REQUEST", message: "Invalid hero settings payload." });
+    return JSON.stringify(validated2.data);
+  }
+  if (category === "media" && key === "gallery_display") {
+    const validated2 = MediaDisplaySchema.safeParse(parsed);
+    if (!validated2.success) throw new TRPCError6({ code: "BAD_REQUEST", message: "Invalid media display settings payload." });
+    return JSON.stringify(validated2.data);
+  }
+  const validated = ThemeDesignSchema.safeParse(parsed);
+  if (!validated.success) throw new TRPCError6({ code: "BAD_REQUEST", message: "Invalid theme design payload." });
+  return JSON.stringify(validated.data);
+}
+async function collectCategorySettings(category) {
+  const rows = await list("siteSettings", {
+    where: [["category", "==", category]]
+  });
+  const settings = {};
+  for (const row of rows) {
+    settings[row.settingKey] = row.settingValue ?? "";
+  }
+  return settings;
+}
+async function createDesignVersion(reason, createdBy) {
+  const snapshot = {};
+  for (const category of DESIGN_VERSION_CATEGORIES) {
+    snapshot[category] = await collectCategorySettings(category);
+  }
+  await db.collection("design_versions").add({
+    reason,
+    snapshot,
+    createdBy: createdBy ?? null,
+    createdAt: /* @__PURE__ */ new Date()
+  });
+}
 var siteSettingsRouter = router({
   /**
    * Get theme settings (public - no auth required for visitors)
@@ -4650,10 +4723,48 @@ var siteSettingsRouter = router({
     return grouped;
   }),
   /**
+   * Design versions list
+   */
+  listDesignVersions: adminProcedure.input(z17.object({ limit: z17.number().int().min(1).max(50).default(20) }).optional()).query(async ({ input }) => {
+    const limit = input?.limit ?? 20;
+    const snap = await db.collection("design_versions").orderBy("createdAt", "desc").limit(limit).get();
+    return snap.docs.map((doc) => {
+      const parsed = DesignVersionSchema.safeParse({ id: doc.id, ...doc.data() });
+      if (!parsed.success) return null;
+      return parsed.data;
+    }).filter(Boolean);
+  }),
+  /**
+   * Rollback to a design version snapshot
+   */
+  rollbackDesignVersion: adminProcedure.input(z17.object({ versionId: z17.string().min(1) })).mutation(async ({ input, ctx }) => {
+    const versionRef = db.collection("design_versions").doc(input.versionId);
+    const versionSnap = await versionRef.get();
+    if (!versionSnap.exists) {
+      throw new TRPCError6({ code: "NOT_FOUND", message: "Design version not found." });
+    }
+    const parsed = DesignVersionSchema.safeParse({ id: versionSnap.id, ...versionSnap.data() });
+    if (!parsed.success) {
+      throw new TRPCError6({ code: "BAD_REQUEST", message: "Invalid design version snapshot." });
+    }
+    for (const [category, settings] of Object.entries(parsed.data.snapshot)) {
+      for (const [key, rawValue] of Object.entries(settings)) {
+        const sanitized = parseAndSanitize(category, key, rawValue);
+        await setSettingValue(category, key, sanitized, ctx.user.id);
+      }
+    }
+    await createDesignVersion(`Rollback to version ${input.versionId}`, ctx.user.id);
+    return { success: true };
+  }),
+  /**
    * Set a single setting (upsert)
    */
   set: adminProcedure.input(z17.object({ category: z17.string(), key: z17.string(), value: z17.string() })).mutation(async ({ input, ctx }) => {
-    await setSettingValue(input.category, input.key, input.value, ctx.user.id);
+    const sanitized = parseAndSanitize(input.category, input.key, input.value);
+    await setSettingValue(input.category, input.key, sanitized, ctx.user.id);
+    if (DESIGN_VERSION_CATEGORIES.has(input.category)) {
+      await createDesignVersion(`Updated ${input.category}.${input.key}`, ctx.user.id);
+    }
     return { success: true };
   }),
   /**
@@ -4665,7 +4776,11 @@ var siteSettingsRouter = router({
   })).mutation(async ({ input, ctx }) => {
     const entries = Object.entries(input.settings);
     for (const [key, value] of entries) {
-      await setSettingValue(input.category, key, value, ctx.user.id);
+      const sanitized = parseAndSanitize(input.category, key, value);
+      await setSettingValue(input.category, key, sanitized, ctx.user.id);
+    }
+    if (DESIGN_VERSION_CATEGORIES.has(input.category)) {
+      await createDesignVersion(`Updated ${input.category} settings`, ctx.user.id);
     }
     return { success: true, count: entries.length };
   }),
@@ -5087,7 +5202,7 @@ var dataImportRouter = router({
 
 // server/routers.ts
 import { z as z20 } from "zod";
-import { TRPCError as TRPCError6 } from "@trpc/server";
+import { TRPCError as TRPCError7 } from "@trpc/server";
 import { createHash, timingSafeEqual } from "crypto";
 var appRouter = router({
   system: systemRouter,
@@ -5105,13 +5220,13 @@ var appRouter = router({
         const adminEmail = ENV.adminEmail;
         const adminPasswordHash = ENV.adminPasswordHash;
         if (!adminEmail || !adminPasswordHash) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "PRECONDITION_FAILED",
             message: "Admin login is not configured on this server. Set ADMIN_EMAIL and ADMIN_PASSWORD_HASH environment variables."
           });
         }
         if (input.email.toLowerCase() !== adminEmail.toLowerCase()) {
-          throw new TRPCError6({ code: "UNAUTHORIZED", message: "Invalid email or password." });
+          throw new TRPCError7({ code: "UNAUTHORIZED", message: "Invalid email or password." });
         }
         const storedHash = adminPasswordHash.trim();
         const isHashFormat = /^[a-f0-9]{64}$/.test(storedHash.toLowerCase());
@@ -5137,7 +5252,7 @@ var appRouter = router({
           }
         }
         if (!match) {
-          throw new TRPCError6({ code: "UNAUTHORIZED", message: "Invalid email or password." });
+          throw new TRPCError7({ code: "UNAUTHORIZED", message: "Invalid email or password." });
         }
         const openId = `admin:${adminEmail.toLowerCase()}`;
         await upsertUser({
@@ -5161,8 +5276,8 @@ var appRouter = router({
         });
         return { success: true };
       } catch (err) {
-        if (err instanceof TRPCError6) throw err;
-        throw new TRPCError6({
+        if (err instanceof TRPCError7) throw err;
+        throw new TRPCError7({
           code: "INTERNAL_SERVER_ERROR",
           message: "An unexpected error occurred during login. Please try again."
         });

@@ -68,6 +68,21 @@ import BlogSEOGenerator from "./pages/marketing/BlogSEOGenerator";
 import AdCopyGenerator from "./pages/marketing/AdCopyGenerator";
 import ContentCalendar from "./pages/marketing/ContentCalendar";
 import { HelmetProvider } from "react-helmet-async";
+import Hotels from "./pages/luxury/Hotels";
+import DayTrips from "./pages/luxury/DayTrips";
+import MICEPage from "./pages/luxury/MICE";
+import PrivateJet from "./pages/luxury/PrivateJet";
+import FastTrack from "./pages/luxury/FastTrack";
+import Visa from "./pages/luxury/Visa";
+import ESim from "./pages/luxury/ESim";
+import FlightsBooking from "./pages/luxury/FlightsBooking";
+import HotelsBooking from "./pages/luxury/HotelsBooking";
+import Tours from "./pages/luxury/Tours";
+import Insurance from "./pages/luxury/Insurance";
+import Groups from "./pages/luxury/Groups";
+import LuxuryNews from "./pages/luxury/News";
+import Affiliated from "./pages/luxury/Affiliated";
+import Packages from "./pages/luxury/Packages";
 
 
 function Router() {
@@ -108,6 +123,23 @@ function Router() {
       <Route path={"/marketing/ad-copy"} component={AdCopyGenerator} />
       <Route path={"/marketing/calendar"} component={ContentCalendar} />
       <Route path={"/components"} component={ComponentShowcase} />
+
+      {/* Luxury Service Pages */}
+      <Route path={"/hotels"} component={Hotels} />
+      <Route path={"/day-trips"} component={DayTrips} />
+      <Route path={"/mice"} component={MICEPage} />
+      <Route path={"/private-jet"} component={PrivateJet} />
+      <Route path={"/fast-track"} component={FastTrack} />
+      <Route path={"/visa"} component={Visa} />
+      <Route path={"/esim"} component={ESim} />
+      <Route path={"/flights-booking"} component={FlightsBooking} />
+      <Route path={"/hotels-booking"} component={HotelsBooking} />
+      <Route path={"/tours"} component={Tours} />
+      <Route path={"/insurance"} component={Insurance} />
+      <Route path={"/groups"} component={Groups} />
+      <Route path={"/news"} component={LuxuryNews} />
+      <Route path={"/affiliated"} component={Affiliated} />
+      <Route path={"/packages"} component={Packages} />
 
       {/* Admin Routes */}
       <Route path="/admin/login" component={AdminLogin} />
