@@ -48,6 +48,12 @@ export interface NavbarStyle {
   activeLinkColorOverride: string;
 }
 
+export interface DesignTokens {
+  palettePreset: "light" | "dark" | "luxury-gold" | "minimalist-tailwind";
+  radiusPreset: "sharp" | "soft" | "glass";
+  shadowPreset: "none" | "soft" | "glass";
+}
+
 export interface HeroSettings {
   title: string;
   rotatingWords: string[];
@@ -115,6 +121,12 @@ export const DEFAULT_NAVBAR_STYLE: NavbarStyle = {
   activeLinkColorOverride: "",
 };
 
+export const DEFAULT_DESIGN_TOKENS: DesignTokens = {
+  palettePreset: "luxury-gold",
+  radiusPreset: "soft",
+  shadowPreset: "soft",
+};
+
 export const FONT_PAIRINGS = [
   { id: "modern", label: "Modern Sans", heading: "Inter", body: "DM Sans", description: "Clean tech aesthetic" },
   { id: "luxury", label: "Luxury Serif", heading: "Playfair Display", body: "Lora", description: "Classic elegance" },
@@ -128,6 +140,7 @@ interface ThemeContextType {
   navbarStyle: NavbarStyle;
   darkMode: boolean;
   fontPairing: string;
+  designTokens: DesignTokens;
   isLoaded: boolean;
   refetch: () => void;
 }
@@ -138,6 +151,7 @@ const ThemeContext = createContext<ThemeContextType>({
   navbarStyle: DEFAULT_NAVBAR_STYLE,
   darkMode: true,
   fontPairing: "luxury",
+  designTokens: DEFAULT_DESIGN_TOKENS,
   isLoaded: false,
   refetch: () => {},
 });
@@ -196,6 +210,18 @@ function applyNavbarToDOM(style: NavbarStyle) {
   else root.style.removeProperty("--navbar-active-override");
 }
 
+function applyDesignTokensToDOM(tokens: DesignTokens) {
+  const root = document.documentElement;
+  const radius = tokens.radiusPreset === "sharp" ? "0px" : tokens.radiusPreset === "glass" ? "16px" : "10px";
+  const shadow = tokens.shadowPreset === "none"
+    ? "none"
+    : tokens.shadowPreset === "glass"
+      ? "0 8px 24px rgba(0, 0, 0, 0.28)"
+      : "0 6px 18px rgba(0, 0, 0, 0.2)";
+  root.style.setProperty("--theme-radius", radius);
+  root.style.setProperty("--theme-shadow", shadow);
+}
+
 /* ─── Provider ─── */
 export function ThemeColorsProvider({ children }: { children: ReactNode }) {
   const [colors, setColors] = useState<ThemeColors>(DEFAULT_COLORS);
@@ -203,6 +229,7 @@ export function ThemeColorsProvider({ children }: { children: ReactNode }) {
   const [navbarStyle, setNavbarStyle] = useState<NavbarStyle>(DEFAULT_NAVBAR_STYLE);
   const [darkMode, setDarkMode] = useState(true);
   const [fontPairing, setFontPairing] = useState("luxury");
+  const [designTokens, setDesignTokens] = useState<DesignTokens>(DEFAULT_DESIGN_TOKENS);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const themeQuery = trpc.siteSettings.getTheme.useQuery(undefined, {
@@ -218,6 +245,7 @@ export function ThemeColorsProvider({ children }: { children: ReactNode }) {
     applyColorsToDOM(DEFAULT_COLORS);
     applyFontsToDOM(DEFAULT_FONTS);
     applyNavbarToDOM(DEFAULT_NAVBAR_STYLE);
+    applyDesignTokensToDOM(DEFAULT_DESIGN_TOKENS);
   }, []);
 
   useEffect(() => {
@@ -257,6 +285,12 @@ export function ThemeColorsProvider({ children }: { children: ReactNode }) {
             applyFontsToDOM(merged);
           }
         }
+        if (d.design_tokens) {
+          const tokens = JSON.parse(d.design_tokens);
+          const merged = { ...DEFAULT_DESIGN_TOKENS, ...tokens };
+          setDesignTokens(merged);
+          applyDesignTokensToDOM(merged);
+        }
       } catch {
         // keep defaults
       }
@@ -267,7 +301,7 @@ export function ThemeColorsProvider({ children }: { children: ReactNode }) {
   }, [themeQuery.data, themeQuery.isError]);
 
   return (
-    <ThemeContext.Provider value={{ colors, fonts, navbarStyle, darkMode, fontPairing, isLoaded, refetch }}>
+    <ThemeContext.Provider value={{ colors, fonts, navbarStyle, darkMode, fontPairing, designTokens, isLoaded, refetch }}>
       {children}
     </ThemeContext.Provider>
   );

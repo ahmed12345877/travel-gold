@@ -4,7 +4,7 @@
  * Color palette: Uses CSS custom properties (--theme-* variables)
  * Features: Restored original design with dynamic theme color support
  */
-import { motion, useScroll, useTransform } from "framer-motion";
+import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
 import { Facebook, Instagram } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { ASSETS } from "@/config/assets";
@@ -22,9 +22,14 @@ export default function HeroSection() {
   const { colors } = useThemeColors();
   const [heroData, setHeroData] = useState<any>(null);
   const [heroImages, setHeroImages] = useState<any[]>([]);
+  const [sliderIndex, setSliderIndex] = useState(0);
 
   // Fetch hero data from admin
   const { data: savedHeroData } = trpc.siteSettings.get.useQuery(
+    { category: "hero", key: "hero_settings" },
+    { staleTime: 30000 }
+  );
+  const { data: savedLegacyHeroData } = trpc.siteSettings.get.useQuery(
     { category: "hero", key: "hero_data" },
     { staleTime: 30000 }
   );
@@ -36,9 +41,10 @@ export default function HeroSection() {
   );
 
   useEffect(() => {
-    if (savedHeroData) {
+    const payload = savedHeroData || savedLegacyHeroData;
+    if (payload) {
       try {
-        const parsed = JSON.parse(savedHeroData);
+        const parsed = JSON.parse(payload);
         setHeroData(parsed);
       } catch (e) {
         console.error("Failed to parse hero data:", e);
@@ -47,7 +53,7 @@ export default function HeroSection() {
     } else {
       setHeroData(null);
     }
-  }, [savedHeroData]);
+  }, [savedHeroData, savedLegacyHeroData]);
 
   useEffect(() => {
     if (savedHeroImages) {
@@ -79,6 +85,39 @@ export default function HeroSection() {
   const mainTitle = heroData?.title || "VANIR GROUP — LUXURY TRAVEL";
   const featuredImageUrl = heroData?.featuredImageUrl;
   const hasBgMedia = heroData && (heroData.mediaType === "image" || heroData.mediaType === "video") && heroData.mediaUrl;
+  const backgroundType = heroData?.backgroundType || (heroData?.mediaType === "video" ? "html5-video" : "static-image");
+  const sliderImages = heroImages.filter((img) => Boolean(img.url));
+  const activeSlide = sliderImages[sliderIndex];
+
+  useEffect(() => {
+    if (backgroundType !== "dynamic-slider" || sliderImages.length <= 1) return;
+    const autoplayMs = heroData?.autoplayMs || 3500;
+    const timer = setInterval(() => {
+      setSliderIndex((prev) => {
+        const next = prev + 1;
+        if (next >= sliderImages.length) {
+          return heroData?.loopSlides === false ? prev : 0;
+        }
+        return next;
+      });
+    }, autoplayMs);
+    return () => clearInterval(timer);
+  }, [backgroundType, heroData?.autoplayMs, heroData?.loopSlides, sliderImages.length]);
+
+  const getSliderAnimation = () => {
+    switch (heroData?.sliderEffect) {
+      case "cube":
+        return { initial: { opacity: 0, rotateY: 18, scale: 0.98 }, animate: { opacity: 1, rotateY: 0, scale: 1 }, exit: { opacity: 0, rotateY: -18, scale: 0.98 } };
+      case "flip":
+        return { initial: { opacity: 0, rotateX: 40 }, animate: { opacity: 1, rotateX: 0 }, exit: { opacity: 0, rotateX: -40 } };
+      case "coverflow":
+        return { initial: { opacity: 0, x: 60, scale: 0.92 }, animate: { opacity: 1, x: 0, scale: 1 }, exit: { opacity: 0, x: -60, scale: 0.92 } };
+      case "creative":
+        return { initial: { opacity: 0, y: 22, scale: 1.04 }, animate: { opacity: 1, y: 0, scale: 1 }, exit: { opacity: 0, y: -22, scale: 0.97 } };
+      default:
+        return { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } };
+    }
+  };
 
   // Travel images for the grid (beautiful destinations)
   const heroGridImages = heroImages && heroImages.length > 0 ? heroImages : [
@@ -113,7 +152,20 @@ export default function HeroSection() {
       }}
     >
       {/* ── Background media (image / video from admin) ── */}
-      {heroData?.mediaType === "video" && heroData?.mediaUrl && (
+      {backgroundType === "dynamic-slider" && sliderImages.length > 0 && (
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={activeSlide?.url || "fallback-slide"}
+            src={activeSlide?.url}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ objectPosition: `${heroData?.mediaCropX ?? 50}% ${heroData?.mediaCropY ?? 50}%` }}
+            alt=""
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            {...getSliderAnimation()}
+          />
+        </AnimatePresence>
+      )}
+      {backgroundType === "html5-video" && heroData?.mediaUrl && (
         <video
           src={heroData.mediaUrl}
           className="absolute inset-0 w-full h-full object-cover"
@@ -124,7 +176,7 @@ export default function HeroSection() {
           playsInline
         />
       )}
-      {heroData?.mediaType === "image" && heroData?.mediaUrl && (
+      {backgroundType === "static-image" && heroData?.mediaUrl && (
         <img
           src={heroData.mediaUrl}
           className="absolute inset-0 w-full h-full object-cover"
@@ -132,7 +184,7 @@ export default function HeroSection() {
           alt=""
         />
       )}
-      {hasBgMedia && (
+      {(hasBgMedia || backgroundType === "dynamic-slider") && (
         <div
           className="absolute inset-0"
           style={{
@@ -188,6 +240,7 @@ export default function HeroSection() {
               transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
               className="leading-tight tracking-tight"
               style={{
+                transition: heroData?.textFadeInEnabled ? `opacity ${heroData?.textFadeInDuration || 900}ms ease` : undefined,
                 fontSize: `${heroData?.titleStyle?.fontSize || 56}px`,
                 fontWeight: heroData?.titleStyle?.fontWeight || "bold",
                 color: heroData?.titleStyle?.color || colors.text,

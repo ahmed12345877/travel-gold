@@ -22,6 +22,13 @@ interface MediaItem {
   tags: string[];
 }
 
+type GalleryLayout = "dynamic-grid" | "masonry" | "swiper-carousel" | "grid-lightbox" | "isotope-filter";
+type GalleryAspect = "square" | "landscape" | "portrait" | "original";
+
+interface GalleryDisplaySettings {
+  layout: GalleryLayout;
+  aspectRatio: GalleryAspect;
+}
 
 const FOLDERS = ["All", "Hero", "Destinations", "Gallery", "Activities", "Avatars", "Blog", "Offers"];
 
@@ -57,6 +64,12 @@ export default function MediaLibrary() {
   const uploadImageMut = trpc.gallery.uploadImage.useMutation();
   const createMut = trpc.gallery.create.useMutation();
   const deleteMut = trpc.gallery.delete.useMutation();
+  const displayQuery = trpc.siteSettings.get.useQuery({ category: "media", key: "gallery_display" }, { staleTime: 30000 });
+  const setMut = trpc.siteSettings.set.useMutation();
+  const [displaySettings, setDisplaySettings] = useState<GalleryDisplaySettings>({
+    layout: "dynamic-grid",
+    aspectRatio: "original",
+  });
 
   useEffect(() => {
     if (galleryQuery.data) {
@@ -74,6 +87,16 @@ export default function MediaLibrary() {
       setMedia(dbMedia);
     }
   }, [galleryQuery.data]);
+
+  useEffect(() => {
+    if (!displayQuery.data) return;
+    try {
+      const parsed = JSON.parse(displayQuery.data);
+      setDisplaySettings((prev) => ({ ...prev, ...parsed }));
+    } catch {
+      /* ignore invalid settings */
+    }
+  }, [displayQuery.data]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFolder, setSelectedFolder] = useState("All");
   const [selectedType, setSelectedType] = useState("all");
@@ -163,6 +186,19 @@ export default function MediaLibrary() {
     }
   };
 
+  const saveDisplaySettings = async () => {
+    try {
+      await setMut.mutateAsync({
+        category: "media",
+        key: "gallery_display",
+        value: JSON.stringify(displaySettings),
+      });
+      toast.success("Gallery display settings saved");
+    } catch (err: any) {
+      toast.error(`Failed to save display settings: ${err?.message || "Unknown error"}`);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -217,6 +253,48 @@ export default function MediaLibrary() {
             className="pl-10 bg-black/40 border-white/10 text-white"
           />
         </div>
+
+        <Card className="bg-black/40 border-white/10">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-white font-semibold text-sm">Live Gallery Display Controls</h3>
+              <Button size="sm" onClick={saveDisplaySettings} className="bg-[var(--theme-primary)] text-black hover:bg-[var(--theme-accent)]">
+                Save Display
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs text-white/60 mb-2">Layout Selector</p>
+                <Select value={displaySettings.layout} onValueChange={(v) => setDisplaySettings((prev) => ({ ...prev, layout: v as GalleryLayout }))}>
+                  <SelectTrigger className="bg-black/40 border-white/10 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dynamic-grid">Dynamic Grid</SelectItem>
+                    <SelectItem value="masonry">Masonry Layout</SelectItem>
+                    <SelectItem value="swiper-carousel">Swiper Carousel</SelectItem>
+                    <SelectItem value="grid-lightbox">Grid + Lightbox</SelectItem>
+                    <SelectItem value="isotope-filter">Isotope Filtering</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <p className="text-xs text-white/60 mb-2">Aspect Ratio</p>
+                <Select value={displaySettings.aspectRatio} onValueChange={(v) => setDisplaySettings((prev) => ({ ...prev, aspectRatio: v as GalleryAspect }))}>
+                  <SelectTrigger className="bg-black/40 border-white/10 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="square">Square (1:1)</SelectItem>
+                    <SelectItem value="landscape">Landscape (16:9)</SelectItem>
+                    <SelectItem value="portrait">Portrait (4:5)</SelectItem>
+                    <SelectItem value="original">Original</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Folder Filter */}
         <div className="flex items-center gap-1 flex-wrap">

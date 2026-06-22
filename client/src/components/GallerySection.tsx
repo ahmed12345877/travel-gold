@@ -10,6 +10,8 @@ export default function GallerySection() {
   const { ref, inView } = useInView({ threshold: 0.1 });
   const [selectedCategory, setSelectedCategory] = useState<GalleryCategory | "all">("all");
   const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set());
+  const [layoutMode, setLayoutMode] = useState<"dynamic-grid" | "masonry" | "swiper-carousel" | "grid-lightbox" | "isotope-filter">("dynamic-grid");
+  const [forcedAspect, setForcedAspect] = useState<"square" | "landscape" | "portrait" | "original">("original");
 
   // Fetch gallery items from server (uses permanent Firebase URLs)
   const { data: images = [], isLoading, error } = trpc.gallery.listVisible.useQuery<GalleryImage[]>(
@@ -19,6 +21,21 @@ export default function GallerySection() {
       enabled: true,
     }
   );
+  const { data: mediaDisplaySettings } = trpc.siteSettings.get.useQuery(
+    { category: "media", key: "gallery_display" },
+    { staleTime: 30000 }
+  );
+
+  useEffect(() => {
+    if (!mediaDisplaySettings) return;
+    try {
+      const parsed = JSON.parse(mediaDisplaySettings);
+      if (parsed.layout) setLayoutMode(parsed.layout);
+      if (parsed.aspectRatio) setForcedAspect(parsed.aspectRatio);
+    } catch {
+      // ignore malformed display setting
+    }
+  }, [mediaDisplaySettings]);
 
   // Debug: Log images when they load
   useEffect(() => {
@@ -146,20 +163,35 @@ export default function GallerySection() {
             initial={{ opacity: 0 }}
             animate={inView ? { opacity: 1 } : {}}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6"
+            className={
+              layoutMode === "masonry"
+                ? "columns-1 sm:columns-2 lg:columns-3 gap-4 sm:gap-5 md:gap-6 space-y-4"
+                : layoutMode === "swiper-carousel"
+                  ? "flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2"
+                  : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6"
+            }
           >
             {filteredImages.map((img, index) => {
               const isBroken = brokenImages.has(img.id);
+              const aspectClass = forcedAspect === "square"
+                ? "aspect-square"
+                : forcedAspect === "landscape"
+                  ? "aspect-video"
+                  : forcedAspect === "portrait"
+                    ? "aspect-[4/5]"
+                    : "aspect-[4/3]";
               return (
                 <motion.div
                   key={img.id}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={inView ? { opacity: 1, scale: 1 } : {}}
                   transition={{ duration: 0.5, delay: Math.min(index * 0.03, 0.6) }}
-                  className="group relative bg-[var(--theme-surface)] border border-white/8 overflow-hidden cursor-pointer hover:border-[var(--theme-primary)]/40 transition-all duration-500"
+                  className={`group relative bg-[var(--theme-surface)] border border-white/8 overflow-hidden cursor-pointer hover:border-[var(--theme-primary)]/40 transition-all duration-500 ${
+                    layoutMode === "masonry" ? "break-inside-avoid mb-4" : ""
+                  } ${layoutMode === "swiper-carousel" ? "snap-start min-w-[300px] sm:min-w-[340px]" : ""}`}
                 >
                   {/* Image */}
-                  <div className="relative aspect-[4/3] bg-black overflow-hidden">
+                  <div className={`relative ${aspectClass} bg-black overflow-hidden`}>
                     <img
                       src={isBroken ? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23333' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dy='.3em' fill='%23999' font-size='12'%3EImage Error%3C/text%3E%3C/svg%3E" : img.imageUrl}
                       alt={img.title || img.titleAr || img.description || img.descriptionAr || "Gallery photo from Vanir Travel"}
