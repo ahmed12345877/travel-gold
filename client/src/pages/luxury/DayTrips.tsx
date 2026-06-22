@@ -143,7 +143,7 @@ export default function DayTrips() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.1 }}
-                className={`group bg-zinc-900 overflow-hidden border ${trip.featured ? "border-[#D4AF37]/50" : "border-white/10"} hover:border-[#D4AF37]/60 transition-all duration-500`}
+                className={`group relative bg-zinc-900 overflow-hidden border ${trip.featured ? "border-[#D4AF37]/50" : "border-white/10"} hover:border-[#D4AF37]/60 transition-all duration-500`}
               >
                 {trip.featured && (
                   <div className="absolute top-4 left-4 z-10 bg-[#D4AF37] text-black text-xs font-bold px-3 py-1 uppercase tracking-widest">

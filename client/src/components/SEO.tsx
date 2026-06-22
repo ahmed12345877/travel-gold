@@ -1,5 +1,6 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
+import { getSEOMetadata, normalizeRoute } from "@shared/seo/seoMatrix";
 
 interface SEOProps {
   title: string;
@@ -25,14 +26,20 @@ export default function SEO({
   ogType = "website",
   noIndex = false,
 }: SEOProps) {
-  const fullTitle = `${title} | ${SITE_NAME}`;
+  const routeFromCanonical = canonicalUrl ? canonicalUrl.replace(BASE_URL, "") : undefined;
+  const currentRoute = normalizeRoute(routeFromCanonical || (typeof window !== "undefined" ? window.location.pathname : "/"));
+  const routeMetadata = getSEOMetadata(currentRoute);
+  const effectiveTitle = routeMetadata?.metaTitle ?? title;
+  const effectiveDescription = routeMetadata?.metaDescription ?? description;
+  const fullTitle = routeMetadata ? effectiveTitle : `${effectiveTitle} | ${SITE_NAME}`;
   const image = ogImage || DEFAULT_OG_IMAGE;
-  const canonical = canonicalUrl || `${BASE_URL}${typeof window !== "undefined" ? window.location.pathname : "/"}`;
+  const canonicalRoute = routeFromCanonical || routeMetadata?.route || currentRoute;
+  const canonical = canonicalUrl || `${BASE_URL}${canonicalRoute}`;
 
   return (
     <Helmet>
       <title>{fullTitle}</title>
-      <meta name="description" content={description} />
+      <meta name="description" content={effectiveDescription} />
       {keywords && <meta name="keywords" content={keywords} />}
       {noIndex ? (
         <meta name="robots" content="noindex, nofollow" />
@@ -43,7 +50,7 @@ export default function SEO({
 
       {/* Open Graph */}
       <meta property="og:title" content={fullTitle} />
-      <meta property="og:description" content={description} />
+      <meta property="og:description" content={effectiveDescription} />
       <meta property="og:type" content={ogType} />
       <meta property="og:image" content={image} />
       <meta property="og:url" content={canonical} />
@@ -52,7 +59,7 @@ export default function SEO({
       {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />
-      <meta name="twitter:description" content={description} />
+      <meta name="twitter:description" content={effectiveDescription} />
       <meta name="twitter:image" content={image} />
     </Helmet>
   );
