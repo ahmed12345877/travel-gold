@@ -33,11 +33,10 @@ export default function PageMeta({
   const routeMetadata = getSEOMetadata(canonicalPath || location);
   const effectiveTitle = routeMetadata?.metaTitle ?? title;
   const effectiveDescription = routeMetadata?.metaDescription ?? description;
-  const fullTitle = routeMetadata
-    ? effectiveTitle
-    : effectiveTitle === SITE_NAME
-      ? effectiveTitle
-      : `${effectiveTitle} | ${SITE_NAME}`;
+  let fullTitle = effectiveTitle;
+  if (!routeMetadata && effectiveTitle !== SITE_NAME) {
+    fullTitle = `${effectiveTitle} | ${SITE_NAME}`;
+  }
   const canonicalRoute = canonicalPath || routeMetadata?.route;
   const canonical = canonicalRoute ? `${SITE_URL}${canonicalRoute}` : undefined;
   const image = ogImage || DEFAULT_OG_IMAGE;

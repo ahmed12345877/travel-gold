@@ -221,7 +221,8 @@ export function getSEOMetadata(route: string): SEOMetadata | null {
   if (exactMatch) return exactMatch;
 
   if (normalizedRoute.startsWith("/destinations/")) {
-    const [, , destinationSlug] = normalizedRoute.split("/");
+    const routeParts = normalizedRoute.split("/");
+    const destinationSlug = routeParts[2];
     if (!destinationSlug) return null;
     const fallbackRoute = `/destinations/${destinationSlug}`;
     return seoByRoute[fallbackRoute] ?? null;

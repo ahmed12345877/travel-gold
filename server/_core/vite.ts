@@ -108,12 +108,19 @@ export function serveStatic(app: import("express").Application) {
     })
   );
 
+  const indexPath = path.resolve(distPath, "index.html");
+  let cachedIndexTemplate = "";
+  try {
+    cachedIndexTemplate = fs.readFileSync(indexPath, "utf-8");
+  } catch (error) {
+    console.error("Failed to read static index.html template:", error);
+  }
+
   app.use("*", (req: any, res: any) => {
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
-    const indexPath = path.resolve(distPath, "index.html");
-    const template = fs.readFileSync(indexPath, "utf-8");
+    const template = cachedIndexTemplate || fs.readFileSync(indexPath, "utf-8");
     const page = injectSeoMeta(template, req.originalUrl || req.url || "/");
     res.status(200).set({ "Content-Type": "text/html" }).end(page);
   });
