@@ -43,6 +43,11 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
  */
 export function createApp() {
   const app = express();
+
+  // Lightweight health check for Railway (and other platform) uptime probes.
+  app.get("/api/health", (_req, res) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
   
   // Enable CORS for all origins in development, restrict in production.
   // In production, CORS_ORIGINS (comma-separated) overrides the default allowlist
@@ -104,12 +109,16 @@ export async function startServer() {
 
   if (process.env.VERCEL !== "1") {
     const preferredPort = parseInt(process.env.PORT || "3000");
-    const port = await findAvailablePort(preferredPort);
+    // In production (Railway, Render, etc.) bind to exactly the assigned PORT.
+    // Scanning for an alternative port would break the platform's proxy routing.
+    const port = process.env.NODE_ENV === "production"
+      ? preferredPort
+      : await findAvailablePort(preferredPort);
     if (port !== preferredPort) {
       console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
     }
-    server.listen(port, () => {
-      console.log(`Server running on http://localhost:${port}/`);
+    server.listen(port, "0.0.0.0", () => {
+      console.log(`Server running on http://0.0.0.0:${port}/`);
     });
   }
 
