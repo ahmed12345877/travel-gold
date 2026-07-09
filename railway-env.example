@@ -34,14 +34,14 @@ NODE_ENV=production
 
 
 # --- FIREBASE CLIENT (build-time Vite variables) ----------------------------
-# ✅ All values below are confirmed from your Firebase project.
-VITE_FIREBASE_API_KEY=AIzaSyAszyNw2a7_bv02cf0FBXiPXwt3E2-CXdY
-VITE_FIREBASE_AUTH_DOMAIN=gen-lang-client-0364375301.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=gen-lang-client-0364375301
-VITE_FIREBASE_STORAGE_BUCKET=gen-lang-client-0364375301.firebasestorage.app
-VITE_FIREBASE_MESSAGING_SENDER_ID=1001729880037
-VITE_FIREBASE_APP_ID=1:1001729880037:android:da145ec4fb1c7f7247090c
-VITE_FIREBASE_MEASUREMENT_ID=G-5ETHDXPS4L
+# ⚠️  MUST SET — find all values in Firebase Console → Project Settings → General
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_MEASUREMENT_ID=
 
 # ⚠️  Set this to your Railway app URL AFTER the first successful deploy.
 # Railway assigns a URL like https://your-app-name.up.railway.app
@@ -50,8 +50,8 @@ VITE_API_URL=
 
 
 # --- FIREBASE ADMIN (server-side) -------------------------------------------
-# ✅ Storage bucket (matches client config — only needed if NOT using R2)
-FIREBASE_STORAGE_BUCKET=gen-lang-client-0364375301.firebasestorage.app
+# 🔧 Storage bucket (matches VITE_FIREBASE_STORAGE_BUCKET — only needed if NOT using R2)
+FIREBASE_STORAGE_BUCKET=
 
 # ⚠️  MUST SET — Firebase Admin SDK credentials (for Firestore database + Auth verification).
 # Steps:
@@ -101,11 +101,12 @@ R2_PUBLIC_URL=
 
 
 # --- SESSION & AUTH ---------------------------------------------------------
-# ✅ OAuth token issuer for Firebase ID token validation
-OAUTH_SERVER_URL=https://securetoken.google.com/gen-lang-client-0364375301
+# ⚠️  MUST SET — OAuth token issuer for Firebase ID token validation
+# Format: https://securetoken.google.com/<your-firebase-project-id>
+OAUTH_SERVER_URL=
 
-# ✅ Owner open-id for the SDK admin context
-OWNER_OPEN_ID=1e7ec060-4294-4c3b-8210-9c532b6930c3
+# ⚠️  MUST SET — Owner open-id for the SDK admin context
+OWNER_OPEN_ID=
 
 # ⚠️  MUST SET — Secret used to sign session cookies.
 # Generate:  openssl rand -hex 32
