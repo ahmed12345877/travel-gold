@@ -11,9 +11,14 @@ import fs from "node:fs";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Railway sets RAILWAY_ENVIRONMENT for every deployment. When this is present,
+// always use explicit credentials (FIREBASE_SERVICE_ACCOUNT_JSON) even if stale
+// Google Cloud env vars were carried over from a previous Firebase App Hosting setup.
+const isRailway = Boolean(process.env.RAILWAY_ENVIRONMENT);
+
 // K_SERVICE is set by Cloud Run (Firebase App Hosting). On Cloud Run,
 // ADC is automatically provisioned — no service account JSON needed.
-const isCloudRun = Boolean(
+const isCloudRun = !isRailway && Boolean(
   process.env.K_SERVICE ||
   process.env.GOOGLE_CLOUD_PROJECT ||
   process.env.FIREBASE_CONFIG
@@ -71,7 +76,7 @@ if (!getApps().length) {
     }
 
     initializeApp({ credential: credentialApp, storageBucket: storageBucketName });
-    console.log("[Firebase] Initialized with explicit credentials (development)");
+    console.log("[Firebase] Initialized with explicit credentials (development / Railway)");
   }
 }
 
