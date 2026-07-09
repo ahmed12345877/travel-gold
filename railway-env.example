@@ -1,0 +1,83 @@
+# =============================================================================
+# RAILWAY ENVIRONMENT VARIABLES
+# Copy these into: Railway dashboard → your service → Variables → Raw Editor
+#
+# Status legend:
+#   ✅ VALUE PROVIDED — copy exactly as shown
+#   ⚠️  MUST SET     — app will crash or malfunction without this
+#   🔧 OPTIONAL      — only needed for specific features
+# =============================================================================
+
+# --- RUNTIME ----------------------------------------------------------------
+NODE_ENV=production
+
+# PORT is injected automatically by Railway. Do NOT set it manually.
+
+# --- FIREBASE CLIENT (build-time Vite variables) ----------------------------
+# ✅ All values below are confirmed from your Firebase project.
+VITE_FIREBASE_API_KEY=AIzaSyAszyNw2a7_bv02cf0FBXiPXwt3E2-CXdY
+VITE_FIREBASE_AUTH_DOMAIN=gen-lang-client-0364375301.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=gen-lang-client-0364375301
+VITE_FIREBASE_STORAGE_BUCKET=gen-lang-client-0364375301.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=1001729880037
+VITE_FIREBASE_APP_ID=1:1001729880037:android:da145ec4fb1c7f7247090c
+VITE_FIREBASE_MEASUREMENT_ID=G-5ETHDXPS4L
+
+# ⚠️  Set this to your Railway app URL AFTER the first successful deploy.
+# Railway assigns a URL like https://your-app-name.up.railway.app
+# Leave blank for the first deploy, then set and redeploy.
+VITE_API_URL=
+
+# --- FIREBASE ADMIN (server-side) -------------------------------------------
+# ✅ Storage bucket (matches client config)
+FIREBASE_STORAGE_BUCKET=gen-lang-client-0364375301.firebasestorage.app
+
+# ⚠️  MUST SET — Firebase Admin SDK credentials.
+# Steps to get this value:
+#   1. Go to Firebase Console → Project Settings → Service Accounts
+#   2. Click "Generate New Private Key" → download the JSON file
+#   3. Run this command to encode it:
+#        base64 -w 0 firebase-service-account.json     (Linux / WSL)
+#        base64 -i firebase-service-account.json       (macOS)
+#   4. Paste the base64 output as the value below (single line, no quotes)
+FIREBASE_SERVICE_ACCOUNT_JSON=
+
+# --- SESSION & AUTH ---------------------------------------------------------
+# ✅ OAuth token issuer for Firebase ID token validation
+OAUTH_SERVER_URL=https://securetoken.google.com/gen-lang-client-0364375301
+
+# ✅ Owner open-id for the SDK admin context
+OWNER_OPEN_ID=1e7ec060-4294-4c3b-8210-9c532b6930c3
+
+# ⚠️  MUST SET — Secret used to sign session cookies.
+# Generate a strong value with:  openssl rand -hex 32
+JWT_SECRET=
+
+# --- ADMIN ACCESS -----------------------------------------------------------
+# ⚠️  MUST SET — Comma-separated Firebase Auth email addresses that are
+# automatically granted the "admin" role on their first login.
+# Example: ADMIN_EMAILS=you@gmail.com,colleague@gmail.com
+ADMIN_EMAILS=
+
+# 🔧 OPTIONAL — Enable direct email+password admin login (no Firebase popup).
+# ADMIN_EMAIL=admin@yourapp.com
+# ADMIN_PASSWORD_HASH=<sha256 hex of password>
+#   Generate: echo -n 'your-password' | sha256sum | cut -d' ' -f1
+
+# --- CORS (only needed for separate frontend domains) -----------------------
+# 🔧 OPTIONAL — The app serves frontend + backend from one Railway service,
+# so same-origin requests work without this. Only add entries if an external
+# domain (e.g. a custom domain or mobile API client) needs to call the API.
+# CORS_ORIGINS=https://your-custom-domain.com
+
+# --- SUPABASE STORAGE (only if you use Supabase for file uploads) -----------
+# 🔧 OPTIONAL — Leave blank to use Firebase Storage only.
+# SUPABASE_URL=https://your-project.supabase.co
+# SUPABASE_SERVICE_ROLE_KEY=
+# SUPABASE_STORAGE_BUCKET=uploads
+# SUPABASE_STORAGE_SIGNED_URL_TTL=3600
+
+# --- AI FEATURES (only if AI routes are used) -------------------------------
+# 🔧 OPTIONAL
+# OPENAI_API_KEY=
+# GEMINI_API_KEY=

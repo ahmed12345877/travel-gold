@@ -4,6 +4,7 @@ import { sdk } from "./_core/sdk";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { COOKIE_NAME, ONE_YEAR_MS } from "../shared/const";
 import { db as firestoreDb } from "./_core/firebaseAdmin";
+import { ENV } from "./_core/env";
 
 // Ensure Firebase Admin is initialized before this module is used
 import "./_core/firebaseAdmin";
@@ -12,7 +13,7 @@ async function resolveAdminUser(uid: string, email: string | undefined, displayN
   // ADMIN_EMAILS: comma-separated list of emails that are granted admin role on first login.
   // Set this env var in apphosting.yaml (or locally in .env) to bootstrap the first admin
   // without needing to manually edit Firestore.
-  const bootstrapEmails = (process.env.ADMIN_EMAILS ?? "")
+  const bootstrapEmails = ENV.adminEmails
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
