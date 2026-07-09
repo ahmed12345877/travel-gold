@@ -5,7 +5,11 @@ import {
   HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 
+let _r2Client: S3Client | null = null;
+
 function getR2Client(): S3Client {
+  if (_r2Client) return _r2Client;
+
   const accountId = process.env.R2_ACCOUNT_ID;
   const accessKeyId = process.env.R2_ACCESS_KEY_ID;
   const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
@@ -16,11 +20,12 @@ function getR2Client(): S3Client {
     );
   }
 
-  return new S3Client({
+  _r2Client = new S3Client({
     region: "auto",
     endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
     credentials: { accessKeyId, secretAccessKey },
   });
+  return _r2Client;
 }
 
 function getBucketName(): string {
@@ -77,7 +82,11 @@ export async function storageExists(filePath: string): Promise<boolean> {
     const bucket = getBucketName();
     await client.send(new HeadObjectCommand({ Bucket: bucket, Key: filePath }));
     return true;
-  } catch {
-    return false;
+  } catch (err: unknown) {
+    const e = err as { name?: string; $metadata?: { httpStatusCode?: number } };
+    if (e.name === "NotFound" || e.$metadata?.httpStatusCode === 404) {
+      return false;
+    }
+    throw err;
   }
 }

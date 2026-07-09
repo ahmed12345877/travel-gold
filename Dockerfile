@@ -1,5 +1,8 @@
 FROM node:20-alpine
 
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 -G nodejs
+
 WORKDIR /app
 
 # Remove corepack so pnpm is never invoked through it
@@ -9,7 +12,7 @@ RUN corepack disable 2>/dev/null || true && \
 # Copy manifests first for better layer caching
 COPY package.json pnpm-lock.yaml ./
 
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Source code
 COPY . .
@@ -39,5 +42,6 @@ RUN pnpm run build
 
 ENV NODE_ENV=production
 EXPOSE 8080
+USER nodejs
 
 CMD ["node", "dist/index.js"]

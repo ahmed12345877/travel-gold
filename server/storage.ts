@@ -56,7 +56,5 @@ export async function storageGet(
 export async function storageDelete(relKey: string): Promise<boolean> {
   const key = normalizeKey(relKey);
   if (useR2) return r2.storageDelete(key);
-  return import("../lib/firebase-storage").then((m) =>
-    m.storageDelete(key)
-  );
+  return firebaseStorageDelete(key);
 }

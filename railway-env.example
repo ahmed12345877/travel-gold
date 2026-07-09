@@ -95,7 +95,9 @@ R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
 R2_BUCKET_NAME=travel-gold-uploads
 R2_PUBLIC_URL=
-STORAGE_PROVIDER=r2
+# STORAGE_PROVIDER is auto-detected: set to "r2" only to force R2 even when
+# R2_ACCOUNT_ID / R2_BUCKET_NAME are absent. Leave unset for normal auto-detection.
+# STORAGE_PROVIDER=r2
 
 
 # --- SESSION & AUTH ---------------------------------------------------------

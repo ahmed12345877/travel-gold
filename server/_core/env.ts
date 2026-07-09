@@ -20,8 +20,7 @@ export const ENV = {
   adminEmails: process.env.ADMIN_EMAILS ?? "",
 };
 
-// Warn at startup if critical variables are missing in production.
-if (process.env.NODE_ENV === "production") {
+if (ENV.isProduction) {
   const missing: string[] = [];
   if (!ENV.cookieSecret) missing.push("JWT_SECRET");
   if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) missing.push("FIREBASE_SERVICE_ACCOUNT_JSON");
@@ -32,5 +31,6 @@ if (process.env.NODE_ENV === "production") {
       missing.join(", "),
       "\nSee railway-env.example for setup instructions."
     );
+    process.exit(1);
   }
 }
