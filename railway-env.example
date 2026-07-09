@@ -1,0 +1,137 @@
+# =============================================================================
+# RAILWAY ENVIRONMENT VARIABLES
+# Copy these into: Railway dashboard → your service → Variables → Raw Editor
+#
+# Status legend:
+#   ✅ VALUE PROVIDED — copy exactly as shown
+#   ⚠️  MUST SET     — app will crash or malfunction without this
+#   🔧 OPTIONAL      — only needed for specific features
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# UNDERSTANDING FIREBASE VARIABLES
+# ─────────────────────────────────────────────────────────────────────────────
+# Railway replaces Firebase App Hosting (the server/compute).
+# But Firebase still provides 3 services that the app uses:
+#
+#   1. Firebase Auth   — user login (email/password + Google Sign-In)
+#                        → requires VITE_FIREBASE_* keys
+#
+#   2. Firestore       — your database (users, bookings, offers…)
+#                        → requires FIREBASE_SERVICE_ACCOUNT_JSON
+#
+#   3. Firebase Storage — file/image uploads
+#                        → can be REPLACED by Cloudflare R2 (see section below)
+#
+# To fully stop using Google Storage, fill in the Cloudflare R2 section.
+# Firebase Auth + Firestore remain on Google (replacing them is a full rewrite).
+# =============================================================================
+
+
+# --- RUNTIME ----------------------------------------------------------------
+NODE_ENV=production
+
+# PORT is injected automatically by Railway. Do NOT set it manually.
+
+
+# --- FIREBASE CLIENT (build-time Vite variables) ----------------------------
+# ⚠️  MUST SET — find all values in Firebase Console → Project Settings → General
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_MEASUREMENT_ID=
+
+# ⚠️  Set this to your Railway app URL AFTER the first successful deploy.
+# Railway assigns a URL like https://your-app-name.up.railway.app
+# Leave blank for the first deploy, then set and redeploy.
+VITE_API_URL=
+
+
+# --- FIREBASE ADMIN (server-side) -------------------------------------------
+# 🔧 Storage bucket (matches VITE_FIREBASE_STORAGE_BUCKET — only needed if NOT using R2)
+FIREBASE_STORAGE_BUCKET=
+
+# ⚠️  MUST SET — Firebase Admin SDK credentials (for Firestore database + Auth verification).
+# Steps:
+#   1. Firebase Console → Project Settings → Service Accounts
+#   2. Click "Generate New Private Key" → download the JSON file
+#   3. Encode it:  base64 -w 0 firebase-service-account.json   (Linux)
+#                  base64 -i firebase-service-account.json      (macOS)
+#   4. Paste the single-line base64 output as the value.
+FIREBASE_SERVICE_ACCOUNT_JSON=
+
+
+# --- CLOUDFLARE R2 STORAGE (replaces Firebase Storage for image/file uploads) ---
+# ⚠️  MUST SET — Fill all 5 values below to store files on Cloudflare R2 instead of Google.
+# The app switches to R2 automatically when R2_ACCOUNT_ID and R2_BUCKET_NAME are present.
+#
+# ─── HOW TO GET EACH VALUE ────────────────────────────────────────────────────
+#
+# R2_ACCOUNT_ID
+#   cloudflare.com → log in → right sidebar: "Account ID" (32-char hex string)
+#   Example: a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
+#
+# R2_BUCKET_NAME
+#   cloudflare.com → R2 Object Storage → Create bucket
+#   Suggested name: travel-gold-uploads
+#   Region: keep default (automatic)
+#
+# R2_ACCESS_KEY_ID  &  R2_SECRET_ACCESS_KEY
+#   cloudflare.com → R2 → "Manage R2 API Tokens" → Create API token
+#   Permission: "Object Read & Write"  (do NOT restrict to specific bucket — leave blank)
+#   Copy "Access Key ID" → R2_ACCESS_KEY_ID
+#   Copy "Secret Access Key" → R2_SECRET_ACCESS_KEY  (shown ONCE — save it immediately)
+#
+# R2_PUBLIC_URL
+#   Open your new bucket → Settings → Public Access → "Allow Access" → Copy the URL
+#   Looks like: https://pub-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.r2.dev
+#   (If you use a custom domain later, replace this value with that domain.)
+#
+# ──────────────────────────────────────────────────────────────────────────────
+R2_ACCOUNT_ID=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET_NAME=travel-gold-uploads
+R2_PUBLIC_URL=
+# STORAGE_PROVIDER is auto-detected: set to "r2" only to force R2 even when
+# R2_ACCOUNT_ID / R2_BUCKET_NAME are absent. Leave unset for normal auto-detection.
+# STORAGE_PROVIDER=r2
+
+
+# --- SESSION & AUTH ---------------------------------------------------------
+# ⚠️  MUST SET — OAuth token issuer for Firebase ID token validation
+# Format: https://securetoken.google.com/<your-firebase-project-id>
+OAUTH_SERVER_URL=
+
+# ⚠️  MUST SET — Owner open-id for the SDK admin context
+OWNER_OPEN_ID=
+
+# ⚠️  MUST SET — Secret used to sign session cookies.
+# Generate:  openssl rand -hex 32
+JWT_SECRET=
+
+
+# --- ADMIN ACCESS -----------------------------------------------------------
+# ⚠️  MUST SET — Comma-separated Firebase Auth email addresses that are
+# automatically granted the "admin" role on their first login.
+# Example: ADMIN_EMAILS=you@gmail.com,colleague@gmail.com
+ADMIN_EMAILS=
+
+# 🔧 OPTIONAL — Enable direct email+password admin login (no Firebase popup).
+# ADMIN_EMAIL=admin@yourapp.com
+# ADMIN_PASSWORD_HASH=<sha256 hex of password>
+#   Generate: echo -n 'your-password' | sha256sum | cut -d' ' -f1
+
+
+# --- CORS (only needed for separate frontend domains) -----------------------
+# 🔧 OPTIONAL — The app serves frontend + backend from one Railway service,
+# so same-origin requests work without this.
+# CORS_ORIGINS=https://your-custom-domain.com
+
+
+# --- AI FEATURES (only if AI routes are used) -------------------------------
+# 🔧 OPTIONAL
+# OPENAI_API_KEY=
+# GEMINI_API_KEY=

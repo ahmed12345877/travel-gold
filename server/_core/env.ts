@@ -16,4 +16,21 @@ export const ENV = {
   adminEmail: process.env.ADMIN_EMAIL ?? "",
   /** SHA-256 hex hash of the admin password */
   adminPasswordHash: process.env.ADMIN_PASSWORD_HASH ?? "",
+  /** Comma-separated admin emails for Firebase Auth bootstrap */
+  adminEmails: process.env.ADMIN_EMAILS ?? "",
 };
+
+if (ENV.isProduction) {
+  const missing: string[] = [];
+  if (!ENV.cookieSecret) missing.push("JWT_SECRET");
+  if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) missing.push("FIREBASE_SERVICE_ACCOUNT_JSON");
+  if (!ENV.oAuthServerUrl) missing.push("OAUTH_SERVER_URL");
+  if (missing.length > 0) {
+    console.error(
+      "[ENV] CRITICAL: Missing required environment variables:",
+      missing.join(", "),
+      "\nSee railway-env.example for setup instructions."
+    );
+    process.exit(1);
+  }
+}
