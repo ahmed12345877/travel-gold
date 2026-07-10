@@ -120,9 +120,29 @@ export async function startServer() {
     server.listen(port, "0.0.0.0", () => {
       console.log(`Server running on http://0.0.0.0:${port}/`);
     });
+    
+    // Graceful shutdown handling to prevent crashes
+    process.on('SIGTERM', () => {
+      console.log('SIGTERM signal received: closing HTTP server');
+      server.close(() => {
+        console.log('HTTP server closed');
+        process.exit(0);
+      });
+    });
+    
+    process.on('SIGINT', () => {
+      console.log('SIGINT signal received: closing HTTP server');
+      server.close(() => {
+        console.log('HTTP server closed');
+        process.exit(0);
+      });
+    });
   }
 
   return app;
 }
 
-startServer().catch(console.error);
+startServer().catch((err) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+});
