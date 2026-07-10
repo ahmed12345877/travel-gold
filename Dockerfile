@@ -1,11 +1,11 @@
-FROM node:22-alpine
+FROM node:20-alpine
 
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 -G nodejs
 
 WORKDIR /app
 
-RUN npm install -g pnpm@11.1.2
+RUN npm install -g pnpm@10.11.0
 
 # Copy manifests first for better layer caching
 COPY package.json pnpm-lock.yaml ./
