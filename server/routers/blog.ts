@@ -113,7 +113,7 @@ export const blogRouter = router({
           ...input,
           authorId: ctx.user.id,
           authorName: ctx.user.name || "VANIR GROUP",
-          publishedAt: input.status === "published" ? new Date().toISOString() : undefined,
+          publishedAt: input.status === "published" ? (new Date() as any) : undefined,
         });
       } catch (err) {
         logError("blog.create", "mutation error", err, { input: { ...input, content: "[omitted]" } });
@@ -148,7 +148,7 @@ export const blogRouter = router({
         const { id, ...data } = input;
         const updated = await updateBlogPost(id, {
           ...data,
-          publishedAt: data.status === "published" ? new Date().toISOString() : undefined,
+          publishedAt: data.status === "published" ? (new Date() as any) : undefined,
         });
         if (!updated) {
           throw new TRPCError({

@@ -50,10 +50,10 @@ export default function GalleryAdmin() {
   });
 
   // Fetch gallery items from database
-  const { data: images = [], isLoading, refetch } = trpc.gallery.listAll.useQuery(
+  const { data: images = [], isLoading, refetch } = (trpc.gallery.listAll.useQuery(
     { limit: 200, offset: 0 },
     { staleTime: 5 * 60 * 1000 }
-  );
+  )) as any;
 
   // Mutations
   const createMutation = trpc.gallery.create.useMutation(
@@ -80,7 +80,7 @@ export default function GalleryAdmin() {
   });
 
   const filtered = useMemo(() => {
-    return images.filter(img => {
+    return images.filter((img: any) => {
       const matchSearch = img.title.toLowerCase().includes(search.toLowerCase());
       const matchCategory = activeCategory === "all" || img.category === activeCategory;
       return matchSearch && matchCategory;
@@ -214,11 +214,11 @@ export default function GalleryAdmin() {
           <p className="text-xs text-white/50">إجمالي الصور</p>
         </div>
         <div className="bg-[var(--theme-surface)] border border-white/5 rounded-lg p-4 text-center">
-          <p className="text-2xl font-bold text-[var(--theme-primary)]">{images.filter(i => i.featured === "yes").length}</p>
+          <p className="text-2xl font-bold text-[var(--theme-primary)]">{images.filter((i: any) => i.featured === "yes").length}</p>
           <p className="text-xs text-white/50">مميزة</p>
         </div>
         <div className="bg-[var(--theme-surface)] border border-white/5 rounded-lg p-4 text-center">
-          <p className="text-2xl font-bold text-blue-400">{new Set(images.map(i => i.category)).size}</p>
+          <p className="text-2xl font-bold text-blue-400">{new Set(images.map((i: any) => i.category)).size}</p>
           <p className="text-xs text-white/50">تصنيفات</p>
         </div>
         <div className="bg-[var(--theme-surface)] border border-white/5 rounded-lg p-4 text-center">
@@ -264,7 +264,7 @@ export default function GalleryAdmin() {
           ) : filtered.length === 0 ? (
             <div className="col-span-full text-center text-white/50">لا توجد صور</div>
           ) : (
-            filtered.map(img => (
+            filtered.map((img: any) => (
               <div key={img.id} className="group bg-[var(--theme-surface)] border border-white/5 rounded-lg overflow-hidden hover:border-[var(--theme-primary)]/20 transition-colors">
                 <div className="relative aspect-[4/3] bg-[#1a1a1a]">
                   <img src={img.imageUrl} alt={img.title} className="w-full h-full object-cover" />
@@ -321,7 +321,7 @@ export default function GalleryAdmin() {
                   <td colSpan={5} className="p-3 text-center text-white/50">لا توجد صور</td>
                 </tr>
               ) : (
-                filtered.map(img => (
+                filtered.map((img: any) => (
                   <tr key={img.id} className="border-b border-white/5 hover:bg-white/[0.02]">
                     <td className="p-3"><img src={img.imageUrl} alt="" className="w-12 h-9 object-cover rounded" /></td>
                     <td className="p-3 text-sm text-white">{img.title}</td>
@@ -355,7 +355,7 @@ export default function GalleryAdmin() {
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 dir-rtl">
           <div className="bg-[var(--theme-surface)] border border-white/10 rounded-xl w-full max-w-lg p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white">{editingImage ? "تعديل الصورة" : "رفع صورة جديدة"}</h2>
+              <h2 className="text-lg font-bold text-white">{editingImage ? "تع��يل الصورة" : "رفع صورة جديدة"}</h2>
               <button onClick={() => setIsDialogOpen(false)} className="text-white/40 hover:text-white"><X size={20} /></button>
             </div>
             <div className="space-y-3">

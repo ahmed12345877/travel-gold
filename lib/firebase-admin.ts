@@ -2,7 +2,7 @@ import admin from 'firebase-admin'
 import { getStorage } from 'firebase-admin/storage'
 
 // Global variable to store initialized Firebase app (idempotent pattern)
-let firebaseAppInstance: admin.app.App | null = null
+let firebaseAppInstance: any = null
 let cachedStorageBucket: string | null = null
 
 /**
@@ -70,7 +70,7 @@ function getStorageBucketName(serviceAccount: Record<string, unknown>): string {
  * @returns The initialized Firebase Admin App instance
  * @throws Error if FIREBASE_SERVICE_ACCOUNT_JSON is not set, invalid, or missing required fields
  */
-export function initializeFirebaseAdmin(): admin.app.App {
+export function initializeFirebaseAdmin(): any {
   // Return cached instance if already initialized (idempotent)
   if (firebaseAppInstance) {
     return firebaseAppInstance
@@ -131,7 +131,7 @@ export function initializeFirebaseAdmin(): admin.app.App {
  *
  * @returns The Firebase Admin App instance
  */
-export function getFirebaseApp(): admin.app.App {
+export function getFirebaseApp(): any {
   if (firebaseAppInstance) {
     return firebaseAppInstance
   }

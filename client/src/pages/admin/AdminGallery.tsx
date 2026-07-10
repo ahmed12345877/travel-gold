@@ -57,11 +57,11 @@ export default function AdminGallery() {
   const { data: galleryItems, isLoading: loadingImages } = trpc.gallery.listAll.useQuery(
     { limit: 200, offset: 0 },
     { staleTime: 30_000 }
-  );
+  ) as any;
   const { data: galleryVideos, isLoading: loadingVideos } = trpc.gallery.listAllVideos.useQuery(
     { limit: 100, offset: 0 },
     { staleTime: 30_000 }
-  );
+  ) as any;
 
   /* ─── Mutations ─── */
   const createImageMut = trpc.gallery.create.useMutation({
@@ -73,8 +73,8 @@ export default function AdminGallery() {
       setEditingImage(null);
     },
     onError: (err) => {
-      const message = err.data?.zodError 
-        ? Object.values(err.data.zodError).flat().join(", ")
+      const message = (err.data as any)?.zodError 
+        ? Object.values((err.data as any).zodError).flat().join(", ")
         : err.message || "فشل في إضافة الصورة";
       toast.error(message);
     },
@@ -89,8 +89,8 @@ export default function AdminGallery() {
       setEditingImage(null);
     },
     onError: (err) => {
-      const message = err.data?.zodError 
-        ? Object.values(err.data.zodError).flat().join(", ")
+      const message = (err.data as any)?.zodError 
+        ? Object.values((err.data as any).zodError).flat().join(", ")
         : err.message || "فشل في تحديث الصورة";
       toast.error(message);
     },
@@ -104,8 +104,8 @@ export default function AdminGallery() {
       setDeleteConfirm(null);
     },
     onError: (err) => {
-      const message = err.data?.zodError 
-        ? Object.values(err.data.zodError).flat().join(", ")
+      const message = (err.data as any)?.zodError 
+        ? Object.values((err.data as any).zodError).flat().join(", ")
         : err.message || "فشل في حذف الصورة";
       toast.error(message);
     },
@@ -113,8 +113,8 @@ export default function AdminGallery() {
 
   const uploadImageMut = trpc.gallery.uploadImage.useMutation({
     onError: (err) => {
-      const message = err.data?.zodError 
-        ? Object.values(err.data.zodError).flat().join(", ")
+      const message = (err.data as any)?.zodError 
+        ? Object.values((err.data as any).zodError).flat().join(", ")
         : err.message || "فشل في رفع الصورة";
       toast.error(message);
     },
@@ -129,8 +129,8 @@ export default function AdminGallery() {
       setEditingVideo(null);
     },
     onError: (err) => {
-      const message = err.data?.zodError 
-        ? Object.values(err.data.zodError).flat().join(", ")
+      const message = (err.data as any)?.zodError 
+        ? Object.values((err.data as any).zodError).flat().join(", ")
         : err.message || "فشل في إضافة الفيديو";
       toast.error(message);
     },
@@ -145,8 +145,8 @@ export default function AdminGallery() {
       setEditingVideo(null);
     },
     onError: (err) => {
-      const message = err.data?.zodError 
-        ? Object.values(err.data.zodError).flat().join(", ")
+      const message = (err.data as any)?.zodError 
+        ? Object.values((err.data as any).zodError).flat().join(", ")
         : err.message || "فشل في تحديث الفيديو";
       toast.error(message);
     },
@@ -160,15 +160,15 @@ export default function AdminGallery() {
       setDeleteConfirm(null);
     },
     onError: (err) => {
-      const message = err.data?.zodError 
-        ? Object.values(err.data.zodError).flat().join(", ")
+      const message = (err.data as any)?.zodError 
+        ? Object.values((err.data as any).zodError).flat().join(", ")
         : err.message || "فشل في حذف الفيديو";
       toast.error(message);
     },
   });
 
   /* ─── Filtered Data ─── */
-  const filteredImages = (galleryItems || []).filter((item) => {
+  const filteredImages = (galleryItems || []).filter((item: any) => {
     const matchesSearch =
       !searchTerm ||
       item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -178,7 +178,7 @@ export default function AdminGallery() {
     return matchesSearch && matchesCategory;
   });
 
-  const filteredVideos = (galleryVideos || []).filter((video) => {
+  const filteredVideos = (galleryVideos || []).filter((video: any) => {
     return (
       !searchTerm ||
       video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -309,7 +309,7 @@ export default function AdminGallery() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredImages.map((item) => (
+              {filteredImages.map((item: any) => (
                 <div
                   key={item.id}
                   className={`group relative bg-[var(--theme-surface)] rounded-xl border overflow-hidden transition-all hover:border-[var(--theme-primary)]/40 ${
@@ -415,7 +415,7 @@ export default function AdminGallery() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredVideos.map((video) => (
+              {filteredVideos.map((video: any) => (
                 <div
                   key={video.id}
                   className={`group relative bg-[var(--theme-surface)] rounded-xl border overflow-hidden transition-all hover:border-[var(--theme-primary)]/40 ${
