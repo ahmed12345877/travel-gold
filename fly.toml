@@ -35,3 +35,4 @@ primary_region = "iad"
     path = "/"
     protocol = "http"
     timeout = "5s"
+    tls_skip_verify = false
