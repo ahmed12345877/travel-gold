@@ -10,3 +10,7 @@ README.md
 dist
 build
 .turbo
+.turbopack
+pnpm-debug.log
+coverage
+.eslintcache
