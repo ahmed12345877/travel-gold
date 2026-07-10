@@ -10,7 +10,7 @@ RUN npm install -g pnpm@11.1.2
 # Copy manifests first for better layer caching
 COPY package.json pnpm-lock.yaml ./
 
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Source code
 COPY . .
