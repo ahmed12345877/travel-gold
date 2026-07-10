@@ -1,52 +1,37 @@
-# Build stage
-FROM node:20-alpine AS builder
+FROM node:20-alpine AS base
+RUN npm install -g pnpm@9
 
+FROM base AS deps
 WORKDIR /app
-
-# Install pnpm
-RUN npm install -g pnpm
-
-# Copy package files
 COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile --prod
 
-# Install dependencies
+FROM base AS builder
+WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
-
-# Copy source code
 COPY . .
-
-# Build the application
 RUN pnpm build
 
-# Production stage
-FROM node:20-alpine
-
+FROM base AS runner
 WORKDIR /app
+ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
 
-# Install pnpm
-RUN npm install -g pnpm
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nextjs -u 1001
 
-# Copy package files from builder
-COPY package.json pnpm-lock.yaml ./
-
-# Install production dependencies only
-RUN pnpm install --prod --frozen-lockfile
-
-# Copy built app from builder
-COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 
-# Expose port
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
+
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
 EXPOSE 3000
+ENV PORT 3000
+ENV HOSTNAME 0.0.0.0
 
-# Set environment
-ENV NODE_ENV=production
-ENV PORT=3000
-ENV HOSTNAME=0.0.0.0
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
-
-# Start the application
-CMD ["pnpm", "start"]
+CMD ["node", "server.js"]
