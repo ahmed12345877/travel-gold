@@ -1,27 +1,26 @@
-# fly.toml app configuration file generated
-app = "my-project"
-primary_region = "ord"
+app = "travel-gold"
+primary_region = "iad"
 
 [build]
-  builder = "heroku"
-  buildpacks = ["heroku/nodejs"]
+  builder = "docker"
+
+[build.args]
+  NODE_ENV = "production"
 
 [env]
   NODE_ENV = "production"
+  PORT = "3000"
+  HOSTNAME = "0.0.0.0"
   NODE_OPTIONS = "--max-old-space-size=1024"
-
-[processes]
-  app = "npm start"
 
 [[services]]
   internal_port = 3000
   processes = ["app"]
   protocol = "tcp"
-  script_checks = []
 
   [services.concurrency]
-    hard_limit = 20
-    soft_limit = 17
+    hard_limit = 50
+    soft_limit = 40
     type = "connections"
 
   [[services.ports]]
@@ -32,7 +31,11 @@ primary_region = "ord"
     handlers = ["tls", "http"]
     port = 443
 
-  [[services.tcp_checks]]
-    grace_period = "10s"
-    interval = "15s"
+  [[services.http_checks]]
+    interval = "10s"
+    grace_period = "5s"
+    method = "get"
+    path = "/api/health"
+    protocol = "http"
     timeout = "5s"
+    tls_skip_verify = false
