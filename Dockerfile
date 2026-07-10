@@ -5,9 +5,7 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-# Remove corepack so pnpm is never invoked through it
-RUN corepack disable 2>/dev/null || true && \
-    npm install -g pnpm@10.10.0
+RUN npm install -g pnpm@11.1.2
 
 # Copy manifests first for better layer caching
 COPY package.json pnpm-lock.yaml ./
