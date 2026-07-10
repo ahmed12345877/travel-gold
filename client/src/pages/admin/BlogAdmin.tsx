@@ -26,7 +26,7 @@ export default function BlogAdmin() {
     status: "draft" as "published" | "draft" | "archived",
   });
 
-  const { data: articles, isLoading, refetch } = trpc.adminBlog.list.useQuery({
+  const { data: articles, isLoading, refetch } = trpc.admin.blog.list.useQuery({
     search,
     limit: 20,
   });
@@ -40,23 +40,23 @@ export default function BlogAdmin() {
     error: (msg: string) => alert(msg),
   };
 
-  const createMutation = trpc.adminBlog.create.useMutation(
+  const createMutation = trpc.admin.blog.create.useMutation(
     buildMutationCallbacks({ successMessage: "تم إنشاء المقالة بنجاح", errorMessage: "خطأ في إنشاء المقالة", refetch, onSuccess: () => { setIsOpen(false); resetForm(); }, notify }),
   );
 
-  const updateMutation = trpc.adminBlog.update.useMutation(
+  const updateMutation = trpc.admin.blog.update.useMutation(
     buildMutationCallbacks({ successMessage: "تم تحديث المقالة بنجاح", errorMessage: "خطأ في تحديث المقالة", refetch, onSuccess: () => { setIsOpen(false); setEditingId(null); }, notify }),
   );
 
-  const deleteMutation = trpc.adminBlog.delete.useMutation(
+  const deleteMutation = trpc.admin.blog.delete.useMutation(
     buildMutationCallbacks({ successMessage: "تم حذف المقالة بنجاح", errorMessage: "خطأ في حذف المقالة", refetch, notify }),
   );
 
-  const publishMutation = trpc.adminBlog.publish.useMutation(
+  const publishMutation = trpc.admin.blog.publish.useMutation(
     buildMutationCallbacks({ successMessage: "تم نشر المقالة بنجاح", errorMessage: "خطأ في نشر المقالة", refetch, notify }),
   );
 
-  const archiveMutation = trpc.adminBlog.archive.useMutation(
+  const archiveMutation = trpc.admin.blog.archive.useMutation(
     buildMutationCallbacks({ successMessage: "تم أرشفة المقالة بنجاح", errorMessage: "خطأ في أرشفة المقالة", refetch, notify }),
   );
 
@@ -82,7 +82,6 @@ export default function BlogAdmin() {
         category: formData.category,
         authorName: formData.author,
         tags,
-        status: formData.status,
       });
     } else {
       await createMutation.mutateAsync({
@@ -94,7 +93,6 @@ export default function BlogAdmin() {
         category: formData.category,
         authorName: formData.author,
         tags,
-        status: formData.status,
       });
     }
   };

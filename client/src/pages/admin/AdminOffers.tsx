@@ -358,26 +358,26 @@ export default function AdminOffers() {
   const [editingOffer, setEditingOffer] = useState<any>(null);
 
   const utils = trpc.useUtils();
-  const { data: offers, isLoading } = trpc.adminOffers.list.useQuery({ limit: 100, offset: 0 });
+  const { data: offers, isLoading } = trpc.admin.offers.list.useQuery({ limit: 100, offset: 0 });
 
-  const createMutation = trpc.adminOffers.create.useMutation({
+  const createMutation = trpc.admin.offers.create.useMutation({
     onSuccess: () => {
-      utils.adminOffers.list.invalidate();
+      utils.admin.offers.list.invalidate();
       setShowModal(false);
       setEditingOffer(null);
       toast.success("Offer created successfully");
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err: any) => toast.error(err.message),
   });
 
-  const updateMutation = trpc.adminOffers.update.useMutation({
+  const updateMutation = trpc.admin.offers.update.useMutation({
     onSuccess: () => {
-      utils.adminOffers.list.invalidate();
+      utils.admin.offers.list.invalidate();
       setShowModal(false);
       setEditingOffer(null);
       toast.success("Offer updated successfully");
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err: any) => toast.error(err.message),
   });
 
   const handleSave = (data: any) => {

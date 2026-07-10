@@ -367,35 +367,35 @@ export default function HeroAdmin() {
   const updateTitleStyle = (updates: Partial<TextStyle>) => {
     markData({
       ...heroData,
-      titleStyle: { ...heroData.titleStyle, ...updates },
+      titleStyle: { ...heroData.titleStyle, ...updates } as any,
     });
   };
 
   const updateSubtitleStyle = (updates: Partial<TextStyle>) => {
     markData({
       ...heroData,
-      subtitleStyle: { ...heroData.subtitleStyle, ...updates },
+      subtitleStyle: { ...heroData.subtitleStyle, ...updates } as any,
     });
   };
 
   const updateRotatingWordsStyle = (updates: Partial<RotatingWordsStyle>) => {
     markData({
       ...heroData,
-      rotatingWordsStyle: { ...heroData.rotatingWordsStyle, ...updates },
+      rotatingWordsStyle: { ...heroData.rotatingWordsStyle, ...updates } as any,
     });
   };
 
   const updateButton1Style = (updates: Partial<TextStyle>) => {
     markData({
       ...heroData,
-      button1Style: { ...heroData.button1Style, ...updates },
+      button1Style: { ...heroData.button1Style, ...updates } as any,
     });
   };
 
   const updateButton2Style = (updates: Partial<TextStyle>) => {
     markData({
       ...heroData,
-      button2Style: { ...heroData.button2Style, ...updates },
+      button2Style: { ...heroData.button2Style, ...updates } as any,
     });
   };
 

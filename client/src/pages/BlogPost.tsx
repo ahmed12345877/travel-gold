@@ -19,12 +19,12 @@ export default function BlogPost() {
   const { data: post, isLoading, error } = trpc.blog.getBySlug.useQuery(
     { slug },
     { enabled: !!slug }
-  );
+  ) as any;
 
   // Related posts (same category, excluding current)
   const { data: relatedPosts } = trpc.blog.list.useQuery(
-    { limit: 3, category: post?.category || undefined },
-    { enabled: !!post?.category }
+    { limit: 3 },
+    { enabled: !!post }
   );
 
   const filteredRelated = relatedPosts?.filter((p) => p.slug !== slug).slice(0, 3);
@@ -32,7 +32,7 @@ export default function BlogPost() {
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: post?.title || "",
+        title: post?.title || "VANIR GROUP Blog",
         url: window.location.href,
       });
     } else {

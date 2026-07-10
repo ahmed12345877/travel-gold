@@ -144,7 +144,7 @@ function EgyptianParticles() {
     if (!containerRef.current) return;
 
     const particlesCount = 20;
-    const particles = [];
+    const particles: HTMLDivElement[] = [];
 
     for (let i = 0; i < particlesCount; i++) {
       const particle = document.createElement('div');

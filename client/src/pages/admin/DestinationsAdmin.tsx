@@ -31,7 +31,7 @@ export default function DestinationsAdmin() {
   });
 
   const utils = trpc.useUtils();
-  const { data: destinations, isLoading, refetch } = trpc.adminDestinations.list.useQuery({
+  const { data: destinations, isLoading, refetch } = trpc.admin.destinations.list.useQuery({
     search,
     limit: 20,
   });
@@ -94,7 +94,7 @@ export default function DestinationsAdmin() {
     reader.readAsDataURL(file);
   };
 
-  const createMutation = trpc.adminDestinations.create.useMutation({
+  const createMutation = trpc.admin.destinations.create.useMutation({
     onSuccess: () => {
       toast.success("تم إنشاء الوجهة بنجاح");
       refetch();
@@ -120,7 +120,7 @@ export default function DestinationsAdmin() {
     },
   });
 
-  const updateMutation = trpc.adminDestinations.update.useMutation({
+  const updateMutation = trpc.admin.destinations.update.useMutation({
     onSuccess: () => {
       toast.success("تم تحديث الوجهة بنجاح");
       refetch();
@@ -132,7 +132,7 @@ export default function DestinationsAdmin() {
     },
   });
 
-  const deleteMutation = trpc.adminDestinations.delete.useMutation({
+  const deleteMutation = trpc.admin.destinations.delete.useMutation({
     onSuccess: () => {
       alert("تم حذف الوجهة بنجاح");
       refetch();
@@ -175,9 +175,9 @@ export default function DestinationsAdmin() {
 
     const payload = {
       ...formData,
-      pricePerPerson,
-      rating,
-      groupSize,
+      pricePerPerson: String(pricePerPerson),
+      rating: String(rating),
+      groupSize: groupSize ? String(groupSize) : undefined,
     };
 
     if (editingId) {
