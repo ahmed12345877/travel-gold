@@ -4,6 +4,9 @@ primary_region = "iad"
 [build]
   builder = "docker"
   dockerfile = "./Dockerfile"
+  
+[build.dockerfile]
+  cmd = "dockerfile"
 
 [env]
   NODE_ENV = "production"
