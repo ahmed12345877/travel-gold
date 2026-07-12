@@ -1,0 +1,47 @@
+import type { Express, Request, Response } from "express";
+import { getServerSupabase } from "./supabase";
+
+// Serve legacy /api/storage/* by issuing Supabase signed redirects only.
+// No backend storage proxy is used - Supabase handles all storage operations.
+export function registerStorageProxy(app: Express) {
+  app.get("/api/storage/*", async (req: Request, res: Response) => {
+    const key = (req.params as Record<string, string>)[0];
+    
+    if (!key) {
+      return void res.status(400).json({ error: "Missing storage key" });
+    }
+
+    const supabase = getServerSupabase();
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET;
+    
+    if (!supabase || !bucket) {
+      return void res.status(404).send("Storage not configured");
+    }
+
+    try {
+      const ttl = Number(process.env.SUPABASE_STORAGE_SIGNED_URL_TTL || 60);
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(key, ttl);
+      
+      if (!error && data?.signedUrl) {
+        res.set("Cache-Control", "no-store");
+        return void res.redirect(307, data.signedUrl);
+      }
+      
+      // Fallback to public URL if bucket is public
+      const { data: pub } = supabase.storage.from(bucket).getPublicUrl(key);
+      if (pub && pub.publicUrl) {
+        res.set("Cache-Control", "no-store");
+        return void res.redirect(307, pub.publicUrl);
+      }
+      
+      return void res.status(404).send("Image not found");
+    } catch (err) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("[StorageProxy] Error:", err instanceof Error ? err.message : String(err));
+      }
+      return void res.status(502).send("Storage proxy error");
+    }
+  });
+}

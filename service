@@ -1,0 +1,14 @@
+[Unit]
+Description=Travel Gold Black Application
+After=network.target
+
+[Service]
+Type=simple
+User=vanirnet
+WorkingDirectory=/home/vanirnet/public_html/travel-gold-black
+ExecStart=/usr/bin/node dist/index.cjs
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
