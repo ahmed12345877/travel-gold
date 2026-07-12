@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": ".next/standalone/public",
+    "public": "out",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -8,6 +8,12 @@
       "**/*.spec.ts"
     ],
     "cleanUrls": true,
-    "trailingSlashBehavior": "remove"
+    "trailingSlashBehavior": "remove",
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
   }
 }
