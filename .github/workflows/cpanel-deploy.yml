@@ -1,0 +1,59 @@
+name: Deploy to cPanel
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Build project
+        run: npm run build
+      
+      - name: Deploy to cPanel via FTP
+        uses: kevinpainchaud/simple-ftp-deploy-action@v1.2.1
+        with:
+          ftp_host: ${{ secrets.CPANEL_FTP_HOST }}
+          ftp_port: 21
+          ftp_username: ${{ secrets.CPANEL_FTP_USER }}
+          ftp_password: ${{ secrets.CPANEL_FTP_PASSWORD }}
+          local_source_dir: "."
+          dist_target_dir: "/public_html/travel-gold"
+          delete: true
+      
+      - name: SSH into cPanel and restart app
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.CPANEL_SSH_HOST }}
+          username: ${{ secrets.CPANEL_SSH_USER }}
+          password: ${{ secrets.CPANEL_SSH_PASSWORD }}
+          script: |
+            cd ~/public_html/travel-gold
+            npm install --production
+            # Restart Node.js app via cPanel API or pm2
+            pm2 restart travel-gold || echo "App will be restarted via cPanel"
+
+      - name: Notify deployment success
+        if: success()
+        run: echo "Successfully deployed to cPanel https://vanirgroup.com"
+
+      - name: Notify deployment failure
+        if: failure()
+        run: echo "Deployment to cPanel failed. Check logs above."
