@@ -1,0 +1,19 @@
+{
+  "hosting": {
+    "public": "out",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "**/*.spec.ts"
+    ],
+    "cleanUrls": true,
+    "trailingSlashBehavior": "remove",
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
